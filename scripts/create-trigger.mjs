@@ -1,5 +1,5 @@
 const PROJECT_REF = 'qbyvzxouutytpmldfuyo';
-const PAT = 'sbp_fb9b9a361dae61429a02bfb39c519f8776152685';
+const PAT = 'SB_PAT_PLACEHOLDER';
 
 const sql = `
 CREATE OR REPLACE FUNCTION handle_new_user()

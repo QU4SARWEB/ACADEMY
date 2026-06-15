@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const PAT = 'sbp_fb9b9a361dae61429a02bfb39c519f8776152685';
+const PAT = 'SB_PAT_PLACEHOLDER';
 const PROJECT_REF = 'qbyvzxouutytpmldfuyo';
 
 const sqlPath = join(__dirname, '..', 'supabase', 'migrations', '00001_profiles.sql');

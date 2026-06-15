@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const url = 'https://qbyvzxouutytpmldfuyo.supabase.co';
-const serviceKey = 'sbp_f8675636b65099d983c5fe1b03546414bd666394';
+const serviceKey = 'SB_SERVICE_KEY_PLACEHOLDER';
 
 // Try using the service role key with auth admin
 const supabase = createClient(url, serviceKey, { 

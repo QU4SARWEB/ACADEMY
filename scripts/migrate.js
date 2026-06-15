@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SUPABASE_URL = 'https://qbyvzxouutytpmldfuyo.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'sbp_f8675636b65099d983c5fe1b03546414bd666394';
+const SUPABASE_SERVICE_ROLE_KEY = 'SB_SERVICE_KEY_PLACEHOLDER';
 
 async function runMigrations() {
   console.log('Running SQL migrations...\n');

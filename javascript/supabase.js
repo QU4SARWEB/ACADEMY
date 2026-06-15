@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://qbyvzxouutytpmldfuyo.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_z8ZCgirXFV7l_xquuHS44Q_4Kw_H9wY';
+const SUPABASE_ANON_KEY = 'SB_PUBLIC_KEY_PLACEHOLDER';
 
 let sb = null;
 

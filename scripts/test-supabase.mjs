@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 const url = 'https://qbyvzxouutytpmldfuyo.supabase.co';
-const anonKey = 'sb_publishable_z8ZCgirXFV7l_xquuHS44Q_4Kw_H9wY';
-const serviceKey = 'sbp_f8675636b65099d983c5fe1b03546414bd666394';
+const anonKey = 'SB_PUBLIC_KEY_PLACEHOLDER';
+const serviceKey = 'SB_SERVICE_KEY_PLACEHOLDER';
 
 const supabase = createClient(url, anonKey, { auth: { persistSession: false } });
 
