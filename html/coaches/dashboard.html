@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QU4SAR | Coach</title>
+  <link rel="icon" type="image/x-icon" href="../../img/QU4SAR.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/coaches/dashboard.css?v=2">
+  <style>
+    @keyframes hideLoader { 0%, 99% { opacity:1; visibility:visible; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
+    #loadingOverlay { animation: hideLoader 0s 3.5s forwards; }
+  </style>
+  <script>
+    setTimeout(function(){ var e=document.getElementById('loadingOverlay'); if(e) e.classList.add('hidden'); }, 3500);
+  </script>
+</head>
+<body>
+
+  <div id="loadingOverlay">
+    <div class="loader-ring"><img src="../../img/QU4SAR.ico" alt="QU4SAR" class="loader-icon"></div>
+  </div>
+
+  <div class="dash-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="../../img/QU4SAR.ico" alt="QU4SAR" class="sidebar-logo">
+        <span class="sidebar-logo-text">QU4SAR</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="overview"><i data-lucide="layout-dashboard" size="18"></i><span>Panel</span></a>
+        <a href="#" class="nav-item" data-section="students"><i data-lucide="users" size="18"></i><span>Mis Alumnos</span></a>
+        <a href="#" class="nav-item" data-section="jugadores"><i data-lucide="gamepad-2" size="18"></i><span>Jugadores</span></a>
+        <a href="#" class="nav-item" data-section="training"><i data-lucide="sword" size="18"></i><span>Entrenamiento</span></a>
+        <a href="#" class="nav-item" data-section="goals"><i data-lucide="target" size="18"></i><span>Objetivos</span></a>
+        <a href="#" class="nav-item" data-section="feedback"><i data-lucide="message-square" size="18"></i><span>Feedback</span></a>
+
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../../html/alumnos/dashboard.html" class="nav-item"><i data-lucide="eye" size="18"></i><span>Vista Alumno</span></a>
+        <a href="#" class="nav-item" id="logoutBtn"><i data-lucide="log-out" size="18"></i><span>Cerrar Sesión</span></a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle"><i data-lucide="menu" size="20"></i></button>
+        <div class="topbar-left"><span class="topbar-title" id="pageTitle">Panel</span></div>
+        <div class="topbar-right">
+          <div class="topbar-user">
+            <div class="user-avatar" id="userAvatar">C</div>
+            <div class="user-info">
+              <span class="user-name" id="userName">Coach</span>
+              <span class="user-role">coach</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content" id="mainContent">
+        <!-- OVERVIEW -->
+        <section id="section-overview" class="section active">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="users" size="20"></i></div><div class="stat-body"><span class="stat-label">Mis Alumnos</span><span class="stat-value" id="myStudents">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="gamepad-2" size="20"></i></div><div class="stat-body"><span class="stat-label">Jugadores</span><span class="stat-value" id="coachJugadores">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="calendar" size="20"></i></div><div class="stat-body"><span class="stat-label">Clases Esta Semana</span><span class="stat-value" id="weeklyClasses">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="target" size="20"></i></div><div class="stat-body"><span class="stat-label">Objetivos Activos</span><span class="stat-value" id="activeGoalsCount">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="message-square" size="20"></i></div><div class="stat-body"><span class="stat-label">Feedback Pendiente</span><span class="stat-value" id="pendingFeedback">-</span></div></div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-card wide">
+              <div class="info-card-header"><i data-lucide="users" size="16"></i><span>Mis Alumnos</span></div>
+              <div class="info-card-body" id="studentsList"><p class="empty-state">Cargando...</p></div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-header"><i data-lucide="calendar" size="16"></i><span>Próximas Clases</span></div>
+              <div class="info-card-body" id="upcomingSessions"><p class="empty-state">Sin clases programadas</p></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section id="section-students" class="section">
+          <div class="section-header"><h2>Mis Alumnos</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Valorant</th><th>Rango</th><th>Progreso</th><th>Última Actividad</th><th>Acción</th></tr></thead>
+              <tbody id="studentsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- JUGADORES -->
+        <section id="section-jugadores" class="section">
+          <div class="section-header"><h2>Jugadores</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Valorant</th><th>Rango</th><th>Progreso</th><th>Última Actividad</th><th>Acción</th></tr></thead>
+              <tbody id="jugadoresTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TRAINING -->
+        <section id="section-training" class="section">
+          <div class="section-header"><h2>Entrenamiento</h2><button class="btn-primary" id="addSessionBtn" style="padding:8px 18px;font-size:0.8rem;min-height:auto">+ NUEVA SESIÓN</button></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Título</th><th>Tipo</th><th>Fecha</th><th>Duración</th><th>Acciones</th></tr></thead>
+              <tbody id="sessionsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- GOALS -->
+        <section id="section-goals" class="section">
+          <div class="section-header"><h2>Objetivos</h2><button class="btn-primary" id="addGoalBtn" style="padding:8px 18px;font-size:0.8rem;min-height:auto">+ NUEVO OBJETIVO</button></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Alumno</th><th>Objetivo</th><th>Progreso</th><th>Estado</th><th>Acción</th></tr></thead>
+              <tbody id="goalsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- FEEDBACK -->
+        <section id="section-feedback" class="section">
+          <div class="section-header"><h2>Feedback</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Alumno</th><th>Título</th><th>Nota</th><th>Fecha</th><th>Acción</th></tr></thead>
+              <tbody id="feedbackTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="../../javascript/supabase.js?v=2"></script>
+  <script src="../../javascript/coaches/dashboard.js?v=2"></script>
+</body>
+</html>
+

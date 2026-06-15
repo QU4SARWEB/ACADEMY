@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QU4SAR | Jugador</title>
+  <link rel="icon" type="image/x-icon" href="../../img/QU4SAR.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/jugadores/dashboard.css?v=2">
+  <style>
+    @keyframes hideLoader { 0%, 99% { opacity:1; visibility:visible; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
+    #loadingOverlay { animation: hideLoader 0s 3.5s forwards; }
+  </style>
+  <script>
+    setTimeout(function(){ var e=document.getElementById('loadingOverlay'); if(e) e.classList.add('hidden'); }, 3500);
+  </script>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div id="loadingOverlay">
+    <div class="loader-ring"><img src="../../img/QU4SAR.ico" alt="QU4SAR" class="loader-icon"></div>
+  </div>
+
+  <div class="dash-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="../../img/QU4SAR.ico" alt="QU4SAR" class="sidebar-logo">
+        <span class="sidebar-logo-text">QU4SAR</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="overview">
+          <i data-lucide="layout-dashboard" size="18"></i>
+          <span>Visión General</span>
+        </a>
+        <a href="../jugadores/cursos/" class="nav-item">
+          <i data-lucide="book-open" size="18"></i>
+          <span>Mis Cursos</span>
+        </a>
+        <a href="../jugadores/training/" class="nav-item">
+          <i data-lucide="sword" size="18"></i>
+          <span>Entrenamiento</span>
+        </a>
+        <a href="../jugadores/scrims/" class="nav-item">
+          <i data-lucide="crosshair" size="18"></i>
+          <span>Scrims</span>
+        </a>
+        <a href="../jugadores/vod/" class="nav-item">
+          <i data-lucide="video" size="18"></i>
+          <span>VOD Reviews</span>
+        </a>
+        <a href="../jugadores/objetivos/" class="nav-item">
+          <i data-lucide="target" size="18"></i>
+          <span>Objetivos</span>
+        </a>
+        <a href="../jugadores/logros/" class="nav-item">
+          <i data-lucide="trophy" size="18"></i>
+          <span>Logros</span>
+        </a>
+        <a href="../jugadores/progreso/" class="nav-item">
+          <i data-lucide="trending-up" size="18"></i>
+          <span>Progreso</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../jugadores/clasificacion/" class="nav-item">
+          <i data-lucide="award" size="18"></i>
+          <span>Clasificación</span>
+        </a>
+        <a href="../jugadores/equipos/" class="nav-item">
+          <i data-lucide="users" size="18"></i>
+          <span>Equipos</span>
+        </a>
+        <a href="../jugadores/perfil/" class="nav-item">
+          <i data-lucide="settings" size="18"></i>
+          <span>Perfil</span>
+        </a>
+        <a href="../jugadores/pagos/" class="nav-item">
+          <i data-lucide="credit-card" size="18"></i>
+          <span>Pagos</span>
+        </a>
+        <a href="#" class="nav-item" id="logoutBtn">
+          <i data-lucide="log-out" size="18"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle">
+          <i data-lucide="menu" size="20"></i>
+        </button>
+
+        <div class="topbar-left">
+          <span class="topbar-title" id="pageTitle">Visi&oacute;n General</span>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-btn" id="notifBtn">
+            <i data-lucide="bell" size="18"></i>
+            <span class="notif-badge" id="notifBadge">0</span>
+          </button>
+          <div class="topbar-user" id="userMenu">
+            <div class="user-avatar" id="userAvatar">Q</div>
+            <div class="user-info">
+              <span class="user-name" id="userName">Cargando...</span>
+              <span class="user-role" id="userRole">jugador</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <div class="content" id="mainContent">
+
+        <!-- OVERVIEW SECTION -->
+        <section id="section-overview" class="section active">
+
+          <!-- Stats row -->
+          <div class="stats-grid">
+            <div class="stat-card highlight">
+              <div class="stat-icon"><i data-lucide="zap" size="22"></i></div>
+              <div class="stat-body">
+                <span class="stat-label">Nivel</span>
+                <span class="stat-value" id="statLevel">-</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="star" size="22"></i></div>
+              <div class="stat-body">
+                <span class="stat-label">XP Total</span>
+                <span class="stat-value" id="statXP">0</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="graduation-cap" size="22"></i></div>
+              <div class="stat-body">
+                <span class="stat-label">Rango Academia</span>
+                <span class="stat-value" id="statAcademyRank">-</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="crosshair" size="22"></i></div>
+              <div class="stat-body">
+                <span class="stat-label">Rango Valorant</span>
+                <span class="stat-value" id="statValRank">-</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="flame" size="22"></i></div>
+              <div class="stat-body">
+                <span class="stat-label">Racha</span>
+                <span class="stat-value" id="statStreak">0 d&iacute;as</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- XP Bar -->
+          <div class="xp-bar-wrapper">
+            <div class="xp-bar-header">
+              <span class="xp-bar-label">XP hacia el siguiente nivel</span>
+              <span class="xp-bar-numbers"><span id="xpCurrent">0</span> / <span id="xpNext">1000</span></span>
+            </div>
+            <div class="xp-bar-track">
+              <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Info cards row -->
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="target" size="16"></i>
+                <span>Objetivos Activos</span>
+              </div>
+              <div class="info-card-body" id="activeGoals">
+                <p class="empty-state">No hay objetivos activos</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="calendar" size="16"></i>
+                <span>Pr&oacute;xima Clase</span>
+              </div>
+              <div class="info-card-body" id="nextClass">
+                <p class="empty-state">No hay clases programadas</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="calendar-check" size="16"></i>
+                <span>Pr&oacute;ximo Scrim</span>
+              </div>
+              <div class="info-card-body" id="nextScrim">
+                <p class="empty-state">No hay scrims programados</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom row -->
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="message-square" size="16"></i>
+                <span>&Uacute;ltimo Feedback</span>
+              </div>
+              <div class="info-card-body" id="lastFeedback">
+                <p class="empty-state">Sin feedback a&uacute;n</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="trophy" size="16"></i>
+                <span>Logros Recientes</span>
+              </div>
+              <div class="info-card-body" id="recentAchievements">
+                <p class="empty-state">Sin logros a&uacute;n</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-header">
+                <i data-lucide="layers" size="16"></i>
+                <span>Temporada Actual</span>
+              </div>
+              <div class="info-card-body" id="currentSeason">
+                <p class="empty-state">Cargando...</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="../../javascript/supabase.js?v=2"></script>
+  <script src="../../javascript/jugadores/dashboard.js?v=2"></script>
+</body>
+</html>

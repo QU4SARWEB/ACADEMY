@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Logros | QU4SAR</title>
+<link rel="icon" type="image/x-icon" href="../../img/QU4SAR.ico">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/global.css"><link rel="stylesheet" href="../../css/logros/index.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    setTimeout(function(){ var e=document.getElementById('loadingOverlay'); if(e) e.classList.add('hidden'); }, 3500);
+  </script>
+</head>
+<body>
+<div id="loadingOverlay"><div class="loader-ring"><img src="../../img/QU4SAR.ico" alt="QU4SAR" class="loader-icon"></div></div>
+<div class="dash-layout">
+  <aside class="sidebar" id="sidebar"><div class="sidebar-brand"><img src="../../img/QU4SAR.ico" alt="" class="sidebar-logo"><span class="sidebar-logo-text">QU4SAR</span></div>
+    <nav class="sidebar-nav">
+      <a href="../alumnos/dashboard.html" class="nav-item"><i data-lucide="layout-dashboard" size="18"></i><span>Visión General</span></a>
+      <a href="../objetivos/index.html" class="nav-item"><i data-lucide="target" size="18"></i><span>Objetivos</span></a>
+      <a href="#" class="nav-item active"><i data-lucide="trophy" size="18"></i><span>Logros</span></a>
+      <a href="../clasificacion/index.html" class="nav-item"><i data-lucide="award" size="18"></i><span>Clasificación</span></a>
+    </nav>
+    <div class="sidebar-footer"><a href="#" class="nav-item" id="logoutBtn"><i data-lucide="log-out" size="18"></i><span>Cerrar Sesión</span></a></div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle"><i data-lucide="menu" size="20"></i></button>
+      <div class="topbar-left"><span class="topbar-title">Logros</span></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="user-avatar" id="userAvatar">Q</div><div class="user-info"><span class="user-name" id="userName">Cargando...</span><span class="user-role">student</span></div></div></div>
+    </header>
+    <div class="content">
+      <div class="achievement-stats"><div class="ach-stat"><span class="ach-stat-value" id="totalAchievements">0</span><span class="ach-stat-label">Desbloqueados</span></div><div class="ach-stat"><span class="ach-stat-value" id="totalBadges">0</span><span class="ach-stat-label">Insignias</span></div><div class="ach-stat"><span class="ach-stat-value" id="totalXpEarned">0</span><span class="ach-stat-label">XP Ganados</span></div></div>
+      <h2 class="section-title">Logros</h2>
+      <div class="achievements-grid" id="achievementsGrid"><p class="empty-state">Cargando...</p></div>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../../javascript/supabase.js"></script>
+<script src="../../javascript/logros/index.js"></script>
+</body>
+</html>
+
+

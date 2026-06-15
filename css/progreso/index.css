@@ -1,0 +1,13 @@
+.progress-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px; }
+.progress-stat { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center; }
+.progress-stat-value { font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--neon-light);display:block; }
+.progress-stat-label { font-size:.7rem;color:var(--text-muted);margin-top:4px;display:block; }
+.activity-timeline { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:8px 0; }
+.activity-item { display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);font-size:.8rem; }
+.activity-item:last-child { border-bottom:none; }
+.activity-dot { width:8px;height:8px;border-radius:50%;background:var(--neon);flex-shrink:0; }
+.activity-text { flex:1; }
+.activity-text strong { color:var(--text); }
+.activity-text span { color:var(--text-muted); }
+.activity-date { font-size:.7rem;color:var(--text-dim); }
+@media (max-width:768px) { .progress-stats { grid-template-columns:repeat(2,1fr); } }

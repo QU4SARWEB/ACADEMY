@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Valorant';
+  src: url('/fonts/valorant.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-bg-primary: #0A0A0A;
+  --color-bg-secondary: #111111;
+  --color-bg-tertiary: #1A1A1A;
+  --color-neon: #8B5CF6;
+  --color-neon-hover: #7C3AED;
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-orbitron);
+  --font-valorant: 'Valorant', sans-serif;
+  --animate-float: float 8s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-24px); }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 8px rgba(139, 92, 246, 0.3); }
+  to { box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); }
+}
+
+:root {
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1A1A1A;
+  --neon: #8B5CF6;
+  --neon-hover: #7C3AED;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --border: rgba(139, 92, 246, 0.2);
+}
+
+* {
+  scrollbar-color: #8B5CF6/20 transparent;
+  scrollbar-width: thin;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: white;
+}
+
+input, textarea, select {
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+button:focus-visible, a:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.5);
+  outline-offset: 2px;
+}
+
+@utility glass {
+  background: rgba(17, 17, 17, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+@utility glass-hover {
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.glass-hover:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+}
+
+@utility btn-glow {
+  transition: all 0.2s;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
+}
+
+@utility btn-glow-sm {
+  transition: all 0.2s;
+}
+
+.btn-glow-sm:hover {
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}

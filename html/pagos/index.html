@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Pagos | QU4SAR</title>
+<link rel="icon" type="image/x-icon" href="../../img/QU4SAR.ico">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/global.css"><link rel="stylesheet" href="../../css/pagos/index.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    setTimeout(function(){ var e=document.getElementById('loadingOverlay'); if(e) e.classList.add('hidden'); }, 3500);
+  </script>
+</head>
+<body>
+<div id="loadingOverlay"><div class="loader-ring"><img src="../../img/QU4SAR.ico" alt="QU4SAR" class="loader-icon"></div></div>
+<div class="dash-layout">
+  <aside class="sidebar" id="sidebar"><div class="sidebar-brand"><img src="../../img/QU4SAR.ico" alt="" class="sidebar-logo"><span class="sidebar-logo-text">QU4SAR</span></div>
+    <nav class="sidebar-nav">
+      <a href="../alumnos/dashboard.html" class="nav-item"><i data-lucide="layout-dashboard" size="18"></i><span>Visión General</span></a>
+      <a href="../perfil/index.html" class="nav-item"><i data-lucide="user" size="18"></i><span>Perfil</span></a>
+      <a href="#" class="nav-item active"><i data-lucide="credit-card" size="18"></i><span>Pagos</span></a>
+    </nav>
+    <div class="sidebar-footer"><a href="#" class="nav-item" id="logoutBtn"><i data-lucide="log-out" size="18"></i><span>Cerrar Sesión</span></a></div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle"><i data-lucide="menu" size="20"></i></button>
+      <div class="topbar-left"><span class="topbar-title">Pagos</span></div>
+      <div class="topbar-right"><div class="topbar-user"><div class="user-avatar" id="userAvatar">Q</div><div class="user-info"><span class="user-name" id="userName">Cargando...</span><span class="user-role">student</span></div></div></div>
+    </header>
+    <div class="content">
+      <div class="payment-status-card">Estado de Membresía: <strong id="membershipStatus">-</strong></div>
+      <h2 class="section-title">Historial de Pagos</h2>
+      <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="paymentsHistory"></tbody></table></div>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../../javascript/supabase.js"></script>
+<script src="../../javascript/pagos/index.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,17 @@
+{
+  "name": "qu4sar-academy",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "serve . -l 4321 --cors",
+    "build": "echo 'Build not needed - static site'",
+    "preview": "serve . -l 4321 --cors"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.6"
+  }
+}

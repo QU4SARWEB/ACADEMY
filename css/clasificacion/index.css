@@ -1,0 +1,14 @@
+.leaderboard-tabs { display:flex;gap:8px;margin-bottom:20px; }
+.leaderboard-list { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden; }
+.lb-row { display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border); }
+.lb-row:last-child { border-bottom:none; }
+.lb-row:hover { background:rgba(139,92,246,.02); }
+.lb-position { width:28px;font-family:var(--font-display);font-weight:700;font-size:.9rem;color:var(--text-muted);text-align:center; }
+.lb-position.top1 { color:#f59e0b; }
+.lb-position.top2 { color:#94a3b8; }
+.lb-position.top3 { color:#d97706; }
+.lb-avatar { width:32px;height:32px;border-radius:8px;background:rgba(139,92,246,.08);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--neon-light); }
+.lb-info { flex:1;min-width:0; }
+.lb-info strong { display:block;font-size:.82rem; }
+.lb-info span { font-size:.7rem;color:var(--text-muted); }
+.lb-value { font-family:var(--font-display);font-size:.85rem;font-weight:700;color:var(--neon-light); }

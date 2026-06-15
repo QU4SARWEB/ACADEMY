@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QU4SAR | Admin</title>
+  <link rel="icon" type="image/x-icon" href="../../img/QU4SAR.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/admin/dashboard.css?v=2">
+  <style>
+    @keyframes hideLoader { 0%, 99% { opacity:1; visibility:visible; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
+    #loadingOverlay { animation: hideLoader 0s 3.5s forwards; }
+  </style>
+  <script>
+    setTimeout(function(){ var e=document.getElementById('loadingOverlay'); if(e) e.classList.add('hidden'); }, 3500);
+  </script>
+</head>
+<body>
+
+  <div id="loadingOverlay">
+    <div class="loader-ring"><img src="../../img/QU4SAR.ico" alt="QU4SAR" class="loader-icon"></div>
+  </div>
+
+  <div class="dash-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="../../img/QU4SAR.ico" alt="QU4SAR" class="sidebar-logo">
+        <span class="sidebar-logo-text">QU4SAR</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="overview"><i data-lucide="layout-dashboard" size="18"></i><span>Panel</span></a>
+        <a href="#" class="nav-item" data-section="students"><i data-lucide="users" size="18"></i><span>Alumnos</span></a>
+        <a href="#" class="nav-item" data-section="jugadores"><i data-lucide="gamepad-2" size="18"></i><span>Jugadores</span></a>
+        <a href="#" class="nav-item" data-section="coaches"><i data-lucide="shield" size="18"></i><span>Coaches</span></a>
+        <a href="#" class="nav-item" data-section="payments"><i data-lucide="credit-card" size="18"></i><span>Pagos</span></a>
+        <a href="#" class="nav-item" data-section="pending"><i data-lucide="clock" size="18"></i><span>Pendientes</span></a>
+        <a href="#" class="nav-item" data-section="seasons"><i data-lucide="layers" size="18"></i><span>Temporadas</span></a>
+
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../../html/alumnos/dashboard.html" class="nav-item"><i data-lucide="eye" size="18"></i><span>Vista Alumno</span></a>
+        <a href="#" class="nav-item" id="logoutBtn"><i data-lucide="log-out" size="18"></i><span>Cerrar Sesión</span></a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle"><i data-lucide="menu" size="20"></i></button>
+        <div class="topbar-left"><span class="topbar-title" id="pageTitle">Panel</span></div>
+        <div class="topbar-right">
+          <div class="topbar-user">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <div class="user-info">
+              <span class="user-name" id="userName">Admin</span>
+              <span class="user-role">admin</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content" id="mainContent">
+        <!-- OVERVIEW -->
+        <section id="section-overview" class="section active">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="users" size="20"></i></div><div class="stat-body"><span class="stat-label">Total Alumnos</span><span class="stat-value" id="totalStudents">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="shield" size="20"></i></div><div class="stat-body"><span class="stat-label">Coaches</span><span class="stat-value" id="totalCoaches">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="gamepad-2" size="20"></i></div><div class="stat-body"><span class="stat-label">Total Jugadores</span><span class="stat-value" id="totalJugadores">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="clock" size="20"></i></div><div class="stat-body"><span class="stat-label">Pendientes Pago</span><span class="stat-value" id="pendingPayment">-</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i data-lucide="credit-card" size="20"></i></div><div class="stat-body"><span class="stat-label">Pagos del Mes</span><span class="stat-value" id="monthPayments">-</span></div></div>
+          </div>
+          <div class="admin-table-wrapper">
+            <h3 class="admin-table-title">Últimos Registros</h3>
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Email</th><th>Estado</th><th>Rol</th><th>Fecha</th></tr></thead>
+              <tbody id="recentUsers"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section id="section-students" class="section">
+          <div class="section-header"><h2>Alumnos</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Discord</th><th>Valorant</th><th>Rango</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="studentsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- JUGADORES -->
+        <section id="section-jugadores" class="section">
+          <div class="section-header"><h2>Jugadores</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Discord</th><th>Valorant</th><th>Rango</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="jugadoresTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- COACHES -->
+        <section id="section-coaches" class="section">
+          <div class="section-header"><h2>Coaches</h2><button class="btn-primary" id="addCoachBtn" style="padding:8px 18px;font-size:0.8rem;min-height:auto">+ AÑADIR COACH</button></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Email</th><th>Alumnos</th><th>Acciones</th></tr></thead>
+              <tbody id="coachesTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PAYMENTS -->
+        <section id="section-payments" class="section">
+          <div class="section-header"><h2>Pagos</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PENDING -->
+        <section id="section-pending" class="section">
+          <div class="section-header"><h2>Solicitudes Pendientes</h2></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Email</th><th>Discord</th><th>Valorant</th><th>Roles</th><th>Acción</th></tr></thead>
+              <tbody id="pendingTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SEASONS -->
+        <section id="section-seasons" class="section">
+          <div class="section-header"><h2>Temporadas</h2><button class="btn-primary" id="addSeasonBtn" style="padding:8px 18px;font-size:0.8rem;min-height:auto">+ NUEVA TEMPORADA</button></div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead><tr><th>Nombre</th><th>Inicio</th><th>Fin</th><th>Activa</th><th>Acciones</th></tr></thead>
+              <tbody id="seasonsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="../../javascript/supabase.js?v=2"></script>
+  <script src="../../javascript/admin/dashboard.js?v=2"></script>
+</body>
+</html>
+
