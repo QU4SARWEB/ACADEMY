@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CoachPaymentsView from './CoachPaymentsView'
@@ -16,9 +18,14 @@ export default async function PaymentsPage() {
 
   if (!profile) redirect('/login')
 
-  if (profile.role === 'coach') {
-    return <CoachPaymentsView />
-  }
+  const dashboardLink = profile.role === 'coach' ? '/coaches/dashboard' : profile.role === 'player' ? '/players/dashboard' : '/students/dashboard'
 
-  return <StudentPaymentsView />
+  return (
+    <div>
+      <Link href={dashboardLink} className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
+      {profile.role === 'coach' ? <CoachPaymentsView /> : <StudentPaymentsView />}
+    </div>
+  )
 }

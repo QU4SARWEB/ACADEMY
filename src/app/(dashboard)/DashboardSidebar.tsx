@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Menu,
   X,
+  GraduationCap,
+  Award,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -29,6 +31,7 @@ interface Props {
   role: Role
   userName: string
   avatarUrl: string | null
+  hasDebt?: boolean
 }
 
 interface NavItem {
@@ -50,6 +53,9 @@ const navItems: NavItem[] = [
   { label: 'Scrims', href: '/scrims', icon: <Swords size={20} />, roles: ['player', 'coach'] },
   { label: 'Estudiantes', href: '/students', icon: <Users size={20} />, roles: ['coach'] },
   { label: 'Jugadores', href: '/players', icon: <Trophy size={20} />, roles: ['coach'] },
+  { label: 'Evaluaciones', href: '/evaluations', icon: <GraduationCap size={20} />, roles: ['coach'] },
+  { label: 'Promociones', href: '/promotions', icon: <Award size={20} />, roles: ['coach'] },
+  { label: 'Seasons', href: '/seasons', icon: <Calendar size={20} />, roles: ['coach'] },
   { label: 'Pagos', href: '/payments', icon: <CreditCard size={20} />, roles: ['student', 'player', 'coach'], rootRoute: true },
   { label: 'Notificaciones', href: '/notifications', icon: <Bell size={20} />, roles: ['student', 'player', 'coach'], rootRoute: true },
   { label: 'Correo', href: '/mail', icon: <Mail size={20} />, roles: ['student', 'player', 'coach'], rootRoute: true },
@@ -57,7 +63,7 @@ const navItems: NavItem[] = [
   { label: 'Perfil', href: '/profile', icon: <Settings size={20} />, roles: ['student', 'player', 'coach'] },
 ]
 
-export default function DashboardSidebar({ role, userName, avatarUrl }: Props) {
+export default function DashboardSidebar({ role, userName, avatarUrl, hasDebt }: Props) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -68,7 +74,13 @@ export default function DashboardSidebar({ role, userName, avatarUrl }: Props) {
     player: '/players',
   }
   const basePath = ROLE_TO_PREFIX[role] || `/${role}`
-  const items = navItems.filter((item) => item.roles.includes(role))
+
+  const DEBT_ALLOWED_LABELS = ['Dashboard', 'Pagos', 'Perfil']
+
+  let items = navItems.filter((item) => item.roles.includes(role))
+  if (hasDebt) {
+    items = items.filter((item) => DEBT_ALLOWED_LABELS.includes(item.label))
+  }
 
   const sidebarContent = (
     <>

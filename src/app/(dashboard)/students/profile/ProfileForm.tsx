@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, Globe, Copy, Check } from 'lucide-react'
-import { uploadFile, getAvatarPath } from '@/services/upload'
+import { Camera, Globe, Copy, Check, Image } from 'lucide-react'
+import { uploadFile, getAvatarPath, getBannerPath } from '@/services/upload'
 import { updatePublicProfile, getPublicProfileByUserId } from '@/features/profiles/actions'
 
 const RANKS = ['Unranked', 'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant']
+const IN_GAME_ROLES = ['Duelist', 'Controller', 'Initiator', 'Sentinel', 'Flex']
 
 export default function ProfileForm({
   profile,
@@ -19,7 +20,9 @@ export default function ProfileForm({
 }) {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? '')
+  const [bannerUrl, setBannerUrl] = useState(profile.banner_url ?? '')
   const [pubProfile, setPubProfile] = useState<any>(null)
   const [pubSlug, setPubSlug] = useState('')
   const [pubEnabled, setPubEnabled] = useState(false)
@@ -51,6 +54,23 @@ export default function ProfileForm({
       router.refresh()
     }
     setUploading(false)
+  }
+
+  async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingBanner(true)
+    const path = getBannerPath(profile.id, `banner.${file.name.split('.').pop()}`)
+    const url = await uploadFile('banners', path, file)
+
+    if (url) {
+      setBannerUrl(url)
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      await supabase.from('profiles').update({ banner_url: url }).eq('id', profile.id)
+      router.refresh()
+    }
+    setUploadingBanner(false)
   }
 
   async function handleSavePublic(formData: FormData) {
@@ -156,6 +176,31 @@ export default function ProfileForm({
           </div>
         </div>
 
+        {/* Banner Upload */}
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-medium text-zinc-400 mb-1">Banner / Portada</label>
+          <div className="relative h-32 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900">
+            {bannerUrl ? (
+              <img src={bannerUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-zinc-600">
+                <Image size={24} />
+              </div>
+            )}
+            <label className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition hover:opacity-100">
+              <Camera size={20} className="text-white" />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerUpload}
+                disabled={uploadingBanner}
+              />
+            </label>
+          </div>
+          {uploadingBanner && <p className="mt-1 text-xs text-purple-400">Subiendo banner...</p>}
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs font-medium text-zinc-400">País</label>
@@ -167,11 +212,33 @@ export default function ProfileForm({
             />
           </div>
           <div>
+            <label className="block text-xs font-medium text-zinc-400">Región</label>
+            <input
+              name="region"
+              defaultValue={profile.region ?? ''}
+              placeholder="Ej: LATAM North"
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400">Rol en juego</label>
+            <select
+              name="inGameRole"
+              defaultValue={profile.in_game_role ?? ''}
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"
+            >
+              <option value="">Seleccionar...</option>
+              {IN_GAME_ROLES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-zinc-400">Email institucional</label>
             <input
               name="institutionalEmail"
               defaultValue={profile.institutional_email ?? ''}
-              placeholder="ej: nombre@qu4sar.edu"
+              placeholder="ej: nombre@qu4sar.com"
               className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
             />
           </div>
@@ -180,6 +247,65 @@ export default function ProfileForm({
             <p className="mt-1 text-sm text-zinc-300">
               {profile.scholarship ? 'Sí (completa)' : 'No'}
             </p>
+          </div>
+        </div>
+
+        {/* Config Section */}
+        <div>
+          <h3 className="mb-3 text-sm font-medium text-zinc-300">Configuración de mouse</h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400">DPI</label>
+              <input
+                name="mouseDpi"
+                type="number"
+                defaultValue={profile.mouse_dpi ?? ''}
+                placeholder="800"
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400">Sensibilidad</label>
+              <input
+                name="mouseSens"
+                type="number"
+                step="0.01"
+                defaultValue={profile.mouse_sens ?? ''}
+                placeholder="0.35"
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400">Scope Sens</label>
+              <input
+                name="mouseScopeSens"
+                type="number"
+                step="0.01"
+                defaultValue={profile.mouse_scope_sens ?? ''}
+                placeholder="1.00"
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400">eDPI</label>
+              <input
+                name="edpi"
+                type="number"
+                defaultValue={profile.edpi ?? ''}
+                placeholder="280"
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400">Frecuencia (Hz)</label>
+              <input
+                name="mouseHertz"
+                type="number"
+                defaultValue={profile.mouse_hertz ?? ''}
+                placeholder="1000"
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]"
+              />
+            </div>
           </div>
         </div>
 

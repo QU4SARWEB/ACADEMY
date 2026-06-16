@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { Plus, ArrowUpRight } from 'lucide-react'
+import { Plus, ArrowUpRight, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { formatDate } from '@/lib/formatDate'
 
 const statusColors: Record<string, string> = {
   pending: 'text-yellow-400',
@@ -19,6 +20,9 @@ export default async function TasksPage() {
 
   return (
     <div>
+      <Link href="/coaches/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-white">Tareas</h1>
@@ -47,7 +51,7 @@ export default async function TasksPage() {
                 <h3 className="font-medium text-white">{task.title}</h3>
               </div>
               <p className="mt-0.5 text-sm text-zinc-500">
-                {task.course_modules?.courses?.name} / {task.course_modules?.name} · Límite: {new Date(task.due_date).toLocaleDateString()}
+                {task.course_modules?.courses?.name} / {task.course_modules?.name} · Límite: {formatDate(task.due_date)}
               </p>
             </div>
             <ArrowUpRight size={16} className="text-zinc-500" />

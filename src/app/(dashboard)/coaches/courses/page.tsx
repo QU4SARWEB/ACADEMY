@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function CoursesPage() {
@@ -12,6 +12,9 @@ export default async function CoursesPage() {
 
   return (
     <div>
+      <Link href="/coaches/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-heading text-2xl font-bold text-white">Cursos</h1>
         <Link

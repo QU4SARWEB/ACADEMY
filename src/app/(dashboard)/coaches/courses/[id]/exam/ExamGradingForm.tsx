@@ -58,8 +58,12 @@ export default function ExamGradingForm({
           {enrollments.map((enr: any) => (
             <tr key={enr.id} className="border-b border-zinc-800/50 transition hover:bg-zinc-800/30">
               <td className="flex items-center gap-3 px-4 py-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                  {enr.profiles?.full_name?.charAt(0) ?? '?'}
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+                  {enr.profiles?.avatar_url ? (
+                    <img src={enr.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    enr.profiles?.full_name?.charAt(0) ?? '?'
+                  )}
                 </div>
                 <span className="text-white">{enr.profiles?.full_name}</span>
               </td>

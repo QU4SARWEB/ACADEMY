@@ -29,11 +29,16 @@ export async function POST(req: Request) {
 
   if (!enrollment) return new NextResponse('Inscripción no encontrada', { status: 404 })
 
+  const now = Date.now()
+  const due = new Date(dueDate).getTime()
+  const status = !isNaN(due) && now > due ? 'late' : 'submitted'
+
   const { error } = await supabase.from('task_submissions').insert({
     task_id: taskId,
     enrollment_id: enrollment.id,
     files,
-    status: new Date() > new Date(dueDate) ? 'late' : 'submitted',
+    status,
+    submitted_at: new Date(now).toISOString(),
   })
 
   if (error) return new NextResponse(error.message, { status: 500 })

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Check, X, Clock, HelpCircle, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { formatDate } from '@/lib/formatDate'
 
 const STATUS_LABELS: Record<string, string> = {
   present: 'Presente',
@@ -94,11 +95,11 @@ export default function AttendanceGrid({
               </th>
               {dates.map((d) => (
                 <th key={d} className="min-w-[100px] px-3 py-3 text-center text-xs text-zinc-500">
-                  {new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                  {formatDate(d, { day: 'numeric', month: 'short' })}
                 </th>
               ))}
               <th className="min-w-[100px] px-3 py-3 text-center text-xs text-purple-400">
-                {newDate ? new Date(newDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : 'Nueva'}
+                {newDate ? formatDate(newDate, { day: 'numeric', month: 'short' }) : 'Nueva'}
               </th>
             </tr>
           </thead>
@@ -113,8 +114,12 @@ export default function AttendanceGrid({
             {enrollments.map((enr: any) => (
               <tr key={enr.id} className="border-b border-zinc-800/50 transition hover:bg-zinc-800/30">
                 <td className="sticky left-0 z-10 flex items-center gap-2 bg-[#0A0A0A] px-4 py-3">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
-                    {enr.profiles?.full_name?.charAt(0) ?? '?'}
+                  <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
+                    {enr.profiles?.avatar_url ? (
+                      <img src={enr.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      enr.profiles?.full_name?.charAt(0) ?? '?'
+                    )}
                   </div>
                   <span className="text-white">{enr.profiles?.full_name}</span>
                 </td>

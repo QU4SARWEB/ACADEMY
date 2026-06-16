@@ -71,6 +71,12 @@ export default async function CourseDetailPage({
           <GraduationCap size={14} /> Examen
         </Link>
         <Link
+          href={`/coaches/courses/${id}/exams`}
+          className="btn-glow-sm flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-800"
+        >
+          <FileText size={14} /> Exámenes
+        </Link>
+        <Link
           href={`/coaches/courses/${id}/grades`}
           className="btn-glow-sm flex items-center gap-2 rounded-lg bg-purple-600/20 px-3 py-1.5 text-sm text-purple-300 transition hover:bg-purple-600/30"
         >
@@ -163,8 +169,12 @@ export default async function CourseDetailPage({
             )}
             {(enrollments ?? []).map((enr) => (
               <div key={enr.id} className="glass flex items-center gap-3 rounded-lg px-4 py-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                  {enr.profiles?.full_name?.charAt(0) ?? '?'}
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+                  {enr.profiles?.avatar_url ? (
+                    <img src={enr.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    enr.profiles?.full_name?.charAt(0) ?? '?'
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">{enr.profiles?.full_name}</p>

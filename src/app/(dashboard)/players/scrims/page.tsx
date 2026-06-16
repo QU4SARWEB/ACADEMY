@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { Swords } from 'lucide-react'
+import Link from 'next/link'
+import { Swords, ArrowLeft } from 'lucide-react'
+import { TimeDisplay } from '@/components/TimeDisplay'
 
 export default async function PlayerScrimsPage() {
   const supabase = await createClient()
@@ -21,6 +23,9 @@ export default async function PlayerScrimsPage() {
 
   return (
     <div>
+      <Link href="/players/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Scrims</h1>
 
       {(scrims ?? []).length === 0 && (
@@ -37,8 +42,13 @@ export default async function PlayerScrimsPage() {
               <div className="flex items-center gap-3">
                 <Swords size={18} className="text-green-400" />
                 <div>
-                  <h3 className="font-medium text-white">{scrim.rival}</h3>
-                  <p className="text-sm text-zinc-500">{new Date(scrim.scheduled_at).toLocaleString()}</p>
+                  <div className="flex items-center gap-2">
+                    {scrim.rival_logo && (
+                      <img src={scrim.rival_logo} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    )}
+                    <h3 className="font-medium text-white">{scrim.rival}</h3>
+                  </div>
+                  <p className="text-sm text-zinc-500"><TimeDisplay date={scrim.scheduled_at} /></p>
                 </div>
               </div>
               <div className="text-right">

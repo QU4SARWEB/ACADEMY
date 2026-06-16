@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 
 async function updateCourse(formData: FormData) {
   'use server'
@@ -31,6 +32,8 @@ async function deleteCourse(formData: FormData) {
   revalidatePath('/coaches/courses')
   redirect('/coaches/courses')
 }
+
+const deleteCourseAction = deleteCourse
 
 export default async function EditCoursePage({
   params,
@@ -84,16 +87,15 @@ export default async function EditCoursePage({
         </button>
       </form>
 
-      <form action={deleteCourse} className="mt-8">
+      <ConfirmDeleteForm message="¿Eliminar este curso permanentemente? Esto eliminará módulos, materiales y tareas asociadas." action={deleteCourseAction}>
         <input type="hidden" name="id" value={id} />
         <button
           type="submit"
-          onClick={(e) => { if (!confirm('¿Eliminar este curso permanentemente? Esto eliminará módulos, materiales y tareas asociadas.')) e.preventDefault() }}
           className="rounded-lg border border-red-500/30 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
         >
           Eliminar curso
         </button>
-      </form>
+      </ConfirmDeleteForm>
     </div>
   )
 }

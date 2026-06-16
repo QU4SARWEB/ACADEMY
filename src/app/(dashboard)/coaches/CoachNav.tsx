@@ -15,6 +15,7 @@ import {
   Settings,
   Swords,
   Shield,
+  FileQuestion,
 } from 'lucide-react'
 
 const tabs = [
@@ -24,6 +25,7 @@ const tabs = [
   { label: 'Jugadores', href: '/coaches/players', icon: Sword },
   { label: 'Tareas', href: '/coaches/tasks', icon: ClipboardList },
   { label: 'Evaluaciones', href: '/coaches/evaluations', icon: GraduationCap },
+  { label: 'Preguntas', href: '/coaches/questions', icon: FileQuestion },
   { label: 'Promociones', href: '/coaches/promotions', icon: Award },
   { label: 'Horarios', href: '/coaches/schedules', icon: Calendar },
   { label: 'Seasons', href: '/coaches/seasons', icon: Trophy },

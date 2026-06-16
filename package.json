@@ -1,17 +1,28 @@
 {
-  "name": "qu4sar-academy",
-  "version": "0.0.1",
+  "name": "qu4sar-v2",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "serve . -l 4321 --cors",
-    "build": "echo 'Build not needed - static site'",
-    "preview": "serve . -l 4321 --cors"
+    "dev": "next dev --webpack -p 5500",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.108.1",
-    "pg": "^8.21.0"
+    "@next/swc-win32-x64-msvc": "^16.2.9",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "lucide-react": "^1.18.0",
+    "next": "16.2.9",
+    "pg": "^8.21.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "serve": "^14.2.6"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

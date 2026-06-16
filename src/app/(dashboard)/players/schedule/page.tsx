@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { Calendar } from 'lucide-react'
+import Link from 'next/link'
+import { Calendar, ArrowLeft } from 'lucide-react'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -29,6 +30,9 @@ export default async function PlayerSchedulePage() {
 
   return (
     <div>
+      <Link href="/players/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Horario competitivo</h1>
 
       {Object.keys(grouped).length === 0 && (

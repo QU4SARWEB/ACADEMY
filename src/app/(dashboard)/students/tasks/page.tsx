@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ClipboardList, ArrowUpRight } from 'lucide-react'
+import { ClipboardList, ArrowUpRight, ArrowLeft } from 'lucide-react'
+import { formatDate } from '@/lib/formatDate'
 
 const statusColors: Record<string, string> = {
   pending: 'text-yellow-400',
@@ -62,14 +63,19 @@ export default async function StudentTasksPage() {
     submissionMap[sub.task_id] = [sub]
   }
 
-  function getStatus(taskId: string) {
+  function getStatus(taskId: string, dueDate: string) {
     const subs = submissionMap[taskId]
-    if (!subs || subs.length === 0) return 'pending'
+    if (!subs || subs.length === 0) {
+      return new Date() > new Date(dueDate) ? 'late' : 'pending'
+    }
     return subs[0].status
   }
 
   return (
     <div>
+      <Link href="/students/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-white">Tareas</h1>
         <p className="mt-1 text-sm text-zinc-400">Tus tareas asignadas</p>
@@ -80,7 +86,7 @@ export default async function StudentTasksPage() {
           <p className="text-sm text-zinc-500">No hay tareas asignadas.</p>
         )}
         {(tasks ?? []).map((task) => {
-          const status = getStatus(task.id)
+          const status = getStatus(task.id, task.due_date)
           return (
             <Link
               key={task.id}
@@ -93,7 +99,7 @@ export default async function StudentTasksPage() {
                   <span className={`text-xs ${statusColors[status]}`}>{statusLabels[status]}</span>
                 </div>
                 <p className="mt-0.5 text-sm text-zinc-500">
-                  {task.course_modules?.courses?.name} / {task.course_modules?.name} · Límite: {new Date(task.due_date).toLocaleDateString()}
+                  {task.course_modules?.courses?.name} / {task.course_modules?.name} · Límite: {formatDate(task.due_date)}
                 </p>
               </div>
               <ArrowUpRight size={16} className="text-zinc-500" />

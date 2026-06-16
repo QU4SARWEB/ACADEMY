@@ -10,13 +10,15 @@ export async function logAudit(
     metadata?: Record<string, any>
   }
 ) {
-  await supabase.from('audit_logs').insert({
+  const { error } = await supabase.from('audit_logs').insert({
     profile_id: params.profile_id,
     action: params.action,
     module: params.module,
     description: params.description ?? null,
     metadata: params.metadata ?? {},
   })
+
+  if (error) console.error('audit log error:', error)
 }
 
 export async function getAuditLogs(
@@ -44,6 +46,7 @@ export async function getAuditLogs(
     query = query.limit(options.limit)
   }
 
-  const { data } = await query
+  const { data, error } = await query
+  if (error) console.error(error)
   return (data ?? []) as any[]
 }

@@ -3,9 +3,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, GraduationCap, Award, CreditCard, CheckCircle, XCircle, AlertTriangle, BookOpen, UserMinus } from 'lucide-react'
+import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 import { checkPromotionEligibility, promoteStudent as doPromote } from '@/services/promotions'
 import { notifyUser } from '@/services/notify'
 import { assignToCourse } from '@/features/enrollments/actions'
+import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
+import { formatDate } from '@/lib/formatDate'
 
 async function promoteStudent(formData: FormData) {
   'use server'
@@ -84,6 +87,15 @@ export default async function StudentDetailPage({
   const { data: seasons } = await supabase.from('seasons').select('id, name, is_active').order('name')
   const { data: activeSeason } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
 
+  const { data: studentPayments } = await supabase
+    .from('payments')
+    .select('season_id, status')
+    .eq('profile_id', id)
+  const paymentBySeason = new Map<string, string>()
+  for (const p of studentPayments ?? []) {
+    paymentBySeason.set(p.season_id, p.status)
+  }
+
   const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id)
   const { data: availableCourses } = enrolledCourseIds.length > 0
     ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
@@ -112,9 +124,13 @@ export default async function StudentDetailPage({
 
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/20 text-2xl font-bold text-purple-400">
-            {profile.full_name.charAt(0)}
-          </div>
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/20 text-2xl font-bold text-purple-400">
+              {profile.full_name.charAt(0)}
+            </div>
+          )}
           <div>
             <h1 className="font-heading text-2xl font-bold text-white">{profile.full_name}</h1>
             <p className="text-sm text-zinc-400">{profile.email} · {profile.riot_id ?? 'Sin Riot ID'}</p>
@@ -161,19 +177,25 @@ export default async function StudentDetailPage({
                       {enr.promoted && ' · Promocionado'}
                     </p>
                     {enr.final_grade && <p className="text-xs text-zinc-500">Nota: {enr.final_grade}</p>}
+                    <div className="mt-1">
+                      {paymentBySeason.has(enr.season_id) ? (
+                        <PaymentStatusBadge status={paymentBySeason.get(enr.season_id)!} />
+                      ) : (
+                        <span className="text-xs text-zinc-600">Sin pago</span>
+                      )}
+                    </div>
                   </div>
                   {(enr.status === 'active' || enr.status === 'recovery') && (
-                    <form action={unenrollStudent}>
+                    <ConfirmDeleteForm message="¿Dar de baja esta inscripción?" action={unenrollStudent}>
                       <input type="hidden" name="enrollmentId" value={enr.id} />
                       <input type="hidden" name="studentId" value={id} />
                       <button
                         type="submit"
-                        onClick={(e) => { if (!confirm('¿Dar de baja esta inscripción?')) e.preventDefault() }}
                         className="text-xs text-red-400 hover:text-red-300"
                       >
                         <UserMinus size={14} />
                       </button>
-                    </form>
+                    </ConfirmDeleteForm>
                   )}
                 </div>
               </div>
@@ -196,7 +218,7 @@ export default async function StudentDetailPage({
                         </>
                       )}
                       <span className="ml-auto text-xs text-zinc-500">
-                        {new Date(p.created_at).toLocaleDateString()}
+                        {formatDate(p.created_at)}
                       </span>
                     </div>
                     {p.grade_at_time && (

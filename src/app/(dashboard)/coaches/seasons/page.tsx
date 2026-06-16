@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { Plus, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { Plus, CheckCircle, Pencil, Trash2, ArrowLeft } from 'lucide-react'
+import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
+import { formatDate } from '@/lib/formatDate'
 
 async function createSeason(formData: FormData) {
   'use server'
@@ -30,12 +32,41 @@ async function activateSeason(formData: FormData) {
   revalidatePath('/coaches/seasons')
 }
 
+async function updateSeason(formData: FormData) {
+  'use server'
+  const supabase = await createClient()
+  const id = formData.get('id') as string
+
+  await supabase.from('seasons').update({
+    name: formData.get('name') as string,
+    start_date: formData.get('startDate') as string,
+    end_date: formData.get('endDate') as string,
+  }).eq('id', id)
+
+  revalidatePath('/coaches/seasons')
+}
+
+async function deleteSeason(formData: FormData) {
+  'use server'
+  const supabase = await createClient()
+  const id = formData.get('id') as string
+
+  await supabase.from('seasons').delete().eq('id', id)
+
+  revalidatePath('/coaches/seasons')
+}
+
+const deleteSeasonAction = deleteSeason
+
 export default async function SeasonsPage() {
   const supabase = await createClient()
   const { data: seasons } = await supabase.from('seasons').select('*').order('start_date', { ascending: false })
 
   return (
     <div>
+      <Link href="/coaches/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-heading text-2xl font-bold text-white">Seasons</h1>
       </div>
@@ -47,25 +78,61 @@ export default async function SeasonsPage() {
               <p className="text-sm text-zinc-500">No hay seasons creadas.</p>
             )}
             {(seasons ?? []).map((s) => (
-              <div key={s.id} className="glass glass-hover flex items-center justify-between rounded-xl p-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-white">{s.name}</h3>
-                    {s.is_active && <CheckCircle size={14} className="text-green-400" />}
+              <details key={s.id} className="glass rounded-xl transition">
+                <summary className="flex cursor-pointer items-center justify-between p-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-white">{s.name}</h3>
+                      {s.is_active && <CheckCircle size={14} className="text-green-400" />}
+                    </div>
+                    <p className="mt-0.5 text-sm text-zinc-500">
+                      {formatDate(s.start_date)} — {formatDate(s.end_date)}
+                    </p>
                   </div>
-                  <p className="mt-0.5 text-sm text-zinc-500">
-                    {new Date(s.start_date).toLocaleDateString()} — {new Date(s.end_date).toLocaleDateString()}
-                  </p>
-                </div>
-                {!s.is_active && (
-                  <form action={activateSeason}>
+                  <div className="flex items-center gap-2">
+                    {!s.is_active && (
+                      <form action={activateSeason}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button type="submit" className="rounded-lg border border-green-500/30 px-3 py-1.5 text-xs text-green-400 transition hover:bg-green-500/10">
+                          Activar
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </summary>
+                <div className="border-t border-zinc-800 px-4 py-4">
+                  <form action={updateSeason} className="space-y-3">
                     <input type="hidden" name="id" value={s.id} />
-                    <button type="submit" className="rounded-lg border border-green-500/30 px-3 py-1.5 text-xs text-green-400 transition hover:bg-green-500/10">
-                      Activar
-                    </button>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400">Nombre</label>
+                      <input name="name" defaultValue={s.name} required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-400">Inicio</label>
+                        <input name="startDate" type="date" defaultValue={s.start_date?.slice(0, 10)} required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-400">Fin</label>
+                        <input name="endDate" type="date" defaultValue={s.end_date?.slice(0, 10)} required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" className="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
+                        Guardar
+                      </button>
+                    </div>
                   </form>
-                )}
-              </div>
+                  <div className="mt-3">
+                    <ConfirmDeleteForm message="¿Eliminar esta season?" action={deleteSeasonAction}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <button type="submit" className="rounded-lg border border-red-500/30 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10">
+                        Eliminar
+                      </button>
+                    </ConfirmDeleteForm>
+                  </div>
+                </div>
+              </details>
             ))}
           </div>
         </div>

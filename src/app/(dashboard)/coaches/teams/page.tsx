@@ -2,28 +2,32 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Users, Plus } from 'lucide-react'
+import { toSlug } from '@/lib/slug'
 
 async function createTeam(formData: FormData) {
   'use server'
   const supabase = await createClient()
+  const name = formData.get('name') as string
   const seasonId = formData.get('seasonId') as string
+  const profileId = formData.get('profileId') as string
+
+  const slug = toSlug(name)
+  if (!slug) return
 
   const { data: team } = await supabase.from('teams').insert({
-    name: formData.get('name') as string,
+    name,
+    slug,
     season_id: seasonId || null,
-  }).select('id').single()
+  }).select('id').maybeSingle()
 
-  if (team) {
-    const profileId = formData.get('profileId') as string
-    if (profileId) {
-      await supabase.from('team_members').insert({
-        team_id: team.id,
-        profile_id: profileId,
-        role: 'captain',
-        status: 'active',
-      })
-    }
-  }
+  if (!team) return
+  await supabase.from('team_members').insert({
+    team_id: team.id,
+    profile_id: profileId,
+    season_id: seasonId || null,
+    role: 'captain',
+    status: 'active',
+  })
 
   revalidatePath('/coaches/teams')
   redirect('/coaches/teams')
@@ -32,12 +36,38 @@ async function createTeam(formData: FormData) {
 async function addMember(formData: FormData) {
   'use server'
   const supabase = await createClient()
-  await supabase.from('team_members').insert({
-    team_id: formData.get('teamId') as string,
-    profile_id: formData.get('profileId') as string,
-    role: formData.get('role') as string || 'player',
+  const teamId = formData.get('teamId') as string
+  const profileId = formData.get('profileId') as string
+  const role = formData.get('role') as string || 'player'
+
+  if (!teamId || !profileId) return
+
+  // Get team's season_id
+  const { data: team } = await supabase
+    .from('teams')
+    .select('season_id')
+    .eq('id', teamId)
+    .maybeSingle()
+
+  // Check duplicate
+  const { data: existing } = await supabase
+    .from('team_members')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('profile_id', profileId)
+    .maybeSingle()
+
+  if (existing) return
+
+  const { error } = await supabase.from('team_members').insert({
+    team_id: teamId,
+    profile_id: profileId,
+    season_id: team?.season_id ?? null,
+    role,
     status: 'active',
   })
+
+  if (error) throw new Error(error.message)
   revalidatePath('/coaches/teams')
 }
 
@@ -61,7 +91,7 @@ export default async function CoachTeamsPage() {
   const supabase = await createClient()
 
   const { data: teams } = await supabase.from('teams').select('*, seasons(name)').order('name')
-  const { data: players } = await supabase.from('profiles').select('id, full_name').eq('role', 'player').order('full_name')
+  const { data: players } = await supabase.from('profiles').select('id, full_name').in('role', ['player', 'student']).order('full_name')
   const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
 
   const teamIds = (teams ?? []).map((t) => t.id)
@@ -126,8 +156,12 @@ export default async function CoachTeamsPage() {
                 {members.map((m) => (
                   <div key={m.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#0A0A0A] px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">
-                        {m.profiles?.full_name?.charAt(0) ?? '?'}
+                      <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">
+                        {m.profiles?.avatar_url ? (
+                          <img src={m.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          m.profiles?.full_name?.charAt(0) ?? '?'
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{m.profiles?.full_name}</p>
@@ -160,7 +194,7 @@ export default async function CoachTeamsPage() {
                   <input type="hidden" name="teamId" value={team.id} />
                   <select name="profileId" required
                     className="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                    <option value="">Seleccionar jugador...</option>
+                    <option value="">Seleccionar miembro...</option>
                     {(players ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
                   </select>
                   <select name="role"

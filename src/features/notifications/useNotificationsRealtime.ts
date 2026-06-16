@@ -26,6 +26,18 @@ export function useNotificationsRealtime(profileId: string) {
           setNewNotification(payload.new)
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `profile_id=eq.${profileId}`,
+        },
+        () => {
+          setNewNotification(null)
+        }
+      )
       .subscribe()
 
     return () => {

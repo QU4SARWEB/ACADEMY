@@ -30,6 +30,8 @@ async function gradeSubmission(formData: FormData) {
   const score = parseFloat(formData.get('score') as string)
   const feedback = formData.get('feedback') as string
 
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: sub } = await supabase
     .from('task_submissions')
     .select('enrollment_id, tasks(title, course_modules(course_id, courses(name)))')
@@ -40,6 +42,7 @@ async function gradeSubmission(formData: FormData) {
     score,
     feedback,
     status: 'graded',
+    graded_by: user?.id ?? null,
     graded_at: new Date().toISOString(),
   }).eq('id', submissionId)
 
@@ -126,8 +129,12 @@ export default async function TaskDetailPage({
               <div key={sub.id} className="glass rounded-lg p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
-                      {sub.enrollments?.profiles?.full_name?.charAt(0) ?? '?'}
+                    <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
+                      {sub.enrollments?.profiles?.avatar_url ? (
+                        <img src={sub.enrollments.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        sub.enrollments?.profiles?.full_name?.charAt(0) ?? '?'
+                      )}
                     </div>
                     <span className="text-sm font-medium text-white">{sub.enrollments?.profiles?.full_name}</span>
                   </div>

@@ -35,11 +35,13 @@ export async function notifyStudentsInCourse(
   excludeCoach?: boolean
 ) {
   const supabase = await createClient()
-  const { data: students } = await supabase
+  const { data: students, error } = await supabase
     .from('enrollments')
     .select('profile_id')
     .eq('course_id', courseId)
     .eq('status', 'active')
+
+  if (error) console.error(error)
 
   for (const s of students ?? []) {
     await createNotification(supabase, { profile_id: s.profile_id, type, title, body, link })

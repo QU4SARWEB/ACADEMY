@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import DashboardSidebar from './DashboardSidebar'
 import NotificationBell from '@/features/notifications/NotificationBell'
 import DebtBanner from './DebtBanner'
+import { hasDebt } from '@/services/payments'
 
 export default async function DashboardLayout({
   children,
@@ -25,12 +26,15 @@ export default async function DashboardLayout({
     redirect('/login?error=pending')
   }
 
+  const userHasDebt = profile.role !== 'coach' ? await hasDebt(supabase, user.id) : false
+
   return (
     <div className="flex h-screen bg-[#0A0A0A]">
       <DashboardSidebar
         role={profile.role}
         userName={profile.full_name}
         avatarUrl={profile.avatar_url}
+        hasDebt={userHasDebt}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex items-center justify-end border-b border-zinc-800 bg-[#0A0A0A] px-6 py-2">

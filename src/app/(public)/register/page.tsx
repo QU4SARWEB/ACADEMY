@@ -12,7 +12,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="glass rounded-xl p-8">
           <div className="mb-8 text-center">
-          <img src="/quasar.ico" alt="QU4SAR" className="mx-auto mb-4 h-16 w-16" />
+          <img src="/qu4sar.ico" alt="QU4SAR" className="mx-auto mb-4 h-16 w-16" />
           <h1 className="text-2xl font-bold text-white">Crear cuenta</h1>
           <p className="mt-1 text-sm text-zinc-400">Únete a QU4SAR Academy</p>
         </div>

@@ -1,9 +1,0 @@
-.sessions-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px; }
-.session-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px; }
-.session-card h3 { font-family:var(--font-display);font-size:.85rem;font-weight:600;margin-bottom:4px; }
-.session-card .session-type { font-size:.7rem;color:var(--neon-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px; }
-.session-card p { font-size:.78rem;color:var(--text-muted);margin-bottom:8px; }
-.session-meta { display:flex;gap:16px;font-size:.72rem;color:var(--text-dim); }
-.sessions-list { background:var(--bg-card);border:1px solid var(--border);border-radius:14px; }
-.session-row { display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);font-size:.8rem; }
-.session-row:last-child { border-bottom:none; }

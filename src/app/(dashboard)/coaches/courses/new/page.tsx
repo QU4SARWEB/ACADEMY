@@ -1,16 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-
-const COURSE_NAMES = [
-  { name: 'Rookie', order: 1, minRank: 'Hierro' },
-  { name: 'Trainee', order: 2, minRank: 'Bronce' },
-  { name: 'Amateur', order: 3, minRank: 'Plata' },
-  { name: 'Competitor', order: 4, minRank: 'Oro' },
-  { name: 'Elite', order: 5, minRank: 'Platino' },
-  { name: 'Semi-Pro', order: 6, minRank: 'Diamante' },
-  { name: 'Pro', order: 7, minRank: 'Ascendente' },
-]
+import CoursePresetSelector from './CoursePresetSelector'
 
 async function createCourse(formData: FormData) {
   'use server'
@@ -30,15 +21,14 @@ async function createCourse(formData: FormData) {
     display_order: displayOrder,
     min_rank: minRank,
     duration_months: durationMonths,
-  }).select('id').single()
+  }).select('id').maybeSingle()
 
-  if (newCourse) {
-    await supabase.from('promotion_requirements').insert({
-      course_id: newCourse.id,
-      min_grade: 80,
-      min_rank: minRank,
-    })
-  }
+  if (!newCourse) return
+  await supabase.from('promotion_requirements').insert({
+    course_id: newCourse.id,
+    min_grade: 80,
+    min_rank: minRank,
+  })
 
   revalidatePath('/coaches/courses')
   redirect('/coaches/courses')
@@ -55,24 +45,7 @@ export default async function NewCoursePage() {
       <form action={createCourse} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-zinc-300">Nombre</label>
-          <select name="name" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]"
-            onChange={(e) => {
-              const course = COURSE_NAMES.find(c => c.name === e.currentTarget.value)
-              if (course) {
-                const slugInput = document.querySelector('[name="slug"]') as HTMLInputElement
-                const orderInput = document.querySelector('[name="displayOrder"]') as HTMLInputElement
-                const rankInput = document.querySelector('[name="minRank"]') as HTMLInputElement
-                if (slugInput) slugInput.value = course.name.toLowerCase()
-                if (orderInput) orderInput.value = String(course.order)
-                if (rankInput) rankInput.value = course.minRank
-              }
-            }}
-          >
-            <option value="">Seleccionar...</option>
-            {COURSE_NAMES.map((c) => (
-              <option key={c.name} value={c.name}>{c.name} (rango mín: {c.minRank})</option>
-            ))}
-          </select>
+          <CoursePresetSelector />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

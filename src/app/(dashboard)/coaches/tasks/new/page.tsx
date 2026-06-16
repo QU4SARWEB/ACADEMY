@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { notifyStudentsInCourse } from '@/services/notify'
+import { parseDateTime } from '@/lib/parseDateTime'
 
 async function createTask(formData: FormData) {
   'use server'
@@ -9,6 +10,20 @@ async function createTask(formData: FormData) {
   const supabase = await createClient()
   const moduleId = formData.get('moduleId') as string
   const title = formData.get('title') as string
+
+  const materialFile = formData.get('materialFile') as File | null
+  let materialUrl: string | null = null
+  if (materialFile && materialFile.size > 0) {
+    const ext = materialFile.name.split('.').pop()
+    const path = `task-materials/${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('uploads')
+      .upload(path, materialFile, { upsert: true, contentType: materialFile.type || 'application/octet-stream' })
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
+      materialUrl = publicUrl
+    }
+  }
 
   const { data: mod } = await supabase
     .from('course_modules')
@@ -21,7 +36,7 @@ async function createTask(formData: FormData) {
     season_id: formData.get('seasonId') as string,
     title,
     description: formData.get('description') as string,
-    due_date: new Date(formData.get('dueDate') as string).toISOString(),
+    due_date: parseDateTime(formData.get('dueDate') as string),
     max_score: parseFloat(formData.get('maxScore') as string) || 100,
     allow_pdf: formData.get('allowPdf') === 'on',
     allow_image: formData.get('allowImage') === 'on',
@@ -48,7 +63,7 @@ export default async function NewTaskPage() {
   const supabase = await createClient()
   const { data: modules } = await supabase
     .from('course_modules')
-    .select('id, name')
+    .select('id, name, course_id, courses(name)')
     .order('course_id')
 
   const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
@@ -68,13 +83,19 @@ export default async function NewTaskPage() {
           <textarea name="description" rows={4} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]" />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-zinc-300">Material adjunto (opcional)</label>
+          <input name="materialFile" type="file" accept=".pdf,.doc,.docx,.zip,.rar,image/*,video/*"
+            className="mt-1 w-full text-sm text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-[#8B5CF6]/20 file:px-3 file:py-1.5 file:text-sm file:text-[#8B5CF6]" />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-zinc-300">Módulo</label>
             <select name="moduleId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]">
               <option value="">Seleccionar...</option>
               {(modules ?? []).map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
+                <option key={m.id} value={m.id}>{m.name} — {(m.courses as any)?.name ?? ''}</option>
               ))}
             </select>
           </div>

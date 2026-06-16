@@ -55,7 +55,7 @@ export default function SubmitTaskForm({
         const filePath = `task-submissions/${taskId}/${Date.now()}-${file.name}`
         const { data, error: uploadError } = await supabase.storage
           .from('uploads')
-          .upload(filePath, file)
+          .upload(filePath, file, { contentType: file.type || 'application/octet-stream' })
 
         if (uploadError) throw new Error(uploadError.message)
 

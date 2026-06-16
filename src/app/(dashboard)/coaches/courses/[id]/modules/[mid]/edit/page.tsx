@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 
 async function updateModule(formData: FormData) {
   'use server'
@@ -34,6 +35,8 @@ async function deleteModule(formData: FormData) {
   revalidatePath(`/coaches/courses/${courseId}`)
   redirect(`/coaches/courses/${courseId}`)
 }
+
+const deleteModuleAction = deleteModule
 
 export default async function EditModulePage({
   params,
@@ -84,17 +87,16 @@ export default async function EditModulePage({
         </button>
       </form>
 
-      <form action={deleteModule} className="mt-8">
+      <ConfirmDeleteForm message="¿Eliminar este módulo y todo su contenido?" action={deleteModuleAction}>
         <input type="hidden" name="moduleId" value={moduleId} />
         <input type="hidden" name="courseId" value={courseId} />
         <button
           type="submit"
-          onClick={(e) => { if (!confirm('¿Eliminar este módulo y todo su contenido?')) e.preventDefault() }}
           className="rounded-lg border border-red-500/30 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
         >
           Eliminar módulo
         </button>
-      </form>
+      </ConfirmDeleteForm>
     </div>
   )
 }

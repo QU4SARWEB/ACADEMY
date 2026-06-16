@@ -8,52 +8,56 @@ export async function updatePublicProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const slug = formData.get('slug') as string
+  const slug = (formData.get('slug') as string)?.trim()
   const isPublic = formData.get('isPublic') === 'on'
 
-  if (slug) {
-    const { data: existing } = await supabase
-      .from('public_profiles')
-      .select('id')
-      .eq('slug', slug)
-      .neq('profile_id', user.id)
-      .maybeSingle()
+  if (!slug) return { error: 'El slug no puede estar vacío' }
 
-    if (existing) {
-      return { error: 'Ese slug ya está en uso' }
-    }
-  }
-
-  const { data: existingProfile } = await supabase
+  const { data: existing } = await supabase
     .from('public_profiles')
     .select('id')
-    .eq('profile_id', user.id)
+    .eq('slug', slug)
+    .neq('profile_id', user.id)
     .maybeSingle()
 
-  const payload = {
-    slug,
-    is_public: isPublic,
-    display_name: formData.get('displayName') as string,
-    bio: formData.get('bio') as string,
-    social_links: {
-      discord: formData.get('socialDiscord') || undefined,
-      youtube: formData.get('socialYoutube') || undefined,
-      twitter: formData.get('socialTwitter') || undefined,
-      twitch: formData.get('socialTwitch') || undefined,
-    },
-  }
+  if (existing) return { error: 'Ese slug ya está en uso' }
 
-  if (existingProfile) {
-    await supabase.from('public_profiles').update(payload).eq('profile_id', user.id)
-  } else {
-    await supabase.from('public_profiles').insert({
-      profile_id: user.id,
-      ...payload,
-    })
-  }
+  try {
+    const { data: existingProfile } = await supabase
+      .from('public_profiles')
+      .select('*')
+      .eq('profile_id', user.id)
+      .maybeSingle()
 
-  revalidatePath('/profile', 'layout')
-  return { success: true }
+    const payload: Record<string, any> = {
+      slug,
+      is_public: isPublic,
+    }
+
+    if (existingProfile) {
+      payload.display_name = existingProfile.display_name
+      payload.bio = existingProfile.bio
+      payload.social_links = existingProfile.social_links
+    }
+
+    if (existingProfile) {
+      const { error } = await supabase.from('public_profiles').update(payload).eq('profile_id', user.id)
+      if (error) return { error: error.message }
+    } else {
+      const { error } = await supabase.from('public_profiles').insert({
+        profile_id: user.id,
+        ...payload,
+      })
+      if (error) return { error: error.message }
+    }
+
+    revalidatePath('/coaches/profile', 'layout')
+    revalidatePath('/students/profile', 'layout')
+    revalidatePath('/players/profile', 'layout')
+    return { success: true }
+  } catch (err: any) {
+    return { error: err.message || 'Error al guardar perfil público' }
+  }
 }
 
 export async function getPublicProfileByUserId(userId: string) {

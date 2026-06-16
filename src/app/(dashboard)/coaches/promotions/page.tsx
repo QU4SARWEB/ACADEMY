@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { GraduationCap } from 'lucide-react'
+import Link from 'next/link'
+import { GraduationCap, ArrowLeft } from 'lucide-react'
 import { getPromotionHistory } from '@/services/promotions'
+import { formatDate } from '@/lib/formatDate'
 
 export default async function PromotionsPage() {
   const supabase = await createClient()
@@ -8,6 +10,9 @@ export default async function PromotionsPage() {
 
   return (
     <div>
+      <Link href="/coaches/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Historial de Promociones</h1>
 
       {promotions.length === 0 && (
@@ -22,8 +27,12 @@ export default async function PromotionsPage() {
           <div key={p.id} className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                  {p.profiles?.full_name?.charAt(0) ?? '?'}
+                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+                  {p.profiles?.avatar_url ? (
+                    <img src={p.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    p.profiles?.full_name?.charAt(0) ?? '?'
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-white">{p.profiles?.full_name}</p>
@@ -39,7 +48,7 @@ export default async function PromotionsPage() {
                 </div>
               </div>
               <div className="text-right text-xs text-zinc-500">
-                <p>{new Date(p.created_at).toLocaleDateString()}</p>
+                <p>{formatDate(p.created_at)}</p>
                 {p.grade_at_time && <p>Nota: {p.grade_at_time}</p>}
                 {p.rank_at_time && <p>Rango: {p.rank_at_time}</p>}
                 {p.promoter && <p className="mt-1 text-purple-400">Por: {p.promoter.full_name}</p>}

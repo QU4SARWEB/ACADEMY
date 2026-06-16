@@ -2,10 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { sendMessage, getInbox, getSentMessages, markMessageRead, archiveMessage, getUnreadMessageCount } from '@/services/mail'
+import { sendMessage, getInbox, getSentMessages, markMessageRead, archiveMessage, deleteMessageRecipient, deleteMessage, getUnreadMessageCount } from '@/services/mail'
 import { createNotification } from '@/services/notifications'
 
-export async function sendMail(prev: any, formData: FormData) {
+export async function sendMail(_prev: any, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
@@ -20,11 +20,23 @@ export async function sendMail(prev: any, formData: FormData) {
     return { error: 'Completa todos los campos' }
   }
 
+  const fileNames = formData.getAll('fileNames') as string[]
+  const fileUrls = formData.getAll('fileUrls') as string[]
+  const fileTypes = formData.getAll('fileTypes') as string[]
+
+  const files = fileNames.map((name, i) => ({
+    name,
+    url: fileUrls[i] ?? '',
+    type: fileTypes[i] ?? '',
+    size: 0,
+  }))
+
   const result = await sendMessage(supabase, {
     sender_id: user.id,
     subject,
     body,
     recipient_ids: recipientIds,
+    files: files.length > 0 ? files : undefined,
   })
 
   if (result.success) {
@@ -33,13 +45,13 @@ export async function sendMail(prev: any, formData: FormData) {
         profile_id: rid,
         type: 'message',
         title: `Nuevo mensaje: ${subject}`,
-        body: `De: ${user.email}`,
+        body: `De: ${user.email}${files.length > 0 ? ` (${files.length} archivo${files.length > 1 ? 's' : ''})` : ''}`,
         link: '/mail',
       })
     }
   }
 
-  revalidatePath('/mail')
+  revalidatePath('/mail', 'layout')
   return result
 }
 
@@ -65,7 +77,7 @@ export async function markRead(messageId: string) {
   if (!user) return
 
   await markMessageRead(supabase, user.id, messageId)
-  revalidatePath('/mail')
+  revalidatePath('/mail', 'layout')
 }
 
 export async function archive(messageId: string) {
@@ -74,7 +86,29 @@ export async function archive(messageId: string) {
   if (!user) return
 
   await archiveMessage(supabase, user.id, messageId)
-  revalidatePath('/mail')
+  revalidatePath('/mail', 'layout')
+}
+
+export async function deleteMsg(messageId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: msg } = await supabase
+    .from('messages')
+    .select('sender_id')
+    .eq('id', messageId)
+    .maybeSingle()
+
+  if (!msg) {
+    await deleteMessageRecipient(supabase, user.id, messageId)
+  } else if (msg.sender_id === user.id) {
+    await deleteMessage(supabase, messageId)
+  } else {
+    await deleteMessageRecipient(supabase, user.id, messageId)
+  }
+
+  revalidatePath('/mail', 'layout')
 }
 
 export async function fetchUnreadCount() {

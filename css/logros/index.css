@@ -1,9 +1,0 @@
-.achievement-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px; }
-.ach-stat { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center; }
-.ach-stat-value { font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--neon-light);display:block; }
-.ach-stat-label { font-size:.7rem;color:var(--text-muted);margin-top:4px;display:block; }
-.achievements-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px; }
-.achievement-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center; }
-.achievement-card .ach-icon { font-size:2rem;margin-bottom:8px; }
-.achievement-card h3 { font-family:var(--font-display);font-size:.8rem;font-weight:600;margin-bottom:4px; }
-.achievement-card p { font-size:.72rem;color:var(--text-muted); }

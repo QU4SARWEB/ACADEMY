@@ -9,6 +9,7 @@ const ROLE_TO_PREFIX: Record<string, string> = {
   student: '/students',
   player: '/players',
 }
+const DEBT_FREE_ROUTES = ['/payments', '/profile', '/api/auth']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -46,6 +47,19 @@ export async function middleware(request: NextRequest) {
     if (matchedPrefix !== expectedPrefix) {
       const targetPrefix = ROLE_TO_PREFIX[profile.role] || `/${profile.role}`
       return NextResponse.redirect(new URL(`${targetPrefix}/dashboard`, request.url))
+    }
+  }
+
+  if (profile.role !== 'coach' && !DEBT_FREE_ROUTES.some((r) => pathname.startsWith(r))) {
+    const { count } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', user.id)
+      .in('status', ['pending', 'expired'])
+
+    if (count && count > 0) {
+      const rolePrefix = ROLE_TO_PREFIX[profile.role] || `/${profile.role}`
+      return NextResponse.redirect(new URL(`${rolePrefix}/payments`, request.url))
     }
   }
 

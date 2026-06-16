@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { BookOpen, ArrowRight, Plus } from 'lucide-react'
+import { BookOpen, ArrowRight, Plus, ArrowLeft } from 'lucide-react'
 import { selfEnroll } from '@/features/enrollments/actions'
+import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 
 export default async function StudentCoursesPage() {
   const supabase = await createClient()
@@ -10,10 +11,23 @@ export default async function StudentCoursesPage() {
 
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('*, courses(name, slug, display_order, duration_months), seasons(name)')
+    .select('*, courses(name, slug, display_order, duration_months), seasons(name, id)')
     .eq('profile_id', user.id)
     .eq('status', 'active')
     .order('enrolled_at', { ascending: false })
+
+  const seasonIds = [...new Set((enrollments ?? []).map(e => e.season_id))]
+  const paymentMap = new Map<string, string>()
+  if (seasonIds.length > 0) {
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('season_id, status')
+      .eq('profile_id', user.id)
+      .in('season_id', seasonIds)
+    for (const p of payments ?? []) {
+      paymentMap.set(p.season_id, p.status)
+    }
+  }
 
   const enrolledCourseIds = (enrollments ?? []).map((e) => e.course_id)
   const { data: availableCourses } = enrolledCourseIds.length > 0
@@ -22,6 +36,9 @@ export default async function StudentCoursesPage() {
 
   return (
     <div>
+      <Link href="/students/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Mis cursos</h1>
 
       <div className="space-y-3">
@@ -45,7 +62,12 @@ export default async function StudentCoursesPage() {
                 </p>
               </div>
             </div>
-            <ArrowRight size={16} className="text-zinc-500" />
+            <div className="flex items-center gap-3">
+              {paymentMap.has(enr.season_id) && (
+                <PaymentStatusBadge status={paymentMap.get(enr.season_id)!} />
+              )}
+              <ArrowRight size={16} className="text-zinc-500" />
+            </div>
           </Link>
         ))}
       </div>

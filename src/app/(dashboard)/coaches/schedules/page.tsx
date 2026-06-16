@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
-import { Plus, ArrowLeft } from 'lucide-react'
+import { Plus, ArrowLeft, Trash2 } from 'lucide-react'
 
 async function createSchedule(formData: FormData) {
   'use server'
@@ -16,11 +16,19 @@ async function createSchedule(formData: FormData) {
     end_time: formData.get('endTime') as string,
     type: formData.get('type') as string,
     title: formData.get('title') as string,
-    description: formData.get('description') as string,
+    description: formData.get('description') as string || null,
+    location: formData.get('location') as string || null,
   })
 
   revalidatePath('/coaches/schedules')
   redirect('/coaches/schedules')
+}
+
+async function deleteSchedule(formData: FormData) {
+  'use server'
+  const supabase = await createClient()
+  await supabase.from('schedules').delete().eq('id', formData.get('id') as string)
+  revalidatePath('/coaches/schedules')
 }
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -53,14 +61,16 @@ export default async function SchedulesPage() {
                   <th className="px-4 py-3 text-left font-medium text-zinc-400">Día</th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-400">Horario</th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-400">Título</th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-400">Ubicación</th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-400">Tipo</th>
                   <th className="px-4 py-3 text-left font-medium text-zinc-400">Season</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {(schedules ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Sin horarios programados.</td>
+                    <td colSpan={8} className="px-4 py-8 text-center text-zinc-500">Sin horarios programados.</td>
                   </tr>
                 )}
                 {(schedules ?? []).map((s) => (
@@ -68,13 +78,25 @@ export default async function SchedulesPage() {
                     <td className="px-4 py-3 text-zinc-300">Semana {s.week_number}</td>
                     <td className="px-4 py-3 text-zinc-300">{DAYS[s.day_of_week]}</td>
                     <td className="px-4 py-3 text-zinc-400">{s.start_time.slice(0, 5)} - {s.end_time.slice(0, 5)}</td>
-                    <td className="px-4 py-3 font-medium text-white">{s.title}</td>
+                    <td className="px-4 py-3 font-medium text-white" title={s.description ?? ''}>
+                      {s.title}
+                      {s.description && <span className="ml-1 text-xs text-zinc-500">ℹ</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-500">{s.location ?? '—'}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs ${s.type === 'academic' ? 'text-purple-400' : 'text-green-400'}`}>
                         {s.type === 'academic' ? 'Académico' : 'Competitivo'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-500">{s.seasons?.name}</td>
+                    <td className="px-4 py-3">
+                      <form action={deleteSchedule}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button type="submit" className="text-xs text-red-400 hover:text-red-300">
+                          <Trash2 size={14} />
+                        </button>
+                      </form>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -121,6 +143,16 @@ export default async function SchedulesPage() {
                   <option value="academic">Académico</option>
                   <option value="competitive">Competitivo</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400">Descripción (opcional)</label>
+                <textarea name="description" rows={2} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400">Ubicación / Link (opcional)</label>
+                <input name="location" placeholder="Ej: Sala A / https://..." className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
               </div>
 
               <div>

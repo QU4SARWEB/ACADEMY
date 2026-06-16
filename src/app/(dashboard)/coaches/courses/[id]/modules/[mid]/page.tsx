@@ -3,6 +3,7 @@ import { Plus, ArrowLeft, FileText, Video, Link2, Image, FileType, Pencil, Trash
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 
 const typeIcons: Record<string, React.ReactNode> = {
   pdf: <FileText size={16} className="text-red-400" />,
@@ -103,18 +104,17 @@ export default async function ModuleDetailPage({
                   >
                     <Pencil size={14} />
                   </Link>
-                  <form action={deleteMaterial}>
+                  <ConfirmDeleteForm message="¿Eliminar este material?" action={deleteMaterial}>
                     <input type="hidden" name="materialId" value={mat.id} />
                     <input type="hidden" name="courseId" value={courseId} />
                     <input type="hidden" name="moduleId" value={moduleId} />
                     <button
                       type="submit"
-                      onClick={(e) => { if (!confirm('¿Eliminar este material?')) e.preventDefault() }}
                       className="rounded p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-800"
                     >
                       <Trash2 size={14} />
                     </button>
-                  </form>
+                  </ConfirmDeleteForm>
                 </div>
               </div>
             ))}

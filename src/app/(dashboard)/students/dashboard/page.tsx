@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BookOpen, ClipboardList, Calendar, FileText, ArrowRight } from 'lucide-react'
+import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
+import { formatDate } from '@/lib/formatDate'
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
@@ -9,10 +11,23 @@ export default async function StudentDashboard() {
 
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('*, courses(name, slug, display_order), seasons(name)')
+    .select('*, courses(name, slug, display_order), seasons(name, id)')
     .eq('profile_id', user.id)
     .eq('status', 'active')
     .order('enrolled_at', { ascending: false })
+
+  const seasonIds = [...new Set((enrollments ?? []).map(e => e.season_id))]
+  const paymentMap = new Map<string, string>()
+  if (seasonIds.length > 0) {
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('season_id, status')
+      .eq('profile_id', user.id)
+      .in('season_id', seasonIds)
+    for (const p of payments ?? []) {
+      paymentMap.set(p.season_id, p.status)
+    }
+  }
 
   const courseIds = enrollments?.map((e) => e.course_id) ?? []
 
@@ -66,6 +81,9 @@ export default async function StudentDashboard() {
                   <p className="text-sm font-medium text-white">{enr.courses?.name}</p>
                   <p className="text-xs text-zinc-500">{enr.seasons?.name}</p>
                 </div>
+                {paymentMap.has(enr.season_id) && (
+                  <PaymentStatusBadge status={paymentMap.get(enr.season_id)!} />
+                )}
                 <ArrowRight size={14} className="text-zinc-500" />
               </Link>
             ))}
@@ -90,7 +108,7 @@ export default async function StudentDashboard() {
                 <ClipboardList size={16} className="text-yellow-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white truncate">{t.title}</p>
-                  <p className="text-xs text-zinc-500">{(t.course_modules as any)?.name} · {new Date(t.due_date).toLocaleDateString()}</p>
+                  <p className="text-xs text-zinc-500">{(t.course_modules as any)?.name} · {formatDate(t.due_date)}</p>
                 </div>
               </Link>
             ))}

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, FileText, Video, ExternalLink } from 'lucide-react'
+import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 
 export default async function StudentCourseDetailPage({
   params,
@@ -9,6 +10,7 @@ export default async function StudentCourseDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: course } = await supabase
     .from('courses')
@@ -17,6 +19,27 @@ export default async function StudentCourseDetailPage({
     .maybeSingle()
 
   if (!course) return <p className="text-zinc-400">Curso no encontrado.</p>
+
+  let paymentStatus = 'pending'
+  if (user) {
+    const { data: enrollment } = await supabase
+      .from('enrollments')
+      .select('season_id')
+      .eq('profile_id', user.id)
+      .eq('course_id', id)
+      .eq('status', 'active')
+      .maybeSingle()
+    if (enrollment) {
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('status')
+        .eq('profile_id', user.id)
+        .eq('season_id', enrollment.season_id)
+        .order('created_at', { ascending: false })
+        .maybeSingle()
+      if (payment) paymentStatus = payment.status
+    }
+  }
 
   const { data: modules } = await supabase
     .from('course_modules')
@@ -51,6 +74,40 @@ export default async function StudentCourseDetailPage({
           {course.seasons?.name} · {course.duration_months} meses · Rango mínimo: {course.min_rank}
         </p>
         {course.description && <p className="mt-2 text-sm text-zinc-300">{course.description}</p>}
+      </div>
+
+      {paymentStatus === 'pending' && (
+        <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-400">
+          Pago pendiente —{' '}
+          <Link href="/payments" className="underline hover:text-yellow-300">
+            Sube tu comprobante aquí
+          </Link>
+        </div>
+      )}
+      {paymentStatus === 'paid' && (
+        <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-400">
+          Pago confirmado. ¡Disfruta del curso!
+        </div>
+      )}
+      {paymentStatus === 'scholarship' && (
+        <div className="mb-6 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-400">
+          Este curso está cubierto por una beca.
+        </div>
+      )}
+
+      <div className="mb-6 flex gap-3">
+        <Link
+          href={`/students/courses/${course.id}/exams`}
+          className="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30"
+        >
+          <FileText size={14} /> Exámenes
+        </Link>
+        <Link
+          href={`/students/courses/${course.id}/evaluations`}
+          className="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30"
+        >
+          <FileText size={14} /> Evaluaciones
+        </Link>
       </div>
 
       <div className="space-y-4">

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAllPayments } from '@/features/payments/actions'
 import PaymentStatusBadge from './PaymentStatusBadge'
 import PaymentActions from './PaymentActions'
+import { formatDate } from '@/lib/formatDate'
 
 export default async function CoachPaymentsView() {
   const supabase = await createClient()
@@ -61,6 +62,7 @@ export default async function CoachPaymentsView() {
               <th className="px-4 py-3 text-left font-medium text-zinc-400">Tipo</th>
               <th className="px-4 py-3 text-left font-medium text-zinc-400">Monto</th>
               <th className="px-4 py-3 text-left font-medium text-zinc-400">Estado</th>
+              <th className="px-4 py-3 text-left font-medium text-zinc-400">Comprobante</th>
               <th className="px-4 py-3 text-left font-medium text-zinc-400">Pagado</th>
               <th className="px-4 py-3 text-left font-medium text-zinc-400">Acciones</th>
             </tr>
@@ -77,8 +79,12 @@ export default async function CoachPaymentsView() {
               <tr key={p.id} className="border-b border-zinc-800 transition hover:bg-[#111]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                      {p.profiles?.full_name?.charAt(0) ?? '?'}
+                    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+                      {p.profiles?.avatar_url ? (
+                        <img src={p.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        p.profiles?.full_name?.charAt(0) ?? '?'
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-white">{p.profiles?.full_name}</p>
@@ -89,8 +95,16 @@ export default async function CoachPaymentsView() {
                 <td className="px-4 py-3 capitalize text-zinc-300">{p.type}</td>
                 <td className="px-4 py-3 text-zinc-300">${p.amount}</td>
                 <td className="px-4 py-3"><PaymentStatusBadge status={p.status} /></td>
+                <td className="px-4 py-3">
+                  {p.receipt_url ? (
+                    <a href={p.receipt_url} target="_blank"
+                      className="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>
+                  ) : (
+                    <span className="text-xs text-zinc-600">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-xs text-zinc-500">
-                  {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : '—'}
+                  {p.paid_at ? formatDate(p.paid_at) : '—'}
                 </td>
                 <td className="px-4 py-3"><PaymentActions paymentId={p.id} currentStatus={p.status} /></td>
               </tr>

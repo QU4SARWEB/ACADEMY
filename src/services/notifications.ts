@@ -41,24 +41,28 @@ export async function getNotifications(
     query = query.limit(options.limit)
   }
 
-  const { data } = await query
+  const { data, error } = await query
+  if (error) console.error(error)
   return (data ?? []) as any[]
 }
 
 export async function markAsRead(supabase: SupabaseClient, notificationId: string) {
-  await supabase.from('notifications').update({ read: true }).eq('id', notificationId)
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('id', notificationId)
+  if (error) console.error(error)
 }
 
 export async function markAllAsRead(supabase: SupabaseClient, profileId: string) {
-  await supabase.from('notifications').update({ read: true }).eq('profile_id', profileId).eq('read', false)
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('profile_id', profileId).eq('read', false)
+  if (error) console.error(error)
 }
 
 export async function getUnreadCount(supabase: SupabaseClient, profileId: string) {
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('profile_id', profileId)
     .eq('read', false)
 
+  if (error) console.error(error)
   return count ?? 0
 }

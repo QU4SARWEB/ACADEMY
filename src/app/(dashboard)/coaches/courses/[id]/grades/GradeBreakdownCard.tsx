@@ -49,8 +49,12 @@ export default function GradeBreakdownCard({
     <div className="glass rounded-xl p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-            {enrollment.profiles?.full_name?.charAt(0) ?? '?'}
+          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+            {enrollment.profiles?.avatar_url ? (
+              <img src={enrollment.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              enrollment.profiles?.full_name?.charAt(0) ?? '?'
+            )}
           </div>
           <div>
             <h3 className="font-medium text-white">{enrollment.profiles?.full_name}</h3>

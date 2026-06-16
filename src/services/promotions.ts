@@ -32,12 +32,13 @@ export async function checkPromotionEligibility(
   supabase: SupabaseClient,
   enrollmentId: string
 ) {
-  const { data: enrollment } = await supabase
+  const { data: enrollment, error: enrollErr } = await supabase
     .from('enrollments')
     .select('*, profiles!inner(rank, full_name), courses!inner(name, min_rank)')
     .eq('id', enrollmentId)
-    .maybeSingle() as any
+    .maybeSingle()
 
+  if (enrollErr) console.error(enrollErr)
   if (!enrollment) return { eligible: false, reason: 'Inscripción no encontrada' }
 
   const grade = enrollment.final_grade
@@ -97,12 +98,13 @@ export async function promoteStudent(
   toCourseId: string | null,
   seasonId: string
 ) {
-  const { data: enrollment } = await supabase
+  const { data: enrollment, error: enrollErr } = await supabase
     .from('enrollments')
     .select('*, profiles(rank)')
     .eq('id', enrollmentId)
-    .maybeSingle() as any
+    .maybeSingle()
 
+  if (enrollErr) console.error(enrollErr)
   if (!enrollment) return { error: 'Inscripción no encontrada' }
 
   const eligibility = await checkPromotionEligibility(supabase, enrollmentId)
@@ -110,12 +112,14 @@ export async function promoteStudent(
     return { error: eligibility.reason }
   }
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from('enrollments')
     .update({ status: 'graduated', promoted: true })
     .eq('id', enrollmentId)
 
-  await supabase.from('promotions').insert({
+  if (updateErr) console.error(updateErr)
+
+  const { error: promoErr } = await supabase.from('promotions').insert({
     enrollment_id: enrollmentId,
     profile_id: enrollment.profile_id,
     from_course_id: enrollment.course_id,
@@ -125,8 +129,10 @@ export async function promoteStudent(
     rank_at_time: enrollment.profiles?.rank,
   })
 
+  if (promoErr) console.error(promoErr)
+
   if (toCourseId) {
-    await supabase.from('enrollments').insert({
+    const { error: newEnrollErr } = await supabase.from('enrollments').insert({
       profile_id: enrollment.profile_id,
       season_id: seasonId,
       course_id: toCourseId,
@@ -134,6 +140,7 @@ export async function promoteStudent(
       status: 'active',
       current_module: 1,
     })
+    if (newEnrollErr) console.error(newEnrollErr)
   }
 
   return { success: true }
@@ -149,6 +156,7 @@ export async function getPromotionHistory(supabase: SupabaseClient, profileId?: 
     query = query.eq('profile_id', profileId)
   }
 
-  const { data } = await query
+  const { data, error } = await query
+  if (error) console.error(error)
   return data ?? []
 }

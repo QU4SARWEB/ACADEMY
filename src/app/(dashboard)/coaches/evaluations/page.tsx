@@ -3,19 +3,22 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
 import { Plus, ArrowLeft } from 'lucide-react'
+import { parseDateTime } from '@/lib/parseDateTime'
 
 async function createEvaluation(formData: FormData) {
   'use server'
   const supabase = await createClient()
 
-  await supabase.from('evaluations').insert({
+  const { error } = await supabase.from('evaluations').insert({
     module_id: formData.get('moduleId') as string,
     title: formData.get('title') as string,
     description: formData.get('description') as string,
     max_score: parseFloat(formData.get('maxScore') as string) || 100,
     weight: parseFloat(formData.get('weight') as string) || 0,
-    due_date: formData.get('dueDate') ? new Date(formData.get('dueDate') as string).toISOString() : null,
+    due_date: formData.get('dueDate') ? parseDateTime(formData.get('dueDate') as string) : null,
   })
+
+  if (error) throw new Error(error.message)
 
   revalidatePath('/coaches/evaluations')
   redirect('/coaches/evaluations')

@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { Users, Swords } from 'lucide-react'
+import Link from 'next/link'
+import { Users, Swords, ArrowLeft } from 'lucide-react'
+import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 
 export default async function PlayerTeamPage() {
   const supabase = await createClient()
@@ -21,8 +23,29 @@ export default async function PlayerTeamPage() {
     .eq('status', 'active')
     .order('role')
 
+  const memberIds = (members ?? []).map(m => m.profile_id)
+  const { data: activeSeason } = await supabase
+    .from('seasons')
+    .select('id')
+    .eq('is_active', true)
+    .maybeSingle()
+  const paymentMap = new Map<string, string>()
+  if (activeSeason && memberIds.length > 0) {
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('profile_id, status')
+      .eq('season_id', activeSeason.id)
+      .in('profile_id', memberIds)
+    for (const p of payments ?? []) {
+      paymentMap.set(p.profile_id, p.status)
+    }
+  }
+
   return (
     <div>
+      <Link href="/players/dashboard" className="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
+        <ArrowLeft size={16} /> Volver al panel
+      </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Mi equipo</h1>
 
       {!team ? (
@@ -58,6 +81,11 @@ export default async function PlayerTeamPage() {
                     {m.profiles?.rank ? ` · ${m.profiles.rank}` : ''}
                     {m.profiles?.riot_id ? ` · ${m.profiles.riot_id}` : ''}
                   </p>
+                </div>
+                <div className="flex items-center">
+                  {paymentMap.has(m.profile_id) && (
+                    <PaymentStatusBadge status={paymentMap.get(m.profile_id)!} />
+                  )}
                 </div>
               </div>
             ))}

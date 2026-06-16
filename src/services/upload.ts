@@ -9,6 +9,7 @@ export async function uploadFile(
 
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,
+    contentType: file.type || 'application/octet-stream',
   })
 
   if (error) {
@@ -22,13 +23,14 @@ export async function uploadFile(
 
 export async function deleteFile(bucket: string, path: string) {
   const supabase = createClient()
-  await supabase.storage.from(bucket).remove([path])
+  const { error } = await supabase.storage.from(bucket).remove([path])
+  if (error) console.error('deleteFile error:', error)
 }
 
 export function getAvatarPath(userId: string, fileName: string): string {
-  return `avatars/${userId}/${fileName}`
+  return `${userId}/${fileName}`
 }
 
 export function getBannerPath(userId: string, fileName: string): string {
-  return `banners/${userId}/${fileName}`
+  return `${userId}/${fileName}`
 }

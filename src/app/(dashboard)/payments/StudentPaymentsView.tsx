@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveEnrollmentsWithPaymentStatus } from '@/services/payments'
 import PaymentStatusBadge from './PaymentStatusBadge'
+import { uploadReceiptAction } from '@/features/payments/actions'
+import { formatDate } from '@/lib/formatDate'
 
 export default async function StudentPaymentsView() {
   const supabase = await createClient()
@@ -9,7 +11,7 @@ export default async function StudentPaymentsView() {
 
   const enrollments = await getActiveEnrollmentsWithPaymentStatus(supabase, user.id)
 
-  const hasDue = enrollments.some((e: any) => e.payment?.status === 'pending' || e.payment?.status === 'expired')
+  const needsPayment = enrollments.filter((e: any) => !e.payment || e.payment?.status === 'pending' || e.payment?.status === 'expired')
   const totalPaid = enrollments.filter((e: any) => e.payment?.status === 'paid').length
   const totalScholarship = enrollments.filter((e: any) => e.payment?.status === 'scholarship').length
 
@@ -17,9 +19,9 @@ export default async function StudentPaymentsView() {
     <div>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Mis Pagos</h1>
 
-      {hasDue && (
+      {needsPayment.length > 0 && (
         <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-400">
-          Tienes pagos pendientes. Por favor, ponte al día para continuar con tus cursos.
+          Tienes {needsPayment.length} curso(s) con pago pendiente. Sube tu comprobante para continuar.
         </div>
       )}
 
@@ -44,31 +46,64 @@ export default async function StudentPaymentsView() {
             No tienes cursos activos.
           </div>
         )}
-        {enrollments.map((enr: any) => (
-          <div key={enr.id} className="glass rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-white">{enr.courses?.name}</h3>
-                <p className="text-xs text-zinc-500">{enr.seasons?.name}</p>
-              </div>
-              <div className="text-right">
-                {enr.payment ? (
-                  <>
-                    <PaymentStatusBadge status={enr.payment.status} />
+        {enrollments.map((enr: any) => {
+          const status = enr.payment?.status ?? 'pending'
+          return (
+            <div key={enr.id} className="glass rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-medium text-white">{enr.courses?.name}</h3>
+                  <p className="text-xs text-zinc-500">{enr.seasons?.name}</p>
+                </div>
+                <div className="text-right">
+                  <PaymentStatusBadge status={status} />
+                  {enr.payment?.amount && (
                     <p className="mt-0.5 text-xs text-zinc-500">${enr.payment.amount}</p>
-                    {enr.payment.paid_at && (
-                      <p className="text-xs text-zinc-600">
-                        {new Date(enr.payment.paid_at).toLocaleDateString()}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-xs text-zinc-600">Sin registro</span>
-                )}
+                  )}
+                  {enr.payment?.paid_at && (
+                    <p className="text-xs text-zinc-600">
+                      {formatDate(enr.payment.paid_at)}
+                    </p>
+                  )}
+                </div>
               </div>
+              {(status === 'pending' || status === 'expired') && (
+                <div className="mt-3 border-t border-zinc-800 pt-3">
+                  {enr.payment?.receipt_url ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-green-400">Comprobante subido</span>
+                      <a href={enr.payment.receipt_url} target="_blank"
+                        className="text-xs text-[#8B5CF6] hover:underline">Ver</a>
+                    </div>
+                  ) : (
+                    <form action={uploadReceiptAction} className="flex items-center gap-2">
+                      <input type="hidden" name="paymentId" value={enr.payment?.id ?? ''} />
+                      <input type="hidden" name="enrollmentId" value={enr.id} />
+                      <input type="hidden" name="seasonId" value={enr.season_id} />
+                      <input type="hidden" name="type" value={enr.type} />
+                      <input type="file" name="receipt" required accept="image/*,.pdf"
+                        className="w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-[#8B5CF6]/20 file:px-2 file:py-1 file:text-xs file:text-[#8B5CF6]" />
+                      <button type="submit"
+                        className="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">
+                        Subir
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+              {status === 'scholarship' && (
+                <div className="mt-3 border-t border-zinc-800 pt-3">
+                  <p className="text-xs text-blue-400">Tu curso está cubierto por una beca. No necesitas realizar ningún pago.</p>
+                </div>
+              )}
+              {status === 'paid' && (
+                <div className="mt-3 border-t border-zinc-800 pt-3">
+                  <p className="text-xs text-green-400">Pago confirmado. ¡Gracias!</p>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
