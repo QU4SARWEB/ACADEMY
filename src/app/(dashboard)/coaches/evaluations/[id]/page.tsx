@@ -1,154 +1,90 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Trash2, Plus } from 'lucide-react'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 import { formatDate } from '@/lib/formatDate'
-import { parseDateTime } from '@/lib/parseDateTime'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
+import { updateEval, deleteEval, addQuestion, removeQuestion, gradeAnswer } from './actions'
 
-async function updateEval(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
+export default function EvalDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [ev, setEv] = useState<any>(null)
+  const [evalQuestions, setEvalQuestions] = useState<any[]>([])
+  const [optsByQuestion, setOptsByQuestion] = useState<Record<string, any[]>>({})
+  const [results, setResults] = useState<any[]>([])
+  const [answersByEq, setAnswersByEq] = useState<Record<string, any[]>>({})
+  const [availableQuestions, setAvailableQuestions] = useState<any[]>([])
+  const [unusedQuestions, setUnusedQuestions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { error } = await supabase.from('evaluations').update({
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    max_score: parseFloat(formData.get('maxScore') as string) || 100,
-    weight: parseFloat(formData.get('weight') as string) || 0,
-    due_date: formData.get('dueDate') ? parseDateTime(formData.get('dueDate') as string) : null,
-  }).eq('id', id)
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: evData } = await supabase
+        .from('evaluations')
+        .select('*, course_modules(name, course_id, courses(name))')
+        .eq('id', id)
+        .maybeSingle()
 
-  if (error) throw new Error(error.message)
-  revalidatePath(`/coaches/evaluations/${id}`)
-}
+      if (!evData) { setLoading(false); return }
+      setEv(evData)
 
-async function deleteEval(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
+      const courseId = evData.course_modules?.course_id
 
-  const { error } = await supabase.from('evaluations').delete().eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/coaches/evaluations')
-  redirect('/coaches/evaluations')
-}
+      const [{ data: eqData }, { data: resultsData }, { data: questionsData }] = await Promise.all([
+        supabase.from('evaluation_questions').select('*, questions(*)').eq('evaluation_id', id).order('order_num'),
+        supabase.from('evaluation_results').select('*, enrollments(profile_id, profiles(full_name, avatar_url))').eq('evaluation_id', id).order('created_at', { ascending: false }),
+        supabase.from('questions').select('*').eq('course_id', courseId).order('created_at', { ascending: false }),
+      ])
 
-async function addQuestion(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const evaluationId = formData.get('evaluationId') as string
-  const questionId = formData.get('questionId') as string
+      const eqs = eqData ?? []
+      setEvalQuestions(eqs)
+      setResults(resultsData ?? [])
+      setAvailableQuestions(questionsData ?? [])
 
-  const { error } = await supabase.from('evaluation_questions').insert({
-    evaluation_id: evaluationId,
-    question_id: questionId,
-    order_num: parseInt(formData.get('orderNum') as string) || 0,
-  })
+      const questionIds = eqs.map(eq => eq.question_id)
 
-  if (error) throw new Error(error.message)
-  revalidatePath(`/coaches/evaluations/${evaluationId}`)
-}
+      const [{ data: optionsData }, { data: answersData }] = await Promise.all([
+        supabase.from('question_options').select('*').in('question_id', questionIds.length > 0 ? questionIds : ['none']).order('order_num'),
+        supabase.from('evaluation_answers').select('*').in('evaluation_question_id', eqs.length > 0 ? eqs.map(e => e.id) : ['none']),
+      ])
 
-async function removeQuestion(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-  const evaluationId = formData.get('evaluationId') as string
+      const optsMap: Record<string, any[]> = {}
+      for (const o of optionsData ?? []) {
+        if (!optsMap[o.question_id]) optsMap[o.question_id] = []
+        optsMap[o.question_id]!.push(o)
+      }
+      setOptsByQuestion(optsMap)
 
-  const { error } = await supabase.from('evaluation_questions').delete().eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath(`/coaches/evaluations/${evaluationId}`)
-}
+      const answersMap: Record<string, any[]> = {}
+      for (const a of answersData ?? []) {
+        if (!answersMap[a.evaluation_question_id]) answersMap[a.evaluation_question_id] = []
+        answersMap[a.evaluation_question_id]!.push(a)
+      }
+      setAnswersByEq(answersMap)
 
-async function gradeAnswer(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const answerId = formData.get('answerId') as string
-  const score = parseFloat(formData.get('score') as string) || 0
-  const evaluationId = formData.get('evaluationId') as string
+      const usedIds = new Set(questionIds)
+      setUnusedQuestions((questionsData ?? []).filter((q: any) => !usedIds.has(q.id)))
 
-  const { error } = await supabase.from('evaluation_answers').update({
-    score,
-    graded_by: (await supabase.auth.getUser()).data.user?.id,
-    graded_at: new Date().toISOString(),
-  }).eq('id', answerId)
+      setLoading(false)
+    })()
+  }, [id])
 
-  if (error) throw new Error(error.message)
-  revalidatePath(`/coaches/evaluations/${evaluationId}`)
-}
-
-export default async function EvalDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const supabase = await createClient()
-
-  const { data: ev } = await supabase
-    .from('evaluations')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .eq('id', id)
-    .maybeSingle()
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        <div className="h-4 w-48 animate-pulse rounded bg-zinc-800" />
+      </div>
+    )
+  }
 
   if (!ev) return <p className="text-zinc-400">Evaluación no encontrada.</p>
 
   const courseId = ev.course_modules?.course_id
-
-  const { data: evalQuestions } = await supabase
-    .from('evaluation_questions')
-    .select('*, questions(*)')
-    .eq('evaluation_id', id)
-    .order('order_num')
-
-  const questionIds = (evalQuestions ?? []).map((eq) => eq.question_id)
-
-  const { data: allOptions } = await supabase
-    .from('question_options')
-    .select('*')
-    .in('question_id', questionIds.length > 0 ? questionIds : ['none'])
-    .order('order_num')
-
-  const optsByQuestion: Record<string, typeof allOptions> = {}
-  for (const o of allOptions ?? []) {
-    if (!optsByQuestion[o.question_id]) optsByQuestion[o.question_id] = []
-    optsByQuestion[o.question_id]!.push(o)
-  }
-
-  const { data: results } = await supabase
-    .from('evaluation_results')
-    .select('*, enrollments(profile_id, profiles(full_name, avatar_url))')
-    .eq('evaluation_id', id)
-    .order('created_at', { ascending: false })
-
-  const eqIds = (evalQuestions ?? []).map((eq) => eq.id)
-  const { data: answers } = await supabase
-    .from('evaluation_answers')
-    .select('*')
-    .in('evaluation_question_id', eqIds.length > 0 ? eqIds : ['none'])
-
-  const answersByEq: Record<string, typeof answers> = {}
-  for (const a of answers ?? []) {
-    if (!answersByEq[a.evaluation_question_id]) answersByEq[a.evaluation_question_id] = []
-    answersByEq[a.evaluation_question_id]!.push(a)
-  }
-
-  const answersByEnrollment: Record<string, typeof answers> = {}
-  for (const a of answers ?? []) {
-    if (!answersByEnrollment[a.enrollment_id]) answersByEnrollment[a.enrollment_id] = []
-    answersByEnrollment[a.enrollment_id]!.push(a)
-  }
-
-  const { data: availableQuestions } = await supabase
-    .from('questions')
-    .select('*')
-    .eq('course_id', courseId)
-    .order('created_at', { ascending: false })
-
-  const usedIds = new Set(questionIds)
-  const unusedQuestions = (availableQuestions ?? []).filter((q) => !usedIds.has(q.id))
 
   return (
     <div>
@@ -208,20 +144,19 @@ export default async function EvalDetailPage({
         </div>
       </details>
 
-      {/* Questions */}
       <div className="mb-6">
         <h2 className="mb-4 font-heading text-lg font-bold text-white">
-          Preguntas ({evalQuestions?.length ?? 0})
+          Preguntas ({evalQuestions.length})
         </h2>
 
-        {(evalQuestions ?? []).length === 0 && (
+        {evalQuestions.length === 0 && (
           <p className="mb-4 text-sm text-zinc-500">Sin preguntas. Añade preguntas del banco de preguntas del curso.</p>
         )}
 
         <div className="space-y-4">
-          {(evalQuestions ?? []).map((eq, i) => {
-            const q = eq.questions as any
-            const options = optsByQuestion[q.id] ?? []
+          {evalQuestions.map((eq, i) => {
+            const q = eq.questions
+            const options = optsByQuestion[q?.id] ?? []
             const eqAnswers = answersByEq[eq.id] ?? []
             return (
               <div key={eq.id} className="glass rounded-xl p-4">
@@ -254,13 +189,12 @@ export default async function EvalDetailPage({
                   </form>
                 </div>
 
-                {/* Per-student grading for open-ended questions */}
                 {(q.type === 'open_ended' || q.type === 'short_answer') && eqAnswers.length > 0 && (
                   <div className="mt-3 border-t border-zinc-800 pt-3">
                     <p className="mb-2 text-xs font-medium text-zinc-400">Respuestas de estudiantes:</p>
                     <div className="space-y-2">
-                      {eqAnswers.map((a: any) => {
-                        const enrollment = (results ?? []).find((r: any) => r.enrollment_id === a.enrollment_id) as any
+                      {eqAnswers.map((a) => {
+                        const enrollment = results.find((r) => r.enrollment_id === a.enrollment_id)
                         return (
                           <form key={a.id} action={gradeAnswer} className="flex items-start gap-3">
                             <input type="hidden" name="answerId" value={a.id} />
@@ -297,7 +231,6 @@ export default async function EvalDetailPage({
           })}
         </div>
 
-        {/* Add question from bank */}
         {unusedQuestions.length > 0 && (
           <details className="glass mt-4 rounded-xl">
             <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-zinc-300">
@@ -306,7 +239,7 @@ export default async function EvalDetailPage({
             <div className="border-t border-zinc-800 px-4 py-4">
               <form action={addQuestion} className="space-y-3">
                 <input type="hidden" name="evaluationId" value={id} />
-                <input type="hidden" name="orderNum" value={evalQuestions?.length ?? 0} />
+                <input type="hidden" name="orderNum" value={evalQuestions.length} />
                 <div>
                   <label className="block text-xs font-medium text-zinc-400">Seleccionar pregunta</label>
                   <select name="questionId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
@@ -326,11 +259,11 @@ export default async function EvalDetailPage({
           </details>
         )}
 
-        {unusedQuestions.length === 0 && (availableQuestions ?? []).length > 0 && (
+        {unusedQuestions.length === 0 && availableQuestions.length > 0 && (
           <p className="mt-3 text-xs text-zinc-500">Todas las preguntas del curso ya están en esta evaluación.</p>
         )}
 
-        {(availableQuestions ?? []).length === 0 && (
+        {availableQuestions.length === 0 && (
           <p className="mt-3 text-xs text-zinc-500">
             No hay preguntas en el banco del curso.{' '}
             <Link href={`/coaches/questions/new?courseId=${courseId}`} className="text-purple-400 underline">
@@ -340,11 +273,10 @@ export default async function EvalDetailPage({
         )}
       </div>
 
-      {/* Results summary */}
-      <h2 className="mb-4 font-heading text-lg font-bold text-white">Resultados ({results?.length ?? 0})</h2>
+      <h2 className="mb-4 font-heading text-lg font-bold text-white">Resultados ({results.length})</h2>
       <div className="space-y-2">
-        {(results ?? []).length === 0 && <p className="text-sm text-zinc-500">Sin resultados todavía.</p>}
-        {(results ?? []).map((r: any) => (
+        {results.length === 0 && <p className="text-sm text-zinc-500">Sin resultados todavía.</p>}
+        {results.map((r) => (
           <div key={r.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#111] px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">

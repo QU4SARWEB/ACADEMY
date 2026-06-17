@@ -1,34 +1,59 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function StudentsPage() {
-  const supabase = await createClient()
+export default function StudentsPage() {
+  const [students, setStudents] = useState<any[]>([])
+  const [paymentMap, setPaymentMap] = useState<Map<string, string>>(new Map())
+  const [loading, setLoading] = useState(true)
 
-  const { data: activeSeason } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_active', true)
-    .maybeSingle()
+  useEffect(() => {
+    ;(async () => {
+      const supabase = createClient()
 
-  const { data: students } = await supabase
-    .from('profiles')
-    .select('id, full_name, email, avatar_url, riot_id, rank, is_active, scholarship, created_at')
-    .eq('role', 'student')
-    .order('full_name')
+      const { data: activeSeason } = await supabase
+        .from('seasons')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle()
 
-  const paymentMap = new Map<string, string>()
-  if (activeSeason && students) {
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('profile_id, status')
-      .eq('season_id', activeSeason.id)
-      .in('profile_id', students.map(s => s.id))
-    for (const p of payments ?? []) {
-      paymentMap.set(p.profile_id, p.status)
-    }
+      const { data: studentsData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url, riot_id, rank, is_active, scholarship, created_at')
+        .eq('role', 'student')
+        .order('full_name')
+      setStudents(studentsData ?? [])
+
+      const pm = new Map<string, string>()
+      if (activeSeason && studentsData) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('profile_id, status')
+          .eq('season_id', activeSeason.id)
+          .in('profile_id', studentsData.map(s => s.id))
+        for (const p of payments ?? []) {
+          pm.set(p.profile_id, p.status)
+        }
+      }
+      setPaymentMap(pm)
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-32 rounded bg-zinc-800" />
+        <div className="h-8 w-48 rounded bg-zinc-800" />
+        <div className="h-4 w-36 rounded bg-zinc-800" />
+        <div className="h-64 rounded-xl border border-zinc-800 bg-zinc-900/50" />
+      </div>
+    )
   }
 
   return (

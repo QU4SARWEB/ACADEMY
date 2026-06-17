@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import ShareButton from '@/components/ShareButton'
+import { incrementProfileViews } from './actions'
 import {
   Award, Zap, Star, Cloud, Circle,
   User, Calendar, MapPin, Gamepad2, Target,
@@ -58,121 +60,130 @@ function rankIcon(icon: string, color: string) {
   }
 }
 
-async function getProfileData(slug: string) {
-  const admin = createAdminClient()
-  const client = admin ?? await createClient()
-
-  const rawSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-
-  let { data: pubProfileData } = await client
-    .from('public_profiles')
-    .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
-    .eq('slug', rawSlug)
-    .maybeSingle()
-
-  if (!pubProfileData) {
-    const { data: fb } = await client
-      .from('public_profiles')
-      .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
-      .eq('slug', slug)
-      .maybeSingle()
-    pubProfileData = fb
-  }
-
-  if (!pubProfileData) {
-    const { data: profileBySlug } = await client
-      .from('profiles')
-      .select('id, full_name, avatar_url, display_name, bio')
-      .eq('share_slug', slug.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-      .maybeSingle()
-
-    if (profileBySlug) {
-      pubProfileData = {
-        profile_id: profileBySlug.id,
-        slug: slug,
-        is_public: true,
-        display_name: profileBySlug.display_name ?? profileBySlug.full_name,
-        avatar_url: profileBySlug.avatar_url,
-        banner_url: null,
-        bio: profileBySlug.bio,
-        social_links: {},
-      }
-    }
-  }
-
-  if (!pubProfileData) return null
-
-  const pubProfile = pubProfileData as any
-  const profileId = pubProfile.profile_id
-
-  const [profileRes, enrollmentsRes, achievementsRes, vodsRes, coachAssignmentsRes] = await Promise.all([
-    client.from('profiles').select('*').eq('id', profileId).maybeSingle(),
-    admin
-      ? admin.from('enrollments').select('*, courses(name, slug, display_order, min_rank, description, duration_months), seasons(name, start_date, end_date, is_active)').eq('profile_id', profileId).order('created_at', { ascending: false })
-      : Promise.resolve({ data: [] }),
-    client.from('member_achievements').select('*').eq('profile_id', profileId).order('unlocked_at', { ascending: false }),
-    client.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
-    admin
-      ? admin.from('coach_assignments').select('*, profiles!coach_assignments_coach_id_fkey(id, full_name, display_name, avatar_url, role)').eq('student_id', profileId).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ])
-
-  const profile: any = (profileRes as any)?.data ?? profileRes
-  const enrollments = enrollmentsRes.data as any[] | null
-  const achievements = achievementsRes.data as any[] | null
-  const vods = vodsRes.data as any[] | null
-  const coachAssignment = coachAssignmentsRes.data as any | null
-
-  let xp = 0
-  let grades: any = null
-
-  if (admin && enrollments && enrollments.length > 0) {
-    const activeEnrollment = enrollments.find((e: any) => e.status === 'active' || e.status === 'recovery') ?? enrollments[0]
-    const enrollmentId = activeEnrollment.id
-
-    const [achCount, taskCount, evalCount, attCount] = await Promise.all([
-      admin.from('member_achievements').select('*', { count: 'exact', head: true }).eq('profile_id', profileId),
-      admin.from('task_submissions').select('*', { count: 'exact', head: true }).eq('enrollment_id', enrollmentId),
-      admin.from('evaluation_results').select('score').eq('enrollment_id', enrollmentId),
-      admin.from('attendance').select('*', { count: 'exact', head: true }).eq('enrollment_id', enrollmentId).in('status', ['present', 'late']),
-    ])
-
-    xp += (achCount.count ?? 0) * 150
-    xp += (taskCount.count ?? 0) * 75
-    const evalScores = (evalCount.data as any[] | null) ?? []
-    if (evalScores.length > 0) {
-      const avg = evalScores.reduce((s: number, e: any) => s + (e.score ?? 0), 0) / evalScores.length
-      xp += Math.round(avg * 10)
-    }
-    xp += (attCount.count ?? 0) * 25
-
-    const { getGradeBreakdown } = await import('@/services/grades')
-    try {
-      grades = await getGradeBreakdown(admin, enrollmentId)
-    } catch {}
-  }
-
-  return {
-    profile,
-    pubProfile,
-    enrollments,
-    achievements,
-    vods,
-    coachAssignment,
-    xp,
-    grades,
-    isAdmin: !!admin,
-    profileId,
-  }
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0A0A0A]">
+      <header className="border-b border-zinc-800/50 bg-[#0A0A0A]/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3">
+          <div className="h-6 w-16 rounded bg-zinc-800" />
+          <div className="h-4 w-12 rounded bg-zinc-800" />
+        </div>
+      </header>
+      <div className="mx-auto max-w-[640px] px-4 py-8">
+        <div className="animate-pulse space-y-5">
+          <div className="h-[200px] rounded-[20px] bg-zinc-800/50" />
+          <div className="glass rounded-[18px] p-7 pb-5 text-center">
+            <div className="mx-auto -mt-12 mb-3 flex justify-center">
+              <div className="h-[90px] w-[90px] rounded-full bg-zinc-800" />
+            </div>
+            <div className="mx-auto h-6 w-40 rounded bg-zinc-800" />
+            <div className="mx-auto mt-3 h-4 w-32 rounded bg-zinc-800" />
+            <div className="mx-auto mt-4 h-8 w-24 rounded bg-zinc-800" />
+          </div>
+          <div className="h-40 rounded-[18px] bg-zinc-800/50" />
+          <div className="h-40 rounded-[18px] bg-zinc-800/50" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
-export default async function PublicProfilePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const data = await getProfileData(slug)
+export default function PublicProfilePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+  const [data, setData] = useState<any>(null)
+  const [notFound, setNotFound] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  if (!data || !data.profile) notFound()
+  useEffect(() => {
+    ;(async () => {
+      const client = createClient()
 
-  const { profile, enrollments, achievements, vods, coachAssignment, xp, grades, pubProfile, profileId } = data
+      const rawSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+
+      let pubProfileData: any = null
+
+      let { data: pubProfileResult } = await client
+        .from('public_profiles')
+        .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
+        .eq('slug', rawSlug)
+        .maybeSingle()
+      pubProfileData = pubProfileResult
+
+      if (!pubProfileData) {
+        const { data: fb } = await client
+          .from('public_profiles')
+          .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
+          .eq('slug', slug)
+          .maybeSingle()
+        pubProfileData = fb
+      }
+
+      if (!pubProfileData) {
+        const { data: profileBySlug } = await client
+          .from('profiles')
+          .select('id, full_name, avatar_url, display_name, bio')
+          .eq('share_slug', slug.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+          .maybeSingle()
+
+        if (profileBySlug) {
+          pubProfileData = {
+            profile_id: profileBySlug.id,
+            slug: slug,
+            is_public: true,
+            display_name: profileBySlug.display_name ?? profileBySlug.full_name,
+            avatar_url: profileBySlug.avatar_url,
+            banner_url: null,
+            bio: profileBySlug.bio,
+            social_links: {},
+          }
+        }
+      }
+
+      if (!pubProfileData) { setNotFound(true); setLoading(false); return }
+
+      const pubProfile = pubProfileData
+      const profileId = pubProfile.profile_id
+
+      const [profileRes, achievementsRes, vodsRes] = await Promise.all([
+        client.from('profiles').select('*').eq('id', profileId).maybeSingle(),
+        client.from('member_achievements').select('*').eq('profile_id', profileId).order('unlocked_at', { ascending: false }),
+        client.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
+      ])
+
+      const profile = profileRes.data ?? profileRes
+      const achievements = achievementsRes.data
+      const vods = vodsRes.data
+
+      if (!profile) { setNotFound(true); setLoading(false); return }
+
+      const achievementsArr = achievements ?? []
+      const xp = achievementsArr.length * 150
+
+      void incrementProfileViews(profileId)
+
+      setData({
+        profile,
+        pubProfile,
+        achievements: achievementsArr,
+        vods: vods ?? [],
+        xp,
+        profileId,
+      })
+      setLoading(false)
+    })()
+  }, [slug])
+
+  if (loading) return <LoadingSkeleton />
+
+  if (notFound || !data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
+        <p className="text-zinc-500">Perfil no encontrado.</p>
+      </div>
+    )
+  }
+
+  const { profile, pubProfile, achievements, vods, xp } = data
   const rank = findRank(xp)
   const next = nextRank(xp)
   const xpInRank = xp - rank.minXP
@@ -184,18 +195,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const bannerUrl = pubProfile.banner_url ?? profile.banner_url ?? null
   const bio = pubProfile.bio ?? profile.bio ?? null
   const socialLinks = pubProfile.social_links as Record<string, string> | null
-
-  const activeEnrollment = enrollments?.find((e: any) => e.status === 'active' || e.status === 'recovery') ?? enrollments?.[0]
-  const currentMonth = activeEnrollment?.current_module ?? 1
-  const totalMonths = activeEnrollment?.courses?.duration_months ?? 2
-  const courseProgress = Math.round((currentMonth / totalMonths) * 100)
-
-  async function incrementViews() {
-    'use server'
-    const client = await createClient()
-    void client.rpc('increment_profile_views', { profile_id: profileId })
-  }
-  incrementViews()
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -361,161 +360,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                       <ExternalLink size={12} className="mt-1 shrink-0 text-zinc-600" />
                     </a>
                   ))}
-                </div>
-              </div>
-            )}
-
-          {/* Current Course */}
-            {activeEnrollment && (
-              <div className="glass rounded-[18px] p-6">
-                <h3 className="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style={{ borderBottom: '1px solid rgba(139,92,246,0.06)' }}>
-                  <Shield size={14} style={{ color: '#8B5CF6' }} />
-                  Curso Actual
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-heading text-base font-bold text-white">
-                        {getCourseName(currentMonth)}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {activeEnrollment.courses?.name}
-                      </p>
-                    </div>
-                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase ${
-                      activeEnrollment.status === 'active' ? 'bg-green-500/10 text-green-400' :
-                      activeEnrollment.status === 'recovery' ? 'bg-yellow-500/10 text-yellow-400' :
-                      'bg-zinc-500/10 text-zinc-400'
-                    }`}>
-                      {activeEnrollment.status}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    {activeEnrollment.seasons?.name && (
-                      <span>{activeEnrollment.seasons.name}</span>
-                    )}
-                    <span>Mes {currentMonth}/{totalMonths}</span>
-                  </div>
-
-                  {activeEnrollment.courses?.min_rank && (
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-zinc-500">Rango mínimo requerido</p>
-                      <p className="mt-0.5 text-sm font-medium text-white">{activeEnrollment.courses.min_rank}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-zinc-500">
-                      <span>Progreso del curso</span>
-                      <span>{courseProgress}%</span>
-                    </div>
-                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-800">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${courseProgress}%`, background: 'linear-gradient(90deg, #8B5CF6, #7C3AED)' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Progress / Grades */}
-            {grades && (
-              <div className="glass rounded-[18px] p-6">
-                <h3 className="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style={{ borderBottom: '1px solid rgba(139,92,246,0.06)' }}>
-                  <Activity size={14} style={{ color: '#8B5CF6' }} />
-                  Progreso
-                </h3>
-
-                <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">Progreso General</span>
-                    <span className="font-heading text-lg font-bold text-white">{grades.finalGrade ?? 0}%</span>
-                  </div>
-                  <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-zinc-800">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${Math.min(100, grades.finalGrade ?? 0)}%`,
-                        background: 'linear-gradient(90deg, #8B5CF6, #C4B5FD)',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {grades.examScore != null && (
-                    <div>
-                      <p className="text-lg font-bold" style={{ color: '#f59e0b' }}>{(grades.examContribution ?? 0).toFixed(1)}%</p>
-                      <p className="text-[11px] text-zinc-500">Examen</p>
-                      <div className="mt-1 h-1 w-full rounded-full bg-zinc-800">
-                        <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.min(100, (grades.examContribution ?? 0))}%` }} />
-                      </div>
-                    </div>
-                  )}
-                  {(grades.evalsContribution ?? 0) > 0 && (
-                    <div>
-                      <p className="text-lg font-bold" style={{ color: '#8B5CF6' }}>{(grades.evalsContribution ?? 0).toFixed(1)}%</p>
-                      <p className="text-[11px] text-zinc-500">Evaluaciones</p>
-                      <div className="mt-1 h-1 w-full rounded-full bg-zinc-800">
-                        <div className="h-full rounded-full bg-[#8B5CF6]" style={{ width: `${Math.min(100, (grades.evalsContribution ?? 0))}%` }} />
-                      </div>
-                    </div>
-                  )}
-                  {(grades.attendanceContribution ?? 0) > 0 && (
-                    <div>
-                      <p className="text-lg font-bold" style={{ color: '#10b981' }}>{(grades.attendanceContribution ?? 0).toFixed(1)}%</p>
-                      <p className="text-[11px] text-zinc-500">Asistencia</p>
-                      <div className="mt-1 h-1 w-full rounded-full bg-zinc-800">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, (grades.attendanceContribution ?? 0))}%` }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {grades.evaluations && grades.evaluations.length > 0 && (
-                  <div className="mt-4 border-t border-zinc-800 pt-4">
-                    <p className="mb-2 text-xs font-medium text-zinc-400">Evaluaciones</p>
-                    <div className="space-y-2">
-                      {grades.evaluations.slice(0, 5).map((ev: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between text-xs">
-                          <span className="text-zinc-400 truncate flex-1 mr-2">{ev.title}</span>
-                          <span className="font-medium text-white shrink-0">
-                            {ev.score != null ? `${ev.score}/${ev.max_score}` : '—'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Coach Card */}
-            {coachAssignment?.profiles && (
-              <div className="glass rounded-[18px] p-6">
-                <h3 className="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style={{ borderBottom: '1px solid rgba(139,92,246,0.06)' }}>
-                  <User size={14} style={{ color: '#8B5CF6' }} />
-                  Coach
-                </h3>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 overflow-hidden">
-                    {coachAssignment.profiles.avatar_url ? (
-                      <img src={coachAssignment.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <User size={16} className="text-zinc-500" />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {coachAssignment.profiles.display_name || coachAssignment.profiles.full_name}
-                    </p>
-                    <p className="text-xs text-zinc-500">Coach</p>
-                  </div>
                 </div>
               </div>
             )}

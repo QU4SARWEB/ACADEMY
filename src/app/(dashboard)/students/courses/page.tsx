@@ -1,38 +1,75 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { BookOpen, ArrowRight, Plus, ArrowLeft } from 'lucide-react'
 import { selfEnroll } from '@/features/enrollments/actions'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 
-export default async function StudentCoursesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+export default function StudentCoursesPage() {
+  const [enrollments, setEnrollments] = useState<any[]>([])
+  const [availableCourses, setAvailableCourses] = useState<any[]>([])
+  const [paymentMap, setPaymentMap] = useState<Map<string, string>>(new Map())
+  const [loading, setLoading] = useState(true)
 
-  const { data: enrollments } = await supabase
-    .from('enrollments')
-    .select('*, courses(name, slug, display_order, duration_months), seasons(name, id)')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
-    .order('enrolled_at', { ascending: false })
+  useEffect(() => {
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
 
-  const seasonIds = [...new Set((enrollments ?? []).map(e => e.season_id))]
-  const paymentMap = new Map<string, string>()
-  if (seasonIds.length > 0) {
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('season_id, status')
-      .eq('profile_id', user.id)
-      .in('season_id', seasonIds)
-    for (const p of payments ?? []) {
-      paymentMap.set(p.season_id, p.status)
-    }
+      const { data: enrollmentsData } = await supabase
+        .from('enrollments')
+        .select('*, courses(name, slug, display_order, duration_months), seasons(name, id)')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
+        .order('enrolled_at', { ascending: false })
+      setEnrollments(enrollmentsData ?? [])
+
+      const seasonIds = [...new Set((enrollmentsData ?? []).map((e: any) => e.season_id))]
+      const pm = new Map<string, string>()
+      if (seasonIds.length > 0) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('season_id, status')
+          .eq('profile_id', user.id)
+          .in('season_id', seasonIds)
+        for (const p of payments ?? []) {
+          pm.set(p.season_id, p.status)
+        }
+      }
+      setPaymentMap(pm)
+
+      const enrolledCourseIds = (enrollmentsData ?? []).map((e: any) => e.course_id)
+      const { data: coursesData } = enrolledCourseIds.length > 0
+        ? await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
+        : await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).order('name')
+      setAvailableCourses(coursesData ?? [])
+
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-32 rounded bg-zinc-800" />
+        <div className="h-8 w-48 rounded bg-zinc-800" />
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-20 rounded-xl bg-zinc-800/50" />
+          ))}
+        </div>
+        <div className="h-8 w-40 rounded bg-zinc-800" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-32 rounded-xl bg-zinc-800/50" />
+          ))}
+        </div>
+      </div>
+    )
   }
-
-  const enrolledCourseIds = (enrollments ?? []).map((e) => e.course_id)
-  const { data: availableCourses } = enrolledCourseIds.length > 0
-    ? await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
-    : await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).order('name')
 
   return (
     <div>

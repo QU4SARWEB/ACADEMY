@@ -1,66 +1,64 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, FileText, Video, ExternalLink } from 'lucide-react'
-import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
 
-export default async function StudentCourseDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function StudentCourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [course, setCourse] = useState<any>(null)
+  const [paymentStatus, setPaymentStatus] = useState<string>('pending')
+  const [modules, setModules] = useState<any[]>([])
+  const [materialsByModule, setMaterialsByModule] = useState<Record<string, any[]>>({})
+  const [loading, setLoading] = useState(true)
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*, seasons(name)')
-    .eq('id', id)
-    .maybeSingle()
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: c } = await supabase.from('courses').select('*, seasons(name)').eq('id', id).maybeSingle()
+      if (!c) { setLoading(false); return }
+      setCourse(c)
+
+      const { data: mods } = await supabase.from('course_modules').select('*').eq('course_id', id).order('display_order')
+      const modList = mods ?? []
+      setModules(modList)
+
+      const moduleIds = modList.map(m => m.id)
+      const { data: mats } = await supabase.from('materials').select('*').in('module_id', moduleIds.length > 0 ? moduleIds : ['none']).order('display_order')
+
+      const byModule: Record<string, any[]> = {}
+      for (const mat of mats ?? []) {
+        if (!byModule[mat.module_id]) byModule[mat.module_id] = []
+        byModule[mat.module_id]!.push(mat)
+      }
+      setMaterialsByModule(byModule)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: enrollment } = await supabase.from('enrollments').select('season_id').eq('profile_id', user.id).eq('course_id', id).eq('status', 'active').maybeSingle()
+        if (enrollment) {
+          const { data: payment } = await supabase.from('payments').select('status').eq('profile_id', user.id).eq('season_id', enrollment.season_id).order('created_at', { ascending: false }).maybeSingle()
+          if (payment) setPaymentStatus(payment.status)
+        }
+      }
+
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        <div className="h-4 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="h-24 animate-pulse rounded-xl bg-zinc-800/60" />
+      </div>
+    )
+  }
 
   if (!course) return <p className="text-zinc-400">Curso no encontrado.</p>
-
-  let paymentStatus = 'pending'
-  if (user) {
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('season_id')
-      .eq('profile_id', user.id)
-      .eq('course_id', id)
-      .eq('status', 'active')
-      .maybeSingle()
-    if (enrollment) {
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('status')
-        .eq('profile_id', user.id)
-        .eq('season_id', enrollment.season_id)
-        .order('created_at', { ascending: false })
-        .maybeSingle()
-      if (payment) paymentStatus = payment.status
-    }
-  }
-
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('*')
-    .eq('course_id', id)
-    .order('display_order')
-
-  const moduleIds = (modules ?? []).map((m) => m.id)
-  const { data: allMaterials } = await supabase
-    .from('materials')
-    .select('*')
-    .in('module_id', moduleIds.length > 0 ? moduleIds : ['none'])
-    .order('display_order')
-
-  const materialsByModule: Record<string, typeof allMaterials> = {}
-  for (const mat of allMaterials ?? []) {
-    if (!materialsByModule[mat.module_id]) {
-      materialsByModule[mat.module_id] = []
-    }
-    materialsByModule[mat.module_id]!.push(mat)
-  }
 
   return (
     <div>
@@ -79,9 +77,7 @@ export default async function StudentCourseDetailPage({
       {paymentStatus === 'pending' && (
         <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-400">
           Pago pendiente —{' '}
-          <Link href="/payments" className="underline hover:text-yellow-300">
-            Sube tu comprobante aquí
-          </Link>
+          <Link href="/payments" className="underline hover:text-yellow-300">Sube tu comprobante aquí</Link>
         </div>
       )}
       {paymentStatus === 'paid' && (
@@ -96,25 +92,19 @@ export default async function StudentCourseDetailPage({
       )}
 
       <div className="mb-6 flex gap-3">
-        <Link
-          href={`/students/courses/${course.id}/exams`}
-          className="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30"
-        >
+        <Link href={`/students/courses/${course.id}/exams`} className="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
           <FileText size={14} /> Exámenes
         </Link>
-        <Link
-          href={`/students/courses/${course.id}/evaluations`}
-          className="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30"
-        >
+        <Link href={`/students/courses/${course.id}/evaluations`} className="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30">
           <FileText size={14} /> Evaluaciones
         </Link>
       </div>
 
       <div className="space-y-4">
-        {(modules ?? []).length === 0 && (
+        {modules.length === 0 && (
           <p className="text-sm text-zinc-500">No hay módulos disponibles todavía.</p>
         )}
-        {(modules ?? []).map((mod) => {
+        {modules.map((mod) => {
           const materials = materialsByModule[mod.id] ?? []
           return (
             <div key={mod.id} className="glass rounded-xl p-5">
@@ -130,21 +120,10 @@ export default async function StudentCourseDetailPage({
                 <div className="ml-8 space-y-2">
                   {materials.map((mat) => (
                     <div key={mat.id} className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#0A0A0A] px-4 py-2.5">
-                      {mat.type === 'video' ? (
-                        <Video size={14} className="text-blue-400" />
-                      ) : mat.type === 'link' ? (
-                        <ExternalLink size={14} className="text-green-400" />
-                      ) : (
-                        <FileText size={14} className="text-zinc-400" />
-                      )}
+                      {mat.type === 'video' ? <Video size={14} className="text-blue-400" /> : mat.type === 'link' ? <ExternalLink size={14} className="text-green-400" /> : <FileText size={14} className="text-zinc-400" />}
                       <span className="flex-1 text-sm text-zinc-300">{mat.title}</span>
                       {mat.url && (
-                        <a
-                          href={mat.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-[#8B5CF6] hover:underline"
-                        >
+                        <a href={mat.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#8B5CF6] hover:underline">
                           {mat.type === 'link' ? 'Abrir' : 'Descargar'}
                         </a>
                       )}

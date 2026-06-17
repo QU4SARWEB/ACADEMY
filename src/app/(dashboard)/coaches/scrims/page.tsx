@@ -1,62 +1,51 @@
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Swords, Plus, ArrowLeft } from 'lucide-react'
 import { TimeDisplay } from '@/components/TimeDisplay'
+import { createScrim, deleteScrim } from './actions'
 
-async function createScrim(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
+export default function CoachScrimsPage() {
+  const [teams, setTeams] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [scrims, setScrims] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const rivalLogo = formData.get('rivalLogo') as File | null
-  let rivalLogoUrl: string | null = null
-  if (rivalLogo && rivalLogo.size > 0) {
-    const ext = rivalLogo.name.split('.').pop()
-    const path = `logos/${Date.now()}.${ext}`
-    const { error } = await supabase.storage
-      .from('uploads')
-      .upload(path, rivalLogo, { upsert: true, contentType: rivalLogo.type || 'application/octet-stream' })
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
-      rivalLogoUrl = publicUrl
-    }
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: teamsData } = await supabase.from('teams').select('id, name')
+      const { data: seasonsData } = await supabase.from('seasons').select('id, name').order('start_date', { ascending: false })
+      const { data: scrimsData } = await supabase
+        .from('scrims')
+        .select('*, teams(name), seasons(name)')
+        .order('scheduled_at', { ascending: false })
+
+      setTeams(teamsData ?? [])
+      setSeasons(seasonsData ?? [])
+      setScrims(scrimsData ?? [])
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 flex items-center justify-between">
+          <div className="h-8 w-32 animate-pulse rounded bg-zinc-800" />
+          <div className="h-10 w-36 animate-pulse rounded-lg bg-zinc-800" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
   }
-
-  const scoreQu4sar = formData.get('scoreQu4sar') as string
-  const scoreOpponent = formData.get('scoreOpponent') as string
-  const score = scoreQu4sar && scoreOpponent ? `${scoreQu4sar}-${scoreOpponent}` : null
-
-  await supabase.from('scrims').insert({
-    team_id: formData.get('teamId') as string,
-    season_id: formData.get('seasonId') as string || null,
-    rival: formData.get('rival') as string,
-    scheduled_at: new Date(formData.get('scheduledAt') as string).toISOString(),
-    result: formData.get('result') as string || null,
-    score,
-    rival_logo: rivalLogoUrl,
-    notes: formData.get('notes') as string || null,
-  })
-  revalidatePath('/coaches/scrims')
-  redirect('/coaches/scrims')
-}
-
-async function deleteScrim(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  await supabase.from('scrims').delete().eq('id', formData.get('id') as string)
-  revalidatePath('/coaches/scrims')
-}
-
-export default async function CoachScrimsPage() {
-  const supabase = await createClient()
-
-  const { data: teams } = await supabase.from('teams').select('id, name')
-  const { data: seasons } = await supabase.from('seasons').select('id, name').order('start_date', { ascending: false })
-  const { data: scrims } = await supabase
-    .from('scrims')
-    .select('*, teams(name), seasons(name)')
-    .order('scheduled_at', { ascending: false })
 
   return (
     <div>
@@ -74,12 +63,12 @@ export default async function CoachScrimsPage() {
               <select name="teamId" required
                 className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                 <option value="">Seleccionar equipo...</option>
-                {(teams ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
               <select name="seasonId"
                 className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                 <option value="">Sin temporada</option>
-                {(seasons ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <input name="rival" placeholder="Rival" required
                 className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
@@ -119,10 +108,10 @@ export default async function CoachScrimsPage() {
       </div>
 
       <div className="space-y-3">
-        {(scrims ?? []).length === 0 && (
+        {scrims.length === 0 && (
           <p className="text-sm text-zinc-500">No hay scrims registrados.</p>
         )}
-        {(scrims ?? []).map((scrim) => (
+        {scrims.map((scrim) => (
           <div key={scrim.id} className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

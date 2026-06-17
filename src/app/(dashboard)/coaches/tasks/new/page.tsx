@@ -1,72 +1,41 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import { notifyStudentsInCourse } from '@/services/notify'
-import { parseDateTime } from '@/lib/parseDateTime'
+'use client'
 
-async function createTask(formData: FormData) {
-  'use server'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { createTask } from './actions'
 
-  const supabase = await createClient()
-  const moduleId = formData.get('moduleId') as string
-  const title = formData.get('title') as string
+export default function NewTaskPage() {
+  const [modules, setModules] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const materialFile = formData.get('materialFile') as File | null
-  let materialUrl: string | null = null
-  if (materialFile && materialFile.size > 0) {
-    const ext = materialFile.name.split('.').pop()
-    const path = `task-materials/${Date.now()}.${ext}`
-    const { error } = await supabase.storage
-      .from('uploads')
-      .upload(path, materialFile, { upsert: true, contentType: materialFile.type || 'application/octet-stream' })
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
-      materialUrl = publicUrl
-    }
-  }
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: modulesData } = await supabase
+        .from('course_modules')
+        .select('id, name, course_id, courses(name)')
+        .order('course_id')
+      const { data: seasonsData } = await supabase.from('seasons').select('id, name, is_active')
 
-  const { data: mod } = await supabase
-    .from('course_modules')
-    .select('course_id')
-    .eq('id', moduleId)
-    .maybeSingle()
+      setModules(modulesData ?? [])
+      setSeasons(seasonsData ?? [])
+      setLoading(false)
+    })()
+  }, [])
 
-  await supabase.from('tasks').insert({
-    module_id: moduleId,
-    season_id: formData.get('seasonId') as string,
-    title,
-    description: formData.get('description') as string,
-    due_date: parseDateTime(formData.get('dueDate') as string),
-    max_score: parseFloat(formData.get('maxScore') as string) || 100,
-    allow_pdf: formData.get('allowPdf') === 'on',
-    allow_image: formData.get('allowImage') === 'on',
-    allow_video: formData.get('allowVideo') === 'on',
-    allow_audio: formData.get('allowAudio') === 'on',
-    allow_link: formData.get('allowLink') === 'on',
-  })
-
-  if (mod) {
-    await notifyStudentsInCourse(
-      mod.course_id,
-      'task',
-      `Nueva tarea: ${title}`,
-      `Se ha asignado una nueva tarea en el curso.`,
-      `/tasks`
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
     )
   }
-
-  revalidatePath('/coaches/tasks')
-  redirect('/coaches/tasks')
-}
-
-export default async function NewTaskPage() {
-  const supabase = await createClient()
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('id, name, course_id, courses(name)')
-    .order('course_id')
-
-  const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -94,7 +63,7 @@ export default async function NewTaskPage() {
             <label className="block text-sm font-medium text-zinc-300">Módulo</label>
             <select name="moduleId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]">
               <option value="">Seleccionar...</option>
-              {(modules ?? []).map((m) => (
+              {modules.map((m) => (
                 <option key={m.id} value={m.id}>{m.name} — {(m.courses as any)?.name ?? ''}</option>
               ))}
             </select>
@@ -102,7 +71,7 @@ export default async function NewTaskPage() {
           <div>
             <label className="block text-sm font-medium text-zinc-300">Season</label>
             <select name="seasonId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]">
-              {(seasons ?? []).map((s) => (
+              {seasons.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} {s.is_active ? '(Activa)' : ''}</option>
               ))}
             </select>

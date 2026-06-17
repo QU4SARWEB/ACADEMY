@@ -1,9 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import { Plus, ArrowLeft, FileText, Video, Link2, Image, FileType, Pencil, Trash2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
+import { deleteMaterial } from './actions'
 
 const typeIcons: Record<string, React.ReactNode> = {
   pdf: <FileText size={16} className="text-red-400" />,
@@ -13,39 +15,53 @@ const typeIcons: Record<string, React.ReactNode> = {
   embed: <FileType size={16} className="text-yellow-400" />,
 }
 
-async function deleteMaterial(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const materialId = formData.get('materialId') as string
-  const courseId = formData.get('courseId') as string
-  const moduleId = formData.get('moduleId') as string
-
-  await supabase.from('materials').delete().eq('id', materialId)
-  revalidatePath(`/coaches/courses/${courseId}/modules/${moduleId}`)
-}
-
-export default async function ModuleDetailPage({
+export default function ModuleDetailPage({
   params,
 }: {
   params: Promise<{ id: string; mid: string }>
 }) {
-  const { id: courseId, mid: moduleId } = await params
-  const supabase = await createClient()
+  const { id: courseId, mid: moduleId } = use(params)
+  const [mod, setMod] = useState<any>(null)
+  const [materials, setMaterials] = useState<any[]>([])
+  const [evaluations, setEvaluations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: mod } = await supabase.from('course_modules').select('*').eq('id', moduleId).maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const [{ data: mod }, { data: materials }, { data: evaluations }] = await Promise.all([
+        supabase.from('course_modules').select('*').eq('id', moduleId).maybeSingle(),
+        supabase.from('materials').select('*').eq('module_id', moduleId).order('display_order'),
+        supabase.from('evaluations').select('*').eq('module_id', moduleId).order('created_at'),
+      ])
+      setMod(mod)
+      setMaterials(materials ?? [])
+      setEvaluations(evaluations ?? [])
+      setLoading(false)
+    })()
+  }, [moduleId])
+
+  if (loading) return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-4 w-32 rounded bg-zinc-800" />
+      <div className="h-8 w-48 rounded bg-zinc-800" />
+      <div className="h-4 w-64 rounded bg-zinc-800" />
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="space-y-2">
+          <div className="h-10 w-24 rounded bg-zinc-800" />
+          <div className="h-14 rounded-lg bg-zinc-800" />
+          <div className="h-14 rounded-lg bg-zinc-800" />
+          <div className="h-14 rounded-lg bg-zinc-800" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-10 w-24 rounded bg-zinc-800" />
+          <div className="h-14 rounded-lg bg-zinc-800" />
+          <div className="h-14 rounded-lg bg-zinc-800" />
+        </div>
+      </div>
+    </div>
+  )
   if (!mod) return <p className="text-zinc-400">Módulo no encontrado.</p>
-
-  const { data: materials } = await supabase
-    .from('materials')
-    .select('*')
-    .eq('module_id', moduleId)
-    .order('display_order')
-
-  const { data: evaluations } = await supabase
-    .from('evaluations')
-    .select('*')
-    .eq('module_id', moduleId)
-    .order('created_at')
 
   return (
     <div>
@@ -82,10 +98,10 @@ export default async function ModuleDetailPage({
           </div>
 
           <div className="space-y-2">
-            {(materials ?? []).length === 0 && (
+            {materials.length === 0 && (
               <p className="text-sm text-zinc-500">Sin materiales todavía.</p>
             )}
-            {(materials ?? []).map((mat) => (
+            {materials.map((mat) => (
               <div
                 key={mat.id}
                 className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] px-4 py-3 transition hover:border-zinc-700"
@@ -133,10 +149,10 @@ export default async function ModuleDetailPage({
           </div>
 
           <div className="space-y-2">
-            {(evaluations ?? []).length === 0 && (
+            {evaluations.length === 0 && (
               <p className="text-sm text-zinc-500">Sin evaluaciones todavía.</p>
             )}
-            {(evaluations ?? []).map((evalItem) => (
+            {evaluations.map((evalItem) => (
               <Link
                 key={evalItem.id}
                 href={`/coaches/evaluations/${evalItem.id}`}

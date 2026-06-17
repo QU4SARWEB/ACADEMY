@@ -1,48 +1,41 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
+import { updateCourse, deleteCourse } from './actions'
 
-async function updateCourse(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-
-  await supabase.from('courses').update({
-    name: formData.get('name') as string,
-    slug: formData.get('slug') as string,
-    min_rank: formData.get('minRank') as string,
-    duration_months: parseInt(formData.get('durationMonths') as string),
-    is_active: formData.get('isActive') === 'true',
-  }).eq('id', id)
-
-  revalidatePath(`/coaches/courses/${id}`)
-  redirect(`/coaches/courses/${id}`)
-}
-
-async function deleteCourse(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-
-  await supabase.from('courses').delete().eq('id', id)
-
-  revalidatePath('/coaches/courses')
-  redirect('/coaches/courses')
-}
-
-const deleteCourseAction = deleteCourse
-
-export default async function EditCoursePage({
+export default function EditCoursePage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: course } = await supabase.from('courses').select('*').eq('id', id).maybeSingle()
+  const { id } = use(params)
+  const [course, setCourse] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('courses').select('*').eq('id', id).maybeSingle()
+      setCourse(data)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (!course) return <p className="text-zinc-400">Curso no encontrado.</p>
 
   return (
@@ -87,7 +80,7 @@ export default async function EditCoursePage({
         </button>
       </form>
 
-      <ConfirmDeleteForm message="¿Eliminar este curso permanentemente? Esto eliminará módulos, materiales y tareas asociadas." action={deleteCourseAction}>
+      <ConfirmDeleteForm message="¿Eliminar este curso permanentemente? Esto eliminará módulos, materiales y tareas asociadas." action={deleteCourse}>
         <input type="hidden" name="id" value={id} />
         <button
           type="submit"

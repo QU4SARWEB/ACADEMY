@@ -1,7 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
 import Link from 'next/link'
 import { ClipboardList, ArrowUpRight, ArrowLeft } from 'lucide-react'
 import { formatDate } from '@/lib/formatDate'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
 const statusColors: Record<string, string> = {
   pending: 'text-yellow-400',
@@ -19,49 +22,71 @@ const statusLabels: Record<string, string> = {
   late: 'Atrasada',
 }
 
-export default async function StudentTasksPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+interface Task {
+  id: string
+  title: string
+  due_date: string
+  course_modules: {
+    name: string
+    courses: { name: string } | null
+  } | null
+}
 
-  const { data: enrollments } = await supabase
-    .from('enrollments')
-    .select('course_id')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
+export default function StudentTasksPage() {
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [submissionMap, setSubmissionMap] = useState<Record<string, any[]>>({})
 
-  const courseIds = enrollments?.map((e) => e.course_id) ?? []
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) return
 
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('id')
-    .in('course_id', courseIds.length > 0 ? courseIds : ['none'])
+      const { data: enrollments } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
 
-  const moduleIds = modules?.map((m) => m.id) ?? []
+      const courseIds = enrollments?.map((e) => e.course_id) ?? []
+      if (courseIds.length === 0) return
 
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .in('module_id', moduleIds.length > 0 ? moduleIds : ['none'])
-    .order('due_date', { ascending: false })
+      const { data: modules } = await supabase
+        .from('course_modules')
+        .select('id')
+        .in('course_id', courseIds)
 
-  const { data: enrollmentsWithIds } = await supabase
-    .from('enrollments')
-    .select('id')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
+      const moduleIds = modules?.map((m) => m.id) ?? []
+      if (moduleIds.length === 0) return
 
-  const enrollmentIds = enrollmentsWithIds?.map((e) => e.id) ?? []
+      const { data: tasksData } = await supabase
+        .from('tasks')
+        .select('*, course_modules(name, course_id, courses(name))')
+        .in('module_id', moduleIds)
+        .order('due_date', { ascending: false })
 
-  const { data: submissions } = await supabase
-    .from('task_submissions')
-    .select('task_id, status, score')
-    .in('enrollment_id', enrollmentIds.length > 0 ? enrollmentIds : ['none'])
+      setTasks(tasksData ?? [])
 
-  const submissionMap: Record<string, typeof submissions> = {}
-  for (const sub of submissions ?? []) {
-    submissionMap[sub.task_id] = [sub]
-  }
+      const { data: enrollmentsWithIds } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
+
+      const enrollmentIds = enrollmentsWithIds?.map((e) => e.id) ?? []
+
+      const { data: submissions } = await supabase
+        .from('task_submissions')
+        .select('task_id, status, score')
+        .in('enrollment_id', enrollmentIds.length > 0 ? enrollmentIds : ['none'])
+
+      const smap: Record<string, any[]> = {}
+      for (const sub of submissions ?? []) {
+        smap[sub.task_id] = [sub]
+      }
+      setSubmissionMap(smap)
+    })()
+  }, [])
 
   function getStatus(taskId: string, dueDate: string) {
     const subs = submissionMap[taskId]
@@ -82,10 +107,10 @@ export default async function StudentTasksPage() {
       </div>
 
       <div className="space-y-3">
-        {(tasks ?? []).length === 0 && (
+        {tasks.length === 0 && (
           <p className="text-sm text-zinc-500">No hay tareas asignadas.</p>
         )}
-        {(tasks ?? []).map((task) => {
+        {tasks.map((task) => {
           const status = getStatus(task.id, task.due_date)
           return (
             <Link

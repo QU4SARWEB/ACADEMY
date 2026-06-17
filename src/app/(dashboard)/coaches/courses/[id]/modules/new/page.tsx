@@ -1,38 +1,44 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
 
-async function createModule(formData: FormData) {
-  'use server'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
+import { createModule } from './actions'
 
-  const supabase = await createClient()
-  const courseId = formData.get('courseId') as string
-
-  await supabase.from('course_modules').insert({
-    course_id: courseId,
-    name: formData.get('name') as string,
-    description: formData.get('description') as string,
-    month_number: parseInt(formData.get('monthNumber') as string),
-    display_order: parseInt(formData.get('displayOrder') as string),
-  })
-
-  revalidatePath(`/coaches/courses/${courseId}`)
-  redirect(`/coaches/courses/${courseId}`)
-}
-
-export default async function NewModulePage({
+export default function NewModulePage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id: courseId } = await params
-  const supabase = await createClient()
-  const { data: course } = await supabase.from('courses').select('name').eq('id', courseId).maybeSingle()
+  const { id: courseId } = use(params)
+  const [courseName, setCourseName] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: course } = await supabase.from('courses').select('name').eq('id', courseId).maybeSingle()
+      setCourseName(course?.name ?? null)
+      setLoading(false)
+    })()
+  }, [courseId])
+
+  if (loading) return (
+    <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+      <div className="h-8 w-64 rounded bg-zinc-800" />
+      <div className="h-10 rounded-lg bg-zinc-800" />
+      <div className="h-20 rounded-lg bg-zinc-800" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-10 rounded-lg bg-zinc-800" />
+        <div className="h-10 rounded-lg bg-zinc-800" />
+      </div>
+      <div className="h-10 w-32 rounded-lg bg-zinc-800" />
+    </div>
+  )
 
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">
-        Nuevo módulo — {course?.name}
+        Nuevo módulo — {courseName}
       </h1>
 
       <form action={createModule} className="space-y-4">

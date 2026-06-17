@@ -1,121 +1,92 @@
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
+import { submitAnswers } from './actions'
+import { useSearchParams } from 'next/navigation'
 
-async function submitAnswers(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+export default function StudentEvalPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const searchParams = useSearchParams()
+  const submitted = searchParams.get('submitted')
+  const [ev, setEv] = useState<any>(null)
+  const [enrollmentId, setEnrollmentId] = useState<string | null>(null)
+  const [evalQuestions, setEvalQuestions] = useState<any[]>([])
+  const [optsByQ, setOptsByQ] = useState<Record<string, any[]>>({})
+  const [existingAnswers, setExistingAnswers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const evaluationId = formData.get('evaluationId') as string
-  const enrollmentId = formData.get('enrollmentId') as string
-  const eqIds = formData.getAll('eqId') as string[]
-  const selectedOptions = formData.getAll('selectedOption') as string[]
-  const textAnswers = formData.getAll('textAnswer') as string[]
-  const types = formData.getAll('type') as string[]
-
-  for (let i = 0; i < eqIds.length; i++) {
-    const type = types[i]
-    let payload: any = {
-      evaluation_question_id: eqIds[i],
-      enrollment_id: enrollmentId,
-    }
-
-    if (type === 'multiple_choice' || type === 'true_false') {
-      const optionId = selectedOptions[i]
-      if (!optionId) continue
-
-      const { data: option } = await supabase
-        .from('question_options')
-        .select('is_correct')
-        .eq('id', optionId)
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: e } = await supabase
+        .from('evaluations')
+        .select('*, course_modules(name, course_id, courses(name))')
+        .eq('id', id)
         .maybeSingle()
+      if (!e) { setLoading(false); return }
+      setEv(e)
 
-      payload.selected_option = optionId
-      payload.is_correct = option?.is_correct ?? false
-      payload.score = option?.is_correct ? 100 : 0
-    } else {
-      const text = textAnswers[i] || ''
-      payload.text_answer = text
-    }
+      const courseId = e.course_modules?.course_id
 
-    const { error } = await supabase.from('evaluation_answers').upsert(payload, {
-      onConflict: 'evaluation_question_id, enrollment_id',
-    })
-    if (error) console.error(error)
+      const { data: { user } } = await supabase.auth.getUser()
+      let enrId: string | null = null
+      if (user) {
+        const { data: enrollment } = await supabase
+          .from('enrollments')
+          .select('id')
+          .eq('profile_id', user.id)
+          .eq('course_id', courseId)
+          .eq('status', 'active')
+          .maybeSingle()
+        if (enrollment) enrId = enrollment.id
+      }
+      setEnrollmentId(enrId)
+
+      const [{ data: eqData }, { data: optionsData }] = await Promise.all([
+        supabase.from('evaluation_questions').select('*, questions(*)').eq('evaluation_id', id).order('order_num'),
+        supabase.from('question_options').select('*').order('order_num'),
+      ])
+
+      const eqs = eqData ?? []
+      setEvalQuestions(eqs)
+
+      const qIds = eqs.map(eq => eq.questions?.id).filter(Boolean)
+      const filteredOpts = (optionsData ?? []).filter(o => qIds.includes(o.question_id))
+      const optsMap: Record<string, any[]> = {}
+      for (const o of filteredOpts) {
+        if (!optsMap[o.question_id]) optsMap[o.question_id] = []
+        optsMap[o.question_id]!.push(o)
+      }
+      setOptsByQ(optsMap)
+
+      if (enrId) {
+        const eqIds = eqs.map(eq => eq.id)
+        const { data: ans } = await supabase
+          .from('evaluation_answers')
+          .select('*')
+          .in('evaluation_question_id', eqIds.length > 0 ? eqIds : ['none'])
+          .eq('enrollment_id', enrId)
+        setExistingAnswers(ans ?? [])
+      }
+
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-32 animate-pulse rounded-xl bg-zinc-800/60" />)}</div>
+      </div>
+    )
   }
-
-  revalidatePath(`/students/evaluations/${evaluationId}`)
-  redirect(`/students/evaluations/${evaluationId}?submitted=true`)
-}
-
-export default async function StudentEvalPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ submitted?: string }>
-}) {
-  const { id } = await params
-  const { submitted } = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: ev } = await supabase
-    .from('evaluations')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .eq('id', id)
-    .maybeSingle()
 
   if (!ev) return <p className="text-zinc-400">Evaluación no encontrada.</p>
-
-  const courseId = ev.course_modules?.course_id
-
-  let enrollmentId: string | null = null
-  if (user) {
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', user.id)
-      .eq('course_id', courseId)
-      .eq('status', 'active')
-      .maybeSingle()
-    if (enrollment) enrollmentId = enrollment.id
-  }
-
-  const { data: evalQuestions } = await supabase
-    .from('evaluation_questions')
-    .select('*, questions(*)')
-    .eq('evaluation_id', id)
-    .order('order_num')
-
-  const questionIds = (evalQuestions ?? []).map((eq) => eq.questions?.id).filter(Boolean)
-  const eqIds = (evalQuestions ?? []).map((eq) => eq.id)
-
-  const { data: allOptions } = await supabase
-    .from('question_options')
-    .select('*')
-    .in('question_id', questionIds.length > 0 ? questionIds : ['none'])
-    .order('order_num')
-
-  const optsByQ: Record<string, typeof allOptions> = {}
-  for (const o of allOptions ?? []) {
-    if (!optsByQ[o.question_id]) optsByQ[o.question_id] = []
-    optsByQ[o.question_id]!.push(o)
-  }
-
-  let existingAnswers: any[] = []
-  if (enrollmentId) {
-    const { data } = await supabase
-      .from('evaluation_answers')
-      .select('*')
-      .in('evaluation_question_id', eqIds.length > 0 ? eqIds : ['none'])
-      .eq('enrollment_id', enrollmentId)
-    existingAnswers = data ?? []
-  }
 
   const ansByEq: Record<string, any> = {}
   for (const a of existingAnswers) {
@@ -124,6 +95,7 @@ export default async function StudentEvalPage({
 
   const allGraded = existingAnswers.length > 0 && existingAnswers.every((a) => a.score != null)
   const totalScore = existingAnswers.reduce((s, a) => s + (a.score ?? 0), 0)
+  const courseId = ev.course_modules?.course_id
 
   return (
     <div>
@@ -154,13 +126,13 @@ export default async function StudentEvalPage({
         <input type="hidden" name="evaluationId" value={id} />
         <input type="hidden" name="enrollmentId" value={enrollmentId ?? ''} />
 
-        {(evalQuestions ?? []).length === 0 && (
+        {evalQuestions.length === 0 && (
           <p className="text-sm text-zinc-500">No hay preguntas disponibles todavía.</p>
         )}
 
-        {(evalQuestions ?? []).map((eq, i) => {
-          const q = eq.questions as any
-          const options = optsByQ[q.id] ?? []
+        {evalQuestions.map((eq, i) => {
+          const q = eq.questions
+          const options = optsByQ[q?.id] ?? []
           const answer = ansByEq[eq.id]
           const isGraded = answer?.score != null
 
@@ -189,22 +161,8 @@ export default async function StudentEvalPage({
                     const correct = isGraded && o.is_correct
                     const wrong = isGraded && selected && !o.is_correct
                     return (
-                      <label
-                        key={o.id}
-                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition
-                          ${selected ? 'border-purple-500 bg-purple-500/10' : 'border-zinc-700 bg-[#0A0A0A] hover:border-zinc-600'}
-                          ${correct ? 'border-green-500 bg-green-500/10' : ''}
-                          ${wrong ? 'border-red-500 bg-red-500/10' : ''}
-                        `}
-                      >
-                        <input
-                          type="radio"
-                          name={`selectedOption-${eq.id}`}
-                          value={o.id}
-                          defaultChecked={selected}
-                          disabled={isGraded}
-                          className="sr-only"
-                        />
+                      <label key={o.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${selected ? 'border-purple-500 bg-purple-500/10' : 'border-zinc-700 bg-[#0A0A0A] hover:border-zinc-600'} ${correct ? 'border-green-500 bg-green-500/10' : ''} ${wrong ? 'border-red-500 bg-red-500/10' : ''}`}>
+                        <input type="radio" name={`selectedOption-${eq.id}`} value={o.id} defaultChecked={selected} disabled={isGraded} className="sr-only" />
                         <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-purple-500 bg-purple-500' : 'border-zinc-600'} ${correct ? 'border-green-500 bg-green-500' : ''} ${wrong ? 'border-red-500 bg-red-500' : ''}`}>
                           {selected && <div className="h-2 w-2 rounded-full bg-white" />}
                         </div>
@@ -219,12 +177,8 @@ export default async function StudentEvalPage({
 
               {(q.type === 'open_ended' || q.type === 'short_answer') && (
                 <div>
-                  <textarea
-                    name={`textAnswer-${eq.id}`}
-                    defaultValue={answer?.text_answer ?? ''}
-                    readOnly={isGraded}
-                    rows={q.type === 'open_ended' ? 4 : 2}
-                    placeholder={isGraded ? '' : 'Escribe tu respuesta...'}
+                  <textarea name={`textAnswer-${eq.id}`} defaultValue={answer?.text_answer ?? ''} readOnly={isGraded}
+                    rows={q.type === 'open_ended' ? 4 : 2} placeholder={isGraded ? '' : 'Escribe tu respuesta...'}
                     className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-4 py-2.5 text-sm text-white outline-none focus:border-[#8B5CF6] disabled:opacity-60"
                   />
                 </div>
@@ -233,11 +187,8 @@ export default async function StudentEvalPage({
           )
         })}
 
-        {enrollmentId && (evalQuestions ?? []).length > 0 && !allGraded && (
-          <button
-            type="submit"
-            className="btn-glow rounded-lg bg-[#8B5CF6] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#7C3AED]"
-          >
+        {enrollmentId && evalQuestions.length > 0 && !allGraded && (
+          <button type="submit" className="btn-glow rounded-lg bg-[#8B5CF6] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
             Guardar respuestas
           </button>
         )}

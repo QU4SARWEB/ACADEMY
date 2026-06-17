@@ -1,19 +1,58 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import { getActiveEnrollmentsWithPaymentStatus } from '@/services/payments'
 import PaymentStatusBadge from './PaymentStatusBadge'
 import { uploadReceiptAction } from '@/features/payments/actions'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function StudentPaymentsView() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+export default function StudentPaymentsView() {
+  const [enrollments, setEnrollments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const enrollments = await getActiveEnrollmentsWithPaymentStatus(supabase, user.id)
+  useEffect(() => {
+    (async () => {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const enr = await getActiveEnrollmentsWithPaymentStatus(supabase, user.id)
+      setEnrollments(enr)
+      setLoading(false)
+    })()
+  }, [])
 
   const needsPayment = enrollments.filter((e: any) => !e.payment || e.payment?.status === 'pending' || e.payment?.status === 'expired')
   const totalPaid = enrollments.filter((e: any) => e.payment?.status === 'paid').length
   const totalScholarship = enrollments.filter((e: any) => e.payment?.status === 'scholarship').length
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 h-8 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass rounded-xl p-4">
+              <div className="h-4 w-16 animate-pulse rounded bg-zinc-800" />
+              <div className="mt-2 h-8 w-12 animate-pulse rounded bg-zinc-800" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="glass rounded-xl p-4">
+              <div className="h-5 w-48 animate-pulse rounded bg-zinc-800" />
+              <div className="mt-2 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

@@ -1,33 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
 
-async function createMaterial(formData: FormData) {
-  'use server'
+import { use } from 'react'
+import { createMaterial } from './actions'
 
-  const supabase = await createClient()
-  const moduleId = formData.get('moduleId') as string
-  const courseId = formData.get('courseId') as string
-
-  await supabase.from('materials').insert({
-    module_id: moduleId,
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    type: formData.get('type') as string,
-    url: formData.get('url') as string,
-    display_order: parseInt(formData.get('displayOrder') as string) || 0,
-  })
-
-  revalidatePath(`/coaches/courses/${courseId}/modules/${moduleId}`)
-  redirect(`/coaches/courses/${courseId}/modules/${moduleId}`)
-}
-
-export default async function NewMaterialPage({
+export default function NewMaterialPage({
   params,
 }: {
   params: Promise<{ id: string; mid: string }>
 }) {
-  const { id: courseId, mid: moduleId } = await params
+  const { id: courseId, mid: moduleId } = use(params)
 
   return (
     <div className="mx-auto max-w-2xl">

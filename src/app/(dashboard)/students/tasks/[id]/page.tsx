@@ -1,4 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle, XCircle, Clock } from 'lucide-react'
 import SubmitTaskForm from './SubmitTaskForm'
@@ -19,38 +22,65 @@ const statusLabels: Record<string, string> = {
   late: 'Atrasada',
 }
 
-export default async function StudentTaskDetailPage({
+export default function StudentTaskDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  const { id } = use(params)
+  const [task, setTask] = useState<any>(null)
+  const [submission, setSubmission] = useState<any>(null)
+  const [notFound, setNotFound] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const { data: task } = await supabase
-    .from('tasks')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .eq('id', id)
-    .maybeSingle()
+  useEffect(() => {
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
 
-  if (!task) return <p className="text-zinc-400">Tarea no encontrada.</p>
+      const { data: taskData } = await supabase
+        .from('tasks')
+        .select('*, course_modules(name, course_id, courses(name))')
+        .eq('id', id)
+        .maybeSingle()
 
-  const { data: enrollment } = await supabase
-    .from('enrollments')
-    .select('id')
-    .eq('profile_id', user.id)
-    .eq('course_id', task.course_modules?.course_id)
-    .eq('status', 'active')
-    .maybeSingle()
+      if (!taskData) { setNotFound(true); setLoading(false); return }
+      setTask(taskData)
 
-  const { data: submission } = await supabase
-    .from('task_submissions')
-    .select('*')
-    .eq('task_id', id)
-    .eq('enrollment_id', enrollment?.id ?? 'none')
-    .maybeSingle()
+      const { data: enrollment } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('course_id', taskData.course_modules?.course_id)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      const { data: submissionData } = await supabase
+        .from('task_submissions')
+        .select('*')
+        .eq('task_id', id)
+        .eq('enrollment_id', enrollment?.id ?? 'none')
+        .maybeSingle()
+
+      setSubmission(submissionData ?? null)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-32 rounded bg-zinc-800" />
+        <div className="h-8 w-64 rounded bg-zinc-800" />
+        <div className="h-4 w-48 rounded bg-zinc-800" />
+        <div className="h-4 w-96 rounded bg-zinc-800" />
+        <div className="h-32 rounded-xl bg-zinc-800/50" />
+      </div>
+    )
+  }
+
+  if (notFound || !task) return <p className="text-zinc-400">Tarea no encontrada.</p>
 
   return (
     <div>

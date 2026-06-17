@@ -1,66 +1,42 @@
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, CheckCircle, Pencil, Trash2, ArrowLeft } from 'lucide-react'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
 import { formatDate } from '@/lib/formatDate'
+import { createSeason, activateSeason, updateSeason, deleteSeason } from './actions'
 
-async function createSeason(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
+export default function SeasonsPage() {
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  await supabase.from('seasons').insert({
-    name: formData.get('name') as string,
-    start_date: formData.get('startDate') as string,
-    end_date: formData.get('endDate') as string,
-    is_active: formData.get('isActive') === 'true',
-  })
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('seasons').select('*').order('start_date', { ascending: false })
+      setSeasons(data ?? [])
+      setLoading(false)
+    })()
+  }, [])
 
-  revalidatePath('/coaches/seasons')
-  redirect('/coaches/seasons')
-}
-
-async function activateSeason(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-
-  await supabase.from('seasons').update({ is_active: false }).neq('id', id)
-  await supabase.from('seasons').update({ is_active: true }).eq('id', id)
-
-  revalidatePath('/coaches/seasons')
-}
-
-async function updateSeason(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-
-  await supabase.from('seasons').update({
-    name: formData.get('name') as string,
-    start_date: formData.get('startDate') as string,
-    end_date: formData.get('endDate') as string,
-  }).eq('id', id)
-
-  revalidatePath('/coaches/seasons')
-}
-
-async function deleteSeason(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const id = formData.get('id') as string
-
-  await supabase.from('seasons').delete().eq('id', id)
-
-  revalidatePath('/coaches/seasons')
-}
-
-const deleteSeasonAction = deleteSeason
-
-export default async function SeasonsPage() {
-  const supabase = await createClient()
-  const { data: seasons } = await supabase.from('seasons').select('*').order('start_date', { ascending: false })
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-800" />
+            ))}
+          </div>
+          <div className="h-72 animate-pulse rounded-xl bg-zinc-800" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -74,10 +50,10 @@ export default async function SeasonsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <div className="space-y-3">
-            {(seasons ?? []).length === 0 && (
+            {seasons.length === 0 && (
               <p className="text-sm text-zinc-500">No hay seasons creadas.</p>
             )}
-            {(seasons ?? []).map((s) => (
+            {seasons.map((s) => (
               <details key={s.id} className="glass rounded-xl transition">
                 <summary className="flex cursor-pointer items-center justify-between p-4">
                   <div>
@@ -124,7 +100,7 @@ export default async function SeasonsPage() {
                     </div>
                   </form>
                   <div className="mt-3">
-                    <ConfirmDeleteForm message="¿Eliminar esta season?" action={deleteSeasonAction}>
+                    <ConfirmDeleteForm message="¿Eliminar esta season?" action={deleteSeason}>
                       <input type="hidden" name="id" value={s.id} />
                       <button type="submit" className="rounded-lg border border-red-500/30 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/10">
                         Eliminar

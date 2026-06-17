@@ -1,25 +1,63 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { Swords, ArrowLeft } from 'lucide-react'
 import { TimeDisplay } from '@/components/TimeDisplay'
 
-export default async function PlayerScrimsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+export default function PlayerScrimsPage() {
+  const [scrims, setScrims] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: teamMember } = await supabase
-    .from('team_members')
-    .select('team_id')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
 
-  const { data: scrims } = await supabase
-    .from('scrims')
-    .select('*')
-    .eq('team_id', teamMember?.team_id ?? 'none')
-    .order('scheduled_at', { ascending: false })
+      const { data: teamMember } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      const { data: scrimsData } = await supabase
+        .from('scrims')
+        .select('*')
+        .eq('team_id', teamMember?.team_id ?? 'none')
+        .order('scheduled_at', { ascending: false })
+
+      setScrims(scrimsData ?? [])
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-800" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-4 w-32 animate-pulse rounded bg-zinc-800" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-zinc-800" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -28,7 +66,7 @@ export default async function PlayerScrimsPage() {
       </Link>
       <h1 className="mb-6 font-heading text-2xl font-bold text-white">Scrims</h1>
 
-      {(scrims ?? []).length === 0 && (
+      {scrims.length === 0 && (
         <div className="glass rounded-xl p-8 text-center">
           <Swords size={32} className="mx-auto text-zinc-600" />
           <p className="mt-3 text-sm text-zinc-500">No hay scrims registrados todavía.</p>
@@ -36,7 +74,7 @@ export default async function PlayerScrimsPage() {
       )}
 
       <div className="space-y-3">
-        {(scrims ?? []).map((scrim) => (
+        {scrims.map((scrim) => (
           <div key={scrim.id} className="glass rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

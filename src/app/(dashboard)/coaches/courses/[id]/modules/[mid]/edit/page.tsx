@@ -1,52 +1,44 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
+import { updateModule, deleteModuleAction } from './actions'
 
-async function updateModule(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const moduleId = formData.get('moduleId') as string
-  const courseId = formData.get('courseId') as string
-
-  await supabase.from('course_modules').update({
-    name: formData.get('name') as string,
-    description: formData.get('description') as string,
-    month_number: parseInt(formData.get('monthNumber') as string),
-    display_order: parseInt(formData.get('displayOrder') as string),
-  }).eq('id', moduleId)
-
-  revalidatePath(`/coaches/courses/${courseId}/modules/${moduleId}`)
-  redirect(`/coaches/courses/${courseId}/modules/${moduleId}`)
-}
-
-async function deleteModule(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const moduleId = formData.get('moduleId') as string
-  const courseId = formData.get('courseId') as string
-
-  await supabase.from('course_modules').delete().eq('id', moduleId)
-
-  revalidatePath(`/coaches/courses/${courseId}`)
-  redirect(`/coaches/courses/${courseId}`)
-}
-
-const deleteModuleAction = deleteModule
-
-export default async function EditModulePage({
+export default function EditModulePage({
   params,
 }: {
   params: Promise<{ id: string; mid: string }>
 }) {
-  const { id: courseId, mid: moduleId } = await params
-  const supabase = await createClient()
+  const { id: courseId, mid: moduleId } = use(params)
+  const [mod, setMod] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: mod } = await supabase.from('course_modules').select('*').eq('id', moduleId).maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: mod } = await supabase.from('course_modules').select('*').eq('id', moduleId).maybeSingle()
+      setMod(mod)
+      setLoading(false)
+    })()
+  }, [moduleId])
+
+  if (loading) return (
+    <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+      <div className="h-4 w-32 rounded bg-zinc-800" />
+      <div className="h-8 w-48 rounded bg-zinc-800" />
+      <div className="h-10 rounded-lg bg-zinc-800" />
+      <div className="h-20 rounded-lg bg-zinc-800" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-10 rounded-lg bg-zinc-800" />
+        <div className="h-10 rounded-lg bg-zinc-800" />
+      </div>
+      <div className="h-10 w-40 rounded-lg bg-zinc-800" />
+      <div className="h-10 rounded-lg bg-zinc-800" />
+    </div>
+  )
   if (!mod) return <p className="text-zinc-400">Módulo no encontrado.</p>
 
   return (

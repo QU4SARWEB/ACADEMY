@@ -1,12 +1,38 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { GraduationCap, ArrowLeft } from 'lucide-react'
 import { getPromotionHistory } from '@/services/promotions'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function PromotionsPage() {
-  const supabase = await createClient()
-  const promotions = await getPromotionHistory(supabase)
+export default function PromotionsPage() {
+  const [promotions, setPromotions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const data = await getPromotionHistory(supabase)
+      setPromotions(data)
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

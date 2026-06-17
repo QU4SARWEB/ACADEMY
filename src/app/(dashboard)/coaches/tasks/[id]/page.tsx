@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle, XCircle, Clock, Eye } from 'lucide-react'
-import { notifyUser } from '@/services/notify'
+import { gradeSubmission } from './actions'
 
 const statusColors: Record<string, string> = {
   pending: 'text-yellow-400',
@@ -21,82 +22,76 @@ const statusLabels: Record<string, string> = {
   late: 'Atrasada',
 }
 
-async function gradeSubmission(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const submissionId = formData.get('submissionId') as string
-  const taskId = formData.get('taskId') as string
-  const score = parseFloat(formData.get('score') as string)
-  const feedback = formData.get('feedback') as string
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: sub } = await supabase
-    .from('task_submissions')
-    .select('enrollment_id, tasks(title, course_modules(course_id, courses(name)))')
-    .eq('id', submissionId)
-    .maybeSingle() as any
-
-  await supabase.from('task_submissions').update({
-    score,
-    feedback,
-    status: 'graded',
-    graded_by: user?.id ?? null,
-    graded_at: new Date().toISOString(),
-  }).eq('id', submissionId)
-
-  if (sub) {
-    const { data: enr } = await supabase
-      .from('enrollments')
-      .select('profile_id')
-      .eq('id', sub.enrollment_id)
-      .maybeSingle()
-
-    if (enr) {
-      await notifyUser(
-        enr.profile_id,
-        'grade',
-        `Tarea calificada: ${sub.tasks?.title}`,
-        `Tu tarea fue calificada con ${score} pts.${feedback ? ` Feedback: ${feedback}` : ''}`,
-        `/tasks/${taskId}`
-      )
-    }
-  }
-
-  revalidatePath(`/coaches/tasks/${taskId}`)
-}
-
-export default async function TaskDetailPage({
+export default function TaskDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  const supabase = await createClient()
+  const { id } = use(params)
+  const [task, setTask] = useState<any>(null)
+  const [submissions, setSubmissions] = useState<any[]>([])
+  const [allEnrollments, setAllEnrollments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: task } = await supabase
-    .from('tasks')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .eq('id', id)
-    .maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+
+      const { data: taskData } = await supabase
+        .from('tasks')
+        .select('*, course_modules(name, course_id, courses(name))')
+        .eq('id', id)
+        .maybeSingle()
+
+      if (!taskData) { setLoading(false); return }
+
+      const { data: submissionsData } = await supabase
+        .from('task_submissions')
+        .select('*, enrollments(profile_id, profiles(full_name, avatar_url, email))')
+        .eq('task_id', id)
+        .order('created_at', { ascending: false })
+
+      const { data: enrollmentsData } = await supabase
+        .from('enrollments')
+        .select('id, profile_id, profiles(full_name, email)')
+        .eq('course_id', taskData.course_modules?.course_id)
+        .eq('status', 'active')
+
+      setTask(taskData)
+      setSubmissions(submissionsData ?? [])
+      setAllEnrollments(enrollmentsData ?? [])
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 space-y-2">
+          <div className="h-8 w-64 animate-pulse rounded bg-zinc-800" />
+          <div className="h-4 w-48 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-28 animate-pulse rounded-lg bg-zinc-800" />
+            ))}
+          </div>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!task) return <p className="text-zinc-400">Tarea no encontrada.</p>
 
-  const { data: submissions } = await supabase
-    .from('task_submissions')
-    .select('*, enrollments(profile_id, profiles(full_name, avatar_url, email))')
-    .eq('task_id', id)
-    .order('created_at', { ascending: false })
-
-  const { data: allEnrollments } = await supabase
-    .from('enrollments')
-    .select('id, profile_id, profiles(full_name, email)')
-    .eq('course_id', task.course_modules?.course_id)
-    .eq('status', 'active')
-
-  const submittedIds = new Set(submissions?.map((s) => s.enrollment_id) ?? [])
-  const pendingStudents = (allEnrollments ?? []).filter((e) => !submittedIds.has(e.id))
+  const submittedIds = new Set(submissions.map((s) => s.enrollment_id))
+  const pendingStudents = allEnrollments.filter((e) => !submittedIds.has(e.id))
 
   return (
     <div>
@@ -118,14 +113,14 @@ export default async function TaskDetailPage({
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h2 className="mb-4 font-heading text-lg font-bold text-white">
-            Entregas ({submissions?.length ?? 0})
+            Entregas ({submissions.length})
           </h2>
 
           <div className="space-y-3">
-            {(submissions ?? []).length === 0 && (
+            {submissions.length === 0 && (
               <p className="text-sm text-zinc-500">Sin entregas todavía.</p>
             )}
-            {(submissions ?? []).map((sub) => (
+            {submissions.map((sub) => (
               <div key={sub.id} className="glass rounded-lg p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">

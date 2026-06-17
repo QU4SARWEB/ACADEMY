@@ -1,50 +1,53 @@
+'use client'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import ProfileForm from '@/app/(dashboard)/students/profile/ProfileForm'
+import { updateProfile } from './actions'
 
-async function updateProfile(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+export default function PlayerProfilePage() {
+  const router = useRouter()
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  await supabase.from('profiles').update({
-    full_name: formData.get('fullName') as string,
-    display_name: formData.get('displayName') as string,
-    riot_id: formData.get('riotId') as string,
-    rank: formData.get('rank') as string,
-    bio: formData.get('bio') as string,
-    country: formData.get('country') as string,
-    institutional_email: formData.get('institutionalEmail') as string,
-    social_discord: formData.get('socialDiscord') as string,
-    social_youtube: formData.get('socialYoutube') as string,
-    social_twitter: formData.get('socialTwitter') as string,
-    social_twitch: formData.get('socialTwitch') as string,
-    region: formData.get('region') as string,
-    in_game_role: formData.get('inGameRole') as string,
-    mouse_dpi: formData.get('mouseDpi') ? parseInt(formData.get('mouseDpi') as string) : null,
-    mouse_sens: formData.get('mouseSens') ? parseFloat(formData.get('mouseSens') as string) : null,
-    mouse_scope_sens: formData.get('mouseScopeSens') ? parseFloat(formData.get('mouseScopeSens') as string) : null,
-    mouse_hertz: formData.get('mouseHertz') ? parseInt(formData.get('mouseHertz') as string) : null,
-    edpi: formData.get('edpi') ? parseInt(formData.get('edpi') as string) : null,
-  }).eq('id', user.id)
+  useEffect(() => {
+    (async () => {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/login')
+        return
+      }
 
-  revalidatePath('/players/profile')
-}
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
 
-export default async function PlayerProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+      setProfile(data)
+      setLoading(false)
+    })()
+  }, [])
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="glass rounded-xl p-6">
+          <div className="space-y-4">
+            <div className="h-10 w-full animate-pulse rounded bg-zinc-800" />
+            <div className="h-10 w-full animate-pulse rounded bg-zinc-800" />
+            <div className="h-10 w-full animate-pulse rounded bg-zinc-800" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!profile) return null
 

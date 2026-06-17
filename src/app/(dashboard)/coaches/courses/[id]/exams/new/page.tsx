@@ -1,16 +1,50 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createNewExam } from '@/features/exams/actions'
 import { fetchQuestions } from '@/features/questions/actions'
 import QuestionSearch from './QuestionSearch'
 
-export default async function NewExamPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: course } = await supabase.from('courses').select('name').eq('id', id).maybeSingle()
-  const { data: modules } = await supabase.from('course_modules').select('id, name').eq('course_id', id).order('order_num')
-  const questions = await fetchQuestions(id)
+export default function NewExamPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [course, setCourse] = useState<any>(null)
+  const [modules, setModules] = useState<any[]>([])
+  const [questions, setQuestions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const [{ data: courseData }, { data: modulesData }, questionsData] = await Promise.all([
+        supabase.from('courses').select('name').eq('id', id).maybeSingle(),
+        supabase.from('course_modules').select('id, name').eq('course_id', id).order('order_num'),
+        fetchQuestions(id),
+      ])
+      setCourse(courseData)
+      setModules(modulesData ?? [])
+      setQuestions(questionsData)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+          <div className="mt-2 h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="glass max-w-3xl rounded-xl p-6 space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -35,7 +69,7 @@ export default async function NewExamPage({ params }: { params: Promise<{ id: st
             <select name="moduleId"
               className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
               <option value="">Sin módulo</option>
-              {(modules ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              {modules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
         </div>

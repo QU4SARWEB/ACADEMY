@@ -1,41 +1,49 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, ArrowLeft } from 'lucide-react'
-import { parseDateTime } from '@/lib/parseDateTime'
+import { createEvaluation } from './actions'
 
-async function createEvaluation(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
+export default function EvaluationsPage() {
+  const [evaluations, setEvaluations] = useState<any[]>([])
+  const [modules, setModules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { error } = await supabase.from('evaluations').insert({
-    module_id: formData.get('moduleId') as string,
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    max_score: parseFloat(formData.get('maxScore') as string) || 100,
-    weight: parseFloat(formData.get('weight') as string) || 0,
-    due_date: formData.get('dueDate') ? parseDateTime(formData.get('dueDate') as string) : null,
-  })
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: evaluationsData } = await supabase
+        .from('evaluations')
+        .select('*, course_modules(name, courses(name))')
+        .order('created_at', { ascending: false })
+      const { data: modulesData } = await supabase
+        .from('course_modules')
+        .select('id, name')
+        .order('course_id')
 
-  if (error) throw new Error(error.message)
+      setEvaluations(evaluationsData ?? [])
+      setModules(modulesData ?? [])
+      setLoading(false)
+    })()
+  }, [])
 
-  revalidatePath('/coaches/evaluations')
-  redirect('/coaches/evaluations')
-}
-
-export default async function EvaluationsPage() {
-  const supabase = await createClient()
-
-  const { data: evaluations } = await supabase
-    .from('evaluations')
-    .select('*, course_modules(name, courses(name))')
-    .order('created_at', { ascending: false })
-
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('id, name')
-    .order('course_id')
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="h-8 w-48 animate-pulse rounded bg-zinc-800" />
+          <div className="h-10 w-40 animate-pulse rounded-lg bg-zinc-800" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -50,10 +58,10 @@ export default async function EvaluationsPage() {
       </div>
 
       <div className="space-y-3">
-        {(evaluations ?? []).length === 0 && (
+        {evaluations.length === 0 && (
           <p className="text-sm text-zinc-500">No hay evaluaciones creadas.</p>
         )}
-        {(evaluations ?? []).map((ev) => (
+        {evaluations.map((ev) => (
           <Link
             key={ev.id}
             href={`/coaches/evaluations/${ev.id}`}
@@ -83,7 +91,7 @@ export default async function EvaluationsPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-400">Módulo</label>
                 <select name="moduleId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  {(modules ?? []).map((m) => (
+                  {modules.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>

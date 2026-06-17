@@ -1,49 +1,53 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, ArrowLeft, Trash2 } from 'lucide-react'
-
-async function createSchedule(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-
-  await supabase.from('schedules').insert({
-    season_id: formData.get('seasonId') as string,
-    week_number: parseInt(formData.get('weekNumber') as string),
-    day_of_week: parseInt(formData.get('dayOfWeek') as string),
-    start_time: formData.get('startTime') as string,
-    end_time: formData.get('endTime') as string,
-    type: formData.get('type') as string,
-    title: formData.get('title') as string,
-    description: formData.get('description') as string || null,
-    location: formData.get('location') as string || null,
-  })
-
-  revalidatePath('/coaches/schedules')
-  redirect('/coaches/schedules')
-}
-
-async function deleteSchedule(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  await supabase.from('schedules').delete().eq('id', formData.get('id') as string)
-  revalidatePath('/coaches/schedules')
-}
+import { createSchedule, deleteSchedule } from './actions'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-export default async function SchedulesPage() {
-  const supabase = await createClient()
-  const { data: schedules } = await supabase
-    .from('schedules')
-    .select('*, seasons(name)')
-    .order('week_number')
-    .order('day_of_week')
-    .order('start_time')
+export default function SchedulesPage() {
+  const [schedules, setSchedules] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [activeSeason, setActiveSeason] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
-  const { data: activeSeason } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: schedulesData } = await supabase
+        .from('schedules')
+        .select('*, seasons(name)')
+        .order('week_number')
+        .order('day_of_week')
+        .order('start_time')
+      const { data: seasonsData } = await supabase.from('seasons').select('id, name, is_active')
+      const { data: activeSeasonData } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+
+      setSchedules(schedulesData ?? [])
+      setSeasons(seasonsData ?? [])
+      setActiveSeason(activeSeasonData)
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <div className="h-64 animate-pulse rounded-xl bg-zinc-800" />
+          </div>
+          <div>
+            <div className="h-96 animate-pulse rounded-xl bg-zinc-800" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -68,12 +72,12 @@ export default async function SchedulesPage() {
                 </tr>
               </thead>
               <tbody>
-                {(schedules ?? []).length === 0 && (
+                {schedules.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-zinc-500">Sin horarios programados.</td>
                   </tr>
                 )}
-                {(schedules ?? []).map((s) => (
+                {schedules.map((s) => (
                   <tr key={s.id} className="border-b border-zinc-800 transition hover:bg-[#111]">
                     <td className="px-4 py-3 text-zinc-300">Semana {s.week_number}</td>
                     <td className="px-4 py-3 text-zinc-300">{DAYS[s.day_of_week]}</td>
@@ -158,7 +162,7 @@ export default async function SchedulesPage() {
               <div>
                 <label className="block text-xs font-medium text-zinc-400">Season</label>
                 <select name="seasonId" required className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  {(seasons ?? []).map((s) => (
+                  {seasons.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} {s.is_active ? '(Activa)' : ''}</option>
                   ))}
                 </select>

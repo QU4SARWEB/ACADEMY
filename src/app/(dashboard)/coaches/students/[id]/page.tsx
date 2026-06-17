@@ -1,120 +1,155 @@
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, GraduationCap, Award, CreditCard, CheckCircle, XCircle, AlertTriangle, BookOpen, UserMinus } from 'lucide-react'
 import ConfirmDeleteForm from '@/components/ConfirmDeleteForm'
-import { checkPromotionEligibility, promoteStudent as doPromote } from '@/services/promotions'
-import { notifyUser } from '@/services/notify'
-import { assignToCourse } from '@/features/enrollments/actions'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 import { formatDate } from '@/lib/formatDate'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
+import { assignToCourse } from '@/features/enrollments/actions'
+import { promoteStudentAction, toggleScholarshipAction, toggleActiveAction, unenrollStudentAction } from './actions'
 
-async function promoteStudent(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const studentId = formData.get('studentId') as string
-  const newCourseId = formData.get('newCourseId') as string
-  const seasonId = formData.get('seasonId') as string
-  const enrollmentId = formData.get('enrollmentId') as string
-
-  if (!user) return
-
-  const result = await doPromote(supabase, enrollmentId, user.id, newCourseId, seasonId)
-  if (result.error) throw new Error(result.error)
-
-  await notifyUser(
-    studentId,
-    'promotion',
-    '¡Felicidades! Has sido promocionado',
-    'Has avanzado al siguiente curso. Sigue así.',
-    '/students/grades'
-  )
-
-  revalidatePath(`/coaches/students/${studentId}`)
-  redirect(`/coaches/students/${studentId}`)
+interface Profile {
+  id: string
+  full_name: string
+  email: string
+  avatar_url: string | null
+  riot_id: string | null
+  rank: string
+  country: string | null
+  is_active: boolean
+  scholarship: boolean
+  social_discord: string | null
+  social_twitter: string | null
+  social_youtube: string | null
+  institutional_email: string | null
 }
 
-async function toggleScholarship(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const studentId = formData.get('studentId') as string
-  const current = formData.get('current') === 'true'
-
-  await supabase.from('profiles').update({ scholarship: !current }).eq('id', studentId)
-  revalidatePath(`/coaches/students/${studentId}`)
+interface Enrollment {
+  id: string
+  course_id: string
+  season_id: string
+  status: string
+  promoted: boolean
+  final_grade: number | null
+  courses: { name: string; slug: string; min_rank: string; display_order: number } | null
+  seasons: { name: string } | null
 }
 
-async function toggleActive(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const studentId = formData.get('studentId') as string
-  const current = formData.get('current') === 'true'
-
-  await supabase.from('profiles').update({ is_active: !current }).eq('id', studentId)
-  revalidatePath(`/coaches/students/${studentId}`)
+interface Course {
+  id: string
+  name: string
+  display_order: number
+  min_rank: string
 }
 
-async function unenrollStudent(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const enrollmentId = formData.get('enrollmentId') as string
-  const studentId = formData.get('studentId') as string
-
-  await supabase.from('enrollments').update({ status: 'dropped' }).eq('id', enrollmentId)
-  revalidatePath(`/coaches/students/${studentId}`)
+interface Season {
+  id: string
+  name: string
+  is_active: boolean
 }
 
-export default async function StudentDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const supabase = await createClient()
+interface Promotion {
+  id: string
+  created_at: string
+  grade_at_time: number | null
+  rank_at_time: string | null
+  from_course: { name: string } | null
+  to_course: { name: string } | null
+}
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
-  if (!profile) return <p className="text-zinc-400">Estudiante no encontrado.</p>
+interface Eligibility {
+  gradeOk: boolean
+  rankOk: boolean
+  eligible: boolean
+  grade: number | null
+  minRank: string
+  studentRank: string
+  reason: string | null
+}
 
-  const { data: enrollments } = await supabase
-    .from('enrollments')
-    .select('*, courses(name, slug, min_rank, display_order), seasons(name)')
-    .eq('profile_id', id)
-    .order('enrolled_at', { ascending: false })
+export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [activeSeason, setActiveSeason] = useState<Season | null>(null)
+  const [paymentBySeason, setPaymentBySeason] = useState<Map<string, string>>(new Map())
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([])
+  const [lastEnrollment, setLastEnrollment] = useState<Enrollment | null>(null)
+  const [eligibility, setEligibility] = useState<Eligibility | null>(null)
+  const [nextCourse, setNextCourse] = useState<Course | null>(null)
+  const [promotions, setPromotions] = useState<Promotion[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: courses } = await supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order')
-  const { data: seasons } = await supabase.from('seasons').select('id, name, is_active').order('name')
-  const { data: activeSeason } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const [{ data: profileData }, { data: enrollData }, { data: coursesData }, { data: seasonsData }, { data: activeSeasonData }, { data: promotionData }, { data: paymentsData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+        supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order), seasons(name)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
+        supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
+        supabase.from('seasons').select('id, name, is_active').order('name'),
+        supabase.from('seasons').select('id').eq('is_active', true).maybeSingle(),
+        supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
+        supabase.from('payments').select('season_id, status').eq('profile_id', id),
+      ])
 
-  const { data: studentPayments } = await supabase
-    .from('payments')
-    .select('season_id, status')
-    .eq('profile_id', id)
-  const paymentBySeason = new Map<string, string>()
-  for (const p of studentPayments ?? []) {
-    paymentBySeason.set(p.season_id, p.status)
+      if (!profileData) { setLoading(false); return }
+
+      setProfile(profileData as Profile)
+      const enr = (enrollData ?? []) as unknown as Enrollment[]
+      setEnrollments(enr)
+      setCourses((coursesData ?? []) as Course[])
+      setSeasons((seasonsData ?? []) as Season[])
+      setActiveSeason(activeSeasonData as Season | null)
+      setPromotions((promotionData ?? []) as Promotion[])
+
+      const pmap = new Map<string, string>()
+      for (const p of paymentsData ?? []) pmap.set(p.season_id, p.status)
+      setPaymentBySeason(pmap)
+
+      const enrolledCourseIds = enr.map(e => e.course_id)
+      const { data: availData } = enrolledCourseIds.length > 0
+        ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
+        : await supabase.from('courses').select('id, name').eq('is_active', true).order('name')
+      setAvailableCourses((availData ?? []) as Course[])
+
+      const lastEnr = enr.find(e => e.status === 'active' || e.status === 'recovery')
+      if (lastEnr) {
+        setLastEnrollment(lastEnr)
+        const { checkPromotionEligibility } = await import('@/services/promotions')
+        const elig = await checkPromotionEligibility(supabase, lastEnr.id)
+        setEligibility(elig as Eligibility)
+
+        if (lastEnr.courses?.display_order) {
+          const next = (coursesData ?? []).find((c: any) => c.display_order === lastEnr.courses!.display_order + 1)
+          setNextCourse(next as Course ?? null)
+        }
+      }
+
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 animate-pulse rounded-full bg-zinc-800" />
+          <div className="space-y-2">
+            <div className="h-6 w-48 animate-pulse rounded bg-zinc-800" />
+            <div className="h-4 w-64 animate-pulse rounded bg-zinc-800" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id)
-  const { data: availableCourses } = enrolledCourseIds.length > 0
-    ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
-    : await supabase.from('courses').select('id, name').eq('is_active', true).order('name')
-
-  const lastEnrollment = enrollments?.find((e: any) => e.status === 'active' || e.status === 'recovery')
-  const eligibility = lastEnrollment
-    ? await checkPromotionEligibility(supabase, lastEnrollment.id)
-    : null
-
-  const nextCourse = lastEnrollment && courses && lastEnrollment.courses?.display_order
-    ? courses.find((c: any) => c.display_order === lastEnrollment.courses.display_order + 1)
-    : null
-
-  const { data: promotions } = await supabase
-    .from('promotions')
-    .select('*, from_course:from_course_id(name), to_course:to_course_id(name)')
-    .eq('profile_id', id)
-    .order('created_at', { ascending: false })
+  if (!profile) return <p className="text-zinc-400">Estudiante no encontrado.</p>
 
   return (
     <div>
@@ -139,14 +174,14 @@ export default async function StudentDetailPage({
         </div>
 
         <div className="flex gap-2">
-          <form action={toggleActive}>
+          <form action={toggleActiveAction}>
             <input type="hidden" name="studentId" value={id} />
             <input type="hidden" name="current" value={String(profile.is_active)} />
             <button className={`rounded-lg border px-4 py-2 text-sm transition ${profile.is_active ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}`}>
               {profile.is_active ? 'Desactivar' : 'Activar'}
             </button>
           </form>
-          <form action={toggleScholarship}>
+          <form action={toggleScholarshipAction}>
             <input type="hidden" name="studentId" value={id} />
             <input type="hidden" name="current" value={String(profile.scholarship)} />
             <button className="flex items-center gap-2 rounded-lg border border-yellow-500/30 px-4 py-2 text-sm text-yellow-400 transition hover:bg-yellow-500/10">
@@ -161,10 +196,10 @@ export default async function StudentDetailPage({
         <div>
           <h2 className="mb-4 font-heading text-lg font-bold text-white">Inscripciones</h2>
           <div className="space-y-3">
-            {(enrollments ?? []).length === 0 && (
+            {enrollments.length === 0 && (
               <p className="text-sm text-zinc-500">Sin inscripciones.</p>
             )}
-            {(enrollments ?? []).map((enr: any) => (
+            {enrollments.map((enr) => (
               <div key={enr.id} className="rounded-lg border border-zinc-800 bg-[#111] p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -186,13 +221,10 @@ export default async function StudentDetailPage({
                     </div>
                   </div>
                   {(enr.status === 'active' || enr.status === 'recovery') && (
-                    <ConfirmDeleteForm message="¿Dar de baja esta inscripción?" action={unenrollStudent}>
+                    <ConfirmDeleteForm message="¿Dar de baja esta inscripción?" action={unenrollStudentAction}>
                       <input type="hidden" name="enrollmentId" value={enr.id} />
                       <input type="hidden" name="studentId" value={id} />
-                      <button
-                        type="submit"
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
+                      <button type="submit" className="text-xs text-red-400 hover:text-red-300">
                         <UserMinus size={14} />
                       </button>
                     </ConfirmDeleteForm>
@@ -202,11 +234,11 @@ export default async function StudentDetailPage({
             ))}
           </div>
 
-          {(promotions ?? []).length > 0 && (
+          {promotions.length > 0 && (
             <div className="mt-6">
               <h2 className="mb-4 font-heading text-lg font-bold text-white">Historial de Promociones</h2>
               <div className="space-y-2">
-                {(promotions ?? []).map((p: any) => (
+                {promotions.map((p) => (
                   <div key={p.id} className="rounded-lg border border-zinc-800 bg-[#111] p-3">
                     <div className="flex items-center gap-2 text-sm">
                       <GraduationCap size={14} className="text-purple-400" />
@@ -217,9 +249,7 @@ export default async function StudentDetailPage({
                           <span className="text-zinc-300">{p.to_course?.name}</span>
                         </>
                       )}
-                      <span className="ml-auto text-xs text-zinc-500">
-                        {formatDate(p.created_at)}
-                      </span>
+                      <span className="ml-auto text-xs text-zinc-500">{formatDate(p.created_at)}</span>
                     </div>
                     {p.grade_at_time && (
                       <p className="mt-1 text-xs text-zinc-500">Nota: {p.grade_at_time} · Rango: {p.rank_at_time}</p>
@@ -274,7 +304,7 @@ export default async function StudentDetailPage({
                   )}
                 </div>
 
-                <form action={promoteStudent} className="space-y-3">
+                <form action={promoteStudentAction} className="space-y-3">
                   <input type="hidden" name="studentId" value={id} />
                   <input type="hidden" name="enrollmentId" value={lastEnrollment.id} />
                   <input type="hidden" name="seasonId" value={activeSeason?.id ?? ''} />
@@ -289,26 +319,19 @@ export default async function StudentDetailPage({
                       </>
                     ) : (
                       <select name="newCourseId" className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-white outline-none focus:border-[#8B5CF6]">
-                        {(courses ?? []).map((c: any) => (
+                        {courses.map((c) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
                     )}
                   </div>
                   {eligibility.eligible ? (
-                    <button
-                      type="submit"
-                      className="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]"
-                    >
+                    <button type="submit" className="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
                       <GraduationCap size={14} />
                       Promocionar a {nextCourse?.name ?? 'curso seleccionado'}
                     </button>
                   ) : (
-                    <button
-                      type="submit"
-                      disabled
-                      className="flex cursor-not-allowed items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-600"
-                    >
+                    <button type="submit" disabled className="flex cursor-not-allowed items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-600">
                       <GraduationCap size={14} />
                       No cumple requisitos
                     </button>
@@ -332,35 +355,27 @@ export default async function StudentDetailPage({
               <BookOpen size={14} /> Inscribir en curso
             </h3>
             <form action={assignToCourse} className="mt-3 space-y-3">
-              <input type="hidden" name="profileId" value={id} />
               <div>
-                <select name="courseId" required
-                  className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <select name="courseId" required className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                   <option value="">Seleccionar curso...</option>
-                  {(availableCourses ?? []).map((c: any) => (
+                  {availableCourses.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
               <div className="flex gap-2">
-                <select name="seasonId" required
-                  className="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  {(seasons ?? []).map((s: any) => (
+                <select name="seasonId" required className="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                  {seasons.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
-                <select name="type"
-                  className="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <select name="type" className="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                   <option value="student">Alumno</option>
                   <option value="player">Jugador</option>
                 </select>
               </div>
-              <button type="submit"
-                className="w-full rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-                Inscribir
-              </button>
             </form>
-            {(availableCourses ?? []).length === 0 && (
+            {availableCourses.length === 0 && (
               <p className="mt-2 text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>
             )}
           </div>

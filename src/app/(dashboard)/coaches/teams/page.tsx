@@ -1,110 +1,61 @@
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Users, Plus } from 'lucide-react'
-import { toSlug } from '@/lib/slug'
+import { createTeam, addMember, removeMember, updateMemberRole } from './actions'
 
-async function createTeam(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const name = formData.get('name') as string
-  const seasonId = formData.get('seasonId') as string
-  const profileId = formData.get('profileId') as string
+export default function CoachTeamsPage() {
+  const [teams, setTeams] = useState<any[]>([])
+  const [players, setPlayers] = useState<any[]>([])
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [membersByTeam, setMembersByTeam] = useState<Record<string, any[]>>({})
+  const [loading, setLoading] = useState(true)
 
-  const slug = toSlug(name)
-  if (!slug) return
+  useEffect(() => {
+    ;(async () => {
+      const supabase = createClient()
 
-  const { data: team } = await supabase.from('teams').insert({
-    name,
-    slug,
-    season_id: seasonId || null,
-  }).select('id').maybeSingle()
+      const { data: teamsData } = await supabase.from('teams').select('*, seasons(name)').order('name')
+      setTeams(teamsData ?? [])
 
-  if (!team) return
-  await supabase.from('team_members').insert({
-    team_id: team.id,
-    profile_id: profileId,
-    season_id: seasonId || null,
-    role: 'captain',
-    status: 'active',
-  })
+      const { data: playersData } = await supabase.from('profiles').select('id, full_name').in('role', ['player', 'student']).order('full_name')
+      setPlayers(playersData ?? [])
 
-  revalidatePath('/coaches/teams')
-  redirect('/coaches/teams')
-}
+      const { data: seasonsData } = await supabase.from('seasons').select('id, name, is_active')
+      setSeasons(seasonsData ?? [])
 
-async function addMember(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const teamId = formData.get('teamId') as string
-  const profileId = formData.get('profileId') as string
-  const role = formData.get('role') as string || 'player'
+      const teamIds = (teamsData ?? []).map((t) => t.id)
+      const { data: allMembers } = await supabase
+        .from('team_members')
+        .select('*, profiles(full_name, avatar_url, riot_id, rank)')
+        .in('team_id', teamIds.length > 0 ? teamIds : ['none'])
+        .order('role')
 
-  if (!teamId || !profileId) return
+      const byTeam: Record<string, any[]> = {}
+      for (const m of allMembers ?? []) {
+        if (!byTeam[m.team_id]) byTeam[m.team_id] = []
+        byTeam[m.team_id]!.push(m)
+      }
+      setMembersByTeam(byTeam)
+      setLoading(false)
+    })()
+  }, [])
 
-  // Get team's season_id
-  const { data: team } = await supabase
-    .from('teams')
-    .select('season_id')
-    .eq('id', teamId)
-    .maybeSingle()
-
-  // Check duplicate
-  const { data: existing } = await supabase
-    .from('team_members')
-    .select('id')
-    .eq('team_id', teamId)
-    .eq('profile_id', profileId)
-    .maybeSingle()
-
-  if (existing) return
-
-  const { error } = await supabase.from('team_members').insert({
-    team_id: teamId,
-    profile_id: profileId,
-    season_id: team?.season_id ?? null,
-    role,
-    status: 'active',
-  })
-
-  if (error) throw new Error(error.message)
-  revalidatePath('/coaches/teams')
-}
-
-async function removeMember(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  await supabase.from('team_members').delete().eq('id', formData.get('memberId') as string)
-  revalidatePath('/coaches/teams')
-}
-
-async function updateMemberRole(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const memberId = formData.get('memberId') as string
-  const role = formData.get('role') as string
-  await supabase.from('team_members').update({ role }).eq('id', memberId)
-  revalidatePath('/coaches/teams')
-}
-
-export default async function CoachTeamsPage() {
-  const supabase = await createClient()
-
-  const { data: teams } = await supabase.from('teams').select('*, seasons(name)').order('name')
-  const { data: players } = await supabase.from('profiles').select('id, full_name').in('role', ['player', 'student']).order('full_name')
-  const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
-
-  const teamIds = (teams ?? []).map((t) => t.id)
-  const { data: allMembers } = await supabase
-    .from('team_members')
-    .select('*, profiles(full_name, avatar_url, riot_id, rank)')
-    .in('team_id', teamIds.length > 0 ? teamIds : ['none'])
-    .order('role')
-
-  const membersByTeam: Record<string, typeof allMembers> = {}
-  for (const m of allMembers ?? []) {
-    if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
-    membersByTeam[m.team_id]!.push(m)
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-32 rounded bg-zinc-800" />
+          <div className="h-10 w-36 rounded-lg bg-zinc-800" />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-48 rounded-xl bg-zinc-800/50" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -1,38 +1,43 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { updateMaterial } from './actions'
 
-async function updateMaterial(formData: FormData) {
-  'use server'
-
-  const supabase = await createClient()
-  const materialId = formData.get('materialId') as string
-  const moduleId = formData.get('moduleId') as string
-  const courseId = formData.get('courseId') as string
-
-  await supabase.from('materials').update({
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    type: formData.get('type') as string,
-    url: formData.get('url') as string,
-    display_order: parseInt(formData.get('displayOrder') as string) || 0,
-  }).eq('id', materialId)
-
-  revalidatePath(`/coaches/courses/${courseId}/modules/${moduleId}`)
-  redirect(`/coaches/courses/${courseId}/modules/${moduleId}`)
-}
-
-export default async function EditMaterialPage({
+export default function EditMaterialPage({
   params,
 }: {
   params: Promise<{ id: string; mid: string; materialId: string }>
 }) {
-  const { id: courseId, mid: moduleId, materialId } = await params
-  const supabase = await createClient()
+  const { id: courseId, mid: moduleId, materialId } = use(params)
+  const [material, setMaterial] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: material } = await supabase.from('materials').select('*').eq('id', materialId).maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: material } = await supabase.from('materials').select('*').eq('id', materialId).maybeSingle()
+      setMaterial(material)
+      setLoading(false)
+    })()
+  }, [materialId])
+
+  if (loading) return (
+    <div className="mx-auto max-w-2xl animate-pulse space-y-4">
+      <div className="h-4 w-32 rounded bg-zinc-800" />
+      <div className="h-8 w-48 rounded bg-zinc-800" />
+      <div className="h-10 rounded-lg bg-zinc-800" />
+      <div className="h-16 rounded-lg bg-zinc-800" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-10 rounded-lg bg-zinc-800" />
+        <div className="h-10 rounded-lg bg-zinc-800" />
+      </div>
+      <div className="h-10 rounded-lg bg-zinc-800" />
+      <div className="h-10 w-40 rounded-lg bg-zinc-800" />
+    </div>
+  )
   if (!material) return <p className="text-zinc-400">Material no encontrado.</p>
 
   return (

@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, FileQuestion, Edit, Trash2, Loader } from 'lucide-react'
-import { fetchQuestions } from '@/features/questions/actions'
-import { removeQuestion } from '@/features/questions/actions'
+import { fetchQuestions, removeQuestion } from '@/features/questions/actions'
 
 const TYPE_LABELS: Record<string, string> = {
   multiple_choice: 'Opción múltiple',
@@ -11,16 +13,46 @@ const TYPE_LABELS: Record<string, string> = {
   open_ended: 'Desarrollo',
 }
 
-export default async function QuestionsPage({
+export default function QuestionsPage({
   searchParams,
 }: {
   searchParams: Promise<{ courseId?: string }>
 }) {
-  const { courseId } = await searchParams
-  const supabase = await createClient()
-  const questions = await fetchQuestions(courseId)
+  const { courseId } = use(searchParams)
+  const [questions, setQuestions] = useState<any[]>([])
+  const [courses, setCourses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: courses } = await supabase.from('courses').select('id, name').order('name')
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const questionsData = await fetchQuestions(courseId)
+      const { data: coursesData } = await supabase.from('courses').select('id, name').order('name')
+      setQuestions(questionsData)
+      setCourses(coursesData ?? [])
+      setLoading(false)
+    })()
+  }, [courseId])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="h-8 w-64 animate-pulse rounded bg-zinc-800" />
+            <div className="mt-1 h-4 w-48 animate-pulse rounded bg-zinc-800" />
+          </div>
+          <div className="h-10 w-40 animate-pulse rounded-lg bg-zinc-800" />
+        </div>
+        <div className="mb-4 h-10 w-64 animate-pulse rounded-lg bg-zinc-800" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -46,11 +78,12 @@ export default async function QuestionsPage({
             else url.searchParams.delete('courseId')
             window.location.href = url.toString()
           }}
+          defaultValue={courseId ?? ''}
           className="w-64 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"
         >
           <option value="">Todos los cursos</option>
-          {(courses ?? []).map((c) => (
-            <option key={c.id} value={c.id} selected={c.id === courseId}>{c.name}</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
       </form>
@@ -92,7 +125,7 @@ export default async function QuestionsPage({
                 >
                   <Edit size={14} />
                 </Link>
-                <form action={async () => { 'use server'; await removeQuestion(q.id) }}>
+                <form action={async () => { await removeQuestion(q.id) }}>
                   <button type="submit" className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-red-400">
                     <Trash2 size={14} />
                   </button>

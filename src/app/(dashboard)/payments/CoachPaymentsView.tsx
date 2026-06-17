@@ -1,28 +1,66 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import { getAllPayments } from '@/features/payments/actions'
 import PaymentStatusBadge from './PaymentStatusBadge'
 import PaymentActions from './PaymentActions'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function CoachPaymentsView() {
-  const supabase = await createClient()
-  const { data: seasons } = await supabase.from('seasons').select('id, name, is_active').order('start_date', { ascending: false })
-  const activeSeason = seasons?.find((s) => s.is_active)
+export default function CoachPaymentsView() {
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
+  const [totalStudents, setTotalStudents] = useState<number>(0)
+  const [totalPlayers, setTotalPlayers] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
 
-  const payments = await getAllPayments(activeSeason?.id)
-  const { count: totalStudents } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'student')
+  useEffect(() => {
+    (async () => {
+      const supabase = await createClient()
+      const { data: seasonsData } = await supabase.from('seasons').select('id, name, is_active').order('start_date', { ascending: false })
+      setSeasons(seasonsData ?? [])
+      const activeSeason = seasonsData?.find((s: any) => s.is_active)
 
-  const { count: totalPlayers } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'player')
+      const paymentsData = await getAllPayments(activeSeason?.id)
+      setPayments(paymentsData)
 
+      const { count: sCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'student')
+      setTotalStudents(sCount ?? 0)
+
+      const { count: pCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'player')
+      setTotalPlayers(pCount ?? 0)
+
+      setLoading(false)
+    })()
+  }, [])
+
+  const activeSeason = seasons.find((s) => s.is_active)
   const paid = payments.filter((p: any) => p.status === 'paid').length
   const pending = payments.filter((p: any) => p.status === 'pending').length
   const scholarships = payments.filter((p: any) => p.status === 'scholarship').length
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 h-8 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="glass rounded-xl p-4">
+              <div className="h-4 w-20 animate-pulse rounded bg-zinc-800" />
+              <div className="mt-2 h-8 w-12 animate-pulse rounded bg-zinc-800" />
+            </div>
+          ))}
+        </div>
+        <div className="h-64 w-full animate-pulse rounded-xl bg-zinc-800" />
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -31,7 +69,7 @@ export default async function CoachPaymentsView() {
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="glass rounded-xl p-4">
           <p className="text-xs text-zinc-500">Estudiantes</p>
-          <p className="text-2xl font-bold text-white">{totalStudents ?? 0}</p>
+          <p className="text-2xl font-bold text-white">{totalStudents}</p>
         </div>
         <div className="glass rounded-xl p-4">
           <p className="text-xs text-zinc-500">Pagados</p>

@@ -1,41 +1,45 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { parseDateTime } from '@/lib/parseDateTime'
+import { createEvaluation } from './actions'
 
-async function createEvaluation(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-
-  const { error } = await supabase.from('evaluations').insert({
-    module_id: formData.get('moduleId') as string,
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    max_score: parseFloat(formData.get('maxScore') as string) || 100,
-    weight: parseFloat(formData.get('weight') as string) || 0,
-    due_date: formData.get('dueDate') ? parseDateTime(formData.get('dueDate') as string) : null,
-  })
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath('/coaches/evaluations')
-  redirect('/coaches/evaluations')
-}
-
-export default async function NewEvaluationPage({
+export default function NewEvaluationPage({
   searchParams,
 }: {
   searchParams: Promise<{ moduleId?: string }>
 }) {
-  const { moduleId } = await searchParams
-  const supabase = await createClient()
+  const { moduleId } = use(searchParams)
+  const [modules, setModules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('id, name, course_id, courses(name)')
-    .order('course_id')
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('course_modules')
+        .select('id, name, course_id, courses(name)')
+        .order('course_id')
+      setModules(data ?? [])
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -60,7 +64,7 @@ export default async function NewEvaluationPage({
           <label className="block text-sm font-medium text-zinc-300">Módulo</label>
           <select name="moduleId" required defaultValue={moduleId ?? ''} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#111] px-4 py-2.5 text-white outline-none focus:border-[#8B5CF6]">
             <option value="">Seleccionar...</option>
-            {(modules ?? []).map((m: any) => (
+            {modules.map((m: any) => (
               <option key={m.id} value={m.id}>{m.courses?.name} / {m.name}</option>
             ))}
           </select>

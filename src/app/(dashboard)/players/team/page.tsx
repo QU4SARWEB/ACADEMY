@@ -1,44 +1,77 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Users, Swords, ArrowLeft } from 'lucide-react'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 
-export default async function PlayerTeamPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+export default function PlayerTeamPage() {
+  const [team, setTeam] = useState<any>(null)
+  const [members, setMembers] = useState<any[]>([])
+  const [paymentMap, setPaymentMap] = useState<Map<string, string>>(new Map())
+  const [userId, setUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: teamMembers } = await supabase
-    .from('team_members')
-    .select('*, teams(name, slug, created_at)')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
+  useEffect(() => {
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      setUserId(user.id)
 
-  const team = teamMembers?.[0]?.teams
+      const { data: teamMembers } = await supabase
+        .from('team_members')
+        .select('*, teams(name, slug, created_at)')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
 
-  const { data: members } = await supabase
-    .from('team_members')
-    .select('*, profiles(full_name, avatar_url, riot_id, rank)')
-    .eq('team_id', teamMembers?.[0]?.team_id ?? 'none')
-    .eq('status', 'active')
-    .order('role')
+      const teamData = teamMembers?.[0]?.teams
+      setTeam(teamData ?? null)
 
-  const memberIds = (members ?? []).map(m => m.profile_id)
-  const { data: activeSeason } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_active', true)
-    .maybeSingle()
-  const paymentMap = new Map<string, string>()
-  if (activeSeason && memberIds.length > 0) {
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('profile_id, status')
-      .eq('season_id', activeSeason.id)
-      .in('profile_id', memberIds)
-    for (const p of payments ?? []) {
-      paymentMap.set(p.profile_id, p.status)
-    }
+      const { data: membersData } = await supabase
+        .from('team_members')
+        .select('*, profiles(full_name, avatar_url, riot_id, rank)')
+        .eq('team_id', teamMembers?.[0]?.team_id ?? 'none')
+        .eq('status', 'active')
+        .order('role')
+      setMembers(membersData ?? [])
+
+      const memberIds = (membersData ?? []).map(m => m.profile_id)
+      const { data: activeSeason } = await supabase
+        .from('seasons')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle()
+      const pm = new Map<string, string>()
+      if (activeSeason && memberIds.length > 0) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('profile_id, status')
+          .eq('season_id', activeSeason.id)
+          .in('profile_id', memberIds)
+        for (const p of payments ?? []) {
+          pm.set(p.profile_id, p.status)
+        }
+      }
+      setPaymentMap(pm)
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-4 w-32 rounded bg-zinc-800" />
+        <div className="h-8 w-48 rounded bg-zinc-800" />
+        <div className="h-32 rounded-xl bg-zinc-800/50" />
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-zinc-800/50" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -74,7 +107,7 @@ export default async function PlayerTeamPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white">
                     {m.profiles?.full_name}
-                    {m.profile_id === user.id && <span className="ml-2 text-xs text-[#8B5CF6]">(Tú)</span>}
+                    {m.profile_id === userId && <span className="ml-2 text-xs text-[#8B5CF6]">(Tú)</span>}
                   </p>
                   <p className="text-xs text-zinc-500">
                     {m.role === 'captain' ? 'Capitán' : m.role === 'coach' ? 'Coach' : 'Jugador'}

@@ -1,25 +1,62 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
-import { FileText, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { FileText, ArrowLeft } from 'lucide-react'
 import { fetchExams } from '@/features/exams/actions'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function StudentExamsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function StudentExamsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [exams, setExams] = useState<any[]>([])
+  const [enrollment, setEnrollment] = useState<any>(null)
+  const [course, setCourse] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const exams = await fetchExams(id)
-  const publishedExams = exams.filter((e: any) => e.is_published)
+  useEffect(() => {
+    (async () => {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: enrollment } = await supabase
-    .from('enrollments')
-    .select('id')
-    .eq('course_id', id)
-    .eq('profile_id', user?.id)
-    .maybeSingle()
+      const examsData = await fetchExams(id)
+      setExams(examsData.filter((e: any) => e.is_published))
 
-  const { data: course } = await supabase.from('courses').select('name').eq('id', id).maybeSingle()
+      const { data: enr } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('course_id', id)
+        .eq('profile_id', user?.id)
+        .maybeSingle()
+      setEnrollment(enr)
+
+      const { data: c } = await supabase.from('courses').select('name').eq('id', id).maybeSingle()
+      setCourse(c)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+        <div className="mb-6 h-8 w-64 animate-pulse rounded bg-zinc-800" />
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass rounded-xl p-4">
+              <div className="h-5 w-48 animate-pulse rounded bg-zinc-800" />
+              <div className="mt-2 h-4 w-64 animate-pulse rounded bg-zinc-800" />
+              <div className="mt-2 flex gap-3">
+                <div className="h-3 w-20 animate-pulse rounded bg-zinc-800" />
+                <div className="h-3 w-20 animate-pulse rounded bg-zinc-800" />
+                <div className="h-3 w-20 animate-pulse rounded bg-zinc-800" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -31,10 +68,10 @@ export default async function StudentExamsPage({ params }: { params: Promise<{ i
       </div>
 
       <div className="space-y-3">
-        {publishedExams.length === 0 && (
+        {exams.length === 0 && (
           <p className="text-sm text-zinc-500">No hay exámenes disponibles.</p>
         )}
-        {publishedExams.map((exam: any) => (
+        {exams.map((exam: any) => (
           <div key={exam.id} className="glass rounded-xl p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">

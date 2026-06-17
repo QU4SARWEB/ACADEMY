@@ -1,13 +1,39 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft, Plus, X } from 'lucide-react'
 import { createNewQuestion } from '@/features/questions/actions'
 
-export default async function NewQuestionPage() {
-  const supabase = await createClient()
-  const { data: courses } = await supabase.from('courses').select('id, name').order('name')
+export default function NewQuestionPage() {
+  const [courses, setCourses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('courses').select('id, name').order('name')
+      setCourses(data ?? [])
+      setLoading(false)
+    })()
+  }, [])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+          <div className="mt-2 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="glass max-w-2xl rounded-xl p-6 space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -24,7 +50,7 @@ export default async function NewQuestionPage() {
           <select name="courseId" required
             className="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
             <option value="">Seleccionar curso...</option>
-            {(courses ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
 

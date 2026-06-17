@@ -1,15 +1,49 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, FileText, CheckCircle, XCircle, Eye } from 'lucide-react'
 import { fetchExams, publishExamAction } from '@/features/exams/actions'
 import { formatDate } from '@/lib/formatDate'
 
-export default async function CourseExamsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const exams = await fetchExams(id)
+export default function CourseExamsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [exams, setExams] = useState<any[]>([])
+  const [course, setCourse] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: course } = await supabase.from('courses').select('name').eq('id', id).maybeSingle()
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const [examsData, { data: courseData }] = await Promise.all([
+        fetchExams(id),
+        supabase.from('courses').select('name').eq('id', id).maybeSingle(),
+      ])
+      setExams(examsData)
+      setCourse(courseData)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="h-8 w-48 animate-pulse rounded bg-zinc-800" />
+            <div className="mt-1 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+          </div>
+          <div className="h-10 w-40 animate-pulse rounded-lg bg-zinc-800" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -66,7 +100,7 @@ export default async function CourseExamsPage({ params }: { params: Promise<{ id
                   <Eye size={16} />
                 </Link>
                 {!exam.is_published && (
-                  <form action={async () => { 'use server'; await publishExamAction(exam.id) }}>
+                  <form action={async () => { await publishExamAction(exam.id) }}>
                     <button type="submit" className="rounded-lg bg-green-500/10 px-3 py-1.5 text-xs text-green-400 transition hover:bg-green-500/20">
                       Publicar
                     </button>

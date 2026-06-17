@@ -1,14 +1,41 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { fetchQuestion } from '@/features/questions/actions'
-import { editQuestion } from '@/features/questions/actions'
-import { notFound } from 'next/navigation'
+import { fetchQuestion, editQuestion } from '@/features/questions/actions'
 
-export default async function EditQuestionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const question = await fetchQuestion(id)
-  if (!question) notFound()
+export default function EditQuestionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [question, setQuestion] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    (async () => {
+      const q = await fetchQuestion(id)
+      setQuestion(q)
+      setLoading(false)
+    })()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="mb-4 h-5 w-32 animate-pulse rounded bg-zinc-800" />
+          <div className="mt-2 h-8 w-48 animate-pulse rounded bg-zinc-800" />
+        </div>
+        <div className="glass max-w-2xl rounded-xl p-6 space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!question) return <p className="text-zinc-400">Pregunta no encontrada.</p>
 
   return (
     <div>
