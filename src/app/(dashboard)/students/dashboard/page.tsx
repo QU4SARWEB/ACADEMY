@@ -1,47 +1,73 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
 import Link from 'next/link'
 import { BookOpen, ClipboardList, Calendar, FileText, ArrowRight } from 'lucide-react'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
 import { formatDate } from '@/lib/formatDate'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
-export default async function StudentDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+interface Enrollment {
+  id: string
+  course_id: string
+  season_id: string
+  courses: { name: string; slug: string; display_order: number } | null
+  seasons: { name: string; id: string } | null
+}
 
-  const { data: enrollments } = await supabase
-    .from('enrollments')
-    .select('*, courses(name, slug, display_order), seasons(name, id)')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
-    .order('enrolled_at', { ascending: false })
+interface Task {
+  id: string
+  title: string
+  due_date: string
+  course_modules: { name: string }[] | null
+}
 
-  const seasonIds = [...new Set((enrollments ?? []).map(e => e.season_id))]
-  const paymentMap = new Map<string, string>()
-  if (seasonIds.length > 0) {
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('season_id, status')
-      .eq('profile_id', user.id)
-      .in('season_id', seasonIds)
-    for (const p of payments ?? []) {
-      paymentMap.set(p.season_id, p.status)
-    }
-  }
+export default function StudentDashboard() {
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [paymentMap, setPaymentMap] = useState<Map<string, string>>(new Map())
+  const [tasks, setTasks] = useState<Task[]>([])
 
-  const courseIds = enrollments?.map((e) => e.course_id) ?? []
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('enrollments')
+      .select('*, courses(name, slug, display_order), seasons(name, id)')
+      .eq('status', 'active')
+      .order('enrolled_at', { ascending: false })
+      .then(async ({ data: enrollData }) => {
+        const enr = enrollData ?? []
+        setEnrollments(enr)
 
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('id, title, due_date, course_modules(name)')
-    .in('course_id', courseIds.length > 0 ? courseIds : ['none'])
-    .gte('due_date', new Date().toISOString())
-    .order('due_date')
-    .limit(5)
+        const seasonIds = [...new Set(enr.map(e => e.season_id))]
+        if (seasonIds.length > 0) {
+          const { data: payments } = await supabase
+            .from('payments')
+            .select('season_id, status')
+            .in('season_id', seasonIds)
+          const pmap = new Map<string, string>()
+          for (const p of payments ?? []) {
+            pmap.set(p.season_id, p.status)
+          }
+          setPaymentMap(pmap)
+        }
+
+        const courseIds = enr.map(e => e.course_id)
+        if (courseIds.length > 0) {
+          const { data: taskData } = await supabase
+            .from('tasks')
+            .select('id, title, due_date, course_modules(name)')
+            .in('course_id', courseIds)
+            .gte('due_date', new Date().toISOString())
+            .order('due_date')
+            .limit(5)
+          setTasks(taskData ?? [])
+        }
+      })
+  }, [])
 
   const stats = [
-    { label: 'Cursos inscritos', value: enrollments?.length ?? 0, icon: BookOpen, color: 'text-purple-400' },
-    { label: 'Tareas pendientes', value: tasks?.length ?? 0, icon: ClipboardList, color: 'text-yellow-400' },
+    { label: 'Cursos inscritos', value: enrollments.length, icon: BookOpen, color: 'text-purple-400' },
+    { label: 'Tareas pendientes', value: tasks.length, icon: ClipboardList, color: 'text-yellow-400' },
   ]
 
   return (
@@ -67,10 +93,10 @@ export default async function StudentDashboard() {
             <Link href="/students/courses" className="text-xs text-[#8B5CF6] hover:underline">Ver todos</Link>
           </div>
           <div className="space-y-2">
-            {(enrollments ?? []).length === 0 && (
+            {enrollments.length === 0 && (
               <p className="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>
             )}
-            {(enrollments ?? []).map((enr) => (
+            {enrollments.map((enr) => (
               <Link
                 key={enr.id}
                 href={`/students/courses/${enr.course_id}`}
@@ -96,10 +122,10 @@ export default async function StudentDashboard() {
             <Link href="/students/tasks" className="text-xs text-[#8B5CF6] hover:underline">Ver todas</Link>
           </div>
           <div className="space-y-2">
-            {(tasks ?? []).length === 0 && (
+            {tasks.length === 0 && (
               <p className="text-sm text-zinc-500">No hay tareas pendientes.</p>
             )}
-            {(tasks ?? []).map((t) => (
+            {tasks.map((t) => (
               <Link
                 key={t.id}
                 href={`/students/tasks/${t.id}`}
@@ -108,7 +134,7 @@ export default async function StudentDashboard() {
                 <ClipboardList size={16} className="text-yellow-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white truncate">{t.title}</p>
-                  <p className="text-xs text-zinc-500">{(t.course_modules as any)?.name} · {formatDate(t.due_date)}</p>
+                  <p className="text-xs text-zinc-500">{t.course_modules?.[0]?.name} · {formatDate(t.due_date)}</p>
                 </div>
               </Link>
             ))}

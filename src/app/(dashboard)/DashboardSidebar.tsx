@@ -25,13 +25,11 @@ import {
   GraduationCap,
   Award,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
-  role: Role
-  userName: string
-  avatarUrl: string | null
-  hasDebt?: boolean
+  userId: string
 }
 
 interface NavItem {
@@ -63,10 +61,42 @@ const navItems: NavItem[] = [
   { label: 'Perfil', href: '/profile', icon: <Settings size={20} />, roles: ['student', 'player', 'coach'] },
 ]
 
-export default function DashboardSidebar({ role, userName, avatarUrl, hasDebt }: Props) {
+export default function DashboardSidebar({ userId }: Props) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [hasDebt, setHasDebt] = useState(false)
+  const [role, setRole] = useState<Role | null>(null)
+  const [userName, setUserName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('profiles')
+      .select('role, full_name, avatar_url')
+      .eq('id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return
+        setRole(data.role as Role)
+        setUserName(data.full_name)
+        setAvatarUrl(data.avatar_url)
+      })
+  }, [userId])
+
+  useEffect(() => {
+    if (!role || role === 'coach') return
+    const supabase = createClient()
+    supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', userId)
+      .in('status', ['pending', 'expired'])
+      .then(({ count }) => setHasDebt((count ?? 0) > 0))
+  }, [role, userId])
+
+  if (!role) return null
 
   const ROLE_TO_PREFIX: Record<string, string> = {
     coach: '/coaches',
@@ -85,11 +115,10 @@ export default function DashboardSidebar({ role, userName, avatarUrl, hasDebt }:
   const sidebarContent = (
     <>
       <div className="flex h-14 items-center border-b border-zinc-800 px-4">
-        {!collapsed && (
-          <Link href={`${basePath}/dashboard`} className="font-bold text-white" onClick={() => setMobileOpen(false)}>
-            <span className="text-[#8B5CF6]">Q</span>U4SAR
-          </Link>
-        )}
+        <Link href="/" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
+          <img src="/qu4sar.ico" alt="QU4SAR" className="h-8 w-8" />
+          {!collapsed && <span className="text-lg font-bold tracking-wider text-white">QU4SAR</span>}
+        </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="ml-auto hidden rounded-md p-1 text-zinc-500 hover:text-white md:block"

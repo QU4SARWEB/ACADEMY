@@ -1,50 +1,68 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
 import Link from 'next/link'
-import { Users, Swords, Calendar, Trophy, CreditCard, ArrowRight } from 'lucide-react'
+import { Users, Swords, Calendar, Trophy, CreditCard } from 'lucide-react'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import PaymentStatusBadge from '@/app/(dashboard)/payments/PaymentStatusBadge'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
-export default async function PlayerDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+interface Scrim {
+  id: string
+  rival: string
+  scheduled_at: string
+  result: string | null
+}
 
-  const { data: teamMembers } = await supabase
-    .from('team_members')
-    .select('*, teams(name, slug)')
-    .eq('profile_id', user.id)
-    .eq('status', 'active')
+export default function PlayerDashboard() {
+  const [teamName, setTeamName] = useState<string>('Sin equipo')
+  const [upcomingScrims, setUpcomingScrims] = useState<Scrim[]>([])
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
 
-  const teamId = teamMembers?.[0]?.team_id
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: teamMembers } = await supabase
+        .from('team_members')
+        .select('*, teams(name, slug)')
+        .eq('status', 'active')
+        .limit(1)
 
-  const { data: upcomingScrims } = await supabase
-    .from('scrims')
-    .select('*')
-    .eq('team_id', teamId ?? 'none')
-    .gte('scheduled_at', new Date().toISOString())
-    .order('scheduled_at')
-    .limit(5)
+      const team = teamMembers?.[0]
+      const teamId = team?.team_id
+      setTeamName(team?.teams?.name ?? 'Sin equipo')
 
-  const { data: activeSeason } = await supabase
-    .from('seasons')
-    .select('id')
-    .eq('is_active', true)
-    .maybeSingle()
+      if (teamId) {
+        supabase
+          .from('scrims')
+          .select('*')
+          .eq('team_id', teamId)
+          .gte('scheduled_at', new Date().toISOString())
+          .order('scheduled_at')
+          .limit(5)
+          .then(({ data }) => setUpcomingScrims(data ?? []))
+      }
 
-  let paymentStatus: string | null = null
-  if (activeSeason) {
-    const { data: payment } = await supabase
-      .from('payments')
-      .select('status')
-      .eq('profile_id', user.id)
-      .eq('season_id', activeSeason.id)
-      .maybeSingle()
-    if (payment) paymentStatus = payment.status
-  }
+      const { data: activeSeason } = await supabase
+        .from('seasons')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (activeSeason) {
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('status')
+          .eq('season_id', activeSeason.id)
+          .maybeSingle()
+        if (payment) setPaymentStatus(payment.status)
+      }
+    })()
+  }, [])
 
   const stats = [
-    { label: 'Equipo', value: teamMembers?.[0]?.teams?.name ?? 'Sin equipo', icon: Users, color: 'text-purple-400', href: '/players/team' },
-    { label: 'Próximos scrims', value: upcomingScrims?.length ?? 0, icon: Swords, color: 'text-green-400', href: '/players/scrims' },
+    { label: 'Equipo', value: teamName, icon: Users, color: 'text-purple-400', href: '/players/team' },
+    { label: 'Próximos scrims', value: upcomingScrims.length, icon: Swords, color: 'text-green-400', href: '/players/scrims' },
   ]
 
   return (
@@ -83,10 +101,10 @@ export default async function PlayerDashboard() {
             <Link href="/players/scrims" className="text-xs text-[#8B5CF6] hover:underline">Ver todos</Link>
           </div>
           <div className="space-y-2">
-            {(upcomingScrims ?? []).length === 0 && (
+            {upcomingScrims.length === 0 && (
               <p className="text-sm text-zinc-500">No hay scrims programados.</p>
             )}
-            {(upcomingScrims ?? []).map((scrim) => (
+            {upcomingScrims.map((scrim) => (
               <div key={scrim.id} className="glass flex items-center gap-3 rounded-lg px-4 py-3">
                 <Swords size={16} className="text-green-400" />
                 <div className="min-w-0 flex-1">

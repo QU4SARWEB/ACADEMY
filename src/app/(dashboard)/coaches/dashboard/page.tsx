@@ -1,24 +1,34 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { BookOpen, Users, Sword, ClipboardList, Calendar, GraduationCap } from 'lucide-react'
+import { BookOpen, Users, Sword, ClipboardList, Calendar } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-export default async function CoachDashboard() {
-  const supabase = await createClient()
+export default function CoachDashboard() {
+  const [stats, setStats] = useState([
+    { label: 'Estudiantes', value: 0, icon: Users, href: '/coaches/students', color: 'text-blue-400' },
+    { label: 'Jugadores', value: 0, icon: Sword, href: '/coaches/players', color: 'text-green-400' },
+    { label: 'Cursos activos', value: 0, icon: BookOpen, href: '/coaches/courses', color: 'text-purple-400' },
+    { label: 'Tareas', value: 0, icon: ClipboardList, href: '/coaches/tasks', color: 'text-yellow-400' },
+  ])
 
-  const [{ count: students }, { count: players }, { count: courses }, { count: tasks }] =
-    await Promise.all([
+  useEffect(() => {
+    const supabase = createClient()
+    Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'player'),
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('tasks').select('*', { count: 'exact', head: true }),
-    ])
-
-  const stats = [
-    { label: 'Estudiantes', value: students ?? 0, icon: Users, href: '/coaches/students', color: 'text-blue-400' },
-    { label: 'Jugadores', value: players ?? 0, icon: Sword, href: '/coaches/players', color: 'text-green-400' },
-    { label: 'Cursos activos', value: courses ?? 0, icon: BookOpen, href: '/coaches/courses', color: 'text-purple-400' },
-    { label: 'Tareas', value: tasks ?? 0, icon: ClipboardList, href: '/coaches/tasks', color: 'text-yellow-400' },
-  ]
+    ]).then(([students, players, courses, tasks]) => {
+      setStats([
+        { label: 'Estudiantes', value: students.count ?? 0, icon: Users, href: '/coaches/students', color: 'text-blue-400' },
+        { label: 'Jugadores', value: players.count ?? 0, icon: Sword, href: '/coaches/players', color: 'text-green-400' },
+        { label: 'Cursos activos', value: courses.count ?? 0, icon: BookOpen, href: '/coaches/courses', color: 'text-purple-400' },
+        { label: 'Tareas', value: tasks.count ?? 0, icon: ClipboardList, href: '/coaches/tasks', color: 'text-yellow-400' },
+      ])
+    })
+  }, [])
 
   return (
     <div>

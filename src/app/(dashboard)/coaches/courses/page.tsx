@@ -1,14 +1,30 @@
+'use client'
+
 import Link from 'next/link'
 import { Plus, ArrowLeft } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
-export default async function CoursesPage() {
-  const supabase = await createClient()
+interface Course {
+  id: string
+  name: string
+  min_rank: string
+  duration_months: number
+  is_active: boolean
+  seasons: { name: string } | null
+}
 
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('*, seasons(name)')
-    .order('display_order')
+export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('courses')
+      .select('*, seasons(name)')
+      .order('display_order')
+      .then(({ data }) => setCourses(data ?? []))
+  }, [])
 
   return (
     <div>
@@ -27,10 +43,10 @@ export default async function CoursesPage() {
       </div>
 
       <div className="space-y-3">
-        {(courses ?? []).length === 0 && (
+        {courses.length === 0 && (
           <p className="text-sm text-zinc-500">No hay cursos creados todavía.</p>
         )}
-        {(courses ?? []).map((course) => (
+        {courses.map((course) => (
           <Link
             key={course.id}
             href={`/coaches/courses/${course.id}`}

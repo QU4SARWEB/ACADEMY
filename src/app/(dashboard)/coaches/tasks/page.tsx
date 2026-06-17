@@ -1,22 +1,32 @@
+'use client'
+
 import Link from 'next/link'
 import { Plus, ArrowUpRight, ArrowLeft } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/formatDate'
+import { useEffect, useState } from 'react'
 
-const statusColors: Record<string, string> = {
-  pending: 'text-yellow-400',
-  submitted: 'text-blue-400',
-  reviewed: 'text-purple-400',
-  graded: 'text-green-400',
-  late: 'text-red-400',
+interface Task {
+  id: string
+  title: string
+  due_date: string
+  course_modules: {
+    name: string
+    courses: { name: string } | null
+  } | null
 }
 
-export default async function TasksPage() {
-  const supabase = await createClient()
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('*, course_modules(name, course_id, courses(name))')
-    .order('due_date', { ascending: false })
+export default function TasksPage() {
+  const [tasks, setTasks] = useState<Task[]>([])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('tasks')
+      .select('*, course_modules(name, course_id, courses(name))')
+      .order('due_date', { ascending: false })
+      .then(({ data }) => setTasks(data ?? []))
+  }, [])
 
   return (
     <div>
@@ -26,7 +36,7 @@ export default async function TasksPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-white">Tareas</h1>
-          <p className="mt-1 text-sm text-zinc-400">{tasks?.length ?? 0} tareas creadas</p>
+          <p className="mt-1 text-sm text-zinc-400">{tasks.length} tareas creadas</p>
         </div>
         <Link
           href="/coaches/tasks/new"
@@ -37,10 +47,10 @@ export default async function TasksPage() {
       </div>
 
       <div className="space-y-3">
-        {(tasks ?? []).length === 0 && (
+        {tasks.length === 0 && (
           <p className="text-sm text-zinc-500">No hay tareas creadas todavía.</p>
         )}
-        {(tasks ?? []).map((task) => (
+        {tasks.map((task) => (
           <Link
             key={task.id}
             href={`/coaches/tasks/${task.id}`}
