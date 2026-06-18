@@ -16,15 +16,21 @@ export function DashboardLayout(contentHtml: string): string {
   const style = `
     <style id="theme-vars">
       :root { --accent: ${accent}; --accent-rgb: ${hexToRgb(accent)}; --accent-bg: ${accent}20; }
-      ${bgUrl ? `body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; } #sidebar, .glass { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }` : ''}
+      ${bgUrl ? `
+        body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
+        #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
+        .glass, .content-card { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+      ` : ''}
     </style>`
 
   return `
     ${style}
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
-      <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8 ${bgUrl ? 'bg-transparent' : ''}">
-        ${contentHtml}
+      <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8 ${bgUrl ? '' : ''}">
+        <div class="${bgUrl ? 'content-card rounded-2xl p-4 md:p-6' : ''}">
+          ${contentHtml}
+        </div>
       </main>
     </div>`
 }
