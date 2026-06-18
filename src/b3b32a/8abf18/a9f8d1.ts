@@ -533,14 +533,15 @@ export async function initCoachExams(): Promise<void> {
     // ── Inline question builder for new exam ──
     let qIdx = document.querySelectorAll('.new-question-item').length
 
-    function createQOptRow(idx: number, placeholder = '', correctVal = ''): string {
+    function createQOptRow(idx: number, placeholder = '', correctVal = '', fixed = false): string {
+      const readonlyAttr = fixed ? ' readonly' : ''
       return `<div class="q-opt-row flex gap-2 items-center">
-        <input type="text" name="q_opt_text" placeholder="${escapeHtml(placeholder)}"
+        <input type="text" name="q_opt_text" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(placeholder)}"${readonlyAttr}
           class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" />
         <label class="flex items-center gap-1 text-xs text-zinc-400 whitespace-nowrap">
           <input type="checkbox" name="q_opt_correct" value="${correctVal}" class="h-3 w-3 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"> Correcta
         </label>
-        <button type="button" class="q-opt-remove text-zinc-600 hover:text-red-400 transition">&times;</button>
+        ${fixed ? '' : '<button type="button" class="q-opt-remove text-zinc-600 hover:text-red-400 transition">&times;</button>'}
       </div>`
     }
 
@@ -585,8 +586,8 @@ export async function initCoachExams(): Promise<void> {
         opts.style.display = show ? '' : 'none'
         if (addBtn) addBtn.style.display = show ? '' : 'none'
         if (type === 'true_false') {
-          opts.innerHTML = createQOptRow(parseInt(item.dataset.qidx || '0'), 'Verdadero', '0') +
-            createQOptRow(parseInt(item.dataset.qidx || '0'), 'Falso', '1')
+          opts.innerHTML = createQOptRow(parseInt(item.dataset.qidx || '0'), 'Verdadero', '0', true) +
+            createQOptRow(parseInt(item.dataset.qidx || '0'), 'Falso', '1', true)
           if (addBtn) addBtn.style.display = 'none'
         }
       }
@@ -808,14 +809,15 @@ export async function initCoachExams(): Promise<void> {
     const quickOptsList = document.getElementById('quick-options-list')
     const quickAddBtn = document.getElementById('quick-add-opt')
 
-    function createQuickOptRow(idx: number, placeholder = ''): string {
+    function createQuickOptRow(idx: number, placeholder = '', fixed = false): string {
+      const readonlyAttr = fixed ? ' readonly' : ''
       return `<div class="q-opt-row flex gap-2 items-center">
-        <input type="text" name="option_text" placeholder="${escapeHtml(placeholder)}"
+        <input type="text" name="option_text" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(placeholder)}"${readonlyAttr}
           class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
         <label class="flex items-center gap-1 text-xs text-zinc-400 whitespace-nowrap">
           <input type="checkbox" name="option_correct" value="${idx}" class="h-3 w-3 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"> Correcta
         </label>
-        <button type="button" class="q-opt-remove text-zinc-600 hover:text-red-400 transition">&times;</button>
+        ${fixed ? '' : '<button type="button" class="q-opt-remove text-zinc-600 hover:text-red-400 transition">&times;</button>'}
       </div>`
     }
 
@@ -824,7 +826,7 @@ export async function initCoachExams(): Promise<void> {
       const container = document.getElementById('quick-options-container')!
       container.style.display = (type === 'multiple_choice' || type === 'true_false') ? '' : 'none'
       if (type === 'true_false' && quickOptsList) {
-        quickOptsList.innerHTML = createQuickOptRow(0, 'Verdadero') + createQuickOptRow(1, 'Falso')
+        quickOptsList.innerHTML = createQuickOptRow(0, 'Verdadero', true) + createQuickOptRow(1, 'Falso', true)
         if (quickAddBtn) quickAddBtn.style.display = 'none'
       } else if (type === 'multiple_choice' && quickOptsList) {
         quickOptsList.innerHTML = createQuickOptRow(0, 'Opción A') + createQuickOptRow(1, 'Opción B')
