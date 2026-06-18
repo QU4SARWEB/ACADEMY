@@ -305,7 +305,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     btn.addEventListener('click', async () => {
       const enrollmentId = (btn as HTMLElement).dataset.enrollmentId
       if (!enrollmentId || !(await confirmDialog('¿Dar de baja esta inscripción?'))) return
-      const { error } = await supabase.from('enrollments').update({ status: 'dropped' }).eq('id', enrollmentId)
+      const { error } = await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
       if (error) toast('error', error.message)
       else mountCoachStudentDetail()
     })
