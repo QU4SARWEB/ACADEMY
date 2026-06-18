@@ -440,18 +440,20 @@ export async function initCoachExams(): Promise<void> {
 
         if (qType === 'multiple_choice' || qType === 'true_false') {
           const optRows = item.querySelectorAll<HTMLElement>('.q-opt-row')
-          optRows.forEach((row, j) => {
+          for (let j = 0; j < optRows.length; j++) {
+            const row = optRows[j]
             const optText = row.querySelector<HTMLInputElement>('input[name="q_opt_text"]')?.value
             const optCheck = row.querySelector<HTMLInputElement>('input[name="q_opt_correct"]')
-          const optCorrect = optCheck?.checked
-          if (!optText?.trim()) return
-          void supabase.from('question_options').insert({
-            question_id: question.id,
-            text: optText,
-            is_correct: optCorrect || false,
-            order_num: j,
-          })
-        })
+            const optCorrect = optCheck?.checked
+            if (!optText?.trim()) continue
+            const { error: optErr } = await supabase.from('question_options').insert({
+              question_id: question.id,
+              text: optText,
+              is_correct: optCorrect || false,
+              order_num: j,
+            })
+            if (optErr) console.error('Error saving option:', optErr)
+          }
         }
 
         await supabase.from('exam_questions').insert({
@@ -764,19 +766,20 @@ export async function initCoachExams(): Promise<void> {
 
       if (type === 'multiple_choice' || type === 'true_false') {
         const optRows = document.querySelectorAll('#quick-options-list .q-opt-row')
-        optRows.forEach((row, i) => {
+        for (let oi = 0; oi < optRows.length; oi++) {
+          const row = optRows[oi]
           const optText = row.querySelector<HTMLInputElement>('input[name="option_text"]')?.value
           const optCheck = row.querySelector<HTMLInputElement>('input[name="option_correct"]')
           const optCorrect = optCheck?.checked
-          if (!optText?.trim()) return
-          void supabase.from('question_options').insert({
+          if (!optText?.trim()) continue
+          await supabase.from('question_options').insert({
             question_id: newQ.id,
             text: optText,
             is_correct: optCorrect || false,
-            order_num: i,
-          })
+            order_num: oi,
           })
         }
+      }
 
       const { data: maxOrder2Raw } = await supabase
         .from('exam_questions')
