@@ -57,7 +57,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const navItems: Array<{ href: string; icon: string; label: string; show: boolean }> = [
     { href: `/${prefix}/dashboard`, icon: 'layoutDashboard', label: 'Dashboard', show: true },
     { href: `/${prefix}/profile`, icon: 'user', label: 'Perfil', show: true },
-    { href: '/payments', icon: 'dollarSign', label: 'Pagos', show: isStudent || isPlayer },
+    { href: '/payments', icon: 'dollarSign', label: 'Pagos', show: true },
     { href: `/${prefix}/schedule`, icon: 'calendar', label: 'Horario', show: isStudent || isPlayer },
     { href: `/${prefix}/tasks`, icon: 'clipboardList', label: 'Tareas', show: isStudent || isPlayer },
     { href: `/${prefix}/courses`, icon: 'bookOpen', label: 'Cursos', show: isStudent || isPlayer || isCoach },
