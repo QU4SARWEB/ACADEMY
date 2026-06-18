@@ -1,6 +1,7 @@
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { store } from '@/9ed39e/8cd892'
+import { supabase } from '@/304244'
 import type { Profile } from '@/d14a80'
 import { signOut } from '@/fa53b9/fa53b9'
 
@@ -23,6 +24,11 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const isStudent = role === 'student'
   const isPlayer = role === 'player'
 
+  // Fetch unread notification count (synchronous cookie-based approach)
+  let unreadNotifs = 0
+  const cachedUnread = (window as any).__unreadNotifs
+  if (cachedUnread !== undefined) unreadNotifs = cachedUnread
+
   const navItems: Array<{ href: string; icon: string; label: string; show: boolean }> = [
     { href: `/${prefix}/dashboard`, icon: 'layoutDashboard', label: 'Dashboard', show: true },
     { href: `/${prefix}/profile`, icon: 'user', label: 'Perfil', show: true },
@@ -34,7 +40,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: `/${prefix}/team`, icon: 'users', label: 'Equipo', show: isPlayer },
     { href: `/${prefix}/scrims`, icon: 'sword', label: 'Scrims', show: isPlayer || isCoach },
     { href: '/support', icon: 'info', label: 'Soporte', show: isStudent || isPlayer },
-    { href: '/notifications', icon: 'bell', label: 'Notificaciones', show: true },
+    { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show: true },
     { href: '/chat', icon: 'mail', label: 'Mensajes', show: true },
   ]
 
@@ -53,7 +59,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
     { href: '/chat', icon: 'mail', label: 'Mensajes' },
     { href: '/support', icon: 'info', label: 'Soporte' },
-    { href: '/notifications', icon: 'bell', label: 'Notificaciones' },
+    { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : '') },
     { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
   ]
 
@@ -111,5 +117,21 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 export function initSidebar(): void {
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await signOut()
+  })
+
+  // Fetch unread notification count
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session?.user?.id) return
+    supabase.from('notifications').select('id', { count: 'exact', head: true })
+      .eq('profile_id', session.user.id)
+      .eq('read', false)
+      .then(({ count }) => {
+        const n = count ?? 0
+        ;(window as any).__unreadNotifs = n
+        document.querySelectorAll('a[href="#/notifications"]').forEach((a) => {
+          const span = a.querySelector('span')
+          if (span) span.textContent = n > 0 ? 'Notificaciones (' + n + ')' : 'Notificaciones'
+        })
+      })
   })
 }
