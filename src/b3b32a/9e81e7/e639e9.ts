@@ -12,7 +12,7 @@ import type { Profile } from '@/d14a80'
 let selectedSeasonId: string | null = null
 
 const PAYPAL_CLIENT_ID = 'ATf2cJdAcCmle4LgS5r851NRL1k4bLiqhadr9ZSPxzeadYyMDmuGDHqj1g4FcpSZ3ULeisdy_m8JGvbS'
-const PAYPAL_SANDBOX = false // false = live, true = sandbox
+const PAYPAL_SANDBOX = true // false = live, true = sandbox
 
 export function renderPayments(): string {
   return `<div id="page-content">${Spinner()}</div>`
