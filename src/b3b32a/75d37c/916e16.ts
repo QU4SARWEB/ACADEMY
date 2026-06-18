@@ -167,7 +167,7 @@ export async function initStudentExamTake(): Promise<void> {
 
     const { data: exam } = await supabase
       .from('exams')
-      .select('*, course_modules(name), exam_questions(*, questions(*, question_options(*)))')
+      .select('*, course_modules(name), exam_questions(*, questions(*))')
       .eq('id', examId)
       .maybeSingle()
 
@@ -176,6 +176,21 @@ export async function initStudentExamTake(): Promise<void> {
       return
     }
     console.log('Exam loaded:', exam.title, 'questions:', exam.exam_questions?.length)
+
+    // Load question_options separately (deep nesting sometimes fails)
+    const questionIds = [...new Set((exam.exam_questions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
+    const { data: allOptions } = questionIds.length > 0
+      ? await supabase.from('question_options').select('*').in('question_id', questionIds).order('order_num')
+      : { data: [] }
+    const optionsByQ: Record<string, any[]> = {}
+    for (const opt of allOptions ?? []) {
+      if (!optionsByQ[opt.question_id]) optionsByQ[opt.question_id] = []
+      optionsByQ[opt.question_id].push(opt)
+    }
+    // Attach options to questions
+    for (const eq of exam.exam_questions ?? []) {
+      if (eq.questions) eq.questions.question_options = optionsByQ[eq.question_id] || []
+    }
 
     const { data: enrollment } = await supabase
       .from('enrollments')
