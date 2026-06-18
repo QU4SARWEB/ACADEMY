@@ -369,17 +369,12 @@ async function renderCoachPayments(): Promise<void> {
                   </td>
                   <td class="px-4 py-3 text-xs text-zinc-500">${p.paid_at ? formatDate(p.paid_at) : '—'}</td>
                   <td class="px-4 py-3">
-                    <div class="flex gap-1">
-                      <button class="pay-action rounded px-2 py-1 text-xs text-green-400 transition hover:bg-green-500/10 ${p.status === 'paid' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="paid" ${p.status === 'paid' ? 'disabled' : ''}>
-                        Pagado
-                      </button>
-                      <button class="pay-action rounded px-2 py-1 text-xs text-blue-400 transition hover:bg-blue-500/10 ${p.status === 'scholarship' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="scholarship" ${p.status === 'scholarship' ? 'disabled' : ''}>
-                        Beca
-                      </button>
-                      <button class="pay-action rounded px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10 ${p.status === 'expired' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="expired" ${p.status === 'expired' ? 'disabled' : ''}>
-                        Vencer
-                      </button>
-                    </div>
+                    <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(p.id)}">
+                      <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                      <option value="paid" ${p.status === 'paid' ? 'selected' : ''}>Pagado</option>
+                      <option value="scholarship" ${p.status === 'scholarship' ? 'selected' : ''}>Beca</option>
+                      <option value="expired" ${p.status === 'expired' ? 'selected' : ''}>Vencido</option>
+                    </select>
                   </td>
                 </tr>
               `).join('')
@@ -397,50 +392,18 @@ async function renderCoachPayments(): Promise<void> {
     renderCoachPayments()
   })
 
-  document.querySelectorAll('.pay-action').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const action = (btn as HTMLElement).dataset.action
-      const row = btn.closest('tr')
-      if (!row || !action) return
-      const paymentId = (row as HTMLElement).dataset.paymentId
+  document.querySelectorAll('.pay-status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const select = sel as HTMLSelectElement
+      const newStatus = select.value
+      const paymentId = select.dataset.paymentId
       if (!paymentId) return
 
-      const { data: oldPayment } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('id', paymentId)
-        .maybeSingle()
+      const updateData: Record<string, any> = { status: newStatus }
+      if (newStatus === 'paid') updateData.paid_at = new Date().toISOString()
+      if (newStatus !== 'paid') updateData.paid_at = null
 
-      if (!oldPayment) return
-
-      const updateData: Record<string, any> = { status: action }
-      if (action === 'paid') updateData.paid_at = new Date().toISOString()
-
-      const { error } = await supabase
-        .from('payments')
-        .update(updateData)
-        .eq('id', paymentId)
-
-      if (error) {
-        alert('Error: ' + error.message)
-        return
-      }
-
-      if (action === 'scholarship') {
-        await supabase.from('profiles').update({ scholarship: true }).eq('id', oldPayment.profile_id)
-        await supabase.from('payments').update({ status: 'scholarship' }).eq('profile_id', oldPayment.profile_id).eq('status', 'pending')
-      } else if (oldPayment.status === 'scholarship') {
-        const { count } = await supabase
-          .from('payments')
-          .select('*', { count: 'exact', head: true })
-          .eq('profile_id', oldPayment.profile_id)
-          .eq('status', 'scholarship')
-          .neq('id', paymentId)
-        if ((count ?? 0) === 0) {
-          await supabase.from('profiles').update({ scholarship: false }).eq('id', oldPayment.profile_id)
-        }
-      }
-
+      await supabase.from('payments').update(updateData).eq('id', paymentId)
       renderCoachPayments()
     })
   })
