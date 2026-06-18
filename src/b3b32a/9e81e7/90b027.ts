@@ -160,11 +160,102 @@ export async function initPublicProfile(): Promise<void> {
     const quote = profile.quote as string | null
     const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play' }
 
-    function embedUrl(url: string): string | null {
-      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
-      if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
-      const spMatch = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/)
-      if (spMatch) return `https://open.spotify.com/embed/${spMatch[1]}/${spMatch[2]}`
+    function ytId(url: string): string | null {
+      const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+      return m?.[1] ?? null
+    }
+    function spId(url: string): string | null {
+      const m = url.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/)
+      return m?.[1] ?? null
+    }
+    function ytThumb(id: string): string { return `https://img.youtube.com/vi/${id}/mqdefault.jpg` }
+
+    let miniPlayer: { item: any; paused: boolean } | null = null
+    let ytPlayerInst: any = null
+    let ytApiLoaded = false
+    const playerCallbacks: Array<() => void> = []
+
+    function loadYtApi(): Promise<void> {
+      if ((window as any).YT?.Player) return Promise.resolve()
+      if (ytApiLoaded) return new Promise(r => playerCallbacks.push(r))
+      ytApiLoaded = true
+      return new Promise(resolve => {
+        playerCallbacks.push(resolve)
+        ;(window as any).onYouTubeIframeAPIReady = () => {
+          const cbs = [...playerCallbacks]
+          playerCallbacks.length = 0
+          cbs.forEach(f => f())
+        }
+        const s = document.createElement('script')
+        s.src = 'https://www.youtube.com/iframe_api'
+        document.head.appendChild(s)
+      })
+    }
+
+    function playItem(item: any, btn: HTMLElement) {
+      const updateBtns = () => {
+        document.querySelectorAll('.playlist-play-btn').forEach(b => {
+          const idx = parseInt((b as HTMLElement).dataset.idx ?? '-1', 10)
+          if (idx === (playlist ?? []).indexOf(item)) {
+            (b as HTMLElement).innerHTML = miniPlayer?.paused ? Icon('play', 16) : Icon('pause', 16)
+          } else {
+            (b as HTMLElement).innerHTML = Icon('play', 16)
+          }
+        })
+      }
+
+      if (miniPlayer && miniPlayer.item === item) {
+        if (miniPlayer.paused) {
+          if (ytPlayerInst && ytId(item.url)) ytPlayerInst.playVideo()
+          miniPlayer.paused = false
+        } else {
+          if (ytPlayerInst && ytId(item.url)) ytPlayerInst.pauseVideo()
+          miniPlayer.paused = true
+        }
+        updateBtns()
+        return
+      }
+
+      miniPlayer = { item, paused: false }
+      const id = ytId(item.url)
+      if (id) {
+        loadYtApi().then(() => {
+          if (ytPlayerInst) {
+            ytPlayerInst.loadVideoById(id)
+          } else {
+            const container = document.getElementById('yt-player-wrap')!
+            container.innerHTML = '<div id="yt-player-inner"></div>'
+            ytPlayerInst = new (window as any).YT.Player('yt-player-inner', {
+              videoId: id,
+              width: 1, height: 1,
+              playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3 },
+              events: { onStateChange: (e: any) => {
+                if (e.data === (window as any).YT.PlayerState.PLAYING) { miniPlayer!.paused = false; updateBtns() }
+                if (e.data === (window as any).YT.PlayerState.PAUSED) { miniPlayer!.paused = true; updateBtns() }
+                if (e.data === (window as any).YT.PlayerState.ENDED) { miniPlayer = null; updateBtns() }
+              }}
+            })
+          }
+        })
+      } else if (spId(item.url)) {
+        const embed = document.getElementById('sp-player-wrap')!
+        embed.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${spId(item.url)}?utm_source=oembed" width="1" height="1" frameborder="0" allow="autoplay; encrypted-media" style="position:fixed;opacity:0.01;pointer-events:none"></iframe>`
+        miniPlayer!.paused = false
+      }
+      updateBtns()
+    }
+
+    async function fetchThumbnail(item: any): Promise<string | null> {
+      const id = ytId(item.url)
+      if (id) return ytThumb(id)
+      const sid = spId(item.url)
+      if (sid) {
+        try {
+          const r = await fetch(`https://open.spotify.com/oembed?url=https://open.spotify.com/track/${sid}`)
+          const d = await r.json()
+          return d.thumbnail_url || null
+        } catch { return null }
+      }
       return null
     }
 
@@ -332,28 +423,58 @@ export async function initPublicProfile(): Promise<void> {
         <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
           ${Icon('music', 14)} Playlist
         </h3>
-        <div class="space-y-3">
-          ${playlist.map((item: any) => {
-            const embed = embedUrl(item.url)
-            return embed ? `
-          <div class="rounded-lg border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/50">
-              <span class="text-sm font-medium text-zinc-300 truncate">${escapeHtml(item.title)}</span>
-              <span class="ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${item.url.includes('spotify') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${item.url.includes('spotify') ? 'Spotify' : 'YouTube'}</span>
+        <div id="playlist-tracks" class="space-y-3">
+          ${playlist.map((item: any, i: number) => {
+            const isYt = !!ytId(item.url)
+            const isSp = !!spId(item.url)
+            return isYt || isSp ? `
+          <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700" data-idx="${i}">
+            <div class="playlist-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+              <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 18)}</div>
             </div>
-            <div class="p-2">
-              <iframe src="${embed}" width="100%" height="80" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:8px"></iframe>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-zinc-300">${escapeHtml(item.title)}</p>
+              <span class="inline-block mt-0.5 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${isSp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${isSp ? 'Spotify' : 'YouTube'}</span>
             </div>
+            <button type="button" data-idx="${i}" class="playlist-play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:border-[#8B5CF6]/40 hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
           </div>` : ''
           }).join('')}
         </div>
-      </div>` : ''}
+      </div>
+      <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>
+      <div id="sp-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
 
     </div>
   </div>
 </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Init mini player for playlist
+    if (playlist && playlist.length > 0) {
+      (async () => {
+        const tracks = document.getElementById('playlist-tracks')
+        if (!tracks) return
+        const items = tracks.querySelectorAll<HTMLElement>('[data-idx]')
+        for (let i = 0; i < items.length; i++) {
+          const item = playlist[parseInt(items[i].dataset.idx ?? '0', 10)]
+          if (!item) continue
+          const thumb = await fetchThumbnail(item)
+          const thumbDiv = items[i].querySelector('.playlist-thumb')
+          if (thumbDiv && thumb) {
+            thumbDiv.innerHTML = `<img src="${escapeHtml(thumb)}" alt="" class="h-full w-full object-cover" loading="lazy" />`
+          }
+        }
+        tracks.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('.playlist-play-btn') as HTMLElement
+          if (!btn) return
+          const idx = parseInt(btn.dataset.idx ?? '-1', 10)
+          const item = playlist[idx]
+          if (!item) return
+          playItem(item, btn)
+        })
+      })()
+    }
 
     // Download as PNG
     async function downloadProfile() {
