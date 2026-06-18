@@ -288,6 +288,11 @@ export function initMouseAutoCalc(): void {
   sens.addEventListener('input', calc)
 }
 
+function ytId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+  return m?.[1] ?? null
+}
+
 export function initPlaylistEditor(): void {
   const container = document.getElementById('playlist-container')
   const urlInput = document.getElementById('playlist-url') as HTMLInputElement
@@ -301,7 +306,6 @@ export function initPlaylistEditor(): void {
     container!.innerHTML = items.map((item: any, i: number) => `
       <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <span class="min-w-0 flex-1 truncate text-sm text-zinc-300">${escapeHtml(item.title)}</span>
-        <span class="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-red-400">YouTube</span>
         <button type="button" data-index="${i}" class="playlist-remove shrink-0 rounded-lg px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10">Eliminar</button>
       </div>
     `).join('')
@@ -309,10 +313,28 @@ export function initPlaylistEditor(): void {
 
   render()
 
+  let fetchTimer: any = null
+  urlInput.addEventListener('input', () => {
+    clearTimeout(fetchTimer)
+    const url = urlInput.value.trim()
+    const id = ytId(url)
+    if (!id) return
+    if (titleInput.value.trim()) return
+    fetchTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`)
+        const d = await r.json()
+        if (d.title && !titleInput.value.trim()) titleInput.value = d.title
+      } catch {}
+    }, 600)
+  })
+
   addBtn.addEventListener('click', () => {
     const url = urlInput!.value.trim()
-    const title = titleInput!.value.trim()
-    if (!url || !title) return
+    const id = ytId(url)
+    if (!id) return
+    let title = titleInput!.value.trim()
+    if (!title) title = id
     const items: any[] = JSON.parse(hidden!.value || '[]')
     items.push({ url, title })
     hidden!.value = JSON.stringify(items)

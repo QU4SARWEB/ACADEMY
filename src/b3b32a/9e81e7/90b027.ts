@@ -228,7 +228,7 @@ export async function initPublicProfile(): Promise<void> {
               events: { onStateChange: (e: any) => {
                 if (e.data === (window as any).YT.PlayerState.PLAYING) { miniPlayer!.paused = false; updateBtns() }
                 if (e.data === (window as any).YT.PlayerState.PAUSED) { miniPlayer!.paused = true; updateBtns() }
-                if (e.data === (window as any).YT.PlayerState.ENDED) { miniPlayer = null; updateBtns() }
+                if (e.data === (window as any).YT.PlayerState.ENDED) { playNext() }
               }}
             })
           }
@@ -240,6 +240,24 @@ export async function initPublicProfile(): Promise<void> {
     async function fetchThumbnail(item: any): Promise<string | null> {
       const id = ytId(item.url)
       return id ? ytThumb(id) : null
+    }
+
+    function playNext() {
+      if (!miniPlayer || !playlist) { miniPlayer = null; updateAllBtns(); return }
+      const curIdx = playlist.indexOf(miniPlayer.item)
+      for (let i = curIdx + 1; i < playlist.length; i++) {
+        if (ytId(playlist[i].url)) {
+          const btn = document.querySelector<HTMLElement>(`.playlist-play-btn[data-idx="${i}"]`)
+          if (btn) { playItem(playlist[i], btn); return }
+        }
+      }
+      miniPlayer = null
+      updateAllBtns()
+    }
+    function updateAllBtns() {
+      document.querySelectorAll('.playlist-play-btn').forEach(b => {
+        (b as HTMLElement).innerHTML = Icon('play', 16)
+      })
     }
 
     const html = `
@@ -416,7 +434,6 @@ export async function initPublicProfile(): Promise<void> {
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-zinc-300">${escapeHtml(item.title)}</p>
-              <span class="inline-block mt-0.5 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-red-400">YouTube</span>
             </div>
             <button type="button" data-idx="${i}" class="playlist-play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:border-[#8B5CF6]/40 hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
           </div>` : ''
