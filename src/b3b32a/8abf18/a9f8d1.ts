@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
+import { renderToggle } from '@/4725dc/forms/Toggle'
 import { router } from '@/f3395c'
 
 export function renderCoachExams(): string {
@@ -103,6 +104,28 @@ export async function initCoachExams(): Promise<void> {
               <input name="due_date" type="datetime-local"
                 class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
             </div>
+            <div class="mb-4 grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1 block text-sm text-zinc-400">Tipo de evaluación</label>
+                <select name="eval_type"
+                  class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                  <option value="exam">Examen</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="practical">Práctica</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-zinc-400">Mes</label>
+                <select name="month"
+                  class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                  <option value="">— Sin mes —</option>
+                  ${Array.from({ length: 12 }, (_, i) => {
+                    const names = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+                    return `<option value="${i + 1}">${names[i]}</option>`
+                  }).join('')}
+                </select>
+              </div>
+            </div>
             <div class="mb-4 flex items-center gap-6">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input name="is_published" type="checkbox"
@@ -114,6 +137,7 @@ export async function initCoachExams(): Promise<void> {
                   class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
                 <span class="text-sm text-zinc-400">Aleatorio</span>
               </label>
+              ${renderToggle({ name: 'is_active', label: 'Activo', checked: true })}
             </div>
 
             <div class="mb-4 border-t border-zinc-700 pt-4">
@@ -251,6 +275,27 @@ export async function initCoachExams(): Promise<void> {
                       <input name="due_date" type="datetime-local" value="${exam.due_date ? exam.due_date.slice(0, 16) : ''}"
                         class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                     </div>
+                    <div class="mb-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="mb-1 block text-xs text-zinc-400">Tipo</label>
+                        <select name="eval_type"
+                          class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                          <option value="exam" ${exam.eval_type === 'exam' ? 'selected' : ''}>Examen</option>
+                          <option value="quiz" ${exam.eval_type === 'quiz' ? 'selected' : ''}>Quiz</option>
+                          <option value="practical" ${exam.eval_type === 'practical' ? 'selected' : ''}>Práctica</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs text-zinc-400">Mes</label>
+                        <select name="month"
+                          class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                          <option value="">— Sin mes —</option>
+                          ${['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((n, i) =>
+                            `<option value="${i + 1}" ${exam.month === i + 1 ? 'selected' : ''}>${n}</option>`
+                          ).join('')}
+                        </select>
+                      </div>
+                    </div>
                     <div class="mb-3 flex items-center gap-6">
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input name="is_published" type="checkbox" ${exam.is_published ? 'checked' : ''}
@@ -261,6 +306,11 @@ export async function initCoachExams(): Promise<void> {
                         <input name="shuffle" type="checkbox" ${exam.shuffle ? 'checked' : ''}
                           class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
                         <span class="text-xs text-zinc-400">Aleatorio</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input name="is_active" type="checkbox" ${exam.is_active !== false ? 'checked' : ''}
+                          class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
+                        <span class="text-xs text-zinc-400">Activo</span>
                       </label>
                     </div>
                     <p class="edit-exam-error mb-3 text-sm text-red-400 hidden"></p>
@@ -358,6 +408,9 @@ export async function initCoachExams(): Promise<void> {
         due_date: fd.get('due_date') || null,
         is_published: fd.get('is_published') === 'on',
         shuffle: fd.get('shuffle') === 'on',
+        eval_type: (fd.get('eval_type') as string) || 'exam',
+        month: fd.get('month') ? parseInt(fd.get('month') as string) : null,
+        is_active: fd.get('is_active') === 'on',
       }
 
       const { data: newExam, error } = await supabase.from('exams').insert(payload).select().maybeSingle()
@@ -442,9 +495,12 @@ export async function initCoachExams(): Promise<void> {
           max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
           weight: parseFloat(fd.get('weight') as string) || 0,
           due_date: fd.get('due_date') || null,
-          is_published: fd.get('is_published') === 'on',
-          shuffle: fd.get('shuffle') === 'on',
-        }
+        is_published: fd.get('is_published') === 'on',
+        shuffle: fd.get('shuffle') === 'on',
+        eval_type: (fd.get('eval_type') as string) || 'exam',
+        month: fd.get('month') ? parseInt(fd.get('month') as string) : null,
+        is_active: fd.get('is_active') === 'on',
+      }
 
         const { error } = await supabase.from('exams').update(payload).eq('id', examId)
         if (error) {
