@@ -71,7 +71,15 @@ export async function initStudentSchedule(): Promise<void> {
                   const endLocal = formatTimeWithTZ(s.end_time?.slice(0, 5), s.timezone)
                   const showTZ = s.timezone && s.timezone !== getLocalTZ()
                   return `
-                  <div class="flex items-center gap-4 rounded-lg bg-zinc-900/50 px-4 py-3 text-sm transition hover:bg-zinc-800/50">
+                  <button class="sched-item w-full text-left flex items-center gap-4 rounded-lg bg-zinc-900/50 px-4 py-3 text-sm transition hover:bg-zinc-800/50 cursor-pointer"
+                    data-title="${escapeHtml(s.title)}"
+                    data-start="${startLocal}"
+                    data-end="${endLocal}"
+                    data-type="${escapeHtml(s.type || '')}"
+                    data-location="${escapeHtml(s.location || '')}"
+                    data-week="${s.week_number || ''}"
+                    data-desc="${escapeHtml(s.description || '')}"
+                    data-tz="${showTZ ? 'local' : ''}">
                     <div class="flex flex-col items-center min-w-[52px]">
                       <span class="text-xs font-bold text-white">${startLocal}</span>
                       <span class="text-[10px] text-zinc-600">${endLocal}</span>
@@ -86,8 +94,8 @@ export async function initStudentSchedule(): Promise<void> {
                         ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
                       </div>
                     </div>
-                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate" title="${escapeHtml(s.description)}">${escapeHtml(s.description)}</span>` : ''}
-                  </div>`
+                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate">${escapeHtml(s.description)}</span>` : ''}
+                  </button>`
                 }).join('')}
               </div>
             </div>`
@@ -98,6 +106,51 @@ export async function initStudentSchedule(): Promise<void> {
     `
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Schedule item overlay
+    const modalHtml = `
+      <div id="sched-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" onclick="if(event.target===this)document.getElementById('sched-modal')?.classList.add('hidden')">
+        <div class="glass max-w-md w-full mx-4 rounded-xl p-6" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between mb-4">
+            <h3 id="sched-modal-title" class="font-heading text-lg font-bold text-white"></h3>
+            <button onclick="document.getElementById('sched-modal')?.classList.add('hidden')" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center gap-2 text-zinc-300"><span class="w-6">🕐</span> <span id="sched-modal-time"></span></div>
+            <div id="sched-modal-type" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">🏷️</span> <span></span></div>
+            <div id="sched-modal-location" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">📍</span> <span></span></div>
+            <div id="sched-modal-week" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">📅</span> <span></span></div>
+            <div id="sched-modal-desc" class="pt-2 border-t border-zinc-700 text-zinc-400 hidden"><p class="text-sm"></p></div>
+          </div>
+        </div>
+      </div>`
+    document.getElementById('page-content')!.insertAdjacentHTML('beforeend', modalHtml)
+
+    document.querySelectorAll('.sched-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLElement
+        document.getElementById('sched-modal-title')!.textContent = el.dataset.title || ''
+        document.getElementById('sched-modal-time')!.textContent = el.dataset.start + ' - ' + el.dataset.end
+
+        const typeEl = document.getElementById('sched-modal-type')!
+        if (el.dataset.type) { typeEl.classList.remove('hidden'); typeEl.querySelector('span:last-child')!.textContent = el.dataset.type }
+        else typeEl.classList.add('hidden')
+
+        const locEl = document.getElementById('sched-modal-location')!
+        if (el.dataset.location) { locEl.classList.remove('hidden'); locEl.querySelector('span:last-child')!.textContent = el.dataset.location }
+        else locEl.classList.add('hidden')
+
+        const weekEl = document.getElementById('sched-modal-week')!
+        if (el.dataset.week) { weekEl.classList.remove('hidden'); weekEl.querySelector('span:last-child')!.textContent = 'Semana ' + el.dataset.week }
+        else weekEl.classList.add('hidden')
+
+        const descEl = document.getElementById('sched-modal-desc')!
+        if (el.dataset.desc) { descEl.classList.remove('hidden'); descEl.querySelector('p')!.textContent = el.dataset.desc }
+        else descEl.classList.add('hidden')
+
+        document.getElementById('sched-modal')!.classList.remove('hidden')
+      })
+    })
 
     // Day buttons: show the selected day, hide others
     document.querySelectorAll('.day-btn').forEach((btn) => {

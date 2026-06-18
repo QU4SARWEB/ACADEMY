@@ -8,19 +8,19 @@ import { router } from '@/f3395c'
 const RANK_OPTIONS = ['Hierro', 'Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Ascendente', 'Inmortal', 'Radiante']
 
 const COURSE_TEMPLATES = [
-  { name: 'Rookie', months: 1, minRank: 'Hierro', order: 1,
+  { name: 'Rookie', months: 1, modules: 5, minRank: 'Hierro', order: 1,
     desc: 'Curso de nivel básico para jugadores con rango Hierro+. Fundamentos del juego, mecánicas básicas y conceptos esenciales.' },
-  { name: 'Trainee', months: 1, minRank: 'Bronce', order: 2,
+  { name: 'Trainee', months: 1, modules: 5, minRank: 'Bronce', order: 2,
     desc: 'Curso de nivel intermedio-bajo para jugadores Bronce+. Técnicas avanzadas, comunicación y trabajo en equipo.' },
-  { name: 'Amateur', months: 1, minRank: 'Plata', order: 3,
+  { name: 'Amateur', months: 1, modules: 5, minRank: 'Plata', order: 3,
     desc: 'Curso de nivel intermedio para jugadores Plata+. Estrategias, macrogestión y análisis de partidas.' },
-  { name: 'Competitor', months: 1, minRank: 'Oro', order: 4,
+  { name: 'Competitor', months: 1, modules: 5, minRank: 'Oro', order: 4,
     desc: 'Curso de nivel intermedio-alto para jugadores Oro+. Tácticas competitivas, roles especializados y draft.' },
-  { name: 'Elite', months: 1, minRank: 'Platino', order: 5,
+  { name: 'Elite', months: 1, modules: 5, minRank: 'Platino', order: 5,
     desc: 'Curso de nivel avanzado para jugadores Platino+. Alto rendimiento, liderazgo y ejecución estratégica.' },
-  { name: 'Semi-Pro', months: 1, minRank: 'Diamante', order: 6,
+  { name: 'Semi-Pro', months: 1, modules: 5, minRank: 'Diamante', order: 6,
     desc: 'Curso de nivel semi-profesional para jugadores Diamante+. Preparación para escena competitiva profesional.' },
-  { name: 'Pro', months: 1, minRank: 'Ascendente', order: 7,
+  { name: 'Pro', months: 1, modules: 5, minRank: 'Ascendente', order: 7,
     desc: 'Curso de nivel profesional para jugadores Ascendente+. Coaching de élite, análisis profundo y rendimiento máximo.' },
 ]
 
@@ -160,12 +160,14 @@ export async function initCoachNewCourse(): Promise<void> {
         return
       }
 
-      // Auto-create modules
+      // Auto-create modules (use template module count if available)
+      const selectedTemplate = COURSE_TEMPLATES.find((t) => t.name === name)
+      const moduleCount = selectedTemplate?.modules ?? duration
       if (createMods && course) {
-        const modules = Array.from({ length: duration }, (_, i) => ({
+        const modules = Array.from({ length: moduleCount }, (_, i) => ({
           course_id: course.id,
-          name: `Mes ${i + 1}`,
-          description: `Módulo del mes ${i + 1}`,
+          name: `Módulo ${i + 1}`,
+          description: `Módulo ${i + 1} de ${moduleCount}`,
           month_number: i + 1,
           display_order: i + 1,
         }))
@@ -173,7 +175,7 @@ export async function initCoachNewCourse(): Promise<void> {
         if (modErr) console.error('Error creating modules:', modErr)
       }
 
-      toast('success', 'Curso creado correctamente' + (createMods && course ? ` con ${duration} módulos` : ''))
+      toast('success', 'Curso creado correctamente' + (createMods && course ? ` con ${moduleCount} módulos` : ''))
       router.navigate('/coaches/courses')
     })
   } catch (err) {
