@@ -184,6 +184,7 @@ export async function initCoachSchedules(): Promise<void> {
       document.getElementById('schedule-create-form')?.addEventListener('submit', async (e) => {
         e.preventDefault()
         const fd = new FormData(e.target as HTMLFormElement)
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'
         const { error } = await supabase.from('schedules').insert({
           season_id: fd.get('seasonId') as string,
           title: fd.get('title') as string,
@@ -192,6 +193,7 @@ export async function initCoachSchedules(): Promise<void> {
           start_time: fd.get('startTime') as string,
           end_time: fd.get('endTime') as string,
           type: (fd.get('type') as string) || null,
+          timezone: tz,
           location: (fd.get('location') as string) || null,
           description: (fd.get('description') as string) || null,
         })
