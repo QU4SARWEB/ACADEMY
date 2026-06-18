@@ -1,0 +1,294 @@
+import { Spinner } from '@/4725dc/a14fa2'
+import { supabase } from '@/304244'
+import { escapeHtml } from '@/2b3583/e0ebc3'
+import { formatDate } from '@/2b3583/6b239c'
+import { Icon } from '@/2b3583/bd2119'
+import { store } from '@/9ed39e/8cd892'
+import type { Profile } from '@/d14a80'
+
+let selectedSeasonId: string | null = null
+
+export function renderPayments(): string {
+  return `<div id="page-content">${Spinner()}</div>`
+}
+
+export async function initPayments(): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) return
+
+    const profile = store.get<Profile>('profile')
+
+    if (profile?.role === 'coach') {
+      await renderCoachPayments()
+    } else {
+      await renderStudentPayments(session.user.id)
+    }
+  } catch (err) {
+    console.error(err)
+    document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar pagos</p>'
+  }
+}
+
+async function renderStudentPayments(userId: string): Promise<void> {
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('*, seasons(name)')
+    .eq('profile_id', userId)
+    .order('created_at', { ascending: false })
+
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('*, courses(name), seasons(name, id)')
+    .eq('profile_id', userId)
+    .eq('status', 'active')
+    .order('enrolled_at', { ascending: false })
+
+  const statusColors: Record<string, string> = { pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
+
+  const html = `
+    <div class="mb-6">
+      <h1 class="font-heading text-2xl font-bold text-white">Pagos</h1>
+      <p class="mt-1 text-sm text-zinc-500">Historial de pagos y facturación</p>
+    </div>
+
+    ${(enrollments ?? []).length > 0 ? `
+      <div class="mb-8 space-y-3">
+        <h2 class="font-heading text-lg font-bold text-white">Cursos activos</h2>
+        ${(enrollments ?? []).map((e: any) => `
+          <div class="glass rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
+              <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')}</p>
+            </div>
+            <span class="text-xs ${statusColors[e.type === 'student' ? 'paid' : 'pending']}">${e.type === 'student' ? 'Activo' : 'Pendiente'}</span>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+    <div class="space-y-3">
+      <h2 class="font-heading text-lg font-bold text-white">Historial de pagos</h2>
+      ${(payments ?? []).length === 0
+        ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
+        : (payments ?? []).map((p: any) => `
+          <div class="glass rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
+              <p class="text-xs text-zinc-500">${p.due_date ? formatDate(p.due_date) : ''} ${p.paid_at ? '· Pagado: ' + formatDate(p.paid_at) : ''}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs ${statusColors[p.status] || 'text-zinc-500'}">${escapeHtml(p.status)}</span>
+              ${p.amount ? `<p class="text-xs text-zinc-400">$${p.amount}</p>` : ''}
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>`
+
+  document.getElementById('page-content')!.innerHTML = html
+}
+
+async function renderCoachPayments(): Promise<void> {
+  const { data: seasons } = await supabase
+    .from('seasons')
+    .select('id, name, is_active')
+    .order('start_date', { ascending: false })
+
+  const activeSeason = seasons?.find((s: any) => s.is_active)
+  const filterSeasonId = selectedSeasonId || activeSeason?.id || null
+
+  let paymentsQuery = supabase
+    .from('payments')
+    .select('*, seasons(name), profiles(full_name, email, avatar_url)')
+    .order('created_at', { ascending: false })
+
+  if (filterSeasonId) {
+    paymentsQuery = paymentsQuery.eq('season_id', filterSeasonId)
+  }
+
+  const { data: payments } = await paymentsQuery
+
+  const { count: sCount } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'student')
+
+  const { count: pCount } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'player')
+
+  const paymentList = payments ?? []
+  const totalStudents = (sCount ?? 0) + (pCount ?? 0)
+  const paidCount = paymentList.filter((p: any) => p.status === 'paid').length
+  const pendingCount = paymentList.filter((p: any) => p.status === 'pending').length
+  const scholarshipCount = paymentList.filter((p: any) => p.status === 'scholarship').length
+
+  const statusColors: Record<string, string> = {
+    pending: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+    paid: 'text-green-400 bg-green-500/10 border-green-500/30',
+    scholarship: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+    expired: 'text-red-400 bg-red-500/10 border-red-500/30',
+  }
+
+  const seasonOptions = (seasons ?? []).map((s: any) =>
+    `<option value="${escapeHtml(s.id)}" ${s.id === filterSeasonId ? 'selected' : ''}>${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
+  ).join('')
+
+  const html = `
+    <div class="mb-6">
+      <h1 class="font-heading text-2xl font-bold text-white">Gestión de Pagos</h1>
+      <p class="mt-1 text-sm text-zinc-500">Panel de administración de pagos</p>
+    </div>
+
+    <div class="mb-4">
+      <select id="season-filter" class="w-full max-w-xs rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+        <option value="">Todas las temporadas</option>
+        ${seasonOptions}
+      </select>
+    </div>
+
+    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="glass rounded-xl p-4 text-center">
+        <p class="text-2xl font-bold text-white">${totalStudents}</p>
+        <p class="text-xs text-zinc-500">Total estudiantes/players</p>
+      </div>
+      <div class="glass rounded-xl p-4 text-center">
+        <p class="text-2xl font-bold text-green-400">${paidCount}</p>
+        <p class="text-xs text-zinc-500">Pagados</p>
+      </div>
+      <div class="glass rounded-xl p-4 text-center">
+        <p class="text-2xl font-bold text-yellow-400">${pendingCount}</p>
+        <p class="text-xs text-zinc-500">Pendientes</p>
+      </div>
+      <div class="glass rounded-xl p-4 text-center">
+        <p class="text-2xl font-bold text-blue-400">${scholarshipCount}</p>
+        <p class="text-xs text-zinc-500">Becas</p>
+      </div>
+    </div>
+
+    <div class="glass rounded-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-zinc-800">
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Estudiante</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Temporada</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Tipo</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Monto</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Estado</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Comprobante</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Pagado</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${paymentList.length === 0
+              ? '<tr><td colspan="8" class="px-4 py-8 text-center text-zinc-500">No hay pagos registrados.</td></tr>'
+              : paymentList.map((p: any) => `
+                <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20" data-payment-id="${escapeHtml(p.id)}">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
+                        ${p.profiles?.avatar_url
+                          ? `<img src="${escapeHtml(p.profiles.avatar_url)}" alt="" class="h-full w-full object-cover" />`
+                          : (p.profiles?.full_name?.charAt(0) ?? '?')
+                        }
+                      </div>
+                      <div>
+                        <p class="font-medium text-white">${escapeHtml(p.profiles?.full_name || 'Desconocido')}</p>
+                        <p class="text-xs text-zinc-500">${escapeHtml(p.profiles?.email || '')}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-zinc-300">${escapeHtml(p.seasons?.name || '—')}</td>
+                  <td class="px-4 py-3 capitalize text-zinc-300">${escapeHtml(p.type || '—')}</td>
+                  <td class="px-4 py-3 text-zinc-300">${p.amount ? '$' + p.amount : '—'}</td>
+                  <td class="px-4 py-3">
+                    <span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[p.status] || 'text-zinc-500'}">
+                      ${escapeHtml(p.status)}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    ${p.receipt_url
+                      ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
+                      : '<span class="text-xs text-zinc-600">—</span>'
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-xs text-zinc-500">${p.paid_at ? formatDate(p.paid_at) : '—'}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex gap-1">
+                      <button class="pay-action rounded px-2 py-1 text-xs text-green-400 transition hover:bg-green-500/10 ${p.status === 'paid' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="paid" ${p.status === 'paid' ? 'disabled' : ''}>
+                        Pagado
+                      </button>
+                      <button class="pay-action rounded px-2 py-1 text-xs text-blue-400 transition hover:bg-blue-500/10 ${p.status === 'scholarship' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="scholarship" ${p.status === 'scholarship' ? 'disabled' : ''}>
+                        Beca
+                      </button>
+                      <button class="pay-action rounded px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10 ${p.status === 'expired' ? 'opacity-30 cursor-not-allowed' : ''}" data-action="expired" ${p.status === 'expired' ? 'disabled' : ''}>
+                        Vencer
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>`
+
+  document.getElementById('page-content')!.innerHTML = html
+
+  document.getElementById('season-filter')?.addEventListener('change', (e) => {
+    const val = (e.target as HTMLSelectElement).value
+    selectedSeasonId = val || null
+    renderCoachPayments()
+  })
+
+  document.querySelectorAll('.pay-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = (btn as HTMLElement).dataset.action
+      const row = btn.closest('tr')
+      if (!row || !action) return
+      const paymentId = (row as HTMLElement).dataset.paymentId
+      if (!paymentId) return
+
+      const { data: oldPayment } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .maybeSingle()
+
+      if (!oldPayment) return
+
+      const updateData: Record<string, any> = { status: action }
+      if (action === 'paid') updateData.paid_at = new Date().toISOString()
+
+      const { error } = await supabase
+        .from('payments')
+        .update(updateData)
+        .eq('id', paymentId)
+
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+
+      if (action === 'scholarship') {
+        await supabase.from('profiles').update({ scholarship: true }).eq('id', oldPayment.profile_id)
+      } else if (oldPayment.status === 'scholarship') {
+        const { count } = await supabase
+          .from('payments')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', oldPayment.profile_id)
+          .eq('status', 'scholarship')
+          .neq('id', paymentId)
+        if ((count ?? 0) === 0) {
+          await supabase.from('profiles').update({ scholarship: false }).eq('id', oldPayment.profile_id)
+        }
+      }
+
+      renderCoachPayments()
+    })
+  })
+}

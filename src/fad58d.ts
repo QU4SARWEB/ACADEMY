@@ -1,0 +1,196 @@
+import { supabase } from '@/304244'
+import { router } from '@/f3395c'
+import { authGuard, getProfile } from '@/fa53b9/fa53b9'
+import { initToastContainer } from '@/4725dc/4f2900'
+import { FullPageSpinner } from '@/4725dc/a14fa2'
+
+import '@/bc4150/0c54ed.css'
+
+import { renderLogin, mountLogin } from '@/fa53b9/d56b69'
+import { renderRegister, mountRegister } from '@/fa53b9/9de4a9'
+import { renderResetPassword, mountResetPassword } from '@/fa53b9/037c60'
+import { renderHome, mountHome } from '@/b3b32a/106a6c'
+import { renderPublicProfile, initPublicProfile } from '@/b3b32a/9e81e7/90b027'
+import { renderNotFound } from '@/b3b32a/9e81e7/803f10'
+
+import { renderCoachDashboard, initCoachDashboard } from '@/b3b32a/8abf18/4866e3'
+import { renderCoachCourses, mountCoachCourses } from '@/b3b32a/8abf18/0dfcce'
+import { renderCoachCourseDetail, mountCoachCourseDetail } from '@/b3b32a/8abf18/ec35bd'
+import { renderCoachNewCourse, initCoachNewCourse } from '@/b3b32a/8abf18/d74f85'
+import { renderCoachProfile, initCoachProfile } from '@/b3b32a/8abf18/7d9748'
+import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
+import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/2cb1ad'
+import { renderCoachEvaluations, initCoachEvaluations } from '@/b3b32a/8abf18/a116c0'
+import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
+import { renderCoachNewSchedule, initCoachNewSchedule } from '@/b3b32a/8abf18/b41a3a'
+import { renderCoachSeasons, initCoachSeasons } from '@/b3b32a/8abf18/85ed15'
+import { renderCoachNewSeason, initCoachNewSeason } from '@/b3b32a/8abf18/3ca400'
+import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
+import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
+import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
+import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/64c62c'
+import { renderCoachPromotions, initCoachPromotions } from '@/b3b32a/8abf18/ea6aeb'
+import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
+import { renderCoachQuestions, initCoachQuestions } from '@/b3b32a/8abf18/478669'
+import { renderCoachModuleDetail, initCoachModuleDetail } from '@/b3b32a/8abf18/201980'
+import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
+import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
+import { renderCoachNewEvaluation, initCoachNewEvaluation } from '@/b3b32a/8abf18/7528d8'
+import { renderCoachEvaluationDetail, initCoachEvaluationDetail } from '@/b3b32a/8abf18/1868f3'
+import { renderCoachNewQuestion, initCoachNewQuestion } from '@/b3b32a/8abf18/e3b770'
+import { renderCoachQuestionDetail, initCoachQuestionDetail } from '@/b3b32a/8abf18/2784c7'
+
+import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
+import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
+import { renderStudentProfile, initStudentProfile } from '@/b3b32a/75d37c/7d9748'
+import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/2cb1ad'
+import { renderStudentTaskDetail, initStudentTaskDetail } from '@/b3b32a/75d37c/2f2d16'
+import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/fce448'
+import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
+import { renderStudentEvaluations, initStudentEvaluations } from '@/b3b32a/75d37c/a116c0'
+import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
+import { renderStudentEvalDetail, initStudentEvalDetail } from '@/b3b32a/75d37c/1868f3'
+import { renderStudentExamList, initStudentExamList } from '@/b3b32a/75d37c/e1760f'
+import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e16'
+
+import { renderPlayerDashboard, initPlayerDashboard } from '@/b3b32a/a2bbab/4866e3'
+import { renderPlayerProfile, initPlayerProfile } from '@/b3b32a/a2bbab/7d9748'
+import { renderPlayerSchedule, initPlayerSchedule } from '@/b3b32a/a2bbab/799855'
+import { renderPlayerScrims, initPlayerScrims } from '@/b3b32a/a2bbab/634637'
+import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
+
+import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
+import { renderNotifications, initNotifications } from '@/b3b32a/9e81e7/f37bd2'
+import { renderMail, initMail } from '@/b3b32a/9e81e7/b83a88'
+import { renderLogs, initLogs } from '@/b3b32a/9e81e7/2165e4'
+
+router.setBeforeNavigate(async () => authGuard())
+
+// Public routes
+router.on('/', async () => {
+  document.getElementById('app')!.innerHTML = renderHome()
+  mountHome()
+})
+
+router.on('/login', async () => {
+  document.getElementById('app')!.innerHTML = renderLogin()
+  mountLogin()
+})
+
+router.on('/register', async () => {
+  document.getElementById('app')!.innerHTML = renderRegister()
+  mountRegister()
+})
+
+router.on('/reset-password', async () => {
+  document.getElementById('app')!.innerHTML = renderResetPassword()
+  mountResetPassword()
+})
+
+router.on('/p/:slug', async () => {
+  document.getElementById('app')!.innerHTML = renderPublicProfile()
+  initPublicProfile()
+})
+
+// Dashboard render helper
+function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void>) | (() => void)): void {
+  router.on(path, async () => {
+    const app = document.getElementById('app')!
+    app.innerHTML = FullPageSpinner()
+    try {
+      await getProfile()
+      const { DashboardLayout, initSidebar } = await import('@/34d59f/dc7161')
+      app.innerHTML = DashboardLayout(renderFn())
+      initToastContainer()
+      initSidebar()
+      if (initFn) await initFn()
+    } catch (err) {
+      console.error('Error rendering dashboard:', err)
+      app.innerHTML = `<div class="flex flex-col items-center justify-center min-h-screen p-8 text-center">
+        <p class="text-red-400 text-sm">Error al cargar la página</p>
+        <button onclick="location.reload()" class="mt-4 text-xs text-zinc-500 hover:text-white underline">Reintentar</button>
+      </div>`
+    }
+  })
+}
+
+// Coach routes
+dash('/coaches/dashboard', () => renderCoachDashboard(), initCoachDashboard)
+dash('/coaches/courses', () => renderCoachCourses(), mountCoachCourses)
+dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
+dash('/coaches/courses/new', () => renderCoachNewCourse(), initCoachNewCourse)
+dash('/coaches/courses/:id/edit', () => '<p class="text-zinc-500">Editar curso (próximamente)</p>')
+dash('/coaches/courses/:id/exams', () => '<p class="text-zinc-500">Exámenes (próximamente)</p>')
+dash('/coaches/courses/:id/attendance', () => renderCoachAttendance(), initCoachAttendance)
+dash('/coaches/courses/:id/grades', () => '<p class="text-zinc-500">Notas (próximamente)</p>')
+dash('/coaches/courses/:id/modules/new', () => '<p class="text-zinc-500">Nuevo módulo (próximamente)</p>')
+dash('/coaches/courses/:id/modules/:mid', () => renderCoachModuleDetail(), initCoachModuleDetail)
+dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
+dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
+dash('/coaches/students/:id', () => renderCoachStudentDetail(), mountCoachStudentDetail)
+dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
+dash('/coaches/tasks/new', () => renderCoachNewTask(), initCoachNewTask)
+dash('/coaches/tasks/:id', () => renderCoachTaskDetail(), initCoachTaskDetail)
+dash('/coaches/evaluations', () => renderCoachEvaluations(), initCoachEvaluations)
+dash('/coaches/evaluations/new', () => renderCoachNewEvaluation(), initCoachNewEvaluation)
+dash('/coaches/evaluations/:id', () => renderCoachEvaluationDetail(), initCoachEvaluationDetail)
+dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
+dash('/coaches/schedules/new', () => renderCoachNewSchedule(), initCoachNewSchedule)
+dash('/coaches/seasons', () => renderCoachSeasons(), initCoachSeasons)
+dash('/coaches/seasons/new', () => renderCoachNewSeason(), initCoachNewSeason)
+dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
+dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
+dash('/coaches/promotions', () => renderCoachPromotions(), initCoachPromotions)
+dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
+dash('/coaches/questions', () => renderCoachQuestions(), initCoachQuestions)
+dash('/coaches/questions/new', () => renderCoachNewQuestion(), initCoachNewQuestion)
+dash('/coaches/questions/:id', () => renderCoachQuestionDetail(), initCoachQuestionDetail)
+
+// Student routes
+dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard)
+dash('/students/profile', () => renderStudentProfile(), initStudentProfile)
+dash('/students/courses', () => renderStudentCourses(), initStudentCourses)
+dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
+dash('/students/courses/:id/evaluations', () => renderStudentEvaluations(), initStudentEvaluations)
+dash('/students/courses/:id/exams', () => renderStudentExamList(), initStudentExamList)
+dash('/students/courses/:id/exams/:examId', () => renderStudentExamTake(), initStudentExamTake)
+dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
+dash('/students/tasks/:id', () => renderStudentTaskDetail(), initStudentTaskDetail)
+dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
+dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
+dash('/students/evaluations/:id', () => renderStudentEvalDetail(), initStudentEvalDetail)
+
+// Player routes
+dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
+dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
+dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
+dash('/players/scrims', () => renderPlayerScrims(), initPlayerScrims)
+dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
+
+// Shared routes
+dash('/payments', () => renderPayments(), initPayments)
+dash('/notifications', () => renderNotifications(), initNotifications)
+dash('/mail', () => renderMail(), initMail)
+dash('/logs', () => renderLogs(), initLogs)
+
+// 404
+router.fallbackRoute(async () => {
+  document.getElementById('app')!.innerHTML = renderNotFound()
+})
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  initToastContainer()
+  router.start()
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session && (!location.hash || location.hash === '#' || location.hash === '#/')) {
+      getProfile().then((profile) => {
+        if (profile) {
+          const prefix = profile.role === 'coach' ? 'coaches' : profile.role === 'student' ? 'students' : 'players'
+          location.hash = `/${prefix}/dashboard`
+        }
+      })
+    }
+  })
+})
