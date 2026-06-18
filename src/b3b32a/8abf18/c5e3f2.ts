@@ -40,18 +40,18 @@ export async function initCoachGrades(): Promise<void> {
 
     const moduleIds = (modules ?? []).map((m: any) => m.id)
 
-    const { data: allEvaluations } = moduleIds.length > 0
-      ? await supabase.from('evaluations').select('id, title, module_id, max_score, weight').in('module_id', moduleIds).order('title')
+    const { data: allExams } = moduleIds.length > 0
+      ? await supabase.from('exams').select('id, title, module_id, max_score, weight').in('module_id', moduleIds).order('title')
       : { data: [] }
 
-    const evalIds = (allEvaluations ?? []).map((e: any) => e.id)
+    const examIds = (allExams ?? []).map((e: any) => e.id)
 
-    const { data: allResults } = evalIds.length > 0
-      ? await supabase.from('evaluation_results').select('*').in('evaluation_id', evalIds.length > 0 ? evalIds : ['none'])
+    const { data: allAttempts } = examIds.length > 0
+      ? await supabase.from('exam_attempts').select('*').in('exam_id', examIds.length > 0 ? examIds : ['none'])
       : { data: [] }
 
     const resultsByEnrollment: Record<string, any[]> = {}
-    for (const r of allResults ?? []) {
+    for (const r of allAttempts ?? []) {
       if (!resultsByEnrollment[r.enrollment_id]) resultsByEnrollment[r.enrollment_id] = []
       resultsByEnrollment[r.enrollment_id].push(r)
     }
@@ -62,16 +62,16 @@ export async function initCoachGrades(): Promise<void> {
           ${Icon('arrowLeft', 16)} Volver al curso
         </a>
         <h1 class="font-heading text-2xl font-bold text-white">Notas — ${escapeHtml(course.name)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">${(allEvaluations ?? []).length} evaluaciones · ${(enrollments ?? []).length} estudiantes</p>
+        <p class="mt-1 text-sm text-zinc-500">${(allExams ?? []).length} evaluaciones · ${(enrollments ?? []).length} estudiantes</p>
       </div>
 
-      ${(allEvaluations ?? []).length > 0 && (enrollments ?? []).length > 0 ? `
+      ${(allExams ?? []).length > 0 && (enrollments ?? []).length > 0 ? `
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-zinc-700 text-left text-xs text-zinc-500">
                 <th class="whitespace-nowrap px-3 py-2 font-medium">Estudiante</th>
-                ${(allEvaluations ?? []).map((ev: any) => `
+                ${(allExams ?? []).map((ev: any) => `
                   <th class="whitespace-nowrap px-3 py-2 font-medium text-center" title="${escapeHtml(ev.title)}">
                     <div class="max-w-[100px] truncate">${escapeHtml(ev.title)}</div>
                     <div class="text-[10px] text-zinc-600">/${ev.max_score} (${ev.weight}%)</div>
@@ -88,8 +88,8 @@ export async function initCoachGrades(): Promise<void> {
                 return `
                   <tr class="border-b border-zinc-800 hover:bg-zinc-800/40">
                     <td class="whitespace-nowrap px-3 py-3 text-white">${escapeHtml(name)}</td>
-                    ${(allEvaluations ?? []).map((ev: any) => {
-                      const result = enrResults.find((r: any) => r.evaluation_id === ev.id)
+                    ${(allExams ?? []).map((ev: any) => {
+                      const result = enrResults.find((r: any) => r.exam_id === ev.id)
                       const score = result?.score
                       return `<td class="px-3 py-3 text-center ${score !== null && score !== undefined ? (score >= ev.max_score / 2 ? 'text-green-400' : 'text-red-400') : 'text-zinc-600'}">${score !== null && score !== undefined ? score : '—'}</td>`
                     }).join('')}
@@ -147,7 +147,7 @@ export async function initCoachGrades(): Promise<void> {
       ` : `
         <div class="glass rounded-xl p-8 text-center">
           <p class="text-zinc-500">
-            ${(allEvaluations ?? []).length === 0
+            ${(allExams ?? []).length === 0
               ? 'No hay evaluaciones en este curso. Crea evaluaciones en los módulos para ver notas.'
               : 'No hay estudiantes inscritos en este curso.'
             }
