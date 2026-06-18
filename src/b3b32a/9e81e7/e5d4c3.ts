@@ -22,7 +22,7 @@ export async function initSettings(): Promise<void> {
     const bgUrl = (profile as any)?.custom_bg_url || ''
 
     const html = `
-      <div class="max-w-2xl mx-auto">
+      <div class="max-w-xl mx-auto">
         <h1 class="mb-6 font-heading text-2xl font-bold text-white">${Icon('settings', 22)} Personalizar</h1>
 
         <div class="glass rounded-xl p-6 mb-6">

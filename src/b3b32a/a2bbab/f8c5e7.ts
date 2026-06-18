@@ -52,7 +52,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
     }
 
     const html = `
-      <div class="max-w-2xl mx-auto">
+      <div class="max-w-xl mx-auto">
         <a href="#/players/tasks" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
           ${Icon('arrowLeft', 16)} Volver a tareas
         </a>
