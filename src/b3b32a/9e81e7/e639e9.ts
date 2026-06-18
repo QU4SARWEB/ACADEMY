@@ -37,7 +37,7 @@ export async function initPayments(): Promise<void> {
 }
 
 async function renderStudentPayments(userId: string): Promise<void> {
-  const { data: payments } = await supabase
+  let { data: payments } = await supabase
     .from('payments')
     .select('*, seasons(name)')
     .eq('profile_id', userId)
@@ -49,6 +49,33 @@ async function renderStudentPayments(userId: string): Promise<void> {
     .eq('profile_id', userId)
     .eq('status', 'active')
     .order('enrolled_at', { ascending: false })
+
+  // Auto-create missing payments for active enrollments
+  const paymentEnrollmentIds = new Set((payments ?? []).map((p: any) => p.enrollment_id))
+  for (const e of enrollments ?? []) {
+    const seasonId = e.seasons?.id ?? e.season_id
+    if (seasonId && !paymentEnrollmentIds.has(e.id)) {
+      const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', userId).maybeSingle()
+      await supabase.from('payments').upsert({
+        profile_id: userId,
+        enrollment_id: e.id,
+        season_id: seasonId,
+        type: e.type || 'student',
+        status: profile?.scholarship ? 'scholarship' : 'pending',
+        amount: 1.54,
+      }, { onConflict: 'enrollment_id', ignoreDuplicates: true })
+    }
+  }
+
+  // Re-fetch payments after auto-creating missing ones
+  if ((payments ?? []).length === 0 && (enrollments ?? []).length > 0) {
+    const { data: refreshed } = await supabase
+      .from('payments')
+      .select('*, seasons(name)')
+      .eq('profile_id', userId)
+      .order('created_at', { ascending: false })
+    if (refreshed) payments = refreshed
+  }
 
   const statusColors: Record<string, string> = { pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
   const statusLabels: Record<string, string> = { pending: 'Debes', paid: 'Pagaste', scholarship: 'Cubierto por beca', expired: 'Vencido' }
