@@ -11,6 +11,9 @@ import type { Profile } from '@/d14a80'
 
 let selectedSeasonId: string | null = null
 
+const PAYPAL_CLIENT_ID = 'ATf2cJdAcCmle4LgS5r851NRL1k4bLiqhadr9ZSPxzeadYyMDmuGDHqj1g4FcpSZ3ULeisdy_m8JGvbS'
+const PAYPAL_SANDBOX = false // false = live, true = sandbox
+
 export function renderPayments(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
@@ -79,15 +82,18 @@ async function renderStudentPayments(userId: string): Promise<void> {
               <p class="text-sm text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
               <p class="text-xs text-zinc-500">${p.due_date ? formatDate(p.due_date) : ''} ${p.paid_at ? '· Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
-            <div class="text-right flex items-center gap-3">
-              ${p.receipt_url
-                ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
-                : p.status === 'pending'
-                  ? `<button class="upload-receipt-btn text-xs text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
-                  : ''
-              }
-              <span class="text-xs ${statusColors[p.status] || 'text-zinc-500'}">${escapeHtml(p.status)}</span>
-              ${p.amount ? `<p class="text-xs text-zinc-400">$${p.amount}</p>` : ''}
+            <div class="text-right flex flex-col items-end gap-2">
+              <div class="flex items-center gap-3">
+                ${p.receipt_url
+                  ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
+                  : p.status === 'pending'
+                    ? `<button class="upload-receipt-btn text-xs text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
+                    : ''
+                }
+                <span class="text-xs ${statusColors[p.status] || 'text-zinc-500'}">${escapeHtml(p.status)}</span>
+                ${p.amount ? `<p class="text-xs text-zinc-400">$${p.amount}</p>` : ''}
+              </div>
+              ${p.status === 'pending' && p.amount ? `<div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount}"></div>` : ''}
             </div>
           </div>
         `).join('')
@@ -162,6 +168,56 @@ async function renderStudentPayments(userId: string): Promise<void> {
     toast('success', 'Comprobante subido correctamente')
     document.getElementById('receipt-modal')!.classList.add('hidden')
     initPayments()
+  })
+
+  // PayPal buttons
+  const paypalContainers = document.querySelectorAll<HTMLElement>('.paypal-btn-container')
+  if (paypalContainers.length > 0) {
+    const sdkUrl = `https://www${PAYPAL_SANDBOX ? '.sandbox' : ''}.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`
+    if (!document.querySelector(`script[src="${sdkUrl}"]`)) {
+      const script = document.createElement('script')
+      script.src = sdkUrl
+      script.onload = () => renderPaypalButtons(paypalContainers)
+      document.head.appendChild(script)
+    } else if ((window as any).paypal) {
+      renderPaypalButtons(paypalContainers)
+    }
+  }
+}
+
+function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
+  containers.forEach(container => {
+    const paymentId = container.dataset.paypalId
+    const amount = container.dataset.amount
+    if (!paymentId || !amount) return
+    const div = document.createElement('div')
+    div.id = `pp-${paymentId}`
+    container.appendChild(div)
+    ;(window as any).paypal.Buttons({
+      style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
+      createOrder(data: any, actions: any) {
+        return actions.order.create({
+          purchase_units: [{ amount: { currency_code: 'USD', value: amount } }]
+        })
+      },
+      onApprove(data: any, actions: any) {
+        return actions.order.capture().then(async (details: any) => {
+          if (details.status === 'COMPLETED') {
+            await supabase.from('payments').update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              method: 'paypal',
+            }).eq('id', paymentId)
+            toast('success', 'Pago confirmado vía PayPal')
+            container.innerHTML = '<span class="text-xs text-green-400">Pagado con PayPal</span>'
+            setTimeout(() => initPayments(), 1500)
+          }
+        })
+      },
+      onError() {
+        toast('error', 'Error al procesar el pago con PayPal')
+      }
+    }).render(`#pp-${paymentId}`)
   })
 }
 
