@@ -207,13 +207,13 @@ export async function initStudentExamTake(): Promise<void> {
 
     const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
 
-    // Get ALL attempts to count them
+    // Get ALL attempts to count them (column is started_at, not created_at)
     const { data: allAttempts } = await supabase
       .from('exam_attempts')
       .select('*')
       .eq('exam_id', examId)
       .eq('enrollment_id', enrollment.id)
-      .order('created_at', { ascending: false })
+      .order('started_at', { ascending: false })
 
     const submittedCount = (allAttempts ?? []).filter((a: any) => a.status === 'submitted' || a.status === 'graded').length
     const maxAttempts = exam.max_attempts ?? 1
@@ -257,7 +257,8 @@ export async function initStudentExamTake(): Promise<void> {
     }
 
     if (!attempt) {
-      const nextNum = submittedCount + 1
+      const maxAttemptNum = Math.max(0, ...(allAttempts ?? []).map((a: any) => a.attempt_num || 0))
+      const nextNum = maxAttemptNum + 1
       const { data: newAttempt, error: attemptError } = await supabase
         .from('exam_attempts')
         .insert({
