@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
@@ -234,7 +234,7 @@ export function mountCoachStudentDetail(): void {
               <div class="mt-4 rounded-lg border border-zinc-800 bg-[#111] p-4">
                 <h3 class="mb-2 text-sm font-medium text-zinc-300">Información adicional</h3>
                 <div class="space-y-1 text-sm text-zinc-500">
-                  <p>Bio: ${escapeHtml((profile as any).bio || 'Sin biografía')}</p>
+                  <p>Bio: ${escBr((profile as any).bio || 'Sin biografía')}</p>
                   <p>Redes: ${[(profile as any).social_discord, (profile as any).social_twitter, (profile as any).social_youtube].filter(Boolean).join(', ') || 'Ninguna'}</p>
                   <p>Email institucional: ${escapeHtml((profile as any).institutional_email || 'No generado')}</p>
                   <p>Beca: ${(profile as any).scholarship ? 'Sí (completa)' : 'No'}</p>

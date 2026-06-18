@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
@@ -85,7 +85,7 @@ export async function initTickets(): Promise<void> {
                         <span class="rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[t.status] || 'text-zinc-500'}">${STATUS_LABELS[t.status] || t.status}</span>
                         <span class="text-[10px] font-medium ${PRIORITY_COLORS[t.priority] || 'text-zinc-500'}">${PRIORITY_LABELS[t.priority] || t.priority}</span>
                       </div>
-                      <p class="mt-1 text-sm text-zinc-400 line-clamp-2">${escapeHtml(t.body)}</p>
+                      <p class="mt-1 text-sm text-zinc-400 line-clamp-2">${escBr(t.body)}</p>
                       <p class="mt-1 text-xs text-zinc-600">
                         ${isCoach ? escapeHtml(name) + ' · ' : ''}${formatDate(t.created_at)}
                       </p>
@@ -157,7 +157,7 @@ async function initTicketDetail(ticketId: string): Promise<void> {
                 <span class="rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status] || 'text-zinc-500'}">${STATUS_LABELS[ticket.status] || ticket.status}</span>
                 ${isCoach ? `<button class="btn-del-ticket-detail ml-auto text-red-400 hover:text-red-300 transition text-xs flex items-center gap-1" data-ticket-id="${escapeHtml(ticket.id)}">${Icon('trash', 12)} Eliminar</button>` : ''}
               </div>
-              <p class="text-sm text-zinc-300">${escapeHtml(ticket.body)}</p>
+              <p class="text-sm text-zinc-300">${escBr(ticket.body)}</p>
               <p class="mt-2 text-xs text-zinc-600">
                 ${escapeHtml(creatorName)} · ${formatDate(ticket.created_at)} · Prioridad: <span class="${PRIORITY_COLORS[ticket.priority]}">${PRIORITY_LABELS[ticket.priority]}</span>
               </p>
@@ -198,7 +198,7 @@ async function initTicketDetail(ticketId: string): Promise<void> {
                       <span class="text-xs text-zinc-600">${formatDate(r.created_at)}</span>
                       ${isCoach ? `<button class="btn-del-response ml-auto text-red-400 hover:text-red-300 transition" data-response-id="${escapeHtml(r.id)}">${Icon('trash', 12)}</button>` : ''}
                     </div>
-                    <p class="text-sm text-zinc-300">${escapeHtml(r.body)}</p>
+                    <p class="text-sm text-zinc-300">${escBr(r.body)}</p>
                   </div>`
               }).join('')
           }

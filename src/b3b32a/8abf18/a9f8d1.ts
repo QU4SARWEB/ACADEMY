@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
@@ -234,7 +234,7 @@ export async function initCoachExams(): Promise<void> {
                     <div class="mb-3">
                       <label class="mb-1 block text-xs text-zinc-400">Descripción</label>
                       <textarea name="description" rows="2"
-                        class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escapeHtml(exam.description || '')}</textarea>
+                        class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escBr(exam.description || '')}</textarea>
                     </div>
                     <div class="mb-3 grid grid-cols-2 gap-3">
                       <div>

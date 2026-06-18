@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { Icon } from '@/2b3583/bd2119'
 
@@ -56,7 +56,7 @@ export async function initNotifications(): Promise<void> {
                   <span class="text-xs font-medium ${typeColors[n.type] || 'text-zinc-400'}">${escapeHtml(n.type)}</span>
                   <h3 class="text-sm font-medium text-white truncate">${escapeHtml(n.title)}</h3>
                 </div>
-                ${n.body ? `<p class="mt-1 text-xs text-zinc-500">${escapeHtml(n.body)}</p>` : ''}
+                ${n.body ? `<p class="mt-1 text-xs text-zinc-500">${escBr(n.body)}</p>` : ''}
                 <p class="mt-1 text-xs text-zinc-600">${formatDate(n.created_at)}</p>
               </div>
               <div class="flex shrink-0 items-center gap-2">

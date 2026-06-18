@@ -2,7 +2,7 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -124,7 +124,7 @@ export async function initStudentCourses(): Promise<void> {
               <div class="glass rounded-xl p-4">
                 <h3 class="font-medium text-white">${escapeHtml(course.name)}</h3>
                 <p class="mt-1 text-xs text-zinc-500">${course.duration_months} meses${course.min_rank ? ` · Rango mínimo: ${escapeHtml(course.min_rank)}` : ''}</p>
-                ${course.description ? `<p class="mt-1 text-xs text-zinc-400">${escapeHtml(course.description)}</p>` : ''}
+                ${course.description ? `<p class="mt-1 text-xs text-zinc-400">${escBr(course.description)}</p>` : ''}
                 <form class="mt-3" data-enroll-form data-course-id="${escapeHtml(course.id)}">
                   <button type="submit"
                     class="flex w-full items-center justify-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">

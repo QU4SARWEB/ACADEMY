@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 
 export function renderLogs(): string {
@@ -40,7 +40,7 @@ export async function initLogs(): Promise<void> {
                   <span class="text-zinc-400">${escapeHtml(l.module || '')}</span>
                   <span class="text-zinc-500 mx-1">·</span>
                   <span class="text-zinc-300">${escapeHtml(l.action || 'Acción')}</span>
-                  ${l.description ? `<p class="text-xs text-zinc-500 truncate">${escapeHtml(l.description)}</p>` : ''}
+                  ${l.description ? `<p class="text-xs text-zinc-500 truncate">${escBr(l.description)}</p>` : ''}
                 </div>
               </div>
               <span class="shrink-0 text-xs text-zinc-600">${formatDate(l.created_at)}</span>

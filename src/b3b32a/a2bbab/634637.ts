@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { Icon } from '@/2b3583/bd2119'
 
@@ -59,7 +59,7 @@ export async function initPlayerScrims(): Promise<void> {
                   ` : '<p class="text-sm text-zinc-500">Programado</p>'}
                 </div>
               </div>
-              ${s.notes ? `<p class="mt-2 border-t border-zinc-800 pt-2 text-sm text-zinc-400">${escapeHtml(s.notes)}</p>` : ''}
+              ${s.notes ? `<p class="mt-2 border-t border-zinc-800 pt-2 text-sm text-zinc-400">${escBr(s.notes)}</p>` : ''}
             </div>
           `).join('')
         }

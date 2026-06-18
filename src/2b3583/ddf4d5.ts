@@ -1,4 +1,4 @@
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 
 const RANKS = ['Unranked', 'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant']
 const IN_GAME_ROLES = ['Duelist', 'Controller', 'Initiator', 'Sentinel', 'Flex']
@@ -66,7 +66,7 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
         <div class="sm:col-span-2">
           <label class="block text-xs font-medium text-zinc-400">Biografía</label>
           <textarea name="bio" rows="3"
-            class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]">${escapeHtml(profile.bio ?? '')}</textarea>
+            class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]">${escBr(profile.bio ?? '')}</textarea>
         </div>
       </div>
 

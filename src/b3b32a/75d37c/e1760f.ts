@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { router } from '@/f3395c'
 
@@ -84,7 +84,7 @@ export async function initStudentExamList(): Promise<void> {
                     <div class="flex items-start justify-between gap-4">
                       <div class="min-w-0 flex-1">
                         <h2 class="text-base font-semibold text-white">${escapeHtml(exam.title)}</h2>
-                        ${exam.description ? `<p class="mt-1 text-sm text-zinc-400">${escapeHtml(exam.description)}</p>` : ''}
+                        ${exam.description ? `<p class="mt-1 text-sm text-zinc-400">${escBr(exam.description)}</p>` : ''}
                         <div class="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
                           ${exam.time_limit ? `<span>Tiempo: ${exam.time_limit} min</span>` : ''}
                           <span>Nota mínima: ${exam.passing_score}%</span>

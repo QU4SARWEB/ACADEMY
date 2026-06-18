@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatTimeWithTZ, getLocalTZ } from '@/2b3583/2938a7'
 
@@ -78,7 +78,7 @@ export async function initStudentSchedule(): Promise<void> {
                     data-type="${escapeHtml(s.type || '')}"
                     data-location="${escapeHtml(s.location || '')}"
                     data-week="${s.week_number || ''}"
-                    data-desc="${escapeHtml(s.description || '')}"
+                    data-desc="${escBr(s.description || '')}"
                     data-tz="${showTZ ? 'local' : ''}">
                     <div class="flex flex-col items-center min-w-[52px]">
                       <span class="text-xs font-bold text-white">${startLocal}</span>
@@ -90,11 +90,11 @@ export async function initStudentSchedule(): Promise<void> {
                       <p class="font-medium text-white truncate">${escapeHtml(s.title)}</p>
                       <div class="flex flex-wrap gap-1.5 mt-0.5">
                         ${s.type ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${escapeHtml(s.type)}</span>` : ''}
-                        ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">📍 ${escapeHtml(s.location)}</span>` : ''}
+                        ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${Icon('mapPin', 10)} ${escapeHtml(s.location)}</span>` : ''}
                         ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
                       </div>
                     </div>
-                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate">${escapeHtml(s.description)}</span>` : ''}
+                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate">${escBr(s.description)}</span>` : ''}
                   </button>`
                 }).join('')}
               </div>

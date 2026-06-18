@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { router } from '@/f3395c'
@@ -64,14 +64,14 @@ export async function initStudentTaskDetail(): Promise<void> {
         ${(task as any).description ? `
           <div class="glass mb-6 rounded-xl p-4">
             <h3 class="mb-2 font-medium text-white">Descripción</h3>
-            <p class="text-sm text-zinc-300">${escapeHtml((task as any).description)}</p>
+            <p class="text-sm text-zinc-300">${escBr((task as any).description)}</p>
           </div>` : ''}
 
         ${submission
           ? `<div class="glass rounded-xl p-4">
               <h3 class="mb-2 font-medium text-white">Tu entrega</h3>
               <p class="text-sm text-zinc-400">Estado: <span class="${submission.status === 'graded' ? 'text-green-400' : submission.status === 'submitted' ? 'text-blue-400' : 'text-yellow-400'}">${escapeHtml(submission.status)}</span></p>
-              ${submission.text_content ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(submission.text_content)}</p>` : ''}
+              ${submission.text_content ? `<p class="mt-2 text-sm text-zinc-300">${escBr(submission.text_content)}</p>` : ''}
               ${submission.files && (submission.files as string[]).length > 0 ? `
                 <div class="mt-3">
                   <p class="mb-1 text-xs font-medium text-zinc-400">Archivos adjuntos:</p>
@@ -85,7 +85,7 @@ export async function initStudentTaskDetail(): Promise<void> {
                   </div>
                 </div>` : ''}
               ${submission.score !== null ? `<p class="mt-2 text-sm">Calificación: <span class="font-bold text-white">${submission.score}</span>${(task as any).max_score ? ` / ${(task as any).max_score}` : ''}</p>` : ''}
-              ${submission.feedback ? `<p class="mt-2 text-sm text-zinc-400">Feedback: ${escapeHtml(submission.feedback)}</p>` : ''}
+              ${submission.feedback ? `<p class="mt-2 text-sm text-zinc-400">Feedback: ${escBr(submission.feedback)}</p>` : ''}
             </div>`
           : `<div class="glass rounded-xl p-4">
               <h3 class="mb-4 font-medium text-white">Entregar tarea</h3>

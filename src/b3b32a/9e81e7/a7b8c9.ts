@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
@@ -236,7 +236,7 @@ async function loadMessages(convId: string): Promise<void> {
           <div class="flex ${isMe ? 'justify-end' : 'justify-start'} group">
             <div class="max-w-[75%] ${isMe ? 'bg-[#8B5CF6]/20 rounded-2xl rounded-br-md' : 'bg-zinc-800 rounded-2xl rounded-bl-md'} px-4 py-2.5 relative">
               ${!isMe ? `<p class="text-[10px] text-[#8B5CF6] mb-0.5">${escapeHtml(name)}</p>` : ''}
-              ${m.content ? `<p class="text-sm text-white">${escapeHtml(m.content)}</p>` : ''}
+              ${m.content ? `<p class="text-sm text-white">${escBr(m.content)}</p>` : ''}
               ${m.attachment_url
                 ? `<div class="mt-1">
                     <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener noreferrer"
@@ -471,7 +471,7 @@ async function initChatEvents(userId: string): Promise<void> {
     const input = document.getElementById('msg-attach') as HTMLInputElement
     const label = document.getElementById('attach-name')!
     if (input?.files?.[0]) {
-      label.textContent = `📎 ${input.files[0].name}`
+      label.innerHTML = `${Icon('paperclip', 12)} ${input.files[0].name}`
       label.classList.remove('hidden')
     } else {
       label.classList.add('hidden')

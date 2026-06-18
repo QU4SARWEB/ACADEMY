@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
@@ -68,7 +68,7 @@ export async function initCoachScrims(): Promise<void> {
                         · ${formatDate(s.scheduled_at)}
                         ${s.score_quasar != null && s.score_opponent != null ? ` · ${s.score_quasar} - ${s.score_opponent}` : ''}
                       </p>
-                      ${s.notes ? `<p class="mt-1 text-xs text-zinc-600">${escapeHtml(s.notes)}</p>` : ''}
+                      ${s.notes ? `<p class="mt-1 text-xs text-zinc-600">${escBr(s.notes)}</p>` : ''}
                     </div>
                     <div class="flex items-center gap-2 ml-4">
                       <button class="btn-delete-scrim text-red-400 hover:text-red-300" data-scrim-id="${escapeHtml(s.id)}">

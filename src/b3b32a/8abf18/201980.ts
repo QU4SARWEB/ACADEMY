@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
@@ -73,7 +73,7 @@ export async function initCoachModuleDetail(): Promise<void> {
               <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml((mod as any).name)}</h1>
               <p class="mt-1 text-sm text-zinc-400">
                 Mes ${(mod as any).month_number} · Orden ${(mod as any).display_order}
-                ${(mod as any).description ? ` · ${escapeHtml((mod as any).description)}` : ''}
+                ${(mod as any).description ? ` · ${escBr((mod as any).description)}` : ''}
               </p>
             </div>
             <div class="flex gap-2">
@@ -99,7 +99,7 @@ export async function initCoachModuleDetail(): Promise<void> {
                 </div>
                 <div>
                   <label class="block text-xs text-zinc-500">Descripción</label>
-                  <input name="description" value="${escapeHtml((mod as any).description || '')}"
+                  <input name="description" value="${escBr((mod as any).description || '')}"
                     class="mt-1 w-full rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
                 </div>
                 <div class="flex gap-4">
@@ -148,7 +148,7 @@ export async function initCoachModuleDetail(): Promise<void> {
                             <p class="truncate text-sm font-medium text-white">${escapeHtml(m.title)}</p>
                             <div class="flex items-center gap-2">
                               <span class="rounded px-1.5 py-0.5 text-xs font-medium ${badge}">${escapeHtml(m.type)}</span>
-                              ${m.description ? `<span class="text-xs text-zinc-500">${escapeHtml(m.description)}</span>` : ''}
+                              ${m.description ? `<span class="text-xs text-zinc-500">${escBr(m.description)}</span>` : ''}
                               <span class="text-xs text-zinc-600">Ord. ${m.display_order}</span>
                             </div>
                           </div>
@@ -199,7 +199,7 @@ export async function initCoachModuleDetail(): Promise<void> {
                             <div>
                               <label class="block text-xs text-zinc-500">Descripción</label>
                               <textarea name="description" rows="2"
-                                class="mt-1 w-full rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escapeHtml(m.description || '')}</textarea>
+                                class="mt-1 w-full rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escBr(m.description || '')}</textarea>
                             </div>
                           </div>
                           <div class="mt-3 flex gap-2">

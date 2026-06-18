@@ -8,3 +8,7 @@ export function escapeHtml(str: unknown): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
+
+export function escBr(str: unknown): string {
+  return escapeHtml(str).replace(/\n/g, '<br>')
+}

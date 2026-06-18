@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { router } from '@/f3395c'
 
 export function renderPlayerCourseDetail(): string {
@@ -58,7 +58,7 @@ export async function initPlayerCourseDetail(): Promise<void> {
           <p class="mt-1 text-sm text-zinc-400">
             ${escapeHtml(course.seasons?.name || '')} · ${course.duration_months} meses · Rango mínimo: ${escapeHtml(course.min_rank)}
           </p>
-          ${course.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(course.description)}</p>` : ''}
+          ${course.description ? `<p class="mt-2 text-sm text-zinc-300">${escBr(course.description)}</p>` : ''}
         </div>
 
         <div class="space-y-4">

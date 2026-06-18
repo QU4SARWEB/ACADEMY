@@ -1,6 +1,6 @@
 import { supabase } from '@/304244'
 import { Spinner } from '@/4725dc/a14fa2'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 
 const ACADEMY_RANKS = [
   { id: 'cosmic1', name: 'Cosmic I',   minXP: 0,     color: '#6b7280', glow: 'rgba(107,114,128,0.3)', icon: 'circle', reward: 'Acceso a clases grupales' },
@@ -193,7 +193,7 @@ export async function initPublicProfile(): Promise<void> {
           ${profile.country ? `<span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(profile.country)}</span>` : ''}
           <span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${new Date(profile.created_at).getFullYear()}</span>
         </div>
-        ${bio ? `<p class="mt-3 text-sm text-zinc-400 leading-relaxed">${escapeHtml(bio)}</p>` : ''}
+        ${bio ? `<p class="mt-3 text-sm text-zinc-400 leading-relaxed">${escBr(bio)}</p>` : ''}
       </div>
 
       <div class="glass rounded-[18px] p-6">
@@ -255,7 +255,7 @@ export async function initPublicProfile(): Promise<void> {
           <div class="group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition hover:border-[#8B5CF6]/30">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
             <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
-            ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escapeHtml(ach.description)}</div>` : ''}
+            ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
           </div>`).join('')}
         </div>
       </div>` : ''}

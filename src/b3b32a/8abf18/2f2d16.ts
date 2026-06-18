@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
@@ -77,7 +77,7 @@ export async function initCoachTaskDetail(): Promise<void> {
               <p class="text-sm text-zinc-500">
                 Límite: ${task.due_date ? formatDate(task.due_date) : '—'} · Máx: ${task.max_score ?? '—'} pts
               </p>
-              ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(task.description)}</p>` : ''}
+              ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escBr(task.description)}</p>` : ''}
             </div>
             <button id="delete-task-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
           </div>
@@ -132,7 +132,7 @@ export async function initCoachTaskDetail(): Promise<void> {
                           <div class="border-t border-zinc-800 pt-2 text-sm">
                             <div class="flex items-center gap-4">
                               <span class="text-green-400">Nota: ${sub.score}/${task.max_score}</span>
-                              ${sub.feedback ? `<span class="text-zinc-400">· ${escapeHtml(sub.feedback)}</span>` : ''}
+                              ${sub.feedback ? `<span class="text-zinc-400">· ${escBr(sub.feedback)}</span>` : ''}
                             </div>
                           </div>`
                         : ''
