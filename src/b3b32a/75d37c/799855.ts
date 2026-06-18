@@ -116,10 +116,10 @@ export async function initStudentSchedule(): Promise<void> {
             <button onclick="document.getElementById('sched-modal')?.classList.add('hidden')" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
           </div>
           <div class="space-y-3 text-sm">
-            <div class="flex items-center gap-2 text-zinc-300"><span class="w-6">🕐</span> <span id="sched-modal-time"></span></div>
-            <div id="sched-modal-type" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">🏷️</span> <span></span></div>
-            <div id="sched-modal-location" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">📍</span> <span></span></div>
-            <div id="sched-modal-week" class="flex items-center gap-2 text-zinc-300 hidden"><span class="w-6">📅</span> <span></span></div>
+            <div class="flex items-center gap-2 text-zinc-300">${Icon('clock', 16)} <span id="sched-modal-time"></span></div>
+            <div id="sched-modal-type" class="flex items-center gap-2 text-zinc-300 hidden">${Icon('target', 16)} <span></span></div>
+            <div id="sched-modal-location" class="flex items-center gap-2 text-zinc-300 hidden">${Icon('mapPin', 16)} <span></span></div>
+            <div id="sched-modal-week" class="flex items-center gap-2 text-zinc-300 hidden">${Icon('calendar', 16)} <span></span></div>
             <div id="sched-modal-desc" class="pt-2 border-t border-zinc-700 text-zinc-400 hidden"><p class="text-sm"></p></div>
           </div>
         </div>
