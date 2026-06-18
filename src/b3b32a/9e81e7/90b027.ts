@@ -315,7 +315,7 @@ export async function initPublicProfile(): Promise<void> {
       try {
         const card = document.getElementById('profile-card')
         if (!card) return
-        // Load dom-to-image-more via script tag (supports oklch/modern CSS)
+        // Load dom-to-image-more via script tag
         if (!(window as any).domtoimage) {
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script')
@@ -330,8 +330,9 @@ export async function initPublicProfile(): Promise<void> {
           bgColor: '#0A0A0A',
           scale: 2,
           useCORS: true,
-          allowTaint: false,
-          filter: () => true,
+          allowTaint: true,
+          filter: (node: any) => node.tagName !== 'SCRIPT',
+          style: { 'backdrop-filter': 'none', '-webkit-backdrop-filter': 'none' },
         })
         const link = document.createElement('a')
         link.download = `perfil-${slug}.png`
