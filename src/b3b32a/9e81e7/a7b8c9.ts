@@ -294,6 +294,31 @@ async function markAsRead(convId: string, userId: string): Promise<void> {
   await supabase.from('conversation_participants').update({ last_read_at: new Date().toISOString() })
     .eq('conversation_id', convId)
     .eq('profile_id', userId)
+  // Remove unread badge from the conversation item in the sidebar
+  const convBtn = document.querySelector(`.conv-item[data-conv-id="${convId}"]`)
+  if (convBtn) {
+    // Remove the red unread badge (absolute positioned span inside the avatar)
+    const badge = convBtn.querySelector('.absolute.-top-0\\.5')
+    if (badge) badge.remove()
+    // Update message text style (remove unread styling)
+    const msgEl = convBtn.querySelector('[class*="text-xs"]')
+    if (msgEl) {
+      msgEl.classList.remove('text-white', 'font-medium')
+      msgEl.classList.add('text-zinc-500')
+    }
+  }
+  // Update global total in chat header
+  const totalBadge = document.querySelector('#conv-list + div + div .rounded-full')
+  if (!totalBadge) {
+    const header = document.querySelector('#conv-list')?.previousElementSibling?.querySelector('h2')
+    if (header) {
+      const match = header.textContent?.match(/\((\d+)\)/)
+      if (match) {
+        const current = parseInt(match[1])
+        header.textContent = current <= 1 ? 'Chat' : 'Chat (' + (current - 1) + ')'
+      }
+    }
+  }
 }
 
 async function sendMessage(convId: string, content: string, file?: File): Promise<void> {
@@ -375,23 +400,15 @@ async function initChatEvents(userId: string): Promise<void> {
     }
     document.getElementById('new-chat-error')!.classList.add('hidden')
 
-    const { data: myConvs } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('profile_id', userId)
+    // Check if conversation already exists using participant_ids array (bypasses RLS issues)
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .contains('participant_ids', [userId, targetId])
+      .maybeSingle()
 
-    const myConvIds = (myConvs ?? []).map((c: any) => c.conversation_id)
-
-    const { data: theirParticipation } = myConvIds.length > 0
-      ? await supabase.from('conversation_participants')
-          .select('conversation_id')
-          .in('conversation_id', myConvIds)
-          .eq('profile_id', targetId)
-          .maybeSingle()
-      : { data: null }
-
-    if (theirParticipation) {
-      activeConvId = theirParticipation.conversation_id
+    if (existingConv) {
+      activeConvId = existingConv.id
     } else {
       const convId = crypto.randomUUID()
       const { error: convErr } = await supabase.from('conversations').insert({ id: convId })
