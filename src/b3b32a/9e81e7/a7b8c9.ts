@@ -388,10 +388,10 @@ async function initChatEvents(userId: string): Promise<void> {
       const { error: convErr } = await supabase.from('conversations').insert({ id: convId })
       if (convErr) { toast('error', 'Error al crear conversación'); return }
 
-      await supabase.from('conversation_participants').insert([
-        { conversation_id: convId, profile_id: userId },
-        { conversation_id: convId, profile_id: targetId },
-      ])
+      const { error: p1Err } = await supabase.from('conversation_participants').insert({ conversation_id: convId, profile_id: userId })
+      if (p1Err) { toast('error', 'Error al agregar participante'); return }
+      const { error: p2Err } = await supabase.from('conversation_participants').insert({ conversation_id: convId, profile_id: targetId })
+      if (p2Err) { toast('error', p2Err.message); return }
       activeConvId = convId
     }
 
