@@ -317,6 +317,7 @@ async function sendMessage(convId: string, content: string, file?: File): Promis
     if (input) input.value = ''
     document.getElementById('attach-name')?.classList.add('hidden')
     document.getElementById('attach-name')!.textContent = ''
+    loadMessages(convId)
   }
 }
 
