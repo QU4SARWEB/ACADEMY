@@ -4,8 +4,6 @@ import { store } from '@/9ed39e/8cd892'
 import { supabase } from '@/304244'
 import type { Profile } from '@/d14a80'
 import { signOut } from '@/fa53b9/fa53b9'
-import { toast } from '@/4725dc/4f2900'
-import { uploadFileFromInput } from '@/2b3583/76ee3d'
 
 export function DashboardLayout(contentHtml: string): string {
   const profile = store.get<Profile>('profile')
@@ -123,10 +121,10 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </nav>
 
       <div class="mt-auto flex flex-col gap-1 pt-4">
-        <button id="settings-btn"
+        <a href="#/settings"
            class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
           ${Icon('settings', 14)} Personalizar
-        </button>
+        </a>
         <button id="logout-btn"
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-800/50 hover:text-red-400">
           ${Icon('logOut', 18)}
@@ -139,104 +137,6 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 export function initSidebar(): void {
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await signOut()
-  })
-
-  // Settings modal
-  document.getElementById('settings-btn')?.addEventListener('click', () => {
-    const profile = store.get<any>('profile')
-    const currentColor = profile?.role_color || '#8B5CF6'
-    const existing = document.getElementById('settings-modal')
-    if (existing) { existing.classList.toggle('hidden'); return }
-    const html = `
-      <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div class="glass max-w-md w-full mx-4 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-heading text-lg font-bold text-white">Personalizar</h3>
-            <button onclick="this.closest('#settings-modal').classList.add('hidden')" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
-          </div>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-zinc-400 mb-1">Color de acento</label>
-              <div class="flex gap-2 items-center">
-                <input type="color" id="pick-accent" value="${currentColor}" class="h-10 w-10 rounded-lg border border-zinc-700 bg-transparent cursor-pointer" />
-                <input type="text" id="pick-accent-hex" value="${currentColor}" maxlength="7" class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[var(--accent)] font-mono" />
-              </div>
-              <div class="flex gap-1.5 mt-2">
-                ${['#8B5CF6','#6D28D9','#EC4899','#EF4444','#F59E0B','#10B981','#3B82F6','#06B6D4','#14B8A6','#F97316'].map(c =>
-                  `<button class="preset-color w-7 h-7 rounded-full border-2 transition hover:scale-110 ${c === currentColor ? 'border-white scale-110' : 'border-transparent'}" style="background:${c}" data-color="${c}"></button>`
-                ).join('')}
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-zinc-400 mb-1">Fondo personalizado</label>
-              <input type="file" id="pick-bg" accept="image/*" class="w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:text-white" />
-              <p class="mt-1 text-[10px] text-zinc-600">Recomendado: 1920x1080, max 2MB</p>
-            </div>
-            <div>
-              <button id="remove-bg-btn" class="text-xs text-zinc-500 hover:text-white underline">Quitar fondo personalizado</button>
-            </div>
-            <p id="settings-error" class="hidden text-xs text-red-400"></p>
-            <button id="save-settings" class="btn-glow w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition" style="background:var(--accent, #8B5CF6)">Guardar cambios</button>
-          </div>
-        </div>
-      </div>`
-    document.body.insertAdjacentHTML('beforeend', html)
-
-    // Color presets
-    document.querySelectorAll('.preset-color').forEach(b => {
-      b.addEventListener('click', () => {
-        const c = (b as HTMLElement).dataset.color || '#8B5CF6'
-        ;(document.getElementById('pick-accent') as HTMLInputElement).value = c
-        ;(document.getElementById('pick-accent-hex') as HTMLInputElement).value = c
-        document.querySelectorAll('.preset-color').forEach(p => p.classList.remove('border-white', 'scale-110'))
-        b.classList.add('border-white', 'scale-110')
-      })
-    })
-    // Hex input sync
-    document.getElementById('pick-accent-hex')?.addEventListener('input', function(this: HTMLInputElement) {
-      if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
-        (document.getElementById('pick-accent') as HTMLInputElement).value = this.value
-      }
-    })
-    document.getElementById('pick-accent')?.addEventListener('input', function(this: HTMLInputElement) {
-      (document.getElementById('pick-accent-hex') as HTMLInputElement).value = this.value
-    })
-
-    document.getElementById('save-settings')?.addEventListener('click', async () => {
-      const err = document.getElementById('settings-error')!
-      err.classList.add('hidden')
-      const color = (document.getElementById('pick-accent-hex') as HTMLInputElement)?.value?.trim()
-      if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) {
-        err.textContent = 'Color inválido (usa formato #RRGGBB)'; err.classList.remove('hidden'); return
-      }
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user?.id) return
-
-      // Upload background if selected
-      const bgInput = document.getElementById('pick-bg') as HTMLInputElement
-      let bgUrl: string | null = null
-      if (bgInput?.files?.[0]) {
-        bgUrl = await uploadFileFromInput('uploads', session.user.id, 'backgrounds', bgInput.files[0])
-      }
-
-      const update: any = { role_color: color }
-      if (bgUrl) update.custom_bg_url = bgUrl
-
-      const { error } = await supabase.from('profiles').update(update).eq('id', session.user.id)
-      if (error) { err.textContent = error.message; err.classList.remove('hidden'); return }
-      toast('success', 'Preferencias guardadas')
-      document.getElementById('settings-modal')?.classList.add('hidden')
-      setTimeout(() => location.reload(), 300)
-    })
-
-    document.getElementById('remove-bg-btn')?.addEventListener('click', async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user?.id) return
-      await supabase.from('profiles').update({ custom_bg_url: null }).eq('id', session.user.id)
-      toast('success', 'Fondo eliminado')
-      document.getElementById('settings-modal')?.classList.add('hidden')
-      setTimeout(() => location.reload(), 300)
-    })
   })
 
   // Fetch unread notification count

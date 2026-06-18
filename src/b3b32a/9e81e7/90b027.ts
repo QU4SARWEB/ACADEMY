@@ -366,6 +366,15 @@ export async function initPublicProfile(): Promise<void> {
 
     document.getElementById('download-btn')?.addEventListener('click', downloadProfile)
     document.getElementById('download-btn-2')?.addEventListener('click', downloadProfile)
+
+    // Real-time: reload public profile when data changes
+    if (profileId) {
+      const rtChannel = supabase.channel(`pub-profile-${profileId}`)
+      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
+      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'public_profiles', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
+      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'member_achievements', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
+      rtChannel.subscribe()
+    }
   } catch (err) {
     console.error('Error loading public profile:', err)
     const pc = document.getElementById('page-content')
