@@ -30,7 +30,7 @@ export function Spinner(): string {
     <div class="flex flex-col items-center justify-center p-12">
       <div class="relative flex h-24 w-24 items-center justify-center">
         <div class="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[#8B5CF6]" style="animation-duration: 1s;"></div>
-        <img src="/qu4sar.ico" alt="QU4SAR" class="h-14 w-14 animate-logo-pulse" />
+        <img src="qu4sar.ico" alt="QU4SAR" class="h-14 w-14 animate-logo-pulse" />
       </div>
     </div>`
 }

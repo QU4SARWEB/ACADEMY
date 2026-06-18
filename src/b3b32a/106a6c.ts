@@ -13,7 +13,7 @@ export function renderHome(): string {
       <!-- Navbar -->
       <nav class="relative z-10 flex items-center justify-between border-b border-zinc-800 px-6 py-4 md:px-12">
         <div class="flex items-center gap-2">
-          <img src="/qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
+          <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
           <span class="font-heading text-lg font-bold text-white">QU4SAR</span>
         </div>
       </nav>
@@ -21,7 +21,7 @@ export function renderHome(): string {
       <!-- Hero -->
       <section class="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-6 pt-24 text-center md:pt-32">
         <div class="animate-float mb-6">
-          <img src="/qu4sar.ico" alt="QU4SAR" class="h-24 w-24 md:h-32 md:w-32" />
+          <img src="qu4sar.ico" alt="QU4SAR" class="h-24 w-24 md:h-32 md:w-32" />
         </div>
         <h1 class="font-heading text-4xl font-bold text-white md:text-6xl">
           QU<span class="text-[#8B5CF6]">4</span>SAR Gaming Academy
