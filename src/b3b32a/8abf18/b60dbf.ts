@@ -515,7 +515,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         season_id: seasonId,
         type,
         status: studentProfile?.scholarship ? 'scholarship' : 'pending',
-        amount: 1.00,
+        amount: 1.54,
       })
       if (payErr) console.error('Error creating payment record:', payErr)
     }

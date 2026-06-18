@@ -86,12 +86,12 @@ async function renderStudentPayments(userId: string): Promise<void> {
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
-              : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.00}</span>`
+              : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.54}</span>`
             }
           </div>
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
-            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.00}"></div>
+            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}"></div>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span class="text-zinc-600">O</span>
               ${p.receipt_url
