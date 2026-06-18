@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { renderSearchableSelect, initSearchableSelect } from '@/4725dc/forms/SearchableSelect'
+import { to12h } from '@/2b3583/2938a7'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -76,7 +77,7 @@ export async function initCoachSchedules(): Promise<void> {
                             </div>
                           </div>
                           <div class="flex items-center gap-3 shrink-0 ml-4">
-                            <span class="text-xs text-zinc-400">${s.start_time?.slice(0, 5) || '??'} - ${s.end_time?.slice(0, 5) || '??'}</span>
+                            <span class="text-xs text-zinc-400">${to12h(s.start_time?.slice(0, 5))} - ${to12h(s.end_time?.slice(0, 5))}</span>
                             <button class="btn-delete-schedule text-red-400 hover:text-red-300" data-id="${escapeHtml(s.id)}">
                               ${Icon('trash', 14)}
                             </button>

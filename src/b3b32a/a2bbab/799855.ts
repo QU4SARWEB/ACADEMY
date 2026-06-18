@@ -27,7 +27,6 @@ export async function initPlayerSchedule(): Promise<void> {
     }
 
     const seasonScheds = (schedules ?? []).filter((s: any) => s.season_id === seasons.id)
-
     const today = new Date().getDay()
 
     const html = `
@@ -37,9 +36,9 @@ export async function initPlayerSchedule(): Promise<void> {
       </div>
 
       <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-          ${DAYS.map((d, i) => {
-            const hasClass = seasonScheds.some((s: any) => Number(s.day_of_week) === i)
-            const isToday = i === today
+        ${DAYS.map((d, i) => {
+          const hasClass = seasonScheds.some((s: any) => Number(s.day_of_week) === i)
+          const isToday = i === today
           return `
             <button class="day-btn shrink-0 rounded-xl px-4 py-3 text-center transition cursor-pointer ${isToday ? 'bg-[#8B5CF6]/20 border border-[#8B5CF6]/30' : 'glass'} ${hasClass ? 'hover:bg-zinc-800/50' : 'opacity-40'}"
               data-day="${i}">
@@ -50,61 +49,71 @@ export async function initPlayerSchedule(): Promise<void> {
         }).join('')}
       </div>
 
-      <div class="space-y-6">
-        ${seasonScheds.length === 0
-          ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horario competitivo publicado todavía.</p></div>'
-          : Array.from({ length: 7 }, (_, day) => {
-              const dayScheds = seasonScheds.filter((s: any) => Number(s.day_of_week) === day)
-              if (dayScheds.length === 0) return ''
-              const isToday = day === today
-              return `
-                <div id="dia-${day}" class="glass rounded-xl p-5 ${isToday ? 'ring-1 ring-[#8B5CF6]/30' : ''}">
-                  <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl ${isToday ? 'bg-[#8B5CF6]/20' : 'bg-zinc-800'}">
-                      ${Icon('sword', isToday ? 18 : 16)}
+      <div class="space-y-6" id="schedule-sections">
+        ${Array.from({ length: 7 }, (_, day) => {
+          const dayScheds = seasonScheds.filter((s: any) => Number(s.day_of_week) === day)
+          if (dayScheds.length === 0) return ''
+          const isToday = day === today
+          return `
+            <div id="dia-${day}" class="schedule-day glass rounded-xl p-5 ${isToday ? 'ring-1 ring-green-400/30' : ''} ${isToday ? '' : 'hidden'}">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl ${isToday ? 'bg-green-500/20' : 'bg-zinc-800'}">
+                  ${Icon('sword', isToday ? 18 : 16)}
+                </div>
+                <div>
+                  <h3 class="font-heading text-base font-bold text-white">${DAYS[day]}</h3>
+                  <p class="text-xs text-zinc-500">${isToday ? 'Hoy' : ''} ${dayScheds.length} entrenamiento${dayScheds.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <div class="space-y-2">
+                ${dayScheds.map((s: any) => {
+                  const startLocal = formatTimeWithTZ(s.start_time?.slice(0, 5), s.timezone)
+                  const endLocal = formatTimeWithTZ(s.end_time?.slice(0, 5), s.timezone)
+                  const showTZ = s.timezone && s.timezone !== getLocalTZ()
+                  return `
+                  <div class="flex items-center gap-4 rounded-lg bg-zinc-900/50 px-4 py-3 text-sm transition hover:bg-zinc-800/50">
+                    <div class="flex flex-col items-center min-w-[52px]">
+                      <span class="text-xs font-bold text-white">${startLocal}</span>
+                      <span class="text-[10px] text-zinc-600">${endLocal}</span>
+                      ${showTZ ? `<span class="text-[9px] text-zinc-700 mt-0.5">local</span>` : ''}
                     </div>
-                    <div>
-                      <h3 class="font-heading text-base font-bold text-white">${DAYS[day]}</h3>
-                      <p class="text-xs text-zinc-500">${isToday ? 'Hoy · ' : ''}${dayScheds.length} entrenamiento${dayScheds.length !== 1 ? 's' : ''}</p>
+                    <div class="h-8 w-[2px] rounded-full ${isToday ? 'bg-green-400' : 'bg-zinc-700'}"></div>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-medium text-white truncate">${escapeHtml(s.title)}</p>
+                      <div class="flex flex-wrap gap-1.5 mt-0.5">
+                        ${s.type ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${escapeHtml(s.type)}</span>` : ''}
+                        ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">📍 ${escapeHtml(s.location)}</span>` : ''}
+                        ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
+                      </div>
                     </div>
-                  </div>
-                  <div class="space-y-2">
-                    ${dayScheds.map((s: any) => {
-                      const startLocal = formatTimeWithTZ(s.start_time?.slice(0, 5), s.timezone)
-                      const endLocal = formatTimeWithTZ(s.end_time?.slice(0, 5), s.timezone)
-                      const showTZ = s.timezone && s.timezone !== getLocalTZ()
-                      return `
-                      <div class="flex items-center gap-4 rounded-lg bg-zinc-900/50 px-4 py-3 text-sm transition hover:bg-zinc-800/50">
-                        <div class="flex flex-col items-center min-w-[52px]">
-                          <span class="text-xs font-bold text-white">${startLocal}</span>
-                          <span class="text-[10px] text-zinc-600">${endLocal}</span>
-                          ${showTZ ? `<span class="text-[9px] text-zinc-700">local</span>` : ''}
-                        </div>
-                        <div class="h-8 w-[2px] rounded-full ${isToday ? 'bg-green-400' : 'bg-zinc-700'}"></div>
-                        <div class="flex-1 min-w-0">
-                          <p class="font-medium text-white truncate">${escapeHtml(s.title)}</p>
-                          <div class="flex flex-wrap gap-1.5 mt-0.5">
-                            ${s.type ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${escapeHtml(s.type)}</span>` : ''}
-                            ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">📍 ${escapeHtml(s.location)}</span>` : ''}
-                            ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
-                          </div>
-                        </div>
-                        ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate" title="${escapeHtml(s.description)}">${escapeHtml(s.description)}</span>` : ''}
-                      </div>`
-                    }).join('')}
-                  </div>
-                </div>`
-            }).join('')
-        }
-      </div>`
+                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate" title="${escapeHtml(s.description)}">${escapeHtml(s.description)}</span>` : ''}
+                  </div>`
+                }).join('')}
+              </div>
+            </div>`
+        }).join('')}
+      </div>
+
+      ${seasonScheds.length === 0 ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horario competitivo publicado todavía.</p></div>' : ''}
+    `
 
     document.getElementById('page-content')!.innerHTML = html
 
     document.querySelectorAll('.day-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const day = (btn as HTMLElement).dataset.day
-        const el = document.getElementById('dia-' + day)
-        if (el) el.scrollIntoView({ behavior: 'smooth' })
+        document.querySelectorAll('.schedule-day').forEach((el) => el.classList.add('hidden'))
+        const target = document.getElementById('dia-' + day)
+        if (target) {
+          target.classList.remove('hidden')
+          target.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+        document.querySelectorAll('.day-btn').forEach((b) => {
+          b.classList.remove('bg-[#8B5CF6]/20', 'border', 'border-[#8B5CF6]/30')
+          b.classList.add('glass')
+        })
+        btn.classList.add('bg-[#8B5CF6]/20', 'border', 'border-[#8B5CF6]/30')
+        btn.classList.remove('glass')
       })
     })
 
