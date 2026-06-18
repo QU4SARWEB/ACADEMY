@@ -68,7 +68,7 @@ export async function initPublicProfile(): Promise<void> {
 
     const { data: pp1 } = await supabase
       .from('public_profiles')
-      .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
+      .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links, playlist')
       .eq('slug', slug)
       .maybeSingle()
 
@@ -77,7 +77,7 @@ export async function initPublicProfile(): Promise<void> {
     } else {
       const { data: pp2 } = await supabase
         .from('public_profiles')
-        .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links')
+        .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links, playlist')
         .eq('slug', match[1])
         .maybeSingle()
       if (pp2) pubProfile = pp2
@@ -99,6 +99,7 @@ export async function initPublicProfile(): Promise<void> {
           banner_url: null,
           bio: profileBySlug.bio,
           social_links: {},
+          playlist: [],
         }
       }
     }
@@ -152,11 +153,20 @@ export async function initPublicProfile(): Promise<void> {
     const bannerUrl = pubProfile.banner_url ?? profile.banner_url
     const bio = pubProfile.bio ?? profile.bio
     const socialLinks = pubProfile.social_links as Record<string, string> | null
+    const playlist = pubProfile.playlist as any[] | null
     const currentUrl = encodeURIComponent(window.location.href)
 
     const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
     const quote = profile.quote as string | null
     const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play' }
+
+    function embedUrl(url: string): string | null {
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+      if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
+      const spMatch = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/)
+      if (spMatch) return `https://open.spotify.com/embed/${spMatch[1]}/${spMatch[2]}`
+      return null
+    }
 
     const html = `
 <div class="min-h-screen bg-[#0A0A0A]" id="profile-page">
@@ -165,7 +175,7 @@ export async function initPublicProfile(): Promise<void> {
       <a href="#/" class="font-heading text-lg font-bold tracking-wider text-white">QU<span class="text-[#8B5CF6]">4</span>SAR</a>
       <nav class="flex items-center gap-4">
         <a href="#/" class="text-sm text-zinc-400 transition-colors hover:text-white">Inicio</a>
-        <button id="download-btn" class="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white">${Icon('download', 12)} PNG</button>
+        <button id="download-btn" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-white">${Icon('download', 14)} PNG</button>
       </nav>
     </div>
   </header>
@@ -197,7 +207,7 @@ export async function initPublicProfile(): Promise<void> {
               </div>
             </div>
           </div>
-          <button id="download-btn-2" class="rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white backdrop-blur transition hover:bg-white/20 flex items-center gap-1.5">${Icon('download', 11)} Descargar</button>
+          <button id="download-btn-2" class="rounded-lg bg-white/10 px-4 py-2 text-sm text-white backdrop-blur transition hover:bg-white/20 flex items-center gap-2">${Icon('download', 14)} Descargar</button>
         </div>
       </div>
 
@@ -247,8 +257,8 @@ export async function initPublicProfile(): Promise<void> {
         ${socialLinks && Object.keys(socialLinks).length > 0 ? `
         <div class="mt-4 flex flex-wrap gap-2">
           ${Object.entries(socialLinks).map(([key, url]) => `
-            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6]/30 hover:text-white">
-              ${Icon(socialIcons[key] || 'externalLink', 12)} ${key.charAt(0).toUpperCase() + key.slice(1)}
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6]/30 hover:text-white">
+              ${Icon(socialIcons[key] || 'externalLink', 14)} ${key.charAt(0).toUpperCase() + key.slice(1)}
             </a>
           `).join('')}
         </div>` : ''}
@@ -314,6 +324,28 @@ export async function initPublicProfile(): Promise<void> {
             <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
             ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
           </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${playlist && playlist.length > 0 ? `
+      <div class="glass rounded-[18px] p-6">
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
+          ${Icon('music', 14)} Playlist
+        </h3>
+        <div class="space-y-3">
+          ${playlist.map((item: any) => {
+            const embed = embedUrl(item.url)
+            return embed ? `
+          <div class="rounded-lg border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/50">
+              <span class="text-sm font-medium text-zinc-300 truncate">${escapeHtml(item.title)}</span>
+              <span class="ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${item.url.includes('spotify') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${item.url.includes('spotify') ? 'Spotify' : 'YouTube'}</span>
+            </div>
+            <div class="p-2">
+              <iframe src="${embed}" width="100%" height="80" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:8px"></iframe>
+            </div>
+          </div>` : ''
+          }).join('')}
         </div>
       </div>` : ''}
 

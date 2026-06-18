@@ -186,6 +186,17 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
       </div>
 
       <div class="border-t border-zinc-800 pt-6">
+        <h3 class="mb-3 text-sm font-medium text-zinc-300">Playlist de canciones</h3>
+        <div id="playlist-container" class="space-y-2"></div>
+        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+          <input id="playlist-url" placeholder="URL de YouTube o Spotify" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          <input id="playlist-title" placeholder="Nombre de la canción" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          <button type="button" id="playlist-add-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">Agregar</button>
+        </div>
+        <input type="hidden" name="playlist" id="playlist-hidden" value='${escapeHtml(JSON.stringify(pubProfile?.playlist ?? []))}' />
+      </div>
+
+      <div class="border-t border-zinc-800 pt-6">
         <h3 class="mb-3 text-sm font-medium text-zinc-300">Perfil público</h3>
         <div class="space-y-4">
           <div class="flex items-center gap-3">
@@ -221,9 +232,15 @@ export function getPublicProfileFormData(form: HTMLFormElement) {
   const fd = new FormData(form)
   const rawSlug = (fd.get('pubSlug') as string)?.trim()
   const displayName = (fd.get('displayName') as string)?.trim() || (fd.get('fullName') as string)?.trim() || ''
+  let playlist: any[] = []
+  try {
+    const raw = fd.get('playlist') as string
+    if (raw) playlist = JSON.parse(raw)
+  } catch {}
   return {
     slug: rawSlug || slugify(displayName),
     is_public: fd.get('pubIsPublic') === 'true',
+    playlist,
   }
 }
 
@@ -269,4 +286,48 @@ export function initMouseAutoCalc(): void {
   }
   dpi.addEventListener('input', calc)
   sens.addEventListener('input', calc)
+}
+
+export function initPlaylistEditor(): void {
+  const container = document.getElementById('playlist-container')
+  const urlInput = document.getElementById('playlist-url') as HTMLInputElement
+  const titleInput = document.getElementById('playlist-title') as HTMLInputElement
+  const addBtn = document.getElementById('playlist-add-btn')
+  const hidden = document.getElementById('playlist-hidden') as HTMLInputElement
+  if (!container || !urlInput || !titleInput || !addBtn || !hidden) return
+
+  function render() {
+    const items: any[] = JSON.parse(hidden!.value || '[]')
+    container!.innerHTML = items.map((item: any, i: number) => `
+      <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+        <span class="min-w-0 flex-1 truncate text-sm text-zinc-300">${escapeHtml(item.title)}</span>
+        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${item.url.includes('spotify') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${item.url.includes('spotify') ? 'Spotify' : 'YouTube'}</span>
+        <button type="button" data-index="${i}" class="playlist-remove shrink-0 rounded-lg px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10">Eliminar</button>
+      </div>
+    `).join('')
+  }
+
+  render()
+
+  addBtn.addEventListener('click', () => {
+    const url = urlInput!.value.trim()
+    const title = titleInput!.value.trim()
+    if (!url || !title) return
+    const items: any[] = JSON.parse(hidden!.value || '[]')
+    items.push({ url, title })
+    hidden!.value = JSON.stringify(items)
+    urlInput!.value = ''
+    titleInput!.value = ''
+    render()
+  })
+
+  container!.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.playlist-remove') as HTMLElement
+    if (!btn) return
+    const index = parseInt(btn.dataset.index ?? '', 10)
+    const items: any[] = JSON.parse(hidden!.value || '[]')
+    items.splice(index, 1)
+    hidden!.value = JSON.stringify(items)
+    render()
+  })
 }
