@@ -35,6 +35,9 @@ async function renderChatLayout(): Promise<void> {
   const profile = store.get<any>('profile')
   const isCoach = profile?.role === 'coach'
 
+  // Mark as read first so unread counts are accurate
+  if (activeConvId) await markAsRead(activeConvId, session.user.id)
+
   const { convs: convList, profileMap } = await loadConversations(session.user.id)
   const unreadCounts: Record<string, number> = convList.length > 0 ? await loadUnreadCounts(session.user.id, convList.map((c: any) => c.id)) : {}
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
@@ -148,7 +151,6 @@ async function renderChatLayout(): Promise<void> {
   await initChatEvents(session!.user.id)
   if (activeConvId) {
     loadMessages(activeConvId)
-    markAsRead(activeConvId, session.user.id)
     subscribeToTyping(activeConvId, session.user.id)
   }
 }
