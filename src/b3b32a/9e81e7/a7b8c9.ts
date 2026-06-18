@@ -22,8 +22,15 @@ export async function initChat(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
-    // Mark message notifications as read
+    // Mark message notifications as read and update sidebar badge
     await supabase.from('notifications').update({ read: true }).eq('profile_id', session.user.id).eq('type', 'message').eq('read', false)
+    const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('profile_id', session.user.id).eq('read', false)
+    const n = count ?? 0
+    ;(window as any).__unreadNotifs = n
+    document.querySelectorAll('a[href="#/notifications"]').forEach((a) => {
+      const span = a.querySelector('span')
+      if (span) span.textContent = n > 0 ? 'Notificaciones (' + n + ')' : 'Notificaciones'
+    })
     await renderChatLayout()
   } catch (err) {
     console.error(err)
