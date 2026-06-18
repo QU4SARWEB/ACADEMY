@@ -28,10 +28,8 @@ export function DashboardLayout(contentHtml: string): string {
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
       <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-        <div class="mx-auto ${bgUrl ? 'max-w-5xl' : ''}">
-          <div class="${bgUrl ? 'content-card rounded-2xl p-4 md:p-6 lg:p-8' : ''}">
-            ${contentHtml}
-          </div>
+        <div class="${bgUrl ? 'content-card rounded-2xl p-4 md:p-6 lg:p-8' : ''}">
+          ${contentHtml}
         </div>
       </main>
     </div>`

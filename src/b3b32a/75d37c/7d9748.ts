@@ -17,7 +17,7 @@ export async function initStudentProfile(): Promise<void> {
     const { data: pubProfile } = await supabase.from('public_profiles').select('*').eq('profile_id', session.user.id).maybeSingle()
 
     const html = `
-      <div class="max-w-2xl">
+      <div class="max-w-2xl mx-auto">
         <h1 class="mb-6 font-heading text-2xl font-bold text-white">Mi Perfil</h1>
         <form id="profile-form" class="space-y-6 glass rounded-xl p-6">
           ${renderProfileForm(profile, pubProfile)}
