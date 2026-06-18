@@ -51,7 +51,6 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/players', icon: 'sword', label: 'Jugadores' },
     { href: '/coaches/courses', icon: 'bookOpen', label: 'Cursos' },
     { href: '/coaches/tasks', icon: 'clipboardList', label: 'Tareas' },
-    { href: '/coaches/questions', icon: 'search', label: 'Preguntas' },
     { href: '/coaches/schedules', icon: 'calendar', label: 'Horarios' },
     { href: '/coaches/seasons', icon: 'calendar', label: 'Temporadas' },
     { href: '/coaches/teams', icon: 'users', label: 'Equipos' },

@@ -30,7 +30,6 @@ import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
 import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/64c62c'
 import { renderCoachPromotions, initCoachPromotions } from '@/b3b32a/8abf18/ea6aeb'
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
-import { renderCoachQuestions, initCoachQuestions } from '@/b3b32a/8abf18/478669'
 import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
 import { renderCoachExams, initCoachExams } from '@/b3b32a/8abf18/a9f8d1'
 import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/c5e3f2'
@@ -38,8 +37,6 @@ import { renderCoachNewModule, initCoachNewModule } from '@/b3b32a/8abf18/b7d4a6
 import { renderCoachModuleDetail, initCoachModuleDetail } from '@/b3b32a/8abf18/201980'
 import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
 import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
-import { renderCoachQuestionDetail, initCoachQuestionDetail } from '@/b3b32a/8abf18/2784c7'
-
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
 import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
 import { renderStudentProfile, initStudentProfile } from '@/b3b32a/75d37c/7d9748'
@@ -211,8 +208,6 @@ dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
 dash('/coaches/promotions', () => renderCoachPromotions(), initCoachPromotions)
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
-dash('/coaches/questions', () => renderCoachQuestions(), initCoachQuestions)
-dash('/coaches/questions/:id', () => renderCoachQuestionDetail(), initCoachQuestionDetail)
 
 // Student routes
 dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard)
