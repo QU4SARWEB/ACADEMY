@@ -17,12 +17,10 @@ export function DashboardLayout(contentHtml: string): string {
     <style id="theme-vars">
       :root { --accent: ${accent}; --accent-rgb: ${hexToRgb(accent)}; --accent-bg: ${accent}20; }
       ${bgUrl ? `
-        body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
+        body { background: url(${bgUrl}) center/cover fixed !important; }
+        #app > div:first-child { background: rgba(0,0,0,0.6) !important; }
         #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
-        #main-content > * { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1.5rem !important; margin-bottom: 0.5rem !important; }
-        #main-content .glass { background: rgba(20,20,30,0.9) !important; }
-        #main-content table { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
-        #main-content .overflow-x-auto { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
+        .glass { background: rgba(15,15,20,0.88) !important; backdrop-filter: blur(8px) !important; }
       ` : ''}
     </style>`
 
