@@ -50,9 +50,17 @@ export async function initStudentExamList(): Promise<void> {
           .select('*')
           .in('exam_id', examIds.length > 0 ? examIds : ['none'])
           .eq('enrollment_id', enr.id)
+        // Track last attempt AND submitted count per exam
+        const lastAttempt: Record<string, any> = {}
+        const submittedCount: Record<string, number> = {}
         for (const a of attempts ?? []) {
-          attemptsByExam[a.exam_id] = a
+          lastAttempt[a.exam_id] = a
+          if (a.status === 'submitted' || a.status === 'graded') {
+            submittedCount[a.exam_id] = (submittedCount[a.exam_id] || 0) + 1
+          }
         }
+        attemptsByExam = lastAttempt
+        ;(window as any).__examSubmittedCount = submittedCount
       }
     }
 
@@ -90,13 +98,20 @@ export async function initStudentExamList(): Promise<void> {
                           : ''
                         }
                       </div>
-                      ${enrollment && !attempt
-                        ? `<a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(exam.id)}"
-                             class="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-                            ${Icon('play', 16)} Iniciar
-                          </a>`
-                        : ''
-                      }
+                      ${(() => {
+                        const subCount = (window as any).__examSubmittedCount?.[exam.id] || 0
+                        const canRetry = subCount < (exam.max_attempts ?? 1)
+                        const isInProgress = attempt?.status === 'in_progress'
+                        if (!enrollment) return ''
+                        if (canRetry || isInProgress) {
+                          const label = isInProgress ? 'Continuar' : attempt ? 'Reintentar' : 'Iniciar'
+                          return `<a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(exam.id)}"
+                               class="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
+                              ${Icon('play', 16)} ${label}
+                            </a>`
+                        }
+                        return ''
+                      })()}
                     </div>
                   </div>`
               }).join('')
