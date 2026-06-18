@@ -315,16 +315,31 @@ export async function initPublicProfile(): Promise<void> {
       try {
         const card = document.getElementById('profile-card')
         if (!card) return
-        // Load dom-to-image-more via script tag
+
+        // Suppress font CSS errors (CORS from Google Fonts)
+        const origConsoleError = console.error
+        console.error = () => {}
+
+        // Temporarily replace backdrop-filter with solid backgrounds to avoid white boxes
+        const style = document.createElement('style')
+        style.id = 'png-capture-override'
+        style.textContent = `
+          .glass { background: rgba(20, 20, 30, 0.95) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+          [class*="backdrop"] { backdrop-filter: none !important; }
+        `
+        document.head.appendChild(style)
+
+        // Load dom-to-image-more via dummy image workaround (no font CSS loading)
         if (!(window as any).domtoimage) {
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script')
             s.src = 'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js'
             s.onload = () => resolve()
-            s.onerror = () => reject(new Error('Failed to load dom-to-image-more'))
+            s.onerror = () => reject(new Error('Failed to load'))
             document.head.appendChild(s)
           })
         }
+
         const dti = (window as any).domtoimage
         const canvas = await dti.toCanvas(card, {
           bgColor: '#0A0A0A',
@@ -332,14 +347,18 @@ export async function initPublicProfile(): Promise<void> {
           useCORS: true,
           allowTaint: true,
           filter: (node: any) => node.tagName !== 'SCRIPT',
-          style: { 'backdrop-filter': 'none', '-webkit-backdrop-filter': 'none' },
         })
+
+        // Restore
+        document.getElementById('png-capture-override')?.remove()
+        console.error = origConsoleError
+
         const link = document.createElement('a')
         link.download = `perfil-${slug}.png`
         link.href = canvas.toDataURL('image/png')
         link.click()
       } catch (e) {
-        console.error('Error generating PNG:', e)
+        console.error('Error generando PNG:', e)
       }
     }
 
