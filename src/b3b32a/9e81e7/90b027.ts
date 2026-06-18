@@ -142,8 +142,6 @@ export async function initPublicProfile(): Promise<void> {
     const currentUrl = encodeURIComponent(window.location.href)
 
     const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
-    const skills = (profile.skills || {}) as Record<string, number>
-    const hasSkills = Object.keys(skills).length > 0
     const quote = profile.quote as string | null
     const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play' }
 
@@ -288,30 +286,6 @@ export async function initPublicProfile(): Promise<void> {
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>`).join('')}
-        </div>
-      </div>` : ''}
-
-      ${hasSkills ? `
-      <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
-          ${Icon('target', 14)} Habilidades
-        </h3>
-        <div class="space-y-3">
-          ${Object.entries(skills).map(([key, val]) => {
-            const labels: Record<string, string> = { mechanics: 'Mecánicas', gameSense: 'Game Sense', communication: 'Comunicación', leadership: 'Liderazgo' }
-            const colors = ['#8B5CF6', '#6D28D9', '#7C3AED', '#10B981']
-            const i = Object.keys(skills).indexOf(key)
-            return `
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-zinc-300">${labels[key] || key}</span>
-                <span class="text-zinc-500">${val}%</span>
-              </div>
-              <div class="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                <div class="h-full rounded-full transition-all" style="width:${val}%;background:${colors[i % colors.length]}"></div>
-              </div>
-            </div>`
-          }).join('')}
         </div>
       </div>` : ''}
 
