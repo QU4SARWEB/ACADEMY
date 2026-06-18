@@ -1,7 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { toast } from '@/4725dc/4f2900'
-import { renderProfileForm, getProfileFormData, getPublicProfileFormData } from '@/2b3583/ddf4d5'
+import { renderProfileForm, getProfileFormData, getPublicProfileFormData, initMouseAutoCalc } from '@/2b3583/ddf4d5'
 import { uploadFile, getAvatarPath, getBannerPath } from '@/2b3583/76ee3d'
 
 export function renderPlayerProfile(): string {
@@ -61,6 +61,8 @@ export async function initPlayerProfile(): Promise<void> {
     document.getElementById('banner-upload')?.addEventListener('change', () => {
       handleImageUpload('banner-upload', 'banner-upload-status', 'banners', getBannerPath)
     })
+
+    initMouseAutoCalc()
 
     document.getElementById('profile-form')!.addEventListener('submit', async (e) => {
       e.preventDefault()

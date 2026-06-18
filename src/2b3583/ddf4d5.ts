@@ -3,9 +3,13 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 const RANKS = ['Unranked', 'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant']
 const IN_GAME_ROLES = ['Duelist', 'Controller', 'Initiator', 'Sentinel', 'Flex']
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'perfil'
+}
+
 export function renderProfileForm(profile: any, pubProfile?: any): string {
   const pubEnabled = pubProfile?.is_public ?? false
-  const pubSlug = pubProfile?.slug ?? ''
+  const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
   const publicUrl = pubSlug ? `${window.location.origin}/#/p/${pubSlug}` : ''
   return `
     <div class="space-y-6">
@@ -129,8 +133,9 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           </div>
           <div>
             <label class="block text-xs font-medium text-zinc-400">eDPI</label>
-            <input name="edpi" type="number" value="${profile.edpi ?? ''}" placeholder="280"
-              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+            <input name="edpi" id="edpi" type="number" value="${profile.edpi ?? ''}" placeholder="Auto"
+              readonly
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-medium text-zinc-400">Frecuencia (Hz)</label>
@@ -203,8 +208,10 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
 
 export function getPublicProfileFormData(form: HTMLFormElement) {
   const fd = new FormData(form)
+  const rawSlug = (fd.get('pubSlug') as string)?.trim()
+  const displayName = (fd.get('displayName') as string)?.trim() || (fd.get('fullName') as string)?.trim() || ''
   return {
-    slug: (fd.get('pubSlug') as string)?.trim() || null,
+    slug: rawSlug || slugify(displayName),
     is_public: fd.get('pubIsPublic') === 'true',
   }
 }
@@ -230,5 +237,38 @@ export function getProfileFormData(form: HTMLFormElement) {
     social_youtube: (fd.get('socialYoutube') as string) || null,
     social_twitter: (fd.get('socialTwitter') as string) || null,
     social_twitch: (fd.get('socialTwitch') as string) || null,
+  }
+}
+
+export function initMouseAutoCalc(): void {
+  const dpi = document.querySelector<HTMLInputElement>('[name="mouseDpi"]')
+  const sens = document.querySelector<HTMLInputElement>('[name="mouseSens"]')
+  const edpi = document.getElementById('edpi') as HTMLInputElement
+  if (!dpi || !sens || !edpi) return
+  const calc = () => {
+    const d = parseFloat(dpi.value)
+    const s = parseFloat(sens.value)
+    if (!isNaN(d) && !isNaN(s)) {
+      edpi.value = String(Math.round(d * s * 100) / 100)
+    } else {
+      edpi.value = ''
+    }
+  }
+  dpi.addEventListener('input', calc)
+  sens.addEventListener('input', calc)
+
+  const displayName = document.querySelector<HTMLInputElement>('[name="displayName"]')
+  const slugInput = document.querySelector<HTMLInputElement>('[name="pubSlug"]')
+  const toggle = document.querySelector<HTMLInputElement>('[name="pubIsPublic"]')
+  if (displayName && slugInput) {
+    const autoSlug = () => {
+      if (toggle?.checked && !slugInput.dataset.userEdited) {
+        slugInput.value = slugify(displayName.value.trim() || 'perfil')
+      }
+    }
+    displayName.addEventListener('input', autoSlug)
+    slugInput.addEventListener('input', () => {
+      slugInput.dataset.userEdited = slugInput.value !== slugify(displayName?.value?.trim() || 'perfil') ? 'true' : ''
+    })
   }
 }

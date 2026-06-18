@@ -78,8 +78,11 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </a>
 
       <div class="mb-4 flex items-center gap-3 rounded-lg bg-zinc-900/50 px-3 py-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">
-          ${escapeHtml(userName.charAt(0).toUpperCase())}
+        <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">
+          ${profile?.avatar_url
+            ? `<img src="${escapeHtml(profile.avatar_url)}" alt="" class="h-full w-full object-cover" />`
+            : escapeHtml(userName.charAt(0).toUpperCase())
+          }
         </div>
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium text-white">${escapeHtml(userName)}</p>
