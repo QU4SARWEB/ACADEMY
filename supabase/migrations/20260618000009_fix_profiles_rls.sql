@@ -5,7 +5,8 @@ DROP POLICY IF EXISTS "auth_read_profiles" ON profiles;
 CREATE POLICY "auth_read_profiles" ON profiles FOR SELECT USING (auth.role() = 'authenticated');
 
 -- 2. Allow viewing participants of conversations you belong to (needed for duplicate detection)
+-- Uses conversations table via its own RLS (view_own_conversations) to avoid recursive policy
 DROP POLICY IF EXISTS "view_conv_participants" ON conversation_participants;
 CREATE POLICY "view_conv_participants" ON conversation_participants FOR SELECT USING (
-  conversation_id IN (SELECT conversation_id FROM conversation_participants WHERE profile_id = auth.uid())
+  EXISTS (SELECT 1 FROM conversations WHERE id = conversation_participants.conversation_id)
 );
