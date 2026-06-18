@@ -98,7 +98,7 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('rank')
+          .select('rank, scholarship')
           .eq('id', session.user.id)
           .maybeSingle()
 
@@ -141,7 +141,7 @@ export async function initStudentCourses(): Promise<void> {
             profile_id: session.user.id,
             enrollment_id: enrollment.id,
             season_id: season.id,
-            status: 'pending',
+            status: profile?.scholarship ? 'scholarship' : 'pending',
           })
         }
 

@@ -406,11 +406,17 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       .maybeSingle()
 
     if (!existingPayment) {
+      const { data: studentProfile } = await supabase
+        .from('profiles')
+        .select('scholarship')
+        .eq('id', profileId)
+        .maybeSingle()
+
       const { error: payErr } = await supabase.from('payments').insert({
         profile_id: profileId,
         season_id: seasonId,
         type,
-        status: 'pending',
+        status: studentProfile?.scholarship ? 'scholarship' : 'pending',
       })
       if (payErr) console.error('Error creating payment record:', payErr)
     }
