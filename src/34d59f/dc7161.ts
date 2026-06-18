@@ -88,7 +88,11 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
   ]
 
+  const isExpired = !!(window as any).__isExpired
   let items = isCoach ? coachItems : navItems.filter(i => i.show)
+  if (isExpired && !isCoach) {
+    items = items.filter(i => i.href === '/payments')
+  }
   const currentHash = location.hash.slice(1)
 
   const itemsHtml = items.map(item => {

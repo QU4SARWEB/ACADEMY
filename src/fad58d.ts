@@ -150,6 +150,24 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
 
     try {
       await getProfile()
+      const profile = store.get<any>('profile')
+      // Check if user has expired payments (block access except /payments)
+      let isExpired = false
+      if (profile && profile.role !== 'coach') {
+        const { data: expiredPay } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('profile_id', profile.id)
+          .eq('status', 'expired')
+          .limit(1)
+          .maybeSingle()
+        isExpired = !!expiredPay
+      }
+      if (isExpired && path !== '/payments') {
+        router.navigate('/payments')
+        return
+      }
+      ;(window as any).__isExpired = isExpired
       const { DashboardLayout, initSidebar } = await import('@/34d59f/dc7161')
       app.innerHTML = DashboardLayout(renderFn())
       initToastContainer()
