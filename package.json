@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5500",
-    "build": "tsc && vite build && copy /Y dist\\index.html dist\\404.html",
+    "build": "tsc && vite build && node -e \"require('fs').writeFileSync('dist/404.html', require('fs').readFileSync('dist/index.html'))\"",
     "preview": "vite preview"
   },
   "dependencies": {
