@@ -19,17 +19,12 @@ export function DashboardLayout(contentHtml: string): string {
       ${bgUrl ? `
         body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
         #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
-        #main-content > .mx-auto { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1rem 0.5rem !important; margin-bottom: 0.5rem !important; margin-top: 0.5rem !important; }
-        #main-content > .overflow-x-auto, #main-content > div:not(.mx-auto) { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1rem 0.5rem !important; margin-bottom: 0.5rem !important; }
+        #main-content > .mx-auto { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 0.75rem 1rem !important; margin-bottom: 0.5rem !important; margin-top: 0.5rem !important; }
+        #main-content .glass { background: rgba(20,20,30,0.9) !important; }
+        #main-content > .overflow-x-auto, #main-content > div:not(.mx-auto) { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 0.75rem 1rem !important; margin-bottom: 0.5rem !important; }
         #main-content table { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
+        #main-content .overflow-x-auto .glass, #main-content .glass { background: rgba(20,20,30,0.9) !important; }
       ` : ''}
-      /* Accent color overrides for all elements */
-      .text-\\[\\#8B5CF6\\], [class*="text-[#8B5CF6]"], .hover\\:text-\\[\\#8B5CF6\\]:hover { color: var(--accent) !important; }
-      .bg-\\[\\#8B5CF6\\], [class*="bg-[#8B5CF6]"], .hover\\:bg-\\[\\#8B5CF6\\]:hover, .hover\\:bg-\\[\\#7C3AED\\]:hover { background-color: var(--accent) !important; }
-      .border-\\[\\#8B5CF6\\], [class*="border-[#8B5CF6]"] { border-color: var(--accent) !important; }
-      .ring-\\[\\#8B5CF6\\], [class*="ring-[#8B5CF6]"] { --tw-ring-color: var(--accent) !important; }
-      .focus\\:border-\\[\\#8B5CF6\\]:focus { border-color: var(--accent) !important; }
-      [style*="border-color:#8B5CF6"] { border-color: var(--accent) !important; }
     </style>`
 
   return `

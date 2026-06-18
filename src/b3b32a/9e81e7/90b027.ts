@@ -127,6 +127,19 @@ export async function initPublicProfile(): Promise<void> {
 
     void supabase.rpc('increment_profile_views', { profile_id: profileId })
 
+    // Apply the user's custom theme (background + accent) to the public profile
+    const bgUrl = (profile as any)?.custom_bg_url
+    const accent = (profile as any)?.role_color || '#8B5CF6'
+    const themeStyle = `
+      <style id="pub-theme">
+        :root { --accent: ${accent}; }
+        ${bgUrl ? `
+          body { background: url(${bgUrl}) center/cover fixed !important; }
+          .glass { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+        ` : ''}
+      </style>`
+    document.head.insertAdjacentHTML('beforeend', themeStyle)
+
     const xp = achievements.length * 150
     const rank = findRank(xp)
     const next = nextRank(xp)
