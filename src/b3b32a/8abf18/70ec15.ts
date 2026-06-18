@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -200,7 +201,7 @@ export async function initCoachSchedules(): Promise<void> {
     document.querySelectorAll('.btn-delete-schedule').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id
-        if (!id || !confirm('¿Eliminar este horario?')) return
+        if (!id || !(await confirmDialog('¿Eliminar este horario?'))) return
         const { error } = await supabase.from('schedules').delete().eq('id', id)
         if (error) toast('error', error.message)
         else initCoachSchedules()

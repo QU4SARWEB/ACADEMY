@@ -51,6 +51,11 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
         </div>
         <div>
+          <label class="block text-xs font-medium text-zinc-400">Color de rol</label>
+          <input name="roleColor" type="color" value="${escapeHtml(profile.role_color ?? '#8B5CF6')}"
+            class="mt-1 h-9 w-full cursor-pointer rounded-lg border border-zinc-700 bg-[#0A0A0A] p-1 outline-none" />
+        </div>
+        <div>
           <label class="block text-xs font-medium text-zinc-400">Rango Valorant</label>
           <select name="rank"
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
@@ -225,6 +230,7 @@ export function getProfileFormData(form: HTMLFormElement) {
     region: (fd.get('region') as string) || null,
     in_game_role: (fd.get('inGameRole') as string) || null,
     institutional_email: (fd.get('institutionalEmail') as string) || null,
+    role_color: (fd.get('roleColor') as string) || '#8B5CF6',
     mouse_dpi: fd.get('mouseDpi') ? Number(fd.get('mouseDpi')) : null,
     mouse_sens: fd.get('mouseSens') ? Number(fd.get('mouseSens')) : null,
     mouse_scope_sens: fd.get('mouseScopeSens') ? Number(fd.get('mouseScopeSens')) : null,

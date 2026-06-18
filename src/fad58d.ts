@@ -32,6 +32,10 @@ import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/64c6
 import { renderCoachPromotions, initCoachPromotions } from '@/b3b32a/8abf18/ea6aeb'
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachQuestions, initCoachQuestions } from '@/b3b32a/8abf18/478669'
+import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
+import { renderCoachExams, initCoachExams } from '@/b3b32a/8abf18/a9f8d1'
+import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/c5e3f2'
+import { renderCoachNewModule, initCoachNewModule } from '@/b3b32a/8abf18/b7d4a6'
 import { renderCoachModuleDetail, initCoachModuleDetail } from '@/b3b32a/8abf18/201980'
 import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
 import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
@@ -49,6 +53,7 @@ import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/fce448'
 import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
 import { renderStudentEvaluations, initStudentEvaluations } from '@/b3b32a/75d37c/a116c0'
 import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
+import { renderStudentEvalList, initStudentEvalList } from '@/b3b32a/75d37c/f9e8d7'
 import { renderStudentEvalDetail, initStudentEvalDetail } from '@/b3b32a/75d37c/1868f3'
 import { renderStudentExamList, initStudentExamList } from '@/b3b32a/75d37c/e1760f'
 import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e16'
@@ -56,6 +61,8 @@ import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e
 import { renderPlayerDashboard, initPlayerDashboard } from '@/b3b32a/a2bbab/4866e3'
 import { renderPlayerProfile, initPlayerProfile } from '@/b3b32a/a2bbab/7d9748'
 import { renderPlayerSchedule, initPlayerSchedule } from '@/b3b32a/a2bbab/799855'
+import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/e8f6c1'
+import { renderPlayerCourses, initPlayerCourses } from '@/b3b32a/a2bbab/d1e5f3'
 import { renderPlayerScrims, initPlayerScrims } from '@/b3b32a/a2bbab/634637'
 import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
 
@@ -119,11 +126,11 @@ dash('/coaches/dashboard', () => renderCoachDashboard(), initCoachDashboard)
 dash('/coaches/courses', () => renderCoachCourses(), mountCoachCourses)
 dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
 dash('/coaches/courses/new', () => renderCoachNewCourse(), initCoachNewCourse)
-dash('/coaches/courses/:id/edit', () => '<p class="text-zinc-500">Editar curso (próximamente)</p>')
-dash('/coaches/courses/:id/exams', () => '<p class="text-zinc-500">Exámenes (próximamente)</p>')
+dash('/coaches/courses/:id/edit', () => renderCoachEditCourse(), initCoachEditCourse)
+dash('/coaches/courses/:id/exams', () => renderCoachExams(), initCoachExams)
 dash('/coaches/courses/:id/attendance', () => renderCoachAttendance(), initCoachAttendance)
-dash('/coaches/courses/:id/grades', () => '<p class="text-zinc-500">Notas (próximamente)</p>')
-dash('/coaches/courses/:id/modules/new', () => '<p class="text-zinc-500">Nuevo módulo (próximamente)</p>')
+dash('/coaches/courses/:id/grades', () => renderCoachGrades(), initCoachGrades)
+dash('/coaches/courses/:id/modules/new', () => renderCoachNewModule(), initCoachNewModule)
 dash('/coaches/courses/:id/modules/:mid', () => renderCoachModuleDetail(), initCoachModuleDetail)
 dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
 dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
@@ -158,11 +165,14 @@ dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/tasks/:id', () => renderStudentTaskDetail(), initStudentTaskDetail)
 dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
+dash('/students/evaluations', () => renderStudentEvalList(), initStudentEvalList)
 dash('/students/evaluations/:id', () => renderStudentEvalDetail(), initStudentEvalDetail)
 
 // Player routes
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
 dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
+dash('/players/tasks', () => renderPlayerTasks(), initPlayerTasks)
+dash('/players/courses', () => renderPlayerCourses(), initPlayerCourses)
 dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
 dash('/players/scrims', () => renderPlayerScrims(), initPlayerScrims)
 dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)

@@ -3,7 +3,9 @@ import { supabase } from '@/304244'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { Icon } from '@/2b3583/bd2119'
+import { toast } from '@/4725dc/4f2900'
 import { store } from '@/9ed39e/8cd892'
+import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import type { Profile } from '@/d14a80'
 
 let selectedSeasonId: string | null = null
@@ -71,21 +73,91 @@ async function renderStudentPayments(userId: string): Promise<void> {
       ${(payments ?? []).length === 0
         ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
         : (payments ?? []).map((p: any) => `
-          <div class="glass rounded-xl p-4 flex items-center justify-between">
+          <div class="payment-item glass rounded-xl p-4 flex items-center justify-between" data-payment-id="${escapeHtml(p.id)}">
             <div>
               <p class="text-sm text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
               <p class="text-xs text-zinc-500">${p.due_date ? formatDate(p.due_date) : ''} ${p.paid_at ? '· Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
-            <div class="text-right">
+            <div class="text-right flex items-center gap-3">
+              ${p.receipt_url
+                ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
+                : p.status === 'pending'
+                  ? `<button class="upload-receipt-btn text-xs text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
+                  : ''
+              }
               <span class="text-xs ${statusColors[p.status] || 'text-zinc-500'}">${escapeHtml(p.status)}</span>
               ${p.amount ? `<p class="text-xs text-zinc-400">$${p.amount}</p>` : ''}
             </div>
           </div>
         `).join('')
       }
+    </div>
+
+    <div id="receipt-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
+      <div class="glass max-w-md rounded-xl p-6">
+        <h3 class="mb-4 font-heading text-lg font-bold text-white">Subir comprobante de pago</h3>
+        <form id="receipt-form">
+          <input type="hidden" name="paymentId">
+          <div class="mb-4">
+            <label class="mb-1 block text-sm text-zinc-400">Selecciona el comprobante (imagen o PDF)</label>
+            <input name="receipt" type="file" accept="image/*,application/pdf" required
+              class="w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:text-white hover:file:bg-zinc-700">
+          </div>
+          <p id="receipt-error" class="mb-3 hidden text-sm text-red-400"></p>
+          <div class="flex gap-3">
+            <button type="submit"
+              class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">Subir</button>
+            <button type="button" id="close-receipt-modal"
+              class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Cancelar</button>
+          </div>
+        </form>
+      </div>
     </div>`
 
   document.getElementById('page-content')!.innerHTML = html
+
+  document.querySelectorAll('.upload-receipt-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const paymentId = (btn as HTMLElement).closest('.payment-item')?.getAttribute('data-payment-id')
+      if (!paymentId) return
+      const modal = document.getElementById('receipt-modal')!
+      modal.querySelector<HTMLInputElement>('input[name="paymentId"]')!.value = paymentId
+      modal.classList.remove('hidden')
+    })
+  })
+
+  document.getElementById('close-receipt-modal')?.addEventListener('click', () => {
+    document.getElementById('receipt-modal')!.classList.add('hidden')
+  })
+
+  document.getElementById('receipt-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const fd = new FormData(e.target as HTMLFormElement)
+    const file = fd.get('receipt') as File
+    const paymentId = fd.get('paymentId') as string
+
+    if (!file || file.size === 0) return
+
+    const url = await uploadFileFromInput('receipts', paymentId, 'receipts', file)
+    if (!url) {
+      const errEl = document.getElementById('receipt-error')!
+      errEl.textContent = 'Error al subir el comprobante'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    const { error } = await supabase.from('payments').update({ receipt_url: url }).eq('id', paymentId)
+    if (error) {
+      const errEl = document.getElementById('receipt-error')!
+      errEl.textContent = error.message
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    toast('success', 'Comprobante subido correctamente')
+    document.getElementById('receipt-modal')!.classList.add('hidden')
+    initPayments()
+  })
 }
 
 async function renderCoachPayments(): Promise<void> {
@@ -276,6 +348,7 @@ async function renderCoachPayments(): Promise<void> {
 
       if (action === 'scholarship') {
         await supabase.from('profiles').update({ scholarship: true }).eq('id', oldPayment.profile_id)
+        await supabase.from('payments').update({ status: 'scholarship' }).eq('profile_id', oldPayment.profile_id).eq('status', 'pending')
       } else if (oldPayment.status === 'scholarship') {
         const { count } = await supabase
           .from('payments')

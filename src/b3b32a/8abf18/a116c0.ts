@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 export function renderCoachEvaluations(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -41,18 +42,20 @@ export async function initCoachEvaluations(): Promise<void> {
         ${(data ?? []).length === 0
           ? '<p class="text-sm text-zinc-500">No hay evaluaciones.</p>'
           : (data ?? []).map((e: any) => `
-            <a href="#/coaches/evaluations/${escapeHtml(e.id)}"
-               class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-              <div>
+            <div class="glass glass-hover flex items-center justify-between rounded-xl p-4">
+              <a href="#/coaches/evaluations/${escapeHtml(e.id)}" class="flex-1 min-w-0">
                 <h3 class="font-medium text-white">${escapeHtml(e.title)}</h3>
                 <p class="mt-0.5 text-sm text-zinc-500">
                   ${escapeHtml(e.course_modules?.courses?.name || 'Sin curso')} / ${escapeHtml(e.course_modules?.name || 'Sin módulo')}
                   ${e.max_score ? ` · Máx: ${e.max_score} pts` : ''}
                   ${e.weight ? ` · Peso: ${e.weight}%` : ''}
                 </p>
+              </a>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-xs ${e.is_active ? 'text-green-400' : 'text-zinc-500'}">${e.is_active ? 'Activa' : 'Inactiva'}</span>
+                <button class="delete-eval-btn rounded-lg border border-red-700 px-2 py-1 text-xs text-red-400 transition hover:bg-red-900/30" data-id="${escapeHtml(e.id)}">${Icon('trash', 12)}</button>
               </div>
-              <span class="text-xs ${e.is_active ? 'text-green-400' : 'text-zinc-500'}">${e.is_active ? 'Activa' : 'Inactiva'}</span>
-            </a>
+            </div>
           `).join('')
         }
       </div>`
@@ -204,6 +207,19 @@ export async function initCoachEvaluations(): Promise<void> {
         () => initCoachEvaluations()
       )
       .subscribe()
+
+    document.querySelectorAll('.delete-eval-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const evalId = (btn as HTMLElement).getAttribute('data-id')
+        if (!evalId || !(await confirmDialog('¿Eliminar esta evaluación?'))) return
+        const { error } = await supabase.from('evaluations').delete().eq('id', evalId)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Evaluación eliminada')
+        initCoachEvaluations()
+      })
+    })
   } catch (err) {
     console.error('Error loading evaluations:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar evaluaciones</p>'

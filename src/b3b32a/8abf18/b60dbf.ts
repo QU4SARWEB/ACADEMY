@@ -4,6 +4,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 const RANK_ORDER: Record<string, number> = {
@@ -289,15 +290,21 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
   })
 
   document.getElementById('btn-toggle-scholarship')?.addEventListener('click', async () => {
-    const { error } = await supabase.from('profiles').update({ scholarship: !hasScholarship }).eq('id', studentId)
-    if (error) toast('error', error.message)
-    else mountCoachStudentDetail()
+    const newVal = !hasScholarship
+    const { error } = await supabase.from('profiles').update({ scholarship: newVal }).eq('id', studentId)
+    if (error) { toast('error', error.message); return }
+    if (newVal) {
+      await supabase.from('payments').update({ status: 'scholarship' }).eq('profile_id', studentId).eq('status', 'pending')
+    } else {
+      await supabase.from('payments').update({ status: 'pending' }).eq('profile_id', studentId).eq('status', 'scholarship')
+    }
+    mountCoachStudentDetail()
   })
 
   document.querySelectorAll('.btn-unenroll').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const enrollmentId = (btn as HTMLElement).dataset.enrollmentId
-      if (!enrollmentId || !confirm('¿Dar de baja esta inscripción?')) return
+      if (!enrollmentId || !(await confirmDialog('¿Dar de baja esta inscripción?'))) return
       const { error } = await supabase.from('enrollments').update({ status: 'dropped' }).eq('id', enrollmentId)
       if (error) toast('error', error.message)
       else mountCoachStudentDetail()

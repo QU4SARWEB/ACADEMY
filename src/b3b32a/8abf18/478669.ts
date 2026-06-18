@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 export function renderCoachQuestions(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -160,7 +161,7 @@ export async function initCoachQuestions(): Promise<void> {
     document.querySelectorAll('.delete-question-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const qId = (btn as HTMLElement).getAttribute('data-id')
-        if (!qId || !confirm('¿Eliminar esta pregunta?')) return
+        if (!qId || !(await confirmDialog('¿Eliminar esta pregunta?'))) return
         const { error } = await supabase.from('questions').delete().eq('id', qId)
         if (error) {
           toast('error', error.message)

@@ -114,7 +114,6 @@ export async function initCoachNewSchedule(): Promise<void> {
       const { error } = await supabase.from('schedules').insert({
         title: fd.get('title') as string,
         season_id: (fd.get('seasonId') as string) || null,
-        module_id: (fd.get('moduleId') as string) || null,
         week_number: (fd.get('weekNumber') as string) ? parseInt(fd.get('weekNumber') as string) : null,
         day_of_week: parseInt(fd.get('dayOfWeek') as string) || 0,
         start_time: (fd.get('startTime') as string) || null,
@@ -122,7 +121,6 @@ export async function initCoachNewSchedule(): Promise<void> {
         type: (fd.get('type') as string) || 'academic',
         location: (fd.get('location') as string) || null,
         description: (fd.get('description') as string) || null,
-        is_active: true,
       })
 
       if (error) {

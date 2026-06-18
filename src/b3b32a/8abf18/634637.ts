@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 export function renderCoachScrims(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -65,7 +66,7 @@ export async function initCoachScrims(): Promise<void> {
                         ${escapeHtml(s.teams?.name || 'Sin equipo')}
                         ${s.seasons?.name ? ' · ' + escapeHtml(s.seasons.name) : ''}
                         · ${formatDate(s.scheduled_at)}
-                        ${s.qu4sar_score != null && s.opponent_score != null ? ` · ${s.qu4sar_score} - ${s.opponent_score}` : ''}
+                        ${s.score_quasar != null && s.score_opponent != null ? ` · ${s.score_quasar} - ${s.score_opponent}` : ''}
                       </p>
                       ${s.notes ? `<p class="mt-1 text-xs text-zinc-600">${escapeHtml(s.notes)}</p>` : ''}
                     </div>
@@ -174,8 +175,8 @@ export async function initCoachScrims(): Promise<void> {
           rival: fd.get('opponent'),
           scheduled_at: fd.get('scheduledAt'),
           result: (fd.get('result') as string) || null,
-          qu4sar_score: (fd.get('qu4sarScore') as string) ? parseInt(fd.get('qu4sarScore') as string) : null,
-          opponent_score: (fd.get('opponentScore') as string) ? parseInt(fd.get('opponentScore') as string) : null,
+          score_quasar: (fd.get('qu4sarScore') as string) ? parseInt(fd.get('qu4sarScore') as string) : null,
+          score_opponent: (fd.get('opponentScore') as string) ? parseInt(fd.get('opponentScore') as string) : null,
           notes: (fd.get('notes') as string) || null,
         }
 
@@ -204,7 +205,7 @@ export async function initCoachScrims(): Promise<void> {
       const deleteBtn = target.closest('.btn-delete-scrim') as HTMLElement
       if (deleteBtn) {
         const scrimId = deleteBtn.dataset.scrimId
-        if (!scrimId || !confirm('¿Eliminar este scrim?')) return
+        if (!scrimId || !(await confirmDialog('¿Eliminar este scrim?'))) return
         const { error } = await supabase.from('scrims').delete().eq('id', scrimId)
         if (error) toast('error', error.message)
         else {

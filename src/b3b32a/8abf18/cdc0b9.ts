@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
+import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { router } from '@/f3395c'
 
 export function renderCoachNewTask(): string {
@@ -67,6 +68,11 @@ export async function initCoachNewTask(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
             </div>
           </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-zinc-400">Archivo adjunto (opcional)</label>
+            <input type="file" name="attachment" accept=".pdf,.mp4,.png,.jpg,.jpeg,.zip"
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition file:mr-3 file:rounded file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1 file:text-xs file:text-white hover:file:bg-[#7C3AED]" />
+          </div>
           <label class="flex items-center gap-2 text-sm text-zinc-300">
             <input type="checkbox" name="isActive" checked
               class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
@@ -91,6 +97,17 @@ export async function initCoachNewTask(): Promise<void> {
     document.getElementById('task-form')!.addEventListener('submit', async (e) => {
       e.preventDefault()
       const fd = new FormData(e.target as HTMLFormElement)
+      const file = (document.querySelector<HTMLInputElement>('input[name="attachment"]'))?.files?.[0]
+      let attachmentUrl: string | null = null
+      if (file) {
+        try {
+          attachmentUrl = await uploadFileFromInput('uploads', 'tasks', 'attachments', file)
+        } catch (err) {
+          document.getElementById('form-error')!.textContent = 'Error al subir archivo'
+          document.getElementById('form-error')!.classList.remove('hidden')
+          return
+        }
+      }
       const { error } = await supabase.from('tasks').insert({
         module_id: fd.get('moduleId') as string,
         season_id: fd.get('seasonId') as string || null,
@@ -99,6 +116,7 @@ export async function initCoachNewTask(): Promise<void> {
         due_date: fd.get('dueDate') as string,
         max_score: parseFloat(fd.get('maxScore') as string) || 100,
         is_active: fd.get('isActive') === 'on',
+        attachment_url: attachmentUrl,
       })
       if (error) {
         document.getElementById('form-error')!.textContent = error.message

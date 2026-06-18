@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 export function renderCoachTeams(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -164,8 +165,10 @@ export async function initCoachTeams(): Promise<void> {
       const name = (fd.get('name') as string)?.trim()
       if (!name) return
 
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36)
       const { error } = await supabase.from('teams').insert({
         name,
+        slug,
         season_id: (fd.get('seasonId') as string) || null,
       })
 
@@ -201,7 +204,7 @@ export async function initCoachTeams(): Promise<void> {
       if (removeBtn) {
         const memberId = removeBtn.dataset.memberId
         const name = removeBtn.dataset.name
-        if (!memberId || !confirm(`¿Eliminar a ${name} del equipo?`)) return
+        if (!memberId || !(await confirmDialog(`¿Eliminar a ${name} del equipo?`))) return
 
         const { error } = await supabase.from('team_members').delete().eq('id', memberId)
         if (error) toast('error', error.message)

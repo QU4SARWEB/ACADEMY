@@ -3,7 +3,9 @@ import { supabase } from '@/304244'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { uploadFile, getFilePath } from '@/2b3583/76ee3d'
 
 const typeBadgeColors: Record<string, string> = {
   video: 'bg-blue-500/20 text-blue-400',
@@ -74,9 +76,14 @@ export async function initCoachModuleDetail(): Promise<void> {
                 ${(mod as any).description ? ` · ${escapeHtml((mod as any).description)}` : ''}
               </p>
             </div>
-            <button id="edit-module-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-800">
-              ${Icon('edit', 14)} Editar
-            </button>
+            <div class="flex gap-2">
+              <button id="edit-module-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-800">
+                ${Icon('edit', 14)} Editar
+              </button>
+              <button id="delete-module-btn" class="rounded-lg border border-red-700 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-900/30">
+                ${Icon('trash', 14)}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -176,10 +183,12 @@ export async function initCoachModuleDetail(): Promise<void> {
                                   <option value="other" ${m.type === 'other' ? 'selected' : ''}>Otro</option>
                                 </select>
                               </div>
-                              <div class="flex-1">
-                                <label class="block text-xs text-zinc-500">URL</label>
-                                <input name="url" value="${escapeHtml(m.url || '')}"
+                              <div class="flex-[2]">
+                                <label class="block text-xs text-zinc-500">URL o archivo</label>
+                                <input name="url" value="${escapeHtml(m.url || '')}" placeholder="Pega una URL..."
                                   class="mt-1 w-full rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                                <input name="file" type="file"
+                                  class="mt-2 w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1 file:text-xs file:text-white hover:file:bg-zinc-700" />
                               </div>
                               <div class="w-24">
                                 <label class="block text-xs text-zinc-500">Orden</label>
@@ -228,10 +237,12 @@ export async function initCoachModuleDetail(): Promise<void> {
                     <option value="other">Otro</option>
                   </select>
                 </div>
-                <div class="flex-1">
-                  <label class="block text-xs text-zinc-500">URL</label>
-                  <input name="url"
+                <div class="flex-[2]">
+                  <label class="block text-xs text-zinc-500">URL o archivo</label>
+                  <input name="url" placeholder="Pega una URL..."
                     class="mt-1 w-full rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                  <input name="file" type="file"
+                    class="mt-2 w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1 file:text-xs file:text-white hover:file:bg-zinc-700" />
                 </div>
                 <div class="w-24">
                   <label class="block text-xs text-zinc-500">Orden</label>
@@ -283,16 +294,36 @@ export async function initCoachModuleDetail(): Promise<void> {
       }
     })
 
+    document.getElementById('delete-module-btn')?.addEventListener('click', async () => {
+      if (!(await confirmDialog('¿Eliminar este módulo? Se eliminarán todos los materiales asociados.'))) return
+      const { error } = await supabase.from('course_modules').delete().eq('id', moduleId)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Módulo eliminado')
+      router.navigate(`/coaches/courses/${escapeHtml(courseId)}`)
+    })
+
     document.getElementById('add-material-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const fd = new FormData(e.target as HTMLFormElement)
+      const file = fd.get('file') as File | null
+      let url = (fd.get('url') as string) || null
+
+      if (file && file.size > 0) {
+        const uploaded = await uploadFile('uploads', getFilePath('coach', 'materials', file.name), file)
+        if (!uploaded) {
+          toast('error', 'Error al subir archivo')
+          return
+        }
+        url = uploaded
+      }
+
       const { error } = await supabase
         .from('materials')
         .insert({
           module_id: moduleId,
           title: fd.get('title') as string,
           type: fd.get('type') as string,
-          url: (fd.get('url') as string) || null,
+          url,
           description: (fd.get('description') as string) || null,
           display_order: parseInt(fd.get('display_order') as string),
         })
@@ -328,12 +359,24 @@ export async function initCoachModuleDetail(): Promise<void> {
         e.preventDefault()
         const fd = new FormData(e.target as HTMLFormElement)
         const id = fd.get('id') as string
+        const file = fd.get('file') as File | null
+        let url = (fd.get('url') as string) || null
+
+        if (file && file.size > 0) {
+          const uploaded = await uploadFile('uploads', getFilePath('coach', 'materials', file.name), file)
+          if (!uploaded) {
+            toast('error', 'Error al subir archivo')
+            return
+          }
+          url = uploaded
+        }
+
         const { error } = await supabase
           .from('materials')
           .update({
             title: fd.get('title') as string,
             type: fd.get('type') as string,
-            url: (fd.get('url') as string) || null,
+            url,
             description: (fd.get('description') as string) || null,
             display_order: parseInt(fd.get('display_order') as string),
           })
@@ -351,7 +394,7 @@ export async function initCoachModuleDetail(): Promise<void> {
       btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).getAttribute('data-id')
         if (!id) return
-        if (!window.confirm('¿Eliminar este material?')) return
+        if (!(await confirmDialog('¿Eliminar este material?'))) return
         const { error } = await supabase
           .from('materials')
           .delete()

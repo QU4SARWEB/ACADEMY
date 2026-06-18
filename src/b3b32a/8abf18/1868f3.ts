@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 export function renderCoachEvaluationDetail(): string {
@@ -39,14 +40,19 @@ export async function initCoachEvaluationDetail(): Promise<void> {
           ${Icon('arrowLeft', 16)} Volver a evaluaciones
         </a>
         <div class="mb-6">
-          <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(ev.title)}</h1>
-          <p class="mt-1 text-sm text-zinc-400">
-            ${escapeHtml(ev.course_modules?.courses?.name || '')} / ${escapeHtml(ev.course_modules?.name || '')}
-          </p>
-          <p class="text-sm text-zinc-500">
-            Máx: ${ev.max_score ?? '—'} pts ${ev.eval_type ? `· Tipo: ${escapeHtml(ev.eval_type)}` : ''} ${ev.month ? `· Mes: ${ev.month}` : ''}
-          </p>
-          ${ev.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(ev.description)}</p>` : ''}
+          <div class="flex items-start justify-between">
+            <div>
+              <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(ev.title)}</h1>
+              <p class="mt-1 text-sm text-zinc-400">
+                ${escapeHtml(ev.course_modules?.courses?.name || '')} / ${escapeHtml(ev.course_modules?.name || '')}
+              </p>
+              <p class="text-sm text-zinc-500">
+                Máx: ${ev.max_score ?? '—'} pts ${ev.eval_type ? `· Tipo: ${escapeHtml(ev.eval_type)}` : ''} ${ev.month ? `· Mes: ${ev.month}` : ''}
+              </p>
+              ${ev.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(ev.description)}</p>` : ''}
+            </div>
+            <button id="delete-eval-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
+          </div>
         </div>
 
         <h2 class="mb-4 font-heading text-lg font-bold text-white">Resultados (${(results ?? []).length})</h2>
@@ -86,6 +92,14 @@ export async function initCoachEvaluationDetail(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.getElementById('delete-eval-detail-btn')?.addEventListener('click', async () => {
+      if (!(await confirmDialog('¿Eliminar esta evaluación? También se eliminarán todos los resultados asociados.'))) return
+      const { error } = await supabase.from('evaluations').delete().eq('id', id)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Evaluación eliminada')
+      router.navigate('/coaches/evaluations')
+    })
 
     document.querySelectorAll('.eval-grade-form').forEach((form) => {
       form.addEventListener('submit', async (e) => {

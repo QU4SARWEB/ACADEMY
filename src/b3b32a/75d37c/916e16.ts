@@ -3,6 +3,7 @@ import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 export function renderStudentExamTake(): string {
@@ -416,8 +417,8 @@ export async function initStudentExamTake(): Promise<void> {
       // Submit button
       const submitBtn = document.getElementById('submit-exam-btn')
       if (submitBtn) {
-        submitBtn.addEventListener('click', () => {
-          if (confirm('¿Estás seguro de que deseas finalizar el examen? Esta acción no se puede deshacer.')) {
+        submitBtn.addEventListener('click', async () => {
+          if (await confirmDialog('¿Estás seguro de que deseas finalizar el examen? Esta acción no se puede deshacer.')) {
             submitExam()
           }
         })

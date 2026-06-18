@@ -2,6 +2,8 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 export function renderCoachCourseDetail(): string {
@@ -59,6 +61,7 @@ export function mountCoachCourseDetail(): void {
                 class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Asistencia</a>
               <a href="#/coaches/courses/${escapeHtml(id)}/grades"
                 class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Notas</a>
+              <button id="delete-course-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
             </div>
           </div>
         </div>
@@ -110,6 +113,14 @@ export function mountCoachCourseDetail(): void {
         </div>`
 
       document.getElementById('page-content')!.innerHTML = html
+
+      document.getElementById('delete-course-btn')?.addEventListener('click', async () => {
+        if (!(await confirmDialog('¿Eliminar este curso? Se eliminarán todos los módulos, materiales, evaluaciones y datos asociados.'))) return
+        const { error } = await supabase.from('courses').delete().eq('id', id)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Curso eliminado')
+        router.navigate('/coaches/courses')
+      })
     } catch (err) {
       console.error('Error loading course detail:', err)
       document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el curso</p>'

@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 const statusColors: Record<string, string> = {
@@ -67,14 +68,19 @@ export async function initCoachTaskDetail(): Promise<void> {
           ${Icon('arrowLeft', 16)} Volver a tareas
         </a>
         <div class="mb-6">
-          <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(task.title)}</h1>
-          <p class="mt-1 text-sm text-zinc-400">
-            ${escapeHtml(task.course_modules?.courses?.name || '')} / ${escapeHtml(task.course_modules?.name || '')}
-          </p>
-          <p class="text-sm text-zinc-500">
-            Límite: ${task.due_date ? formatDate(task.due_date) : '—'} · Máx: ${task.max_score ?? '—'} pts
-          </p>
-          ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(task.description)}</p>` : ''}
+          <div class="flex items-start justify-between">
+            <div>
+              <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(task.title)}</h1>
+              <p class="mt-1 text-sm text-zinc-400">
+                ${escapeHtml(task.course_modules?.courses?.name || '')} / ${escapeHtml(task.course_modules?.name || '')}
+              </p>
+              <p class="text-sm text-zinc-500">
+                Límite: ${task.due_date ? formatDate(task.due_date) : '—'} · Máx: ${task.max_score ?? '—'} pts
+              </p>
+              ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escapeHtml(task.description)}</p>` : ''}
+            </div>
+            <button id="delete-task-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
+          </div>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-2">
@@ -153,6 +159,14 @@ export async function initCoachTaskDetail(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.getElementById('delete-task-detail-btn')?.addEventListener('click', async () => {
+      if (!(await confirmDialog('¿Eliminar esta tarea y todas sus entregas?'))) return
+      const { error } = await supabase.from('tasks').delete().eq('id', id)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Tarea eliminada')
+      router.navigate('/coaches/tasks')
+    })
 
     document.querySelectorAll('.grade-form').forEach((form) => {
       form.addEventListener('submit', async (e) => {
