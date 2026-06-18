@@ -30,22 +30,24 @@ function typeLabel(type: string): string {
     const qData = q.questions || {}
     const options = qData?.question_options ?? []
     const userAnswer = answers[q.question_id] ?? ''
-    if (!qData.type) return `<p class="text-red-400 text-sm">Error: pregunta sin tipo</p>`
+    if (!qData.type) return `<p class="text-red-400 text-sm">Error: pregunta sin tipo (qData: ${JSON.stringify(Object.keys(qData))})</p>`
+    console.log('Question type:', qData.type, 'options:', options.length)
 
-  let inputHtml = ''
-  if (qData.type === 'multiple_choice' || qData.type === 'true_false') {
-    inputHtml = `<div class="space-y-3">
-      ${options.map((o: any) => {
-        const selected = userAnswer === o.id
-        return `<button type="button" class="option-btn w-full rounded-lg border px-4 py-3 text-left text-sm transition ${
-          selected
-            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-white'
-            : 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-white'
-        }" data-option-id="${escapeHtml(o.id)}">${escapeHtml(o.text)}</button>`
-      }).join('')}
-    </div>`
-  } else if (qData.type === 'short_answer') {
-    inputHtml = `<textarea id="text-answer" rows="3"
+    let inputHtml = ''
+    if (qData.type === 'multiple_choice' || qData.type === 'true_false') {
+      inputHtml = `<div class="space-y-3">
+        ${options.length === 0 ? '<p class="text-xs text-yellow-400">No hay opciones configuradas para esta pregunta.</p>' : ''}
+        ${options.map((o: any) => {
+          const selected = userAnswer === o.id
+          return `<button type="button" class="option-btn w-full rounded-lg border px-4 py-3 text-left text-sm transition ${
+            selected
+              ? 'border-[#8B5CF6] bg-[#8B5CF6]/10 text-white'
+              : 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-white'
+          }" data-option-id="${escapeHtml(o.id)}">${escapeHtml(o.text)}</button>`
+        }).join('')}
+      </div>`
+    } else if (qData.type === 'short_answer') {
+      inputHtml = `<textarea id="text-answer" rows="3"
       class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-4 py-3 text-sm text-white outline-none focus:border-[#8B5CF6]"
       placeholder="Escribe tu respuesta...">${escapeHtml(userAnswer)}</textarea>`
   } else if (qData.type === 'open_ended') {
@@ -190,25 +192,43 @@ export async function initStudentExamTake(): Promise<void> {
 
     const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
 
-    const { data: existingAttempt } = await supabase
+    // Get ALL attempts to count them
+    const { data: allAttempts } = await supabase
       .from('exam_attempts')
-      .select('*, student_answers(*)')
+      .select('*')
       .eq('exam_id', examId)
       .eq('enrollment_id', enrollment.id)
       .order('created_at', { ascending: false })
-      .maybeSingle()
 
-    // Show results if already submitted/graded
-    if (existingAttempt && (existingAttempt.status === 'submitted' || existingAttempt.status === 'graded')) {
-      renderResultsView(existingAttempt, questions, courseId, exam.passing_score ?? 60)
+    const submittedCount = (allAttempts ?? []).filter((a: any) => a.status === 'submitted' || a.status === 'graded').length
+    const maxAttempts = exam.max_attempts ?? 1
+
+    // Check if max attempts reached
+    if (submittedCount >= maxAttempts) {
+      const lastAttempt = (allAttempts ?? [])[0]
+      if (lastAttempt) {
+        renderResultsView(lastAttempt, questions, courseId, exam.passing_score ?? 60)
+      } else {
+        document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500 py-10 text-center">Has alcanzado el máximo de intentos.</p>'
+      }
       return
     }
 
-    let attempt = existingAttempt
+    // Check for an in_progress attempt to resume
+    const inProgressAttempt = (allAttempts ?? []).find((a: any) => a.status === 'in_progress')
+    let attempt = inProgressAttempt || null
     let savedAnswers: Record<string, string> = {}
-    if (attempt?.student_answers) {
-      for (const ans of attempt.student_answers) {
-        savedAnswers[ans.question_id] = ans.selected_option || ans.text_answer || ''
+
+    if (attempt?.id) {
+      const { data: attemptWithAnswers } = await supabase
+        .from('exam_attempts')
+        .select('*, student_answers(*)')
+        .eq('id', attempt.id)
+        .maybeSingle()
+      if (attemptWithAnswers?.student_answers) {
+        for (const ans of attemptWithAnswers.student_answers) {
+          savedAnswers[ans.question_id] = ans.selected_option || ans.text_answer || ''
+        }
       }
     }
 
@@ -222,12 +242,13 @@ export async function initStudentExamTake(): Promise<void> {
     }
 
     if (!attempt) {
+      const nextNum = submittedCount + 1
       const { data: newAttempt, error: attemptError } = await supabase
         .from('exam_attempts')
         .insert({
           exam_id: examId,
           enrollment_id: enrollment.id,
-          attempt_num: 1,
+          attempt_num: nextNum,
           status: 'in_progress',
           started_at: new Date().toISOString(),
         })
