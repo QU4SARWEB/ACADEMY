@@ -172,9 +172,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
           ch.subscribe()
           ;(window as any).__rtChannel = ch
         } catch (e) {
-          console.warn('Realtime unavailable, falling back to 15s polling')
-          if ((window as any).__rtInterval) clearInterval((window as any).__rtInterval)
-          ;(window as any).__rtInterval = setInterval(() => reloadSoon(path), 15000)
+          console.warn('Realtime not available:', e)
         }
       }
     } catch (err) {
