@@ -384,14 +384,15 @@ async function initChatEvents(userId: string): Promise<void> {
     if (theirParticipation) {
       activeConvId = theirParticipation.conversation_id
     } else {
-      const { data: conv } = await supabase.from('conversations').insert({}).select().maybeSingle()
-      if (!conv) { toast('error', 'Error al crear conversación'); return }
+      const convId = crypto.randomUUID()
+      const { error: convErr } = await supabase.from('conversations').insert({ id: convId })
+      if (convErr) { toast('error', 'Error al crear conversación'); return }
 
       await supabase.from('conversation_participants').insert([
-        { conversation_id: conv.id, profile_id: userId },
-        { conversation_id: conv.id, profile_id: targetId },
+        { conversation_id: convId, profile_id: userId },
+        { conversation_id: convId, profile_id: targetId },
       ])
-      activeConvId = conv.id
+      activeConvId = convId
     }
 
     document.getElementById('new-chat-modal')!.classList.add('hidden')
