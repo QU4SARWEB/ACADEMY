@@ -163,18 +163,9 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
               const key = `_rt_${path}`
               if ((window as any)[key]) return
               ;(window as any)[key] = true
-              setTimeout(() => { (window as any)[key] = false }, 5000)
-              // Show refresh button instead of auto-reload
-              const existing = document.getElementById('rt-refresh-btn')
-              if (!existing) {
-                const btn = document.createElement('button')
-                btn.id = 'rt-refresh-btn'
-                btn.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#8B5CF6] px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-[#7C3AED] animate-bounce'
-                btn.innerHTML = '🔄 Actualizar'
-                btn.onclick = () => location.reload()
-                document.body.appendChild(btn)
-                setTimeout(() => btn?.remove(), 8000)
-              }
+              setTimeout(() => { (window as any)[key] = false }, 3000)
+              // Auto-refresh: silently reload the page
+              location.reload()
             }
           )
         }
