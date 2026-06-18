@@ -210,18 +210,30 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
       onApprove(data: any, actions: any) {
         return actions.order.capture().then(async (details: any) => {
           if (details.status === 'COMPLETED') {
-            await supabase.from('payments').update({
+            const { error: upErr } = await supabase.from('payments').update({
               status: 'paid',
               paid_at: new Date().toISOString(),
               method: 'paypal',
             }).eq('id', paymentId)
+            if (upErr) {
+              console.error('Error updating payment:', upErr)
+              toast('error', 'Pago realizado pero error al actualizar. Contacta al coach.')
+              return
+            }
             toast('success', 'Pago confirmado vía PayPal')
-            container.innerHTML = '<span class="text-xs text-green-400">Pagado con PayPal</span>'
+            container.innerHTML = '<span class="text-xs text-green-400">✓ Pagado</span>'
             setTimeout(() => initPayments(), 1500)
+          } else {
+            console.warn('PayPal capture status:', details.status)
+            toast('error', 'El pago no se completó. Intenta de nuevo.')
           }
+        }).catch((err: any) => {
+          console.error('PayPal capture error:', err)
+          toast('error', 'Error al capturar el pago. ¿La cuenta de PayPal está verificada?')
         })
       },
-      onError() {
+      onError(err: any) {
+        console.error('PayPal button error:', err)
         toast('error', 'Error al procesar el pago con PayPal')
       }
     }).render(`#pp-${paymentId}`)
