@@ -4,6 +4,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
+import { renderSearchableSelect, initSearchableSelect } from '@/4725dc/forms/SearchableSelect'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -93,9 +94,10 @@ export async function initCoachSchedules(): Promise<void> {
     document.getElementById('page-content')!.innerHTML = html
 
     function renderScheduleForm(): string {
-      const seasonOptions = (allSeasons ?? []).map((s: any) =>
-        `<option value="${escapeHtml(s.id)}" ${activeSeason?.id === s.id ? 'selected' : ''}>${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
-      ).join('')
+      const seasonOpts = (allSeasons ?? []).map((s: any) => ({
+        value: s.id,
+        label: `${s.name}${s.is_active ? ' (Activa)' : ''}`
+      }))
       return `
         <div class="glass rounded-xl p-4">
           <h3 class="mb-3 font-medium text-white">Nuevo horario</h3>
@@ -107,12 +109,14 @@ export async function initCoachSchedules(): Promise<void> {
                   class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
               </div>
               <div>
-                <label class="mb-1 block text-xs text-zinc-400">Temporada</label>
-                <select name="seasonId" required
-                  class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  <option value="">Seleccionar...</option>
-                  ${seasonOptions}
-                </select>
+                ${renderSearchableSelect({
+                  name: 'seasonId',
+                  label: 'Temporada',
+                  options: seasonOpts,
+                  value: activeSeason?.id || '',
+                  placeholder: 'Seleccionar temporada...',
+                  required: true,
+                })}
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Semana</label>
@@ -171,6 +175,7 @@ export async function initCoachSchedules(): Promise<void> {
       const container = document.getElementById('schedule-form-container')!
       container.innerHTML = renderScheduleForm()
       container.classList.remove('hidden')
+      initSearchableSelect(container)
 
       document.getElementById('btn-cancel-schedule')?.addEventListener('click', () => {
         container.classList.add('hidden')
