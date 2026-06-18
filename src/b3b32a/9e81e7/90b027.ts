@@ -131,13 +131,25 @@ export async function initPublicProfile(): Promise<void> {
     // Apply the user's custom theme (background + accent) to the public profile
     const bgUrl = (profile as any)?.custom_bg_url
     const accent = (profile as any)?.role_color || '#8B5CF6'
+    function hexToRgb(h: string): string {
+      const hex = h.replace('#', '')
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      return isNaN(r) ? '139,92,246' : `${r},${g},${b}`
+    }
+    const accentRgb = hexToRgb(accent)
     const themeStyle = `
       <style id="pub-theme">
-        :root { --accent: ${accent}; }
+        :root { --accent: ${accent}; --accent-rgb: ${accentRgb}; }
         ${bgUrl ? `
           body { background: url(${bgUrl}) center/cover fixed !important; }
-          .glass { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+          #profile-page { background: transparent !important; }
+          header { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
+          #profile-card .glass, #profile-card > div { background: rgba(20,20,30,0.92) !important; backdrop-filter: blur(12px) !important; }
+          #profile-page .btn-glow { background: var(--accent) !important; }
         ` : ''}
+        .hover-accent-border:hover { border-color: var(--accent) !important; }
       </style>`
     document.head.insertAdjacentHTML('beforeend', themeStyle)
 
@@ -264,7 +276,7 @@ export async function initPublicProfile(): Promise<void> {
 <div class="min-h-screen bg-[#0A0A0A]" id="profile-page">
   <header class="border-b border-zinc-800/50 bg-[#0A0A0A]/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3">
-      <a href="#/" class="font-heading text-lg font-bold tracking-wider text-white">QU<span class="text-[#8B5CF6]">4</span>SAR</a>
+      <a href="#/" class="flex items-center gap-2"><img src="qu4sar.ico" alt="QU4SAR" class="h-6 w-6" /><span class="font-heading text-lg font-bold tracking-wider text-white">QU<span style="color:${accent}">4</span>SAR</span></a>
       <nav class="flex items-center gap-4">
         <a href="#/" class="text-sm text-zinc-400 transition-colors hover:text-white">Inicio</a>
         <button id="download-btn" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-white">${Icon('download', 14)} PNG</button>
@@ -295,7 +307,7 @@ export async function initPublicProfile(): Promise<void> {
               <div class="flex items-center gap-3 mt-1">
                 <span class="text-sm font-medium flex items-center gap-1.5" style="color:${rankColor}">${rankSvg(rank.icon, rank.color)}${rank.name}</span>
                 <span class="text-xs text-zinc-500">${xp} XP</span>
-                ${profile.role === 'coach' ? `<span class="rounded-full border border-[#8B5CF6]/20 bg-[#8B5CF6]/10 px-2 py-0.5 text-[10px] text-[#8B5CF6]">Coach</span>` : profile.role === 'player' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">Player</span>` : ''}
+                ${profile.role === 'coach' ? `<span class="rounded-full px-2 py-0.5 text-[10px]" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">Coach</span>` : profile.role === 'player' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">Player</span>` : ''}
               </div>
             </div>
           </div>
@@ -336,7 +348,7 @@ export async function initPublicProfile(): Promise<void> {
 
       <div class="glass rounded-[18px] px-7 pb-5 pt-5">
         <div class="flex flex-wrap gap-2">
-          ${profile.in_game_role ? `<span class="rounded-full border border-[#8B5CF6]/20 bg-[#8B5CF6]/10 px-3 py-0.5 text-xs text-[#8B5CF6]">${escapeHtml(profile.in_game_role)}</span>` : ''}
+          ${profile.in_game_role ? `<span class="rounded-full px-3 py-0.5 text-xs" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">${escapeHtml(profile.in_game_role)}</span>` : ''}
           ${profile.region ? `<span class="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-0.5 text-xs text-zinc-400">${escapeHtml(profile.region)}</span>` : ''}
           ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${escapeHtml(profile.rank)}</span>` : ''}
         </div>
@@ -349,7 +361,7 @@ export async function initPublicProfile(): Promise<void> {
         ${socialLinks && Object.keys(socialLinks).length > 0 ? `
         <div class="mt-4 flex flex-wrap gap-2">
           ${Object.entries(socialLinks).map(([key, url]) => `
-            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6]/30 hover:text-white">
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="hover-accent-border flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-300 transition hover:text-white">
               ${Icon(socialIcons[key] || 'externalLink', 14)} ${key.charAt(0).toUpperCase() + key.slice(1)}
             </a>
           `).join('')}
@@ -372,8 +384,8 @@ export async function initPublicProfile(): Promise<void> {
 
       ${hasConfig ? `
       <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Configuración
         </h3>
         <div class="grid grid-cols-2 gap-4">
@@ -387,8 +399,8 @@ export async function initPublicProfile(): Promise<void> {
 
       ${vods.length > 0 ? `
       <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           VOD Reviews
         </h3>
         <div class="space-y-3">
@@ -406,12 +418,12 @@ export async function initPublicProfile(): Promise<void> {
 
       ${achievements.length > 0 ? `
       <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
           ${Icon('trophy', 14)} Logros
         </h3>
         <div class="flex flex-wrap gap-2">
           ${achievements.map((ach: any) => `
-          <div class="group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition hover:border-[#8B5CF6]/30">
+          <div class="hover-accent-border group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition">
             ${Icon('trophy', 12)}
             <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
             ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
@@ -421,7 +433,7 @@ export async function initPublicProfile(): Promise<void> {
 
       ${playlist && playlist.length > 0 ? `
       <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
           ${Icon('music', 14)} Playlist
         </h3>
         <div id="playlist-tracks" class="space-y-3">
@@ -435,7 +447,7 @@ export async function initPublicProfile(): Promise<void> {
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-zinc-300">${escapeHtml(item.title)}</p>
             </div>
-            <button type="button" data-idx="${i}" class="playlist-play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:border-[#8B5CF6]/40 hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
+            <button type="button" data-idx="${i}" class="playlist-play-btn hover-accent-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
           </div>` : ''
           }).join('')}
         </div>

@@ -67,6 +67,7 @@ export async function initStudentCourses(): Promise<void> {
             enrollment_id: enrollment.id,
             season_id: season.id,
             status: profile?.scholarship ? 'scholarship' : 'pending',
+            amount: 1.00,
           })
         }
         // Reload to show the new enrollment
@@ -197,6 +198,7 @@ export async function initStudentCourses(): Promise<void> {
             enrollment_id: enrollment.id,
             season_id: season.id,
             status: profile?.scholarship ? 'scholarship' : 'pending',
+            amount: 1.00,
           })
         }
 

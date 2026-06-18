@@ -51,6 +51,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
     .order('enrolled_at', { ascending: false })
 
   const statusColors: Record<string, string> = { pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
+  const statusLabels: Record<string, string> = { pending: 'Debes', paid: 'Pagaste', scholarship: 'Cubierto por beca', expired: 'Vencido' }
 
   const html = `
     <div class="mb-6">
@@ -90,10 +91,12 @@ async function renderStudentPayments(userId: string): Promise<void> {
                     ? `<button class="upload-receipt-btn text-xs text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
                     : ''
                 }
-                <span class="text-xs ${statusColors[p.status] || 'text-zinc-500'}">${escapeHtml(p.status)}</span>
-                ${p.amount ? `<p class="text-xs text-zinc-400">$${p.amount}</p>` : ''}
+                ${p.status === 'scholarship'
+                  ? `<span class="text-xs font-medium text-blue-400">${statusLabels.scholarship}</span>`
+                  : `<span class="text-xs font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.00}</span>`
+                }
               </div>
-              ${p.status === 'pending' && p.amount ? `<div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount}"></div>` : ''}
+              ${p.status === 'pending' ? `<div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.00}"></div>` : ''}
             </div>
           </div>
         `).join('')
