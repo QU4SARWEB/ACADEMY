@@ -75,6 +75,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/students', icon: 'users', label: 'Estudiantes' },
     { href: '/coaches/players', icon: 'sword', label: 'Jugadores' },
     { href: '/coaches/courses', icon: 'bookOpen', label: 'Cursos' },
+    { href: '/payments', icon: 'dollarSign', label: 'Pagos' },
     { href: '/coaches/tasks', icon: 'clipboardList', label: 'Tareas' },
     { href: '/coaches/schedules', icon: 'calendar', label: 'Horarios' },
     { href: '/coaches/seasons', icon: 'calendar', label: 'Temporadas' },
