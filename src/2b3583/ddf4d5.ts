@@ -182,15 +182,12 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             </label>
             <span class="text-sm text-zinc-400">Habilitar perfil público</span>
           </div>
-          <div id="pub-slug-field" class="${pubEnabled ? '' : 'hidden'} space-y-2">
-            <label class="block text-xs font-medium text-zinc-400">Slug de perfil público</label>
-            <input name="pubSlug" value="${escapeHtml(pubSlug)}" placeholder="tunombre"
-              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          <div id="pub-slug-field" class="${pubEnabled ? '' : 'hidden'}">
             ${publicUrl ? `
-            <p class="flex items-center gap-2 text-xs text-zinc-500">
+            <p class="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
               <span>${escapeHtml(publicUrl)}</span>
               <button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(publicUrl)}')" class="text-[#8B5CF6] hover:underline">Copiar</button>
-            </p>` : ''}
+            </p>` : '<p class="text-xs text-zinc-500">Activa el perfil público para generar el enlace</p>'}
           </div>
         </div>
         <p id="pub-profile-error" class="mt-2 hidden text-xs text-red-400"></p>
@@ -256,19 +253,4 @@ export function initMouseAutoCalc(): void {
   }
   dpi.addEventListener('input', calc)
   sens.addEventListener('input', calc)
-
-  const displayName = document.querySelector<HTMLInputElement>('[name="displayName"]')
-  const slugInput = document.querySelector<HTMLInputElement>('[name="pubSlug"]')
-  const toggle = document.querySelector<HTMLInputElement>('[name="pubIsPublic"]')
-  if (displayName && slugInput) {
-    const autoSlug = () => {
-      if (toggle?.checked && !slugInput.dataset.userEdited) {
-        slugInput.value = slugify(displayName.value.trim() || 'perfil')
-      }
-    }
-    displayName.addEventListener('input', autoSlug)
-    slugInput.addEventListener('input', () => {
-      slugInput.dataset.userEdited = slugInput.value !== slugify(displayName?.value?.trim() || 'perfil') ? 'true' : ''
-    })
-  }
 }

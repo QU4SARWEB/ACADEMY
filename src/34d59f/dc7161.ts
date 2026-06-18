@@ -71,7 +71,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
 
   return `
-    <aside id="sidebar" class="w-64 shrink-0 border-r border-zinc-800 bg-[#0A0A0A] p-4 flex flex-col">
+    <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden border-r border-zinc-800 bg-[#0A0A0A] p-4 flex flex-col">
       <a href="#/${prefix}/dashboard" class="mb-6 flex items-center gap-2 px-3">
         <img src="/qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-base font-bold text-white">QU<span class="text-[#8B5CF6]">4</span>SAR</span>
