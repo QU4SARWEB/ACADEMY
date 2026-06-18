@@ -131,6 +131,13 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
   router.on(path, async () => {
     const app = document.getElementById('app')!
     app.innerHTML = FullPageSpinner()
+
+    // Clean up previous realtime channel (needed because hash navigation doesn't call router.navigate)
+    if ((window as any).__rtChannel) {
+      supabase.removeChannel((window as any).__rtChannel)
+      ;(window as any).__rtChannel = null
+    }
+
     try {
       await getProfile()
       const { DashboardLayout, initSidebar } = await import('@/34d59f/dc7161')
@@ -147,33 +154,22 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         const profileData = store.get<any>('profile')
         const role = profileData?.role || 'coach'
         const tables = REALTIME_TABLES[role] || REALTIME_TABLES.coaches
-        const channelName = `global-${path.replace(/[^a-z0-9]/g, '-')}-${Date.now()}`
-        const channel = supabase.channel(channelName)
+        const channel = supabase.channel(`rt-${path.replace(/[^a-z0-9]/g, '-')}`)
 
         for (const table of tables) {
           channel.on('postgres_changes',
             { event: '*', schema: 'public', table },
             () => {
-              // Debounce: avoid rapid re-fetches
               const key = `_rt_${path}`
               if ((window as any)[key]) return
               ;(window as any)[key] = true
               setTimeout(() => { (window as any)[key] = false }, 2000)
-              // Re-execute init function silently
               Promise.resolve(initFn()).catch(console.error)
             }
           )
         }
         channel.subscribe()
-
-        // Clean up channel on navigation
-        const origNav = router.navigate.bind(router)
-        const wrappedNav = async (href: string, replace?: boolean) => {
-          supabase.removeChannel(channel)
-          router.navigate = origNav
-          await origNav(href, replace)
-        }
-        router.navigate = wrappedNav as typeof router.navigate
+        ;(window as any).__rtChannel = channel
       }
     } catch (err) {
       console.error('Error rendering dashboard:', err)
