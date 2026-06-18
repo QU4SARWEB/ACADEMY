@@ -315,23 +315,23 @@ export async function initPublicProfile(): Promise<void> {
       try {
         const card = document.getElementById('profile-card')
         if (!card) return
-        // Load html2canvas via script tag
-        if (!(window as any).html2canvas) {
+        // Load dom-to-image-more via script tag (supports oklch/modern CSS)
+        if (!(window as any).domtoimage) {
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script')
-            s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+            s.src = 'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js'
             s.onload = () => resolve()
-            s.onerror = () => reject(new Error('Failed to load html2canvas'))
+            s.onerror = () => reject(new Error('Failed to load dom-to-image-more'))
             document.head.appendChild(s)
           })
         }
-        const h2c = (window as any).html2canvas
-        const canvas = await h2c(card, {
-          backgroundColor: '#0A0A0A',
+        const dti = (window as any).domtoimage
+        const canvas = await dti.toCanvas(card, {
+          bgColor: '#0A0A0A',
           scale: 2,
           useCORS: true,
           allowTaint: false,
-          logging: false,
+          filter: () => true,
         })
         const link = document.createElement('a')
         link.download = `perfil-${slug}.png`
