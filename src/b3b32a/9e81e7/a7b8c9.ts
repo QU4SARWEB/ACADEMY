@@ -136,6 +136,12 @@ async function renderChatLayout(): Promise<void> {
           <button id="btn-cancel-conv" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">Cancelar</button>
         </div>
       </div>
+    </div>
+
+    <!-- Media lightbox -->
+    <div id="media-lightbox" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80" onclick="if(event.target===this)this.classList.add('hidden')">
+      <button class="absolute top-4 right-4 text-white/60 hover:text-white text-2xl" onclick="document.getElementById('media-lightbox')?.classList.add('hidden')">&times;</button>
+      <img id="lightbox-img" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" src="" alt="" />
     </div>`
 
   document.getElementById('page-content')!.innerHTML = html
@@ -236,12 +242,32 @@ async function loadMessages(convId: string): Promise<void> {
               ${!isMe ? `<p class="text-[10px] text-[#8B5CF6] mb-0.5">${escapeHtml(name)}</p>` : ''}
               ${m.content ? `<p class="text-sm text-white">${escBr(m.content)}</p>` : ''}
               ${m.attachment_url
-                ? `<div class="mt-1">
-                    <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener noreferrer"
-                      class="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white transition">
-                      ${Icon('paperclip', 12)} ${escapeHtml(m.attachment_url.split('/').pop() || 'archivo')}
-                    </a>
-                  </div>`
+                ? (() => {
+                    const url = m.attachment_url
+                    const isImg = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url)
+                    const isVideo = /\.(mp4|webm|mov|avi)$/i.test(url)
+                    if (isImg) {
+                      return `<div class="mt-1">
+                        <img src="${escapeHtml(url)}" alt="Adjunto" class="media-attach max-h-48 rounded-lg cursor-pointer object-cover transition hover:opacity-90" onclick="document.getElementById('lightbox-img')?.setAttribute('src','${escapeHtml(url)}');document.getElementById('media-lightbox')?.classList.remove('hidden')" />
+                      </div>`
+                    } else if (isVideo) {
+                      return `<div class="mt-1 relative">
+                        <video src="${escapeHtml(url)}" class="media-attach max-h-48 rounded-lg cursor-pointer object-cover w-full" onclick="this.paused ? this.play() : this.pause()" preload="metadata"></video>
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          </div>
+                        </div>
+                      </div>`
+                    } else {
+                      return `<div class="mt-1">
+                        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+                          class="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white transition">
+                          ${Icon('paperclip', 12)} ${escapeHtml(url.split('/').pop() || 'archivo')}
+                        </a>
+                      </div>`
+                    }
+                  })()
                 : ''
               }
               <p class="text-[10px] text-zinc-500 mt-0.5 ${isMe ? 'text-right' : ''}">${formatDate(m.created_at)}</p>
