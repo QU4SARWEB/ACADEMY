@@ -68,6 +68,12 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           <textarea name="bio" rows="3"
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]">${escBr(profile.bio ?? '')}</textarea>
         </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-medium text-zinc-400">Frase destacada</label>
+          <input name="quote" value="${escapeHtml(profile.quote ?? '')}" placeholder="Ej: Never stop learning..."
+            class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+        </div>
+      </div>
       </div>
 
       <div>
@@ -116,6 +122,32 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           <label class="block text-xs font-medium text-zinc-400">Beca</label>
           <p class="mt-1 text-sm text-zinc-300">${profile.scholarship ? 'Sí (completa)' : 'No'}</p>
         </div>` : ''}
+      </div>
+
+      <div>
+        <h3 class="mb-3 text-sm font-medium text-zinc-300">Habilidades</h3>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Mecánicas (0-100)</label>
+            <input name="skillMechanics" type="number" min="0" max="100" value="${(profile.skills as any)?.mechanics ?? ''}"
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Game Sense (0-100)</label>
+            <input name="skillGameSense" type="number" min="0" max="100" value="${(profile.skills as any)?.gameSense ?? ''}"
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Comunicación (0-100)</label>
+            <input name="skillCommunication" type="number" min="0" max="100" value="${(profile.skills as any)?.communication ?? ''}"
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Liderazgo (0-100)</label>
+            <input name="skillLeadership" type="number" min="0" max="100" value="${(profile.skills as any)?.leadership ?? ''}"
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+          </div>
+        </div>
       </div>
 
       <div>
@@ -240,6 +272,19 @@ export function getProfileFormData(form: HTMLFormElement) {
     social_youtube: (fd.get('socialYoutube') as string) || null,
     social_twitter: (fd.get('socialTwitter') as string) || null,
     social_twitch: (fd.get('socialTwitch') as string) || null,
+    quote: (fd.get('quote') as string) || null,
+    skills: (() => {
+      const s: Record<string, number> = {}
+      const m = fd.get('skillMechanics') ? parseInt(fd.get('skillMechanics') as string) : null
+      const gs = fd.get('skillGameSense') ? parseInt(fd.get('skillGameSense') as string) : null
+      const c = fd.get('skillCommunication') ? parseInt(fd.get('skillCommunication') as string) : null
+      const l = fd.get('skillLeadership') ? parseInt(fd.get('skillLeadership') as string) : null
+      if (m !== null) s.mechanics = m
+      if (gs !== null) s.gameSense = gs
+      if (c !== null) s.communication = c
+      if (l !== null) s.leadership = l
+      return s
+    })(),
   }
 }
 

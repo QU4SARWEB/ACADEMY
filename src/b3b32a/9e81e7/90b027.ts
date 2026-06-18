@@ -1,6 +1,7 @@
 import { supabase } from '@/304244'
 import { Spinner } from '@/4725dc/a14fa2'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
+import { Icon } from '@/2b3583/bd2119'
 
 const ACADEMY_RANKS = [
   { id: 'cosmic1', name: 'Cosmic I',   minXP: 0,     color: '#6b7280', glow: 'rgba(107,114,128,0.3)', icon: 'circle', reward: 'Acceso a clases grupales' },
@@ -141,19 +142,24 @@ export async function initPublicProfile(): Promise<void> {
     const currentUrl = encodeURIComponent(window.location.href)
 
     const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
+    const skills = (profile.skills || {}) as Record<string, number>
+    const hasSkills = Object.keys(skills).length > 0
+    const quote = profile.quote as string | null
+    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play' }
 
     const html = `
-<div class="min-h-screen bg-[#0A0A0A]">
+<div class="min-h-screen bg-[#0A0A0A]" id="profile-page">
   <header class="border-b border-zinc-800/50 bg-[#0A0A0A]/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3">
       <a href="#/" class="font-heading text-lg font-bold tracking-wider text-white">QU<span class="text-[#8B5CF6]">4</span>SAR</a>
       <nav class="flex items-center gap-4">
         <a href="#/" class="text-sm text-zinc-400 transition-colors hover:text-white">Inicio</a>
+        <button id="download-btn" class="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white">${Icon('download', 12)} PNG</button>
       </nav>
     </div>
   </header>
   <div class="mx-auto max-w-[640px] px-4 py-8">
-    <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-5" id="profile-card">
 
       <div class="relative overflow-hidden rounded-[20px]" style="height:200px">
         <div class="absolute inset-0 bg-cover bg-center" style="${bannerUrl ? `background-image:url(${bannerUrl})` : 'background-color:#0a0514'}"></div>
@@ -173,27 +179,68 @@ export async function initPublicProfile(): Promise<void> {
             </div>
             <div>
               <h1 class="font-heading text-[22px] font-bold text-white">${escapeHtml(displayName)}</h1>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="text-sm font-medium" style="color:${rankColor}">${rank.name}</span>
+              <div class="flex items-center gap-3 mt-1">
+                <span class="text-sm font-medium flex items-center gap-1.5" style="color:${rankColor}">${rankSvg(rank.icon, rank.color)}${rank.name}</span>
                 <span class="text-xs text-zinc-500">${xp} XP</span>
+                ${profile.role === 'coach' ? `<span class="rounded-full border border-[#8B5CF6]/20 bg-[#8B5CF6]/10 px-2 py-0.5 text-[10px] text-[#8B5CF6]">Coach</span>` : profile.role === 'player' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">Player</span>` : ''}
               </div>
             </div>
           </div>
+          <button id="download-btn-2" class="rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white backdrop-blur transition hover:bg-white/20 flex items-center gap-1.5">${Icon('download', 11)} Descargar</button>
         </div>
+      </div>
+
+      ${quote ? `
+      <div class="glass rounded-[18px] px-7 py-5 text-center">
+        <p class="text-sm italic text-zinc-400">"${escapeHtml(quote)}"</p>
+      </div>` : ''}
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-4 gap-3">
+        ${(() => {
+          const totalAchievements = achievements.length
+          const totalVods = vods.length
+          const estTasks = Math.floor(xp / 100)
+          return `
+          <div class="glass rounded-[14px] p-3 text-center">
+            <p class="text-lg font-bold text-white">${totalAchievements}</p>
+            <p class="text-[10px] text-zinc-500">Logros</p>
+          </div>
+          <div class="glass rounded-[14px] p-3 text-center">
+            <p class="text-lg font-bold text-white">${totalVods}</p>
+            <p class="text-[10px] text-zinc-500">VODs</p>
+          </div>
+          <div class="glass rounded-[14px] p-3 text-center">
+            <p class="text-lg font-bold text-white">${estTasks}</p>
+            <p class="text-[10px] text-zinc-500">Tareas</p>
+          </div>
+          <div class="glass rounded-[14px] p-3 text-center">
+            <p class="text-lg font-bold text-white">${xp}</p>
+            <p class="text-[10px] text-zinc-500">XP total</p>
+          </div>`
+        })()}
       </div>
 
       <div class="glass rounded-[18px] px-7 pb-5 pt-5">
         <div class="flex flex-wrap gap-2">
           ${profile.in_game_role ? `<span class="rounded-full border border-[#8B5CF6]/20 bg-[#8B5CF6]/10 px-3 py-0.5 text-xs text-[#8B5CF6]">${escapeHtml(profile.in_game_role)}</span>` : ''}
           ${profile.region ? `<span class="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-0.5 text-xs text-zinc-400">${escapeHtml(profile.region)}</span>` : ''}
-          ${profile.role && profile.role !== 'student' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-0.5 text-xs text-green-400">${profile.role === 'coach' ? 'Coach' : 'Player'}</span>` : ''}
+          ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${escapeHtml(profile.rank)}</span>` : ''}
         </div>
         <div class="mt-3 flex flex-wrap justify-start gap-x-4 gap-y-1 text-xs text-zinc-500">
-          ${profile.riot_id ? `<span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="2 12 12 2 22 12"/></svg> ${escapeHtml(profile.riot_id)}</span>` : ''}
-          ${profile.country ? `<span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(profile.country)}</span>` : ''}
-          <span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${new Date(profile.created_at).getFullYear()}</span>
+          ${profile.riot_id ? `<span class="flex items-center gap-1">${Icon('target', 12)} ${escapeHtml(profile.riot_id)}</span>` : ''}
+          ${profile.country ? `<span class="flex items-center gap-1">${Icon('mapPin', 12)} ${escapeHtml(profile.country)}</span>` : ''}
+          <span class="flex items-center gap-1">${Icon('calendar', 12)} Miembro desde ${new Date(profile.created_at).getFullYear()}</span>
         </div>
         ${bio ? `<p class="mt-3 text-sm text-zinc-400 leading-relaxed">${escBr(bio)}</p>` : ''}
+        ${socialLinks && Object.keys(socialLinks).length > 0 ? `
+        <div class="mt-4 flex flex-wrap gap-2">
+          ${Object.entries(socialLinks).map(([key, url]) => `
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6]/30 hover:text-white">
+              ${Icon(socialIcons[key] || 'externalLink', 12)} ${key.charAt(0).toUpperCase() + key.slice(1)}
+            </a>
+          `).join('')}
+        </div>` : ''}
       </div>
 
       <div class="glass rounded-[18px] p-6">
@@ -244,16 +291,39 @@ export async function initPublicProfile(): Promise<void> {
         </div>
       </div>` : ''}
 
+      ${hasSkills ? `
+      <div class="glass rounded-[18px] p-6">
+        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
+          ${Icon('target', 14)} Habilidades
+        </h3>
+        <div class="space-y-3">
+          ${Object.entries(skills).map(([key, val]) => {
+            const labels: Record<string, string> = { mechanics: 'Mecánicas', gameSense: 'Game Sense', communication: 'Comunicación', leadership: 'Liderazgo' }
+            const colors = ['#8B5CF6', '#6D28D9', '#7C3AED', '#10B981']
+            const i = Object.keys(skills).indexOf(key)
+            return `
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-zinc-300">${labels[key] || key}</span>
+                <span class="text-zinc-500">${val}%</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full rounded-full transition-all" style="width:${val}%;background:${colors[i % colors.length]}"></div>
+              </div>
+            </div>`
+          }).join('')}
+        </div>
+      </div>` : ''}
+
       ${achievements.length > 0 ? `
       <div class="glass rounded-[18px] p-6">
         <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="12" rx="2"/><path d="M8 14v4h8v-4"/><path d="M12 18v4"/></svg>
-          Logros
+          ${Icon('trophy', 14)} Logros
         </h3>
         <div class="flex flex-wrap gap-2">
           ${achievements.map((ach: any) => `
           <div class="group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition hover:border-[#8B5CF6]/30">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+            ${Icon('trophy', 12)}
             <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
             ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
           </div>`).join('')}
@@ -266,6 +336,40 @@ export async function initPublicProfile(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
+    // Download as PNG
+    async function downloadProfile() {
+      try {
+        const card = document.getElementById('profile-card')
+        if (!card) return
+        // Load html2canvas via script tag
+        if (!(window as any).html2canvas) {
+          await new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script')
+            s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+            s.onload = () => resolve()
+            s.onerror = () => reject(new Error('Failed to load html2canvas'))
+            document.head.appendChild(s)
+          })
+        }
+        const h2c = (window as any).html2canvas
+        const canvas = await h2c(card, {
+          backgroundColor: '#0A0A0A',
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+        })
+        const link = document.createElement('a')
+        link.download = `perfil-${slug}.png`
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+      } catch (e) {
+        console.error('Error generating PNG:', e)
+      }
+    }
+
+    document.getElementById('download-btn')?.addEventListener('click', downloadProfile)
+    document.getElementById('download-btn-2')?.addEventListener('click', downloadProfile)
   } catch (err) {
     console.error('Error loading public profile:', err)
     const pc = document.getElementById('page-content')
