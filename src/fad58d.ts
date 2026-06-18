@@ -154,23 +154,27 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         const profileData = store.get<any>('profile')
         const role = profileData?.role || 'coach'
         const tables = REALTIME_TABLES[role] || REALTIME_TABLES.coaches
-        const channel = supabase.channel(`rt-${path.replace(/[^a-z0-9]/g, '-')}`)
+        try {
+          const channel = supabase.channel(`rt-${path.replace(/[^a-z0-9]/g, '-')}`)
 
-        for (const table of tables) {
-          channel.on('postgres_changes',
-            { event: '*', schema: 'public', table },
-            () => {
-              const key = `_rt_${path}`
-              if ((window as any)[key]) return
-              ;(window as any)[key] = true
-              setTimeout(() => { (window as any)[key] = false }, 3000)
-              // Auto-refresh: silently reload the page
-              location.reload()
-            }
-          )
+          for (const table of tables) {
+            channel.on('postgres_changes',
+              { event: '*', schema: 'public', table },
+              () => {
+                const key = `_rt_${path}`
+                if ((window as any)[key]) return
+                ;(window as any)[key] = true
+                setTimeout(() => { (window as any)[key] = false }, 3000)
+                location.reload()
+              }
+            )
+          }
+          channel.subscribe()
+          ;(window as any).__rtChannel = channel
+        } catch (e) {
+          // Channel may already exist from race condition, ignore
+          console.warn('Realtime channel error (non-critical):', e)
         }
-        channel.subscribe()
-        ;(window as any).__rtChannel = channel
       }
     } catch (err) {
       console.error('Error rendering dashboard:', err)

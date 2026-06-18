@@ -112,7 +112,8 @@ export function mountCoachCourseDetail(): void {
           </div>
         </div>`
 
-      document.getElementById('page-content')!.innerHTML = html
+      const pc = document.getElementById('page-content')
+      if (pc) pc.innerHTML = html
 
       document.getElementById('delete-course-btn')?.addEventListener('click', async () => {
         if (!(await confirmDialog('¿Eliminar este curso? Se eliminarán todos los módulos, materiales, evaluaciones y datos asociados.'))) return
@@ -123,7 +124,8 @@ export function mountCoachCourseDetail(): void {
       })
     } catch (err) {
       console.error('Error loading course detail:', err)
-      document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el curso</p>'
+      const pc = document.getElementById('page-content')
+      if (pc) pc.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el curso</p>'
     }
   })()
 }
