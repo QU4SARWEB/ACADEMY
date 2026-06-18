@@ -42,14 +42,14 @@
 | `/coaches/evaluations/new` | `8abf18/7528d8` | ❌ **MIGRAR** luego ELIMINAR | Reemplazado por exams | Exams unified |
 | `/coaches/evaluations/:id` | `8abf18/1868f3` | ❌ **MIGRAR** luego ELIMINAR | Reemplazado por exams | Exams unified |
 | `/coaches/schedules` | `8abf18/70ec15` | ✅ COMPLETO | Mantener (ganador inline) | — |
-| `/coaches/schedules/new` | `8abf18/b41a3a` | ❌ **ELIMINAR** | Duplicado, `module_id` no existe en DB | Inline `70ec15` |
-| `/coaches/seasons` | `8abf18/85ed15` | ✅ COMPLETO | Mantener (ganador inline) | — |
-| `/coaches/seasons/new` | `8abf18/3ca400` | ❌ **ELIMINAR** | Duplicado | Inline `85ed15` |
+| ~~`/coaches/schedules/new`~~ | ~~`8abf18/b41a3a`~~ | ❌ **ELIMINADO** F2 | Duplicado | Inline `70ec15` |
+| `/coaches/seasons` | `8abf18/85ed15` | ✅ COMPLETO (+is_active) | Mantener (ganador inline) | — |
+| ~~`/coaches/seasons/new`~~ | ~~`8abf18/3ca400`~~ | ❌ **ELIMINADO** F2 | Duplicado | Inline `85ed15` |
 | `/coaches/teams` | `8abf18/8fd6f4` | ✅ COMPLETO | Mantener | — |
 | `/coaches/scrims` | `8abf18/634637` | ✅ COMPLETO | Mantener | — |
 | `/coaches/promotions` | `8abf18/ea6aeb` | ✅ COMPLETO | Mantener | — |
 | `/coaches/questions` | `8abf18/478669` | ✅ COMPLETO | Mantener (ganador inline) | — |
-| `/coaches/questions/new` | `8abf18/e3b770` | ❌ **ELIMINAR** | Schema incorrecto (`text` vs `stem`) | Inline `478669` |
+| ~~`/coaches/questions/new`~~ | ~~`8abf18/e3b770`~~ | ❌ **ELIMINADO** F2 | Schema incorrecto (`text` vs `stem`) | Inline `478669` |
 | `/coaches/questions/:id` | `8abf18/2784c7` | ✅ COMPLETO | Mantener | — |
 
 ---
@@ -180,9 +180,9 @@
 
 | Archivo | Ruta | Depende de | Eliminar cuando |
 |---------|------|-----------|-----------------|
-| `3ca400.ts` | Seasons new | Solo `fad58d.ts:27` | ✅ Ya verificado. Fase 2 |
-| `b41a3a.ts` | Schedules new | Solo `fad58d.ts:25` | ✅ Ya verificado. Fase 2 |
-| `e3b770.ts` | Questions new | Solo `fad58d.ts:44` | ✅ Ya verificado. Fase 2 |
+| ~~`3ca400.ts`~~ | ~~Seasons new~~ | ✅ **ELIMINADO** Fase 2 | ✔ |
+| ~~`b41a3a.ts`~~ | ~~Schedules new~~ | ✅ **ELIMINADO** Fase 2 | ✔ |
+| ~~`e3b770.ts`~~ | ~~Questions new~~ | ✅ **ELIMINADO** Fase 2 | ✔ |
 | `a116c0.ts` | Coach eval list | Solo `fad58d.ts:23` | ⏳ Fase 3 (post-migración) |
 | `7528d8.ts` | Coach eval new | Solo `fad58d.ts:42` | ⏳ Fase 3 (post-migración) |
 | `1868f3.ts` | Coach eval detail | Solo `fad58d.ts:43` | ⏳ Fase 3 (post-migración) |
@@ -201,10 +201,11 @@ Fase 0.5 ✔ Mapa maestro (este documento)
 Fase 1   Sidebar coach (dc7161.ts)
          + Eliminar Config duplicado
 ─────────────────────────────────────
-Fase 2   Duplicados obvios
-         Eliminar: 3ca400, b41a3a, e3b770
+Fase 2   ✅ Duplicados obvios
+         Eliminados: 3ca400, b41a3a, e3b770
          + rutas en fad58d.ts
-         + Agregar is_active a seasons inline
+         + is_active agregado a seasons inline
+         + type select agregado a schedules inline
 ─────────────────────────────────────
 Fase 3   Assessments unificados
          SQL: migrar evaluations → exams

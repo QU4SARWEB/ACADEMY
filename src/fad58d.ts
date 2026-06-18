@@ -58,6 +58,8 @@ import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e
 import { renderPlayerDashboard, initPlayerDashboard } from '@/b3b32a/a2bbab/4866e3'
 import { renderPlayerProfile, initPlayerProfile } from '@/b3b32a/a2bbab/7d9748'
 import { renderPlayerSchedule, initPlayerSchedule } from '@/b3b32a/a2bbab/799855'
+import { renderPlayerTaskDetail, initPlayerTaskDetail } from '@/b3b32a/a2bbab/f8c5e7'
+import { renderPlayerCourseDetail, initPlayerCourseDetail } from '@/b3b32a/a2bbab/a3b2c1'
 import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/e8f6c1'
 import { renderPlayerCourses, initPlayerCourses } from '@/b3b32a/a2bbab/d1e5f3'
 import { renderPlayerScrims, initPlayerScrims } from '@/b3b32a/a2bbab/634637'
@@ -166,7 +168,9 @@ dash('/students/evaluations/:id', () => renderStudentEvalDetail(), initStudentEv
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
 dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
 dash('/players/tasks', () => renderPlayerTasks(), initPlayerTasks)
+dash('/players/tasks/:id', () => renderPlayerTaskDetail(), initPlayerTaskDetail)
 dash('/players/courses', () => renderPlayerCourses(), initPlayerCourses)
+dash('/players/courses/:id', () => renderPlayerCourseDetail(), initPlayerCourseDetail)
 dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
 dash('/players/scrims', () => renderPlayerScrims(), initPlayerScrims)
 dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
