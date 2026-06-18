@@ -17,10 +17,13 @@ export function DashboardLayout(contentHtml: string): string {
     <style id="theme-vars">
       :root { --accent: ${accent}; --accent-rgb: ${hexToRgb(accent)}; --accent-bg: ${accent}20; }
       ${bgUrl ? `
-        body { background: url(${bgUrl}) center/cover fixed !important; }
-        #app > div:first-child { background: rgba(0,0,0,0.6) !important; }
+        body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
         #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
-        .glass { background: rgba(15,15,20,0.88) !important; backdrop-filter: blur(8px) !important; }
+        #main-content > .mx-auto { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1.5rem !important; margin-bottom: 0.75rem !important; margin-top: 0.75rem !important; }
+        #main-content .glass { background: rgba(20,20,30,0.9) !important; }
+        #main-content > .overflow-x-auto, #main-content > div:not(.mx-auto) { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1.5rem !important; margin-bottom: 0.75rem !important; }
+        #main-content table { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
+        #main-content .overflow-x-auto .glass, #main-content .glass { background: rgba(20,20,30,0.9) !important; }
       ` : ''}
     </style>`
 
