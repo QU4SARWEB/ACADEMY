@@ -84,7 +84,7 @@ async function renderChatLayout(): Promise<void> {
         ${activeConvId
           ? `<div class="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
                <span class="text-xs text-zinc-500">${isCoach ? 'Coach' : ''}</span>
-               ${isCoach ? `<button class="btn-del-conv text-red-400 hover:text-red-300 transition text-xs flex items-center gap-1" data-conv-id="${escapeHtml(activeConvId)}">${Icon('trash', 12)} Eliminar conversación</button>` : ''}
+               <button class="btn-del-conv text-red-400 hover:text-red-300 transition text-xs flex items-center gap-1" data-conv-id="${escapeHtml(activeConvId)}">${Icon('trash', 12)} Eliminar conversación</button>
              </div>
              <div id="typing-indicator" class="hidden px-4 pt-2 text-xs text-zinc-500 italic"></div>
              <div id="msg-area" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
@@ -216,9 +216,6 @@ async function loadMessages(convId: string): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return
 
-  const profile = store.get<any>('profile')
-  const isCoach = profile?.role === 'coach'
-
   const { data } = await supabase
     .from('chat_messages')
     .select('*, sender:sender_id(full_name, display_name, avatar_url)')
@@ -248,7 +245,7 @@ async function loadMessages(convId: string): Promise<void> {
                 : ''
               }
               <p class="text-[10px] text-zinc-500 mt-0.5 ${isMe ? 'text-right' : ''}">${formatDate(m.created_at)}</p>
-              ${isCoach ? `<button class="btn-del-msg absolute -top-1 -right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500/80 text-white hover:bg-red-500 transition" data-msg-id="${escapeHtml(m.id)}">${Icon('x', 10)}</button>` : ''}
+              <button class="btn-del-msg absolute -top-1 -right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-500/80 text-white hover:bg-red-500 transition" data-msg-id="${escapeHtml(m.id)}">${Icon('x', 10)}</button>
             </div>
           </div>`
       }).join('')
