@@ -3,6 +3,7 @@ import { router } from '@/f3395c'
 import { authGuard, getProfile } from '@/fa53b9/fa53b9'
 import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
+import { store } from '@/9ed39e/8cd892'
 
 import '@/bc4150/0c54ed.css'
 
@@ -94,6 +95,26 @@ router.on('/p/:slug', async () => {
   initPublicProfile()
 })
 
+// Tables that affect the current page — grouped by route prefix
+const REALTIME_TABLES: Record<string, string[]> = {
+  coaches: [
+    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
+    'evaluations', 'exams', 'exam_questions', 'exam_attempts', 'schedules', 'seasons',
+    'teams', 'scrims', 'promotions', 'questions', 'attendance', 'profiles', 'payments',
+  ],
+  students: [
+    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
+    'exams', 'exam_questions', 'exam_attempts', 'evaluations', 'schedules', 'payments', 'profiles',
+  ],
+  players: [
+    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
+    'teams', 'team_members', 'scrims', 'schedules', 'payments', 'profiles',
+  ],
+}
+
+// Routes that should NOT auto-refresh (forms, exams in progress, etc.)
+const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/modules/new', '/exams/', '/take']
+
 // Dashboard render helper
 function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void>) | (() => void)): void {
   router.on(path, async () => {
@@ -106,6 +127,41 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       initToastContainer()
       initSidebar()
       if (initFn) await initFn()
+
+      // Global real-time: auto-refresh when data changes
+      const shouldAutoRefresh = !NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))
+      if (shouldAutoRefresh && initFn) {
+        const profileData = store.get<any>('profile')
+        const role = profileData?.role || 'coach'
+        const tables = REALTIME_TABLES[role] || REALTIME_TABLES.coaches
+        const channelName = `global-${path.replace(/[^a-z0-9]/g, '-')}-${Date.now()}`
+        const channel = supabase.channel(channelName)
+
+        for (const table of tables) {
+          channel.on('postgres_changes',
+            { event: '*', schema: 'public', table },
+            () => {
+              // Debounce: avoid rapid re-fetches
+              const key = `_rt_${path}`
+              if ((window as any)[key]) return
+              ;(window as any)[key] = true
+              setTimeout(() => { (window as any)[key] = false }, 2000)
+              // Re-execute init function silently
+              Promise.resolve(initFn()).catch(console.error)
+            }
+          )
+        }
+        channel.subscribe()
+
+        // Clean up channel on navigation
+        const origNav = router.navigate.bind(router)
+        const wrappedNav = async (href: string, replace?: boolean) => {
+          supabase.removeChannel(channel)
+          router.navigate = origNav
+          await origNav(href, replace)
+        }
+        router.navigate = wrappedNav as typeof router.navigate
+      }
     } catch (err) {
       console.error('Error rendering dashboard:', err)
       app.innerHTML = `<div class="flex flex-col items-center justify-center min-h-screen p-8 text-center">
