@@ -8,7 +8,9 @@ import { uploadFileFromInput } from '@/2b3583/76ee3d'
 
 let activeConvId: string | null = null
 let activeChannel: any = null
-const draftStorage: Record<string, string> = {}
+let typingChannel: any = null
+let typingTimer: any = null
+const EMOJIS = ['😀','😂','❤️','🔥','👍','👏','🎉','💯','✨','🚀','💪','😍','🤣','🙏','😎','🥺','😅','😭','😤','😡','🥳','🤔','🤯','😱','🥶','😈','💀','☠️','👀','🍿','🎮','🏆','💻','📱','🖥️','⌨️','🖱️','🎯','🧠','💡','📚','🎓','🏅','⭐','🌟','💫','⚡','🔥']
 
 export function renderChat(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -31,12 +33,14 @@ async function renderChatLayout(): Promise<void> {
 
   const convList = await loadConversations(session.user.id)
   const participants: Record<string, any[]> = convList.length > 0 ? await loadParticipants(convList.map((c: any) => c.id)) : {}
+  const unreadCounts: Record<string, number> = convList.length > 0 ? await loadUnreadCounts(session.user.id, convList.map((c: any) => c.id)) : {}
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
 
   const html = `
     <div class="flex h-[calc(100vh-6rem)] gap-0">
       <div class="w-80 shrink-0 border-r border-zinc-800 flex flex-col">
         <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-          <h2 class="font-heading text-lg font-bold text-white">Chat</h2>
+          <h2 class="font-heading text-lg font-bold text-white">Chat${totalUnread > 0 ? ` <span class="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">${totalUnread}</span>` : ''}</h2>
           <button id="btn-new-chat" class="rounded-lg bg-[#8B5CF6] p-1.5 text-white transition hover:bg-[#7C3AED]">
             ${Icon('plus', 16)}
           </button>
@@ -49,19 +53,21 @@ async function renderChatLayout(): Promise<void> {
                 const other = part.find((p: any) => p.profile_id !== session.user.id)
                 const name = other?.profiles?.display_name || other?.profiles?.full_name || 'Desconocido'
                 const lastMsg = c.last_message
+                const unread = unreadCounts[c.id] || 0
                 return `
                   <button class="conv-item w-full rounded-lg px-3 py-2.5 text-left transition hover:bg-zinc-800/50 ${activeConvId === c.id ? 'bg-zinc-800' : ''}"
                     data-conv-id="${escapeHtml(c.id)}">
                     <div class="flex items-center gap-3">
-                      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6] overflow-hidden">
+                      <div class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6] overflow-hidden">
                         ${other?.profiles?.avatar_url
                           ? `<img src="${escapeHtml(other.profiles.avatar_url)}" alt="" class="h-full w-full object-cover" />`
                           : escapeHtml(name.charAt(0).toUpperCase())
                         }
+                        ${unread > 0 ? `<span class="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">${unread > 9 ? '9+' : unread}</span>` : ''}
                       </div>
                       <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-white truncate">${escapeHtml(name)}</p>
-                        <p class="text-xs text-zinc-500 truncate">${lastMsg ? escapeHtml(lastMsg.content || '(archivo)') : 'Sin mensajes'}</p>
+                        <p class="text-xs ${unread > 0 ? 'text-white font-medium' : 'text-zinc-500'} truncate">${lastMsg ? escapeHtml(lastMsg.content || '(archivo)') : 'Sin mensajes'}</p>
                       </div>
                       ${lastMsg ? `<span class="text-[10px] text-zinc-600 shrink-0">${formatDate(lastMsg.created_at)}</span>` : ''}
                     </div>
@@ -73,12 +79,19 @@ async function renderChatLayout(): Promise<void> {
 
       <div id="chat-main" class="flex-1 flex flex-col ${activeConvId ? '' : 'items-center justify-center'}">
         ${activeConvId
-          ? `<div id="msg-area" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+          ? `<div id="typing-indicator" class="hidden px-4 pt-2 text-xs text-zinc-500 italic"></div>
+             <div id="msg-area" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
              <div class="border-t border-zinc-800 p-4">
                <form id="msg-form" class="flex gap-2 items-end">
-                 <div class="flex-1">
+                 <div class="flex-1 relative">
                    <textarea id="msg-input" rows="1" placeholder="Escribe un mensaje..."
-                     class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] resize-none"></textarea>
+                     class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] resize-none pr-10"></textarea>
+                   <button type="button" id="btn-emoji" class="absolute right-2 bottom-2 text-zinc-500 hover:text-white transition cursor-pointer">😀</button>
+                   <div id="emoji-picker" class="absolute bottom-full right-0 mb-2 hidden glass rounded-xl p-3 shadow-xl z-50">
+                     <div class="grid grid-cols-8 gap-1.5 w-[280px] max-h-[200px] overflow-y-auto">
+                       ${EMOJIS.map(e => `<button type="button" class="emoji-btn h-7 w-7 rounded-lg hover:bg-zinc-700 text-base transition cursor-pointer">${e}</button>`).join('')}
+                     </div>
+                   </div>
                  </div>
                  <label class="cursor-pointer rounded-lg border border-zinc-700 p-2 text-zinc-400 hover:text-white hover:border-zinc-500 transition">
                    ${Icon('paperclip', 16)}
@@ -119,8 +132,12 @@ async function renderChatLayout(): Promise<void> {
     </div>`
 
   document.getElementById('page-content')!.innerHTML = html
-  initChatEvents(session!.user.id)
-  if (activeConvId) loadMessages(activeConvId)
+  await initChatEvents(session!.user.id)
+  if (activeConvId) {
+    loadMessages(activeConvId)
+    markAsRead(activeConvId, session.user.id)
+    subscribeToTyping(activeConvId, session.user.id)
+  }
 }
 
 async function loadConversations(userId: string): Promise<any[]> {
@@ -169,6 +186,25 @@ async function loadParticipants(convIds: string[]): Promise<Record<string, any[]
   return byConv
 }
 
+async function loadUnreadCounts(userId: string, convIds: string[]): Promise<Record<string, number>> {
+  const { data: myParts } = await supabase
+    .from('conversation_participants')
+    .select('conversation_id, last_read_at')
+    .in('conversation_id', convIds)
+    .eq('profile_id', userId)
+
+  const result: Record<string, number> = {}
+  for (const part of myParts ?? []) {
+    let query = supabase.from('chat_messages').select('id', { count: 'exact', head: true })
+      .eq('conversation_id', part.conversation_id)
+      .neq('sender_id', userId)
+    if (part.last_read_at) query = query.gt('created_at', part.last_read_at)
+    const { count } = await query
+    result[part.conversation_id] = count ?? 0
+  }
+  return result
+}
+
 async function loadMessages(convId: string): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return
@@ -208,12 +244,12 @@ async function loadMessages(convId: string): Promise<void> {
 
   area.scrollTop = area.scrollHeight
 
-  // Subscribe to realtime
   subscribeToMessages(convId)
 
-  // Restore draft
+  // Restore localStorage draft
   const input = document.getElementById('msg-input') as HTMLTextAreaElement
-  if (input && draftStorage[convId]) input.value = draftStorage[convId]
+  const saved = localStorage.getItem(`chat_draft_${convId}`)
+  if (input && saved) input.value = saved
 }
 
 function subscribeToMessages(convId: string): void {
@@ -222,8 +258,34 @@ function subscribeToMessages(convId: string): void {
   activeChannel = supabase.channel(`chat-${convId}`)
   activeChannel.on('postgres_changes',
     { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${convId}` },
-    () => loadMessages(convId)
+    async () => {
+      loadMessages(convId)
+      const sesh = await supabase.auth.getSession()
+      if (sesh.data?.session?.user?.id) markAsRead(convId, sesh.data.session.user.id)
+    }
   ).subscribe()
+}
+
+function subscribeToTyping(convId: string, userId: string): void {
+  if (typingChannel) supabase.removeChannel(typingChannel)
+  typingChannel = supabase.channel(`typing-${convId}`)
+  typingChannel.on('broadcast', { event: 'typing' }, (payload: any) => {
+    if (payload.sender_id !== userId) {
+      const el = document.getElementById('typing-indicator')
+      if (el) {
+        el.textContent = `${escapeHtml(payload.name || 'Alguien')} está escribiendo...`
+        el.classList.remove('hidden')
+        clearTimeout(typingTimer)
+        typingTimer = setTimeout(() => { if (el) el.classList.add('hidden') }, 2000)
+      }
+    }
+  }).subscribe()
+}
+
+async function markAsRead(convId: string, userId: string): Promise<void> {
+  await supabase.from('conversation_participants').update({ last_read_at: new Date().toISOString() })
+    .eq('conversation_id', convId)
+    .eq('profile_id', userId)
 }
 
 async function sendMessage(convId: string, content: string, file?: File): Promise<void> {
@@ -250,7 +312,7 @@ async function sendMessage(convId: string, content: string, file?: File): Promis
   if (error) {
     toast('error', error.message)
   } else {
-    delete draftStorage[convId]
+    localStorage.removeItem(`chat_draft_${convId}`)
     const input = document.getElementById('msg-input') as HTMLTextAreaElement
     if (input) input.value = ''
     document.getElementById('attach-name')?.classList.add('hidden')
@@ -258,8 +320,13 @@ async function sendMessage(convId: string, content: string, file?: File): Promis
   }
 }
 
-function initChatEvents(userId: string): void {
-  // Select conversation
+function emitTyping(convId: string, userId: string, userName: string): void {
+  if (typingChannel) {
+    typingChannel.send({ type: 'broadcast', event: 'typing', payload: { sender_id: userId, name: userName } })
+  }
+}
+
+async function initChatEvents(userId: string): Promise<void> {
   document.querySelectorAll('.conv-item').forEach((btn) => {
     btn.addEventListener('click', () => {
       activeConvId = (btn as HTMLElement).dataset.convId || null
@@ -267,7 +334,6 @@ function initChatEvents(userId: string): void {
     })
   })
 
-  // New chat modal
   document.getElementById('btn-new-chat')?.addEventListener('click', async () => {
     const modal = document.getElementById('new-chat-modal')!
     modal.classList.remove('hidden')
@@ -300,7 +366,6 @@ function initChatEvents(userId: string): void {
     }
     document.getElementById('new-chat-error')!.classList.add('hidden')
 
-    // Check existing conversation
     const { data: myConvs } = await supabase
       .from('conversation_participants')
       .select('conversation_id')
@@ -333,7 +398,6 @@ function initChatEvents(userId: string): void {
     renderChatLayout()
   })
 
-  // Send message
   document.getElementById('msg-form')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     if (!activeConvId) return
@@ -347,13 +411,38 @@ function initChatEvents(userId: string): void {
     if (fileInput) fileInput.value = ''
   })
 
-  // Auto-resize textarea + draft
+  // Emoji picker toggle
+  document.getElementById('btn-emoji')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    document.getElementById('emoji-picker')?.classList.toggle('hidden')
+  })
+
+  document.addEventListener('click', () => {
+    document.getElementById('emoji-picker')?.classList.add('hidden')
+  })
+
+  document.querySelectorAll('.emoji-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('msg-input') as HTMLTextAreaElement
+      if (input) {
+        input.value += (btn as HTMLElement).textContent
+        input.dispatchEvent(new Event('input'))
+        input.focus()
+      }
+    })
+  })
+
   const textarea = document.getElementById('msg-input') as HTMLTextAreaElement
+  const profileData = await supabase.from('profiles').select('display_name, full_name').eq('id', userId).maybeSingle()
+  const profileName = (profileData.data as any)?.display_name || (profileData.data as any)?.full_name || ''
   if (textarea) {
     textarea.addEventListener('input', () => {
       textarea.style.height = 'auto'
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
-      if (activeConvId) draftStorage[activeConvId] = textarea.value
+      if (activeConvId) {
+        localStorage.setItem(`chat_draft_${activeConvId}`, textarea.value)
+        if (textarea.value) emitTyping(activeConvId, userId, profileName)
+      }
     })
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -364,7 +453,6 @@ function initChatEvents(userId: string): void {
     })
   }
 
-  // Attach file
   document.getElementById('msg-attach')?.addEventListener('change', () => {
     const input = document.getElementById('msg-attach') as HTMLInputElement
     const label = document.getElementById('attach-name')!
