@@ -51,13 +51,13 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: enrollment, error: enrError } = await supabase
           .from('enrollments')
-          .insert({
+          .upsert({
             profile_id: session.user.id,
             course_id: targetCourse.id,
             season_id: season?.id ?? null,
             type: 'student',
             status: 'active',
-          })
+          }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
           .select()
           .maybeSingle()
 
@@ -177,13 +177,13 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: enrollment, error: enrError } = await supabase
           .from('enrollments')
-          .insert({
+          .upsert({
             profile_id: session.user.id,
             course_id: courseId,
             season_id: season?.id ?? null,
             type: 'student',
             status: 'active',
-          })
+          }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
           .select()
           .maybeSingle()
 

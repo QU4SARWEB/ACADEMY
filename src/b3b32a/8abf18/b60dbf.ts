@@ -438,14 +438,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     if (err2) { toast('error', 'Error al registrar promoción: ' + err2.message); return }
 
     if (newCourseId) {
-      const { error: err3 } = await supabase.from('enrollments').insert({
+      const { error: err3 } = await supabase.from('enrollments').upsert({
         profile_id: studentId,
         season_id: seasonId,
         course_id: newCourseId,
         type: 'student',
         status: 'active',
         current_module: 1,
-      })
+      }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
       if (err3) { toast('error', 'Error al inscribir en nuevo curso: ' + err3.message); return }
     }
 
@@ -481,14 +481,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    const { error } = await supabase.from('enrollments').insert({
+    const { error } = await supabase.from('enrollments').upsert({
       profile_id: profileId,
       course_id: courseId,
       season_id: seasonId,
       type,
       status: 'active',
       current_module: 1,
-    })
+    }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
 
     if (error) {
       document.getElementById('enroll-error')!.textContent = error.message
