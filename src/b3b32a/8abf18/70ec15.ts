@@ -138,8 +138,12 @@ export async function initCoachSchedules(): Promise<void> {
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Tipo</label>
-                <input type="text" name="type"
-                  class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                <select name="type"
+                  class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                  <option value="">Seleccionar...</option>
+                  <option value="academic">Académico</option>
+                  <option value="competitive">Competitivo</option>
+                </select>
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Ubicación</label>

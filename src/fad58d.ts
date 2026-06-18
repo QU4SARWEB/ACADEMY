@@ -22,9 +22,7 @@ import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
 import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/2cb1ad'
 import { renderCoachEvaluations, initCoachEvaluations } from '@/b3b32a/8abf18/a116c0'
 import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
-import { renderCoachNewSchedule, initCoachNewSchedule } from '@/b3b32a/8abf18/b41a3a'
 import { renderCoachSeasons, initCoachSeasons } from '@/b3b32a/8abf18/85ed15'
-import { renderCoachNewSeason, initCoachNewSeason } from '@/b3b32a/8abf18/3ca400'
 import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
@@ -41,7 +39,6 @@ import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
 import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
 import { renderCoachNewEvaluation, initCoachNewEvaluation } from '@/b3b32a/8abf18/7528d8'
 import { renderCoachEvaluationDetail, initCoachEvaluationDetail } from '@/b3b32a/8abf18/1868f3'
-import { renderCoachNewQuestion, initCoachNewQuestion } from '@/b3b32a/8abf18/e3b770'
 import { renderCoachQuestionDetail, initCoachQuestionDetail } from '@/b3b32a/8abf18/2784c7'
 
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
@@ -142,15 +139,12 @@ dash('/coaches/evaluations', () => renderCoachEvaluations(), initCoachEvaluation
 dash('/coaches/evaluations/new', () => renderCoachNewEvaluation(), initCoachNewEvaluation)
 dash('/coaches/evaluations/:id', () => renderCoachEvaluationDetail(), initCoachEvaluationDetail)
 dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
-dash('/coaches/schedules/new', () => renderCoachNewSchedule(), initCoachNewSchedule)
 dash('/coaches/seasons', () => renderCoachSeasons(), initCoachSeasons)
-dash('/coaches/seasons/new', () => renderCoachNewSeason(), initCoachNewSeason)
 dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
 dash('/coaches/promotions', () => renderCoachPromotions(), initCoachPromotions)
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/questions', () => renderCoachQuestions(), initCoachQuestions)
-dash('/coaches/questions/new', () => renderCoachNewQuestion(), initCoachNewQuestion)
 dash('/coaches/questions/:id', () => renderCoachQuestionDetail(), initCoachQuestionDetail)
 
 // Student routes

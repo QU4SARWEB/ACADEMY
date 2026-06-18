@@ -45,6 +45,10 @@ export async function initCoachSeasons(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
             </div>
           </div>
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" name="isActive" class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
+            Temporada activa
+          </label>
           <p id="season-form-error" class="hidden text-xs text-red-400"></p>
           <div class="flex gap-2">
             <button type="submit"
@@ -93,6 +97,7 @@ export async function initCoachSeasons(): Promise<void> {
         name: fd.get('name') as string,
         start_date: fd.get('startDate') as string,
         end_date: fd.get('endDate') as string,
+        is_active: fd.get('isActive') === 'on',
       })
       if (error) {
         const errEl = document.getElementById('season-form-error')!
