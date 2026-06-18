@@ -41,8 +41,15 @@ export function convertTime(timeStr: string, sourceTZ: string): string {
   }
 }
 
+export function to12h(timeStr: string): string {
+  if (!timeStr || !timeStr.includes(':')) return timeStr || '??'
+  const [h, m] = timeStr.split(':').map(Number)
+  const period = h >= 12 ? 'p. m.' : 'a. m.'
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return `${h12}:${m.toString().padStart(2, '0')} ${period}`
+}
+
 export function formatTimeWithTZ(timeStr: string, sourceTZ: string): string {
   const local = convertTime(timeStr, sourceTZ)
-  if (local === timeStr) return local
-  return local
+  return to12h(local)
 }

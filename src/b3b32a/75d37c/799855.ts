@@ -42,11 +42,12 @@ export async function initStudentSchedule(): Promise<void> {
           const hasClass = seasonScheds.some((s: any) => s.day_of_week === i)
           const isToday = i === today
           return `
-            <a href="#dia-${i}" class="scroll-to-day shrink-0 rounded-xl px-4 py-3 text-center transition cursor-pointer ${isToday ? 'bg-[#8B5CF6]/20 border border-[#8B5CF6]/30' : 'glass'} ${hasClass ? 'hover:bg-zinc-800/50' : 'opacity-40'}">
+            <button class="day-btn shrink-0 rounded-xl px-4 py-3 text-center transition cursor-pointer ${isToday ? 'bg-[#8B5CF6]/20 border border-[#8B5CF6]/30' : 'glass'} ${hasClass ? 'hover:bg-zinc-800/50' : 'opacity-40'}"
+              data-day="${i}">
               <p class="text-xs font-bold ${isToday ? 'text-[#8B5CF6]' : 'text-zinc-400'}">${SHORT_DAYS[i]}</p>
               <p class="text-lg font-bold text-white">${d.charAt(0)}</p>
               <p class="text-[10px] ${hasClass ? 'text-green-400' : 'text-zinc-600'}">${hasClass ? (seasonScheds.filter(s => s.day_of_week === i).length) + ' cls' : '—'}</p>
-            </a>`
+            </button>`
         }).join('')}
       </div>
 
@@ -100,8 +101,18 @@ export async function initStudentSchedule(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
-    // Scroll to today on load
-    document.querySelector('.scroll-to-day')?.scrollIntoView({ behavior: 'smooth', inline: 'center' })
+    // Day buttons: scroll to the corresponding day section
+    document.querySelectorAll('.day-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const day = (btn as HTMLElement).dataset.day
+        const el = document.getElementById('dia-' + day)
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+      })
+    })
+
+    // Scroll today's button into view in the selector
+    const todayBtn = document.querySelector(`.day-btn[data-day="${today}"]`)
+    if (todayBtn) todayBtn.scrollIntoView({ behavior: 'smooth', inline: 'center' })
   } catch (err) {
     console.error('Error loading schedule:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar horario</p>'
