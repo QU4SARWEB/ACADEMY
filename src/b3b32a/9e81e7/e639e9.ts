@@ -12,7 +12,7 @@ import type { Profile } from '@/d14a80'
 let selectedSeasonId: string | null = null
 
 const PAYPAL_CLIENT_ID = 'ATf2cJdAcCmle4LgS5r851NRL1k4bLiqhadr9ZSPxzeadYyMDmuGDHqj1g4FcpSZ3ULeisdy_m8JGvbS'
-const PAYPAL_SANDBOX = false // false = live, true = sandbox
+const PAYPAL_SANDBOX = true // false = live, true = sandbox
 
 export function renderPayments(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -78,27 +78,31 @@ async function renderStudentPayments(userId: string): Promise<void> {
       ${(payments ?? []).length === 0
         ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
         : (payments ?? []).map((p: any) => `
-          <div class="payment-item glass rounded-xl p-4 flex items-center justify-between" data-payment-id="${escapeHtml(p.id)}">
-            <div>
-              <p class="text-sm text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
+          <div class="payment-item glass rounded-xl p-4 space-y-3" data-payment-id="${escapeHtml(p.id)}">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
               <p class="text-xs text-zinc-500">${p.due_date ? formatDate(p.due_date) : ''} ${p.paid_at ? '· Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
-            <div class="text-right flex flex-col items-end gap-2">
-              <div class="flex items-center gap-3">
-                ${p.receipt_url
-                  ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
-                  : p.status === 'pending'
-                    ? `<button class="upload-receipt-btn text-xs text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
-                    : ''
-                }
-                ${p.status === 'scholarship'
-                  ? `<span class="text-xs font-medium text-blue-400">${statusLabels.scholarship}</span>`
-                  : `<span class="text-xs font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.00}</span>`
-                }
-              </div>
-              ${p.status === 'pending' ? `<div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.00}"></div>` : ''}
-            </div>
+            ${p.status === 'scholarship'
+              ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
+              : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.00}</span>`
+            }
           </div>
+          ${p.status === 'pending' ? `
+          <div class="flex flex-col gap-2">
+            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.00}"></div>
+            <div class="flex items-center gap-2 text-xs text-zinc-400">
+              <span class="text-zinc-600">O</span>
+              ${p.receipt_url
+                ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-[#8B5CF6] hover:underline">Ver comprobante</a>`
+                : `<button class="upload-receipt-btn flex items-center gap-1 text-[#8B5CF6] hover:underline">${Icon('upload', 12)} Subir comprobante</button>`
+              }
+            </div>
+          </div>` : ''}
+          ${p.status === 'paid' && p.receipt_url ? `
+          <div class="text-xs"><a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-[#8B5CF6] hover:underline">${Icon('fileText', 12)} Ver comprobante</a></div>` : ''}
+        </div>
         `).join('')
       }
     </div>
