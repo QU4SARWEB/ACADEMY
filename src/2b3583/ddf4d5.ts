@@ -301,7 +301,7 @@ export function initPlaylistEditor(): void {
     container!.innerHTML = items.map((item: any, i: number) => `
       <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <span class="min-w-0 flex-1 truncate text-sm text-zinc-300">${escapeHtml(item.title)}</span>
-        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${item.url.includes('spotify') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${item.url.includes('spotify') ? 'Spotify' : 'YouTube'}</span>
+        <span class="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-red-400">YouTube</span>
         <button type="button" data-index="${i}" class="playlist-remove shrink-0 rounded-lg px-2 py-1 text-xs text-red-400 transition hover:bg-red-500/10">Eliminar</button>
       </div>
     `).join('')

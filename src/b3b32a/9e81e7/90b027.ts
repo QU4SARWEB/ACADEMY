@@ -164,10 +164,6 @@ export async function initPublicProfile(): Promise<void> {
       const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
       return m?.[1] ?? null
     }
-    function spId(url: string): string | null {
-      const m = url.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/)
-      return m?.[1] ?? null
-    }
     function ytThumb(id: string): string { return `https://img.youtube.com/vi/${id}/mqdefault.jpg` }
 
     let miniPlayer: { item: any; paused: boolean } | null = null
@@ -237,26 +233,13 @@ export async function initPublicProfile(): Promise<void> {
             })
           }
         })
-      } else if (spId(item.url)) {
-        const embed = document.getElementById('sp-player-wrap')!
-        embed.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${spId(item.url)}?utm_source=oembed" width="1" height="1" frameborder="0" allow="autoplay; encrypted-media" style="position:fixed;opacity:0.01;pointer-events:none"></iframe>`
-        miniPlayer!.paused = false
       }
       updateBtns()
     }
 
     async function fetchThumbnail(item: any): Promise<string | null> {
       const id = ytId(item.url)
-      if (id) return ytThumb(id)
-      const sid = spId(item.url)
-      if (sid) {
-        try {
-          const r = await fetch(`https://open.spotify.com/oembed?url=https://open.spotify.com/track/${sid}`)
-          const d = await r.json()
-          return d.thumbnail_url || null
-        } catch { return null }
-      }
-      return null
+      return id ? ytThumb(id) : null
     }
 
     const html = `
@@ -425,24 +408,22 @@ export async function initPublicProfile(): Promise<void> {
         </h3>
         <div id="playlist-tracks" class="space-y-3">
           ${playlist.map((item: any, i: number) => {
-            const isYt = !!ytId(item.url)
-            const isSp = !!spId(item.url)
-            return isYt || isSp ? `
+            const id = ytId(item.url)
+            return id ? `
           <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700" data-idx="${i}">
             <div class="playlist-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
               <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 18)}</div>
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-zinc-300">${escapeHtml(item.title)}</p>
-              <span class="inline-block mt-0.5 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${isSp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">${isSp ? 'Spotify' : 'YouTube'}</span>
+              <span class="inline-block mt-0.5 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-red-400">YouTube</span>
             </div>
             <button type="button" data-idx="${i}" class="playlist-play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:border-[#8B5CF6]/40 hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
           </div>` : ''
           }).join('')}
         </div>
       </div>
-      <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>
-      <div id="sp-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
+      <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
 
     </div>
   </div>
