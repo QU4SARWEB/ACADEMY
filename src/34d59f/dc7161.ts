@@ -33,6 +33,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: `/${prefix}/grades`, icon: 'scrollText', label: 'Calificaciones', show: isStudent },
     { href: `/${prefix}/team`, icon: 'users', label: 'Equipo', show: isPlayer },
     { href: `/${prefix}/scrims`, icon: 'sword', label: 'Scrims', show: isPlayer || isCoach },
+    { href: '/support', icon: 'info', label: 'Soporte', show: isStudent || isPlayer },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones', show: true },
     { href: '/mail', icon: 'mail', label: 'Mensajes', show: true },
   ]
@@ -51,6 +52,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/scrims', icon: 'sword', label: 'Scrims' },
     { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
     { href: '/mail', icon: 'mail', label: 'Mensajes' },
+    { href: '/support', icon: 'info', label: 'Soporte' },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones' },
     { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
   ]
