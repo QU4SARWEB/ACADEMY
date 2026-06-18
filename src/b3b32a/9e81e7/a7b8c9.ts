@@ -22,6 +22,8 @@ export async function initChat(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
+    // Mark message notifications as read
+    await supabase.from('notifications').update({ read: true }).eq('profile_id', session.user.id).eq('type', 'message').eq('read', false)
     await renderChatLayout()
   } catch (err) {
     console.error(err)

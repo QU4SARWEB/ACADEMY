@@ -119,8 +119,8 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
 // Coach routes
 dash('/coaches/dashboard', () => renderCoachDashboard(), initCoachDashboard)
 dash('/coaches/courses', () => renderCoachCourses(), mountCoachCourses)
-dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
 dash('/coaches/courses/new', () => renderCoachNewCourse(), initCoachNewCourse)
+dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
 dash('/coaches/courses/:id/edit', () => renderCoachEditCourse(), initCoachEditCourse)
 dash('/coaches/courses/:id/exams', () => renderCoachExams(), initCoachExams)
 dash('/coaches/courses/:id/attendance', () => renderCoachAttendance(), initCoachAttendance)
@@ -184,6 +184,46 @@ document.addEventListener('DOMContentLoaded', () => {
   router.start()
 
   supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      // Real-time notification toast
+      const notifChannel = supabase.channel('notif-toast')
+      notifChannel.on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `profile_id=eq.${session.user.id}` },
+        (payload: any) => {
+          const n = payload.new
+          if (n && (window as any).__toast) {
+            const typeMap: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
+              task: 'info', evaluation: 'info', schedule: 'info',
+              payment: 'success', scrim: 'warning', system: 'info',
+              message: 'info', grade: 'success', promotion: 'success',
+            }
+            const iconMap: Record<string, string> = {
+              task: 'clipboardList', evaluation: 'target', schedule: 'calendar',
+              payment: 'dollarSign', scrim: 'sword', system: 'bell',
+              message: 'mail', grade: 'scrollText', promotion: 'trophy',
+            }
+            ;(window as any).__toast(typeMap[n.type] || 'info', n.title || 'Nueva notificación')
+            // Update sidebar badge
+            const notifLinks = document.querySelectorAll('a[href="#/notifications"]')
+            notifLinks.forEach((a) => {
+              const span = a.querySelector('span')
+              if (span) {
+                const match = span.textContent?.match(/\((\d+)\)/)
+                const current = match ? parseInt(match[1]) : 0
+                span.textContent = 'Notificaciones (' + (current + 1) + ')'
+              }
+            })
+            ;(window as any).__unreadNotifs = ((window as any).__unreadNotifs || 0) + 1
+          }
+        }
+      ).subscribe()
+
+      // Store toast reference for real-time notifications
+      if (!(window as any).__toast) {
+        import('@/4725dc/4f2900').then((m) => { (window as any).__toast = m.toast })
+      }
+    }
+
     if (session && (!location.hash || location.hash === '#' || location.hash === '#/')) {
       getProfile().then((profile) => {
         if (profile) {

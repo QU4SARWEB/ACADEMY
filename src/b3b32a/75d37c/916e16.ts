@@ -186,7 +186,7 @@ export async function initStudentExamTake(): Promise<void> {
       return
     }
 
-    const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => a.display_order - b.display_order)
+    const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
 
     const { data: existingAttempt } = await supabase
       .from('exam_attempts')
