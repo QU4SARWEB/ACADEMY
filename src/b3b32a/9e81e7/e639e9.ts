@@ -6,6 +6,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { store } from '@/9ed39e/8cd892'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
+import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzone'
 import type { Profile } from '@/d14a80'
 
 let selectedSeasonId: string | null = null
@@ -99,9 +100,12 @@ async function renderStudentPayments(userId: string): Promise<void> {
         <form id="receipt-form">
           <input type="hidden" name="paymentId">
           <div class="mb-4">
-            <label class="mb-1 block text-sm text-zinc-400">Selecciona el comprobante (imagen o PDF)</label>
-            <input name="receipt" type="file" accept="image/*,application/pdf" required
-              class="w-full text-xs text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:text-white hover:file:bg-zinc-700">
+            ${renderFileDropzone({
+              name: 'receipt',
+              label: 'Comprobante de pago',
+              accept: 'image/*,application/pdf',
+              maxSizeMB: 10,
+            })}
           </div>
           <p id="receipt-error" class="mb-3 hidden text-sm text-red-400"></p>
           <div class="flex gap-3">
@@ -115,6 +119,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
     </div>`
 
   document.getElementById('page-content')!.innerHTML = html
+  initFileDropzone(document.getElementById('page-content')!)
 
   document.querySelectorAll('.upload-receipt-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
