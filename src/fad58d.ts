@@ -4,6 +4,7 @@ import { authGuard, getProfile } from '@/fa53b9/fa53b9'
 import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
+import { initAutoSave } from '@/4725dc/forms/DraftManager'
 
 import '@/bc4150/0c54ed.css'
 
@@ -127,6 +128,9 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       initToastContainer()
       initSidebar()
       if (initFn) await initFn()
+
+      // Auto-save drafts for all forms
+      initAutoSave()
 
       // Global real-time: auto-refresh when data changes
       const shouldAutoRefresh = !NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))
