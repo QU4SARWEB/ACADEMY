@@ -39,6 +39,8 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   ]
 
   const coachItems: Array<{ href: string; icon: string; label: string }> = [
+    { href: '/coaches/dashboard', icon: 'layoutDashboard', label: 'Dashboard' },
+    { href: '/coaches/profile', icon: 'user', label: 'Perfil' },
     { href: '/coaches/students', icon: 'users', label: 'Estudiantes' },
     { href: '/coaches/players', icon: 'sword', label: 'Jugadores' },
     { href: '/coaches/courses', icon: 'bookOpen', label: 'Cursos' },
@@ -50,6 +52,8 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/teams', icon: 'users', label: 'Equipos' },
     { href: '/coaches/scrims', icon: 'sword', label: 'Scrims' },
     { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
+    { href: '/mail', icon: 'mail', label: 'Mensajes' },
+    { href: '/notifications', icon: 'bell', label: 'Notificaciones' },
     { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
   ]
 
@@ -95,11 +99,6 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </nav>
 
       <div class="mt-auto flex flex-col gap-1 pt-4">
-        <a href="#/${prefix}/profile"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
-          ${Icon('settings', 18)}
-          <span>Configuración</span>
-        </a>
         <button id="logout-btn"
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-800/50 hover:text-red-400">
           ${Icon('logOut', 18)}
