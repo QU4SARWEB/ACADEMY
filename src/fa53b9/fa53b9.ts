@@ -55,21 +55,21 @@ export async function signUp(
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: { data: { full_name: fullName, role } },
   })
 
   if (authError) return { error: authError.message }
   if (!authData.user) return { error: 'Error al crear usuario' }
 
-  const { error: profileError } = await supabase.from('profiles').insert({
+  // Profile is auto-created by DB trigger; try insert in case trigger hasn't run yet
+  await supabase.from('profiles').upsert({
     id: authData.user.id,
     email,
     full_name: fullName,
     role,
     is_active: true,
-  })
+  }, { onConflict: 'id', ignoreDuplicates: true })
 
-  if (profileError) return { error: profileError.message }
   return { success: true }
 }
 
@@ -97,6 +97,7 @@ export async function updatePassword(password: string): Promise<{ error?: string
 export async function authGuard(): Promise<boolean> {
   const hash = location.hash.slice(1) || '/'
   if (hash.startsWith('/p/')) return true
+  if (hash === '/login' || hash === '/register' || hash === '/reset-password') return true
 
   const session = await getSession()
   if (!session) {
@@ -117,7 +118,7 @@ export async function authGuard(): Promise<boolean> {
   }
 
   const prefix = ROLE_PREFIX[currentProfile.role]
-  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/mail') && !hash.startsWith('/logs') && hash !== '/') {
+  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/mail') && !hash.startsWith('/logs') && !hash.startsWith('/chat') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
     return false
   }

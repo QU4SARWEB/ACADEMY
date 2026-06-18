@@ -31,6 +31,7 @@ export function renderCoachNewCourse(): string {
 export async function initCoachNewCourse(): Promise<void> {
   try {
     const { data: seasons } = await supabase.from('seasons').select('id, name').eq('is_active', true).order('name')
+  const activeSeason = seasons?.[0]
 
     const html = `
       <div class="max-w-2xl">
@@ -69,8 +70,7 @@ export async function initCoachNewCourse(): Promise<void> {
               <label class="mb-1 block text-xs font-medium text-zinc-400">Temporada</label>
               <select name="seasonId"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
-                <option value="">Sin temporada</option>
-                ${(seasons ?? []).map((s: any) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('')}
+                ${(seasons ?? []).map((s: any) => `<option value="${escapeHtml(s.id)}" ${s.id === activeSeason?.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
               </select>
             </div>
             <div>
@@ -147,7 +147,7 @@ export async function initCoachNewCourse(): Promise<void> {
         name,
         slug,
         description: (fd.get('description') as string) || null,
-        season_id: (fd.get('seasonId') as string) || null,
+        season_id: fd.get('seasonId') as string,
         duration_months: duration,
         min_rank: (fd.get('minRank') as string) || '',
         display_order: parseInt(fd.get('displayOrder') as string) || 0,
