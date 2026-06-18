@@ -35,8 +35,7 @@ async function renderChatLayout(): Promise<void> {
   const profile = store.get<any>('profile')
   const isCoach = profile?.role === 'coach'
 
-  const convList = await loadConversations(session.user.id)
-  const participants: Record<string, any[]> = convList.length > 0 ? await loadParticipants(convList.map((c: any) => c.id)) : {}
+  const { convs: convList, profileMap } = await loadConversations(session.user.id)
   const unreadCounts: Record<string, number> = convList.length > 0 ? await loadUnreadCounts(session.user.id, convList.map((c: any) => c.id)) : {}
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
 
@@ -53,9 +52,9 @@ async function renderChatLayout(): Promise<void> {
           ${convList.length === 0
             ? '<p class="p-4 text-sm text-zinc-500 text-center">Sin conversaciones. <button id="btn-start-chat" class="text-[#8B5CF6] hover:underline">Inicia una</button></p>'
             : convList.map((c: any) => {
-                const part = participants[c.id] || []
-                const other = part.find((p: any) => p.profile_id !== session.user.id)
-                const name = other?.profiles?.display_name || other?.profiles?.full_name || 'Desconocido'
+                const otherId = (c.participant_ids || []).find((pid: string) => pid !== session.user.id)
+                const otherProf = otherId ? (profileMap[otherId] || null) : null
+                const name = otherProf?.display_name || otherProf?.full_name || 'Desconocido'
                 const lastMsg = c.last_message
                 const unread = unreadCounts[c.id] || 0
                 return `
@@ -63,8 +62,8 @@ async function renderChatLayout(): Promise<void> {
                     data-conv-id="${escapeHtml(c.id)}">
                     <div class="flex items-center gap-3">
                       <div class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6] overflow-hidden">
-                        ${other?.profiles?.avatar_url
-                          ? `<img src="${escapeHtml(other.profiles.avatar_url)}" alt="" class="h-full w-full object-cover" />`
+                        ${otherProf?.avatar_url
+                          ? `<img src="${escapeHtml(otherProf.avatar_url)}" alt="" class="h-full w-full object-cover" />`
                           : escapeHtml(name.charAt(0).toUpperCase())
                         }
                         ${unread > 0 ? `<span class="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">${unread > 9 ? '9+' : unread}</span>` : ''}
@@ -148,14 +147,14 @@ async function renderChatLayout(): Promise<void> {
   }
 }
 
-async function loadConversations(userId: string): Promise<any[]> {
+async function loadConversations(userId: string): Promise<{ convs: any[]; profileMap: Record<string, any> }> {
   const { data } = await supabase
     .from('conversation_participants')
     .select('conversation_id')
     .eq('profile_id', userId)
 
   const convIds = (data ?? []).map((p: any) => p.conversation_id)
-  if (convIds.length === 0) return []
+  if (convIds.length === 0) return { convs: [], profileMap: {} }
 
   const { data: msgData } = await supabase
     .from('chat_messages')
@@ -170,28 +169,28 @@ async function loadConversations(userId: string): Promise<any[]> {
 
   const { data: convs } = await supabase
     .from('conversations')
-    .select('id')
+    .select('id, participant_ids')
     .in('id', convIds)
     .order('created_at', { ascending: false })
 
-  return (convs ?? []).map((c: any) => ({
-    ...c,
-    last_message: lastMsgByConv[c.id] || null,
-  }))
-}
-
-async function loadParticipants(convIds: string[]): Promise<Record<string, any[]>> {
-  const { data } = await supabase
-    .from('conversation_participants')
-    .select('*, profiles(full_name, display_name, avatar_url)')
-    .in('conversation_id', convIds)
-
-  const byConv: Record<string, any[]> = {}
-  for (const p of data ?? []) {
-    if (!byConv[p.conversation_id]) byConv[p.conversation_id] = []
-    byConv[p.conversation_id].push(p)
+  // Build profile map from all participant IDs
+  const allIds = [...new Set((convs ?? []).flatMap((c: any) => c.participant_ids || []))]
+  const profileMap: Record<string, any> = {}
+  if (allIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, display_name, avatar_url')
+      .in('id', allIds)
+    for (const p of profiles ?? []) profileMap[p.id] = p
   }
-  return byConv
+
+  return {
+    convs: (convs ?? []).map((c: any) => ({
+      ...c,
+      last_message: lastMsgByConv[c.id] || null,
+    })),
+    profileMap,
+  }
 }
 
 async function loadUnreadCounts(userId: string, convIds: string[]): Promise<Record<string, number>> {
