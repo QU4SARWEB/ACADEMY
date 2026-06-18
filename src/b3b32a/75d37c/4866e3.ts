@@ -13,93 +13,118 @@ export async function initStudentDashboard(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('*, courses(name, slug, display_order), seasons(name, id)')
-      .eq('profile_id', session.user.id)
-      .eq('status', 'active')
-      .order('enrolled_at', { ascending: false })
-
-    const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
-    const seasonIds = [...new Set((enrollments ?? []).map((e: any) => e.season_id).filter(Boolean))]
-
-    const paymentMap = new Map<string, string>()
-    if (seasonIds.length > 0) {
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('season_id, status')
-        .eq('profile_id', session.user.id)
-        .in('season_id', seasonIds)
-      for (const p of payments ?? []) paymentMap.set(p.season_id, p.status)
-    }
-
-    let tasksData: any[] = []
-    if (courseIds.length > 0) {
-      const { data } = await supabase
-        .from('tasks')
-        .select('id, title, due_date, course_modules(name)')
-        .in('course_id', courseIds)
-        .gte('due_date', new Date().toISOString())
-        .order('due_date')
-        .limit(5)
-      tasksData = data ?? []
-    }
-
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, display_name')
       .eq('id', session.user.id)
       .maybeSingle()
 
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('*, courses(name, id), seasons(name, id)')
+      .eq('profile_id', session.user.id)
+      .eq('status', 'active')
+      .order('enrolled_at', { ascending: false })
+
+    const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
+
+    // Task stats
+    const { data: submissions } = await supabase
+      .from('task_submissions')
+      .select('status')
+      .in('enrollment_id', (enrollments ?? []).map((e: any) => e.id))
+
+    const totalSubs = submissions?.length ?? 0
+    const gradedSubs = submissions?.filter((s: any) => s.status === 'graded').length ?? 0
+
+    // Exam stats
+    let examAvg = '—'
+    const { data: attempts } = await supabase
+      .from('exam_attempts')
+      .select('score')
+      .not('score', 'is', null)
+    const examScores = (attempts ?? []).map((a: any) => a.score).filter((s: any) => s !== null)
+    if (examScores.length > 0) {
+      examAvg = (examScores.reduce((a: number, b: number) => a + b, 0) / examScores.length).toFixed(1)
+    }
+
+    // Course progress
+    const courseProgress = await Promise.all((enrollments ?? []).map(async (e: any) => {
+      const { count: totalMods } = await supabase
+        .from('course_modules')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', e.course_id)
+      const progress = totalMods && totalMods > 0 ? Math.min(Math.round(((e.current_module || 0) / totalMods) * 100), 100) : 0
+      return { ...e, progress, totalModules: totalMods || 0 }
+    }))
+
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
-
-    const enrollHtml = (enrollments ?? []).length === 0
-      ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>'
-      : (enrollments ?? []).map((e: any) => {
-          const payStatus = paymentMap.get(e.season_id)
-          return `
-            <a href="#/students/courses/${escapeHtml(e.course_id)}"
-               class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-              <div class="flex items-center gap-4">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
-                  ${Icon('bookOpen', 20)}
-                </div>
-                <div>
-                  <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Sin nombre')}</h3>
-                  <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')} · ${e.status}</p>
-                </div>
-              </div>
-              ${payStatus
-                ? `<span class="text-xs ${payStatus === 'paid' ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(payStatus)}</span>`
-                : ''}
-            </a>`
-        }).join('')
-
-    const tasksHtml = (tasksData ?? []).length === 0
-      ? '<p class="text-sm text-zinc-500">No hay tareas próximas.</p>'
-      : (tasksData ?? []).map((t: any) => `
-          <a href="#/students/tasks/${escapeHtml(t.id)}"
-             class="glass glass-hover flex items-center justify-between rounded-xl px-4 py-3 text-sm">
-            <div>
-              <span class="text-white">${escapeHtml(t.title)}</span>
-              <span class="text-zinc-500 ml-2">${escapeHtml(t.course_modules?.name || '')}</span>
-            </div>
-            <span class="text-xs text-zinc-500">${formatDate(t.due_date)}</span>
-          </a>
-        `).join('')
 
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">Panel de estudiante</p>
+        <p class="mt-1 text-sm text-zinc-500">Tu progreso académico</p>
       </div>
+
+      <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-4">
+        <div class="glass rounded-xl p-4 text-center">
+          <p class="text-2xl font-bold text-white">${(enrollments ?? []).length}</p>
+          <p class="text-xs text-zinc-500">Cursos activos</p>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <p class="text-2xl font-bold text-green-400">${totalSubs}</p>
+          <p class="text-xs text-zinc-500">Tareas entregadas</p>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <p class="text-2xl font-bold text-[#8B5CF6]">${examAvg}</p>
+          <p class="text-xs text-zinc-500">Promedio exámenes</p>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <p class="text-2xl font-bold text-yellow-400">${totalSubs > 0 ? Math.round((gradedSubs / totalSubs) * 100) : 0}%</p>
+          <p class="text-xs text-zinc-500">Tareas calificadas</p>
+        </div>
+      </div>
+
       <div class="mb-8">
-        <h2 class="mb-4 font-heading text-lg font-bold text-white">Mis cursos</h2>
-        <div class="space-y-3">${enrollHtml}</div>
+        <h2 class="mb-4 font-heading text-lg font-bold text-white">Progreso por curso</h2>
+        <div class="space-y-4">
+          ${(courseProgress ?? []).length === 0
+            ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>'
+            : courseProgress.map((e: any) => `
+              <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
+                    <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')}</p>
+                  </div>
+                  <span class="text-sm font-bold text-white">${e.progress}%</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-zinc-800 overflow-hidden">
+                  <div class="h-full rounded-full bg-[#8B5CF6] transition-all duration-700" style="width:${e.progress}%"></div>
+                </div>
+                <p class="mt-1 text-xs text-zinc-600">Módulo ${e.current_module || 1} de ${e.totalModules}</p>
+              </div>
+            `).join('')
+          }
+        </div>
       </div>
+
       <div>
-        <h2 class="mb-4 font-heading text-lg font-bold text-white">Próximas tareas</h2>
-        <div class="space-y-2">${tasksHtml}</div>
+        <h2 class="mb-4 font-heading text-lg font-bold text-white">Acceso rápido</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <a href="#/students/courses" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
+            ${Icon('bookOpen', 20)} <span class="text-sm text-white">Mis cursos</span>
+          </a>
+          <a href="#/students/tasks" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
+            ${Icon('clipboardList', 20)} <span class="text-sm text-white">Tareas</span>
+          </a>
+          <a href="#/students/grades" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
+            ${Icon('scrollText', 20)} <span class="text-sm text-white">Calificaciones</span>
+          </a>
+          <a href="#/payments" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
+            ${Icon('dollarSign', 20)} <span class="text-sm text-white">Pagos</span>
+          </a>
+        </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html

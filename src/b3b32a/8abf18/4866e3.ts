@@ -19,72 +19,199 @@ export async function initCoachDashboard(): Promise<void> {
       .eq('id', session.user.id)
       .maybeSingle()
 
-    const { count: studentsCount } = await supabase
+    // KPIs
+    const [{ count: studentsCount }, { count: playersCount }, { count: coursesCount },
+      { count: examsCount }, { count: pendingSubs }, { count: openTickets }] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'player').eq('is_active', true),
+      supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('exams').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabase.from('task_submissions').select('*', { count: 'exact', head: true }).in('status', ['submitted', 'reviewed']),
+      supabase.from('support_tickets').select('*', { count: 'exact', head: true }).in('status', ['open', 'in_progress']),
+    ])
+
+    // Academic performance
+    const { data: gradeData } = await supabase
       .from('enrollments')
-      .select('*', { count: 'exact', head: true })
+      .select('final_grade, promoted')
       .eq('status', 'active')
+      .not('final_grade', 'is', null)
 
-    const { count: coursesCount } = await supabase
-      .from('courses')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true)
+    const grades = (gradeData ?? []).map((e: any) => e.final_grade).filter((g: any) => g !== null)
+    const avgGrade = grades.length > 0 ? (grades.reduce((a: number, b: number) => a + b, 0) / grades.length).toFixed(1) : '—'
+    const passed = (gradeData ?? []).filter((e: any) => e.final_grade >= 11).length
+    const failed = (gradeData ?? []).filter((e: any) => e.final_grade < 11).length
+    const total = passed + failed
+    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0
+    const failRate = total > 0 ? Math.round((failed / total) * 100) : 0
 
-    const { count: tasksCount } = await supabase
-      .from('tasks')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true)
-
-    const { data: recentEnrollments } = await supabase
+    // Students at risk (final_grade < 11)
+    const { data: riskEnrollments } = await supabase
       .from('enrollments')
       .select('*, profiles(full_name, display_name), courses(name)')
       .eq('status', 'active')
-      .order('enrolled_at', { ascending: false })
-      .limit(5)
+      .lt('final_grade', 11)
+      .order('final_grade')
+      .limit(6)
 
-    const cards = [
-      { icon: 'users', label: 'Estudiantes activos', value: String(studentsCount ?? 0), color: '#8B5CF6' },
-      { icon: 'bookOpen', label: 'Cursos activos', value: String(coursesCount ?? 0), color: '#6D28D9' },
-      { icon: 'clipboardList', label: 'Tareas activas', value: String(tasksCount ?? 0), color: '#7C3AED' },
+    // Grades by course (for chart)
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('course_id, final_grade, courses(name)')
+      .eq('status', 'active')
+      .not('final_grade', 'is', null)
+
+    const byCourse: Record<string, { grades: number[]; name: string }> = {}
+    for (const e of enrollments ?? []) {
+      const cid = e.course_id
+      const courseObj = e.courses as { name?: string } | null
+      if (!byCourse[cid]) byCourse[cid] = { grades: [], name: courseObj?.name || 'Curso' }
+      byCourse[cid].grades.push(e.final_grade)
+    }
+    const courseAvgs = Object.values(byCourse).map((c) => ({
+      name: c.name,
+      avg: c.grades.length > 0 ? Math.round(c.grades.reduce((a, b) => a + b, 0) / c.grades.length) : 0,
+    }))
+
+    const kpiCards = [
+      { icon: 'users', label: 'Alumnos activos', value: String(studentsCount ?? 0), color: '#8B5CF6' },
+      { icon: 'sword', label: 'Jugadores activos', value: String(playersCount ?? 0), color: '#6D28D9' },
+      { icon: 'bookOpen', label: 'Cursos activos', value: String(coursesCount ?? 0), color: '#7C3AED' },
+      { icon: 'target', label: 'Exámenes publicados', value: String(examsCount ?? 0), color: '#10B981' },
+      { icon: 'clipboardList', label: 'Tareas por revisar', value: String(pendingSubs ?? 0), color: '#F59E0B' },
+      { icon: 'alertTriangle', label: 'Tickets abiertos', value: String(openTickets ?? 0), color: '#EF4444' },
     ]
 
-    const cardsHtml = cards.map(c => `
-      <div class="glass rounded-xl p-4">
-        <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background: ${c.color}20">
-            <span style="color: ${c.color}">${Icon(c.icon, 20)}</span>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-white">${escapeHtml(c.value)}</p>
-            <p class="text-xs text-zinc-500">${escapeHtml(c.label)}</p>
-          </div>
-        </div>
-      </div>
-    `).join('')
+    const chartMax = Math.max(...courseAvgs.map((c) => c.avg), 20)
+    const chartColors = ['#8B5CF6', '#6D28D9', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899']
 
-    const recentHtml = (recentEnrollments ?? []).length === 0
-      ? '<p class="text-sm text-zinc-500">No hay inscripciones recientes.</p>'
-      : (recentEnrollments ?? []).map((e: any) => {
+    const chartHtml = courseAvgs.length > 0 ? `
+      <div class="space-y-3">
+        ${courseAvgs.map((c, i) => `
+          <div class="flex items-center gap-3">
+            <span class="w-28 text-xs text-zinc-400 text-right truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+            <div class="flex-1 h-6 rounded-lg bg-zinc-800 overflow-hidden">
+              <div class="h-full rounded-lg transition-all duration-700" style="width:${Math.max((c.avg / chartMax) * 100, 3)}%;background:${chartColors[i % chartColors.length]}"></div>
+            </div>
+            <span class="w-8 text-xs text-zinc-300 text-right font-mono">${c.avg}</span>
+          </div>
+        `).join('')}
+      </div>
+      <p class="mt-2 text-[10px] text-zinc-600">Promedio de notas por curso (máx 20)</p>
+    ` : '<p class="text-sm text-zinc-500 text-center py-4">Sin datos de notas</p>'
+
+    const riskHtml = (riskEnrollments ?? []).length > 0
+      ? (riskEnrollments ?? []).map((e: any) => {
           const name = e.profiles?.display_name || e.profiles?.full_name || 'Desconocido'
-          const courseName = e.courses?.name || 'Sin curso'
           return `
-            <div class="glass rounded-lg px-4 py-3 text-sm">
-              <span class="text-white">${escapeHtml(name)}</span>
-              <span class="text-zinc-500"> — ${escapeHtml(courseName)}</span>
-              <span class="text-zinc-600 text-xs ml-2">${formatDate(e.enrolled_at)}</span>
+            <div class="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm">
+              <div>
+                <span class="text-red-300">${escapeHtml(name)}</span>
+                <span class="text-zinc-500 text-xs ml-2">${escapeHtml(e.courses?.name || '')}</span>
+              </div>
+              <span class="text-red-400 font-mono text-xs">${e.final_grade ?? '—'}</span>
             </div>`
         }).join('')
+      : '<p class="text-sm text-zinc-500 text-center py-4">Ningún estudiante en riesgo</p>'
 
     const userName = profile?.display_name || profile?.full_name || 'Coach'
 
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">Panel de control de QU<span class="text-[#8B5CF6]">4</span>SAR</p>
+        <p class="mt-1 text-sm text-zinc-500">Panel de control — QU<span class="text-[#8B5CF6]">4</span>SAR Analytics</p>
       </div>
-      <div class="mb-8 grid gap-4 sm:grid-cols-3">${cardsHtml}</div>
-      <div>
-        <h2 class="mb-4 font-heading text-lg font-bold text-white">Inscripciones recientes</h2>
-        <div class="space-y-2">${recentHtml}</div>
+
+      <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        ${kpiCards.map(c => `
+          <div class="glass rounded-xl p-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background: ${c.color}20">
+                <span style="color: ${c.color}">${Icon(c.icon, 18)}</span>
+              </div>
+              <div>
+                <p class="text-xl font-bold text-white">${escapeHtml(c.value)}</p>
+                <p class="text-[10px] text-zinc-500">${escapeHtml(c.label)}</p>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="mb-8 grid gap-6 lg:grid-cols-2">
+        <div class="glass rounded-xl p-5">
+          <h2 class="mb-4 font-heading text-base font-bold text-white">Rendimiento académico</h2>
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-2xl font-bold text-white">${avgGrade}</p>
+              <p class="text-xs text-zinc-500">Promedio general</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-2xl font-bold text-green-400">${passRate}%</p>
+              <p class="text-xs text-zinc-500">Aprobados</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-2xl font-bold text-red-400">${failRate}%</p>
+              <p class="text-xs text-zinc-500">Reprobados</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-2xl font-bold text-[#8B5CF6]">${total}</p>
+              <p class="text-xs text-zinc-500">Total evaluados</p>
+            </div>
+          </div>
+          <div class="flex gap-1 h-8 items-end">
+            ${total > 0 ? `
+              <div class="flex-1 rounded-t bg-green-500/60 transition-all duration-500" style="height:${passRate}%"></div>
+              <div class="flex-1 rounded-t bg-red-500/60 transition-all duration-500" style="height:${failRate}%"></div>
+            ` : '<p class="text-xs text-zinc-600 w-full text-center">Sin datos</p>'}
+          </div>
+          <div class="flex justify-between text-[10px] text-zinc-600 mt-1">
+            <span>Aprobados (${passRate}%)</span>
+            <span>Reprobados (${failRate}%)</span>
+          </div>
+        </div>
+
+        <div class="glass rounded-xl p-5">
+          <h2 class="mb-4 font-heading text-base font-bold text-white">Promedio por curso</h2>
+          ${chartHtml}
+        </div>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div class="glass rounded-xl p-5">
+          <h2 class="mb-4 font-heading text-base font-bold text-white flex items-center gap-2">
+            ${Icon('alertTriangle', 16)} Estudiantes en riesgo
+            ${(riskEnrollments ?? []).length > 0 ? `<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">${(riskEnrollments ?? []).length}</span>` : ''}
+          </h2>
+          <div class="space-y-2">
+            ${riskHtml}
+            ${(riskEnrollments ?? []).length >= 6 ? '<p class="text-xs text-zinc-500 text-center mt-2">Mostrando los 6 más bajos</p>' : ''}
+          </div>
+        </div>
+
+        <div class="glass rounded-xl p-5">
+          <h2 class="mb-4 font-heading text-base font-bold text-white">Acceso rápido</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <a href="#/coaches/students" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('users', 16)} Estudiantes
+            </a>
+            <a href="#/coaches/courses" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('bookOpen', 16)} Cursos
+            </a>
+            <a href="#/coaches/tasks" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('clipboardList', 16)} Tareas
+            </a>
+            <a href="#/support" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('alertTriangle', 16)} Tickets
+            </a>
+            <a href="#/chat" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('mail', 16)} Chat
+            </a>
+            <a href="#/logs" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('scrollText', 16)} Auditoría
+            </a>
+          </div>
+        </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
