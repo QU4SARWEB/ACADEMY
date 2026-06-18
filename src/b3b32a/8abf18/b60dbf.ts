@@ -7,6 +7,17 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
+const ACH_PRESETS = [
+  { badge: 'attendance', title: 'Asistencia perfecta', desc: '100% de asistencia en el mes', icon: 'checkCircle' },
+  { badge: 'improvement', title: 'Mejora continua', desc: 'Progreso significativo enrank', icon: 'trendingUp' },
+  { badge: 'teamwork', title: 'Trabajo en equipo', desc: 'Excelente comunicación y colaboración', icon: 'users' },
+  { badge: 'leader', title: 'Liderazgo', desc: 'Demostró habilidades de liderazgo', icon: 'shield' },
+  { badge: 'dedication', title: 'Dedicación', desc: 'Esfuerzo constante y compromiso', icon: 'clock' },
+  { badge: 'mvp', title: 'MVP de la semana', desc: 'Mejor rendimiento de la semana', icon: 'star' },
+  { badge: 'first_blood', title: 'Primer blood', desc: 'Primer logro desbloqueado', icon: 'zap' },
+  { badge: 'veteran', title: 'Veterano', desc: '3+ meses en la academia', icon: 'award' },
+]
+
 const RANK_ORDER: Record<string, number> = {
   Unranked: 0, Iron: 1, Bronze: 2, Silver: 3, Gold: 4,
   Platinum: 5, Diamond: 6, Ascendant: 7, Immortal: 8, Radiant: 9,
@@ -247,12 +258,19 @@ export function mountCoachStudentDetail(): void {
                   ${Icon('trophy', 14)} Logros (${(achievements ?? []).length})
                   <button id="btn-add-achievement" class="ml-auto flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 transition hover:bg-zinc-800 hover:text-white">${Icon('plus', 10)} Agregar</button>
                 </h3>
-                <div id="achievements-list" class="space-y-2 mt-2">
+
+                <div class="flex flex-wrap gap-1.5 mt-3">
+                  ${ACH_PRESETS.map((p, i) => `
+                    <button class="ach-preset-btn rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 transition hover:border-[#8B5CF6] hover:text-white hover:bg-[#8B5CF6]/10" data-index="${i}">${Icon(p.icon as any, 12)} ${escapeHtml(p.title)}</button>
+                  `).join('')}
+                </div>
+
+                <div id="achievements-list" class="space-y-2 mt-3">
                   ${(achievements ?? []).length === 0
                     ? '<p class="text-xs text-zinc-500">Sin logros aún.</p>'
                     : (achievements ?? []).map((a: any) => `
                       <div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
-                        <span class="text-sm">${a.icon === 'award' ? '🏆' : '⭐'}</span>
+                        <span class="text-sm">${Icon('trophy', 14)}</span>
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-medium text-white truncate">${escapeHtml(a.title)}</p>
                           ${a.description ? `<p class="text-xs text-zinc-500 truncate">${escapeHtml(a.description)}</p>` : ''}
@@ -265,7 +283,7 @@ export function mountCoachStudentDetail(): void {
                 </div>
 
                 <div id="add-achievement-form" class="hidden mt-3 space-y-2 border-t border-zinc-800 pt-3">
-                  <input id="ach-title" type="text" placeholder="Título del logro" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                  <input id="ach-title" type="text" placeholder="Título del logro personalizado" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
                   <input id="ach-desc" type="text" placeholder="Descripción (opcional)" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
                   <div class="flex gap-2">
                     <button id="btn-save-achievement" class="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">Guardar</button>
@@ -336,26 +354,10 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
   })
 
   // Achievements
-  document.getElementById('btn-add-achievement')?.addEventListener('click', () => {
-    document.getElementById('add-achievement-form')?.classList.toggle('hidden')
-  })
-  document.getElementById('btn-cancel-achievement')?.addEventListener('click', () => {
-    document.getElementById('add-achievement-form')?.classList.add('hidden')
-  })
-  document.getElementById('btn-save-achievement')?.addEventListener('click', async () => {
-    const title = (document.getElementById('ach-title') as HTMLInputElement)?.value?.trim()
-    if (!title) {
-      document.getElementById('ach-error')!.textContent = 'El título es obligatorio'
-      document.getElementById('ach-error')!.classList.remove('hidden')
-      return
-    }
+  async function saveAchievement(title: string, desc: string | null) {
     document.getElementById('ach-error')!.classList.add('hidden')
-    const desc = (document.getElementById('ach-desc') as HTMLInputElement)?.value?.trim() || null
     const { error } = await supabase.from('member_achievements').insert({
-      profile_id: studentId,
-      badge: 'custom',
-      title,
-      description: desc,
+      profile_id: studentId, badge: 'custom', title, description: desc,
     })
     if (error) {
       document.getElementById('ach-error')!.textContent = error.message
@@ -364,7 +366,29 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     }
     toast('success', 'Logro agregado')
     mountCoachStudentDetail()
+  }
+
+  document.getElementById('btn-add-achievement')?.addEventListener('click', () => {
+    document.getElementById('add-achievement-form')?.classList.toggle('hidden')
   })
+  document.getElementById('btn-cancel-achievement')?.addEventListener('click', () => {
+    document.getElementById('add-achievement-form')?.classList.add('hidden')
+  })
+  document.getElementById('btn-save-achievement')?.addEventListener('click', async () => {
+    const title = (document.getElementById('ach-title') as HTMLInputElement)?.value?.trim()
+    if (!title) { document.getElementById('ach-error')!.textContent = 'El título es obligatorio'; document.getElementById('ach-error')!.classList.remove('hidden'); return }
+    saveAchievement(title, (document.getElementById('ach-desc') as HTMLInputElement)?.value?.trim() || null)
+  })
+
+  // Preset buttons
+  document.querySelectorAll('.ach-preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt((btn as HTMLElement).dataset.index || '0')
+      const preset = ACH_PRESETS[idx]
+      if (preset) saveAchievement(preset.title, preset.desc)
+    })
+  })
+
   document.querySelectorAll('.del-achievement').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = (btn as HTMLElement).dataset.id

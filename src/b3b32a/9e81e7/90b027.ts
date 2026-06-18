@@ -320,12 +320,14 @@ export async function initPublicProfile(): Promise<void> {
         const origConsoleError = console.error
         console.error = () => {}
 
-        // Temporarily replace backdrop-filter with solid backgrounds to avoid white boxes
+        // Override styles for clean PNG capture
         const style = document.createElement('style')
         style.id = 'png-capture-override'
         style.textContent = `
-          .glass { background: rgba(20, 20, 30, 0.95) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-          [class*="backdrop"] { backdrop-filter: none !important; }
+          .glass { background: rgb(18, 18, 22) !important; border-color: rgb(30, 30, 40) !important; }
+          .glass [class*="border"] { border-color: rgb(30, 30, 40) !important; }
+          [class*="ring"] { box-shadow: none !important; }
+          * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         `
         document.head.appendChild(style)
 

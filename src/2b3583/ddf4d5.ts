@@ -8,6 +8,7 @@ function slugify(text: string): string {
 }
 
 export function renderProfileForm(profile: any, pubProfile?: any): string {
+  const isCoach = profile.role === 'coach'
   const pubEnabled = pubProfile?.is_public ?? false
   const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
   const publicUrl = pubSlug ? `${window.location.origin}${window.location.pathname}#/p/${pubSlug}` : ''
@@ -45,16 +46,18 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           <input name="displayName" value="${escapeHtml(profile.display_name ?? '')}" placeholder="Apodo público"
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
         </div>
+        ${!isCoach ? `
         <div>
           <label class="block text-xs font-medium text-zinc-400">Riot ID</label>
           <input name="riotId" value="${escapeHtml(profile.riot_id ?? '')}" placeholder="Jugador#1234"
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
-        </div>
+        </div>` : ''}
         <div>
           <label class="block text-xs font-medium text-zinc-400">Color de rol</label>
           <input name="roleColor" type="color" value="${escapeHtml(profile.role_color ?? '#8B5CF6')}"
             class="mt-1 h-9 w-full cursor-pointer rounded-lg border border-zinc-700 bg-[#0A0A0A] p-1 outline-none" />
         </div>
+        ${!isCoach ? `
         <div>
           <label class="block text-xs font-medium text-zinc-400">Rango Valorant</label>
           <select name="rank"
@@ -62,7 +65,7 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             <option value="">Seleccionar...</option>
             ${RANKS.map(r => `<option value="${r}" ${profile.rank === r ? 'selected' : ''}>${r}</option>`).join('')}
           </select>
-        </div>
+        </div>` : ''}
         <div class="sm:col-span-2">
           <label class="block text-xs font-medium text-zinc-400">Biografía</label>
           <textarea name="bio" rows="3"
