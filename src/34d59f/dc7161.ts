@@ -19,7 +19,10 @@ export function DashboardLayout(contentHtml: string): string {
       ${bgUrl ? `
         body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
         #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
-        .glass, .content-card { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+        #main-content > * { background: rgba(10,10,10,0.85) !important; backdrop-filter: blur(8px) !important; border-radius: 16px !important; padding: 1.5rem !important; margin-bottom: 0.5rem !important; }
+        #main-content .glass { background: rgba(20,20,30,0.9) !important; }
+        #main-content table { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
+        #main-content .overflow-x-auto { background: transparent !important; backdrop-filter: none !important; border-radius: 0 !important; padding: 0 !important; }
       ` : ''}
     </style>`
 
@@ -28,9 +31,7 @@ export function DashboardLayout(contentHtml: string): string {
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
       <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-        <div class="${bgUrl ? 'content-card rounded-2xl p-4 md:p-6 lg:p-8' : ''}">
-          ${contentHtml}
-        </div>
+        ${contentHtml}
       </main>
     </div>`
 }
