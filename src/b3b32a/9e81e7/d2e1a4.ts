@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { store } from '@/9ed39e/8cd892'
 
@@ -54,6 +55,7 @@ export async function initTickets(): Promise<void> {
     if (!isCoach) query = query.eq('profile_id', session.user.id)
     const { data: tickets } = await query.order('created_at', { ascending: false })
 
+
     const html = `
       <div class="mb-6 flex items-center justify-between">
         <div>
@@ -88,7 +90,7 @@ export async function initTickets(): Promise<void> {
                         ${isCoach ? escapeHtml(name) + ' · ' : ''}${formatDate(t.created_at)}
                       </p>
                     </div>
-                    ${Icon('arrowRight', 16)}
+                    ${isCoach ? `<button class="btn-del-ticket text-red-400 hover:text-red-300 transition" data-ticket-id="${escapeHtml(t.id)}">${Icon('trash', 14)}</button>` : Icon('arrowRight', 16)}
                   </div>
                 </a>`
             }).join('')
@@ -96,6 +98,19 @@ export async function initTickets(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.querySelectorAll('.btn-del-ticket').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const id = (btn as HTMLElement).dataset.ticketId
+        if (!id || !(await confirmDialog('¿Eliminar este ticket?'))) return
+        const { error } = await supabase.from('support_tickets').delete().eq('id', id)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Ticket eliminado')
+        initTickets()
+      })
+    })
   } catch (err) {
     console.error(err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar tickets</p>'
@@ -140,6 +155,7 @@ async function initTicketDetail(ticketId: string): Promise<void> {
               <div class="flex items-center gap-2 mb-2">
                 <h1 class="font-heading text-xl font-bold text-white">${escapeHtml(ticket.subject)}</h1>
                 <span class="rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status] || 'text-zinc-500'}">${STATUS_LABELS[ticket.status] || ticket.status}</span>
+                ${isCoach ? `<button class="btn-del-ticket-detail ml-auto text-red-400 hover:text-red-300 transition text-xs flex items-center gap-1" data-ticket-id="${escapeHtml(ticket.id)}">${Icon('trash', 12)} Eliminar</button>` : ''}
               </div>
               <p class="text-sm text-zinc-300">${escapeHtml(ticket.body)}</p>
               <p class="mt-2 text-xs text-zinc-600">
@@ -180,6 +196,7 @@ async function initTicketDetail(ticketId: string): Promise<void> {
                       <span class="text-sm font-medium text-white">${escapeHtml(rName)}</span>
                       ${isStaff ? '<span class="rounded bg-[#8B5CF6]/20 px-1.5 py-0.5 text-[10px] text-[#8B5CF6]">Staff</span>' : ''}
                       <span class="text-xs text-zinc-600">${formatDate(r.created_at)}</span>
+                      ${isCoach ? `<button class="btn-del-response ml-auto text-red-400 hover:text-red-300 transition" data-response-id="${escapeHtml(r.id)}">${Icon('trash', 12)}</button>` : ''}
                     </div>
                     <p class="text-sm text-zinc-300">${escapeHtml(r.body)}</p>
                   </div>`
@@ -237,6 +254,30 @@ async function initTicketDetail(ticketId: string): Promise<void> {
         toast('success', 'Respuesta enviada')
         initTicketDetail(ticketId)
       }
+    })
+
+    // Delete ticket (coach)
+    document.querySelectorAll('.btn-del-ticket-detail').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.ticketId
+        if (!id || !(await confirmDialog('¿Eliminar este ticket y todas sus respuestas?'))) return
+        const { error } = await supabase.from('support_tickets').delete().eq('id', id)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Ticket eliminado')
+        router.navigate('/support')
+      })
+    })
+
+    // Delete response (coach)
+    document.querySelectorAll('.btn-del-response').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.responseId
+        if (!id || !(await confirmDialog('¿Eliminar esta respuesta?'))) return
+        const { error } = await supabase.from('ticket_responses').delete().eq('id', id)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Respuesta eliminada')
+        initTicketDetail(ticketId)
+      })
     })
   } catch (err) {
     console.error(err)
