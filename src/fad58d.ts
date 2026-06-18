@@ -254,19 +254,17 @@ document.addEventListener('DOMContentLoaded', () => {
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `profile_id=eq.${session.user.id}` },
         (payload: any) => {
           const n = payload.new
-          if (n && (window as any).__toast) {
-            const typeMap: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
-              task: 'info', evaluation: 'info', schedule: 'info',
-              payment: 'success', scrim: 'warning', system: 'info',
-              message: 'info', grade: 'success', promotion: 'success',
+          if (n) {
+            // Only show toast for non-chat notifications (chat is real-time, no need)
+            if (n.type !== 'message' && (window as any).__toast) {
+              const typeMap: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
+                task: 'info', evaluation: 'info', schedule: 'info',
+                payment: 'success', scrim: 'warning', system: 'info',
+                grade: 'success', promotion: 'success',
+              }
+              ;(window as any).__toast(typeMap[n.type] || 'info', n.title || 'Nueva notificación')
             }
-            const iconMap: Record<string, string> = {
-              task: 'clipboardList', evaluation: 'target', schedule: 'calendar',
-              payment: 'dollarSign', scrim: 'sword', system: 'bell',
-              message: 'mail', grade: 'scrollText', promotion: 'trophy',
-            }
-            ;(window as any).__toast(typeMap[n.type] || 'info', n.title || 'Nueva notificación')
-            // Update sidebar badge
+            // Update sidebar badge (all types including messages)
             const notifLinks = document.querySelectorAll('a[href="#/notifications"]')
             notifLinks.forEach((a) => {
               const span = a.querySelector('span')
