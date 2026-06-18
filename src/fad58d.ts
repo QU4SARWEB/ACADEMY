@@ -61,7 +61,7 @@ import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
 
 import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
 import { renderNotifications, initNotifications } from '@/b3b32a/9e81e7/f37bd2'
-import { renderMail, initMail } from '@/b3b32a/9e81e7/b83a88'
+import { renderChat, initChat } from '@/b3b32a/9e81e7/a7b8c9'
 import { renderTickets, initTickets } from '@/b3b32a/9e81e7/d2e1a4'
 import { renderNewTicket, initNewTicket } from '@/b3b32a/9e81e7/f4b5c6'
 import { renderLogs, initLogs } from '@/b3b32a/9e81e7/2165e4'
@@ -167,7 +167,7 @@ dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
 // Shared routes
 dash('/payments', () => renderPayments(), initPayments)
 dash('/notifications', () => renderNotifications(), initNotifications)
-dash('/mail', () => renderMail(), initMail)
+dash('/chat', () => renderChat(), initChat)
 dash('/support', () => renderTickets(), initTickets)
 dash('/support/new', () => renderNewTicket(), initNewTicket)
 dash('/support/:id', () => renderTickets(), initTickets)

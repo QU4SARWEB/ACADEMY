@@ -35,7 +35,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: `/${prefix}/scrims`, icon: 'sword', label: 'Scrims', show: isPlayer || isCoach },
     { href: '/support', icon: 'info', label: 'Soporte', show: isStudent || isPlayer },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones', show: true },
-    { href: '/mail', icon: 'mail', label: 'Mensajes', show: true },
+    { href: '/chat', icon: 'mail', label: 'Mensajes', show: true },
   ]
 
   const coachItems: Array<{ href: string; icon: string; label: string }> = [
@@ -51,7 +51,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/teams', icon: 'users', label: 'Equipos' },
     { href: '/coaches/scrims', icon: 'sword', label: 'Scrims' },
     { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
-    { href: '/mail', icon: 'mail', label: 'Mensajes' },
+    { href: '/chat', icon: 'mail', label: 'Mensajes' },
     { href: '/support', icon: 'info', label: 'Soporte' },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones' },
     { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
