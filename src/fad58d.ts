@@ -114,7 +114,20 @@ const REALTIME_TABLES: Record<string, string[]> = {
 }
 
 // Routes that should NOT auto-refresh (forms, exams in progress, etc.)
-const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/modules/new', '/exams/', '/take']
+// Only skip auto-refresh for form/edit pages and exam-taking (with :examId param)
+const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/questions/new']
+
+// Also skip routes where path has /exams/ followed by another segment (exam taking)
+function shouldAutoRefresh(path: string): boolean {
+  if (NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))) return false
+  // Skip exam taking: /exams/:examId (but NOT /exams alone)
+  const examsMatch = path.match(/\/exams\//)
+  if (examsMatch) {
+    const afterExams = path.slice(examsMatch.index! + 7)
+    if (afterExams && afterExams.includes('/')) return false
+  }
+  return true
+}
 
 // Dashboard render helper
 function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void>) | (() => void)): void {
@@ -133,8 +146,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       initAutoSave()
 
       // Global real-time: auto-refresh when data changes
-      const shouldAutoRefresh = !NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))
-      if (shouldAutoRefresh && initFn) {
+      if (shouldAutoRefresh(path) && initFn) {
         const profileData = store.get<any>('profile')
         const role = profileData?.role || 'coach'
         const tables = REALTIME_TABLES[role] || REALTIME_TABLES.coaches

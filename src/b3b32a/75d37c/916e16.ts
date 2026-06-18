@@ -26,10 +26,11 @@ function typeLabel(type: string): string {
   return labels[type] || type || ''
 }
 
-function renderQuestionCard(q: any, answers: Record<string, string>): string {
-  const qData = q.questions
-  const options = qData?.question_options ?? []
-  const userAnswer = answers[q.question_id] ?? ''
+  function renderQuestionCard(q: any, answers: Record<string, string>): string {
+    const qData = q.questions || {}
+    const options = qData?.question_options ?? []
+    const userAnswer = answers[q.question_id] ?? ''
+    if (!qData.type) return `<p class="text-red-400 text-sm">Error: pregunta sin tipo</p>`
 
   let inputHtml = ''
   if (qData.type === 'multiple_choice' || qData.type === 'true_false') {
@@ -172,6 +173,7 @@ export async function initStudentExamTake(): Promise<void> {
       document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500 py-10 text-center">Examen no encontrado.</p>'
       return
     }
+    console.log('Exam loaded:', exam.title, 'questions:', exam.exam_questions?.length)
 
     const { data: enrollment } = await supabase
       .from('enrollments')
