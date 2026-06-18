@@ -10,7 +10,7 @@ function slugify(text: string): string {
 export function renderProfileForm(profile: any, pubProfile?: any): string {
   const pubEnabled = pubProfile?.is_public ?? false
   const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
-  const publicUrl = pubSlug ? `${window.location.origin}/#/p/${pubSlug}` : ''
+  const publicUrl = pubSlug ? `${window.location.origin}${window.location.pathname}#/p/${pubSlug}` : ''
   return `
     <div class="space-y-6">
       <div class="flex items-center gap-4">
