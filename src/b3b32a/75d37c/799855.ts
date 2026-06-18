@@ -39,14 +39,14 @@ export async function initStudentSchedule(): Promise<void> {
 
       <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
         ${DAYS.map((d, i) => {
-          const hasClass = seasonScheds.some((s: any) => s.day_of_week === i)
+          const hasClass = seasonScheds.some((s: any) => Number(s.day_of_week) === i)
           const isToday = i === today
           return `
             <button class="day-btn shrink-0 rounded-xl px-4 py-3 text-center transition cursor-pointer ${isToday ? 'bg-[#8B5CF6]/20 border border-[#8B5CF6]/30' : 'glass'} ${hasClass ? 'hover:bg-zinc-800/50' : 'opacity-40'}"
               data-day="${i}">
               <p class="text-xs font-bold ${isToday ? 'text-[#8B5CF6]' : 'text-zinc-400'}">${SHORT_DAYS[i]}</p>
               <p class="text-lg font-bold text-white">${d.charAt(0)}</p>
-              <p class="text-[10px] ${hasClass ? 'text-green-400' : 'text-zinc-600'}">${hasClass ? (seasonScheds.filter(s => s.day_of_week === i).length) + ' cls' : '—'}</p>
+              <p class="text-[10px] ${hasClass ? 'text-green-400' : 'text-zinc-600'}">${hasClass ? (seasonScheds.filter(s => Number(s.day_of_week) === i).length) + ' cls' : '—'}</p>
             </button>`
         }).join('')}
       </div>
@@ -55,7 +55,7 @@ export async function initStudentSchedule(): Promise<void> {
         ${seasonScheds.length === 0
           ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horarios publicados para esta temporada.</p></div>'
           : Array.from({ length: 7 }, (_, day) => {
-              const dayScheds = seasonScheds.filter((s: any) => s.day_of_week === day)
+              const dayScheds = seasonScheds.filter((s: any) => Number(s.day_of_week) === day)
               if (dayScheds.length === 0) return ''
               const isToday = day === today
               return `
