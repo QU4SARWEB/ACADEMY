@@ -8,19 +8,19 @@ import { router } from '@/f3395c'
 const RANK_OPTIONS = ['Hierro', 'Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Ascendente', 'Inmortal', 'Radiante']
 
 const COURSE_TEMPLATES = [
-  { name: 'Rookie', months: 6, minRank: 'Hierro', order: 1,
+  { name: 'Rookie', months: 1, minRank: 'Hierro', order: 1,
     desc: 'Curso de nivel básico para jugadores con rango Hierro+. Fundamentos del juego, mecánicas básicas y conceptos esenciales.' },
-  { name: 'Trainee', months: 6, minRank: 'Bronce', order: 2,
+  { name: 'Trainee', months: 1, minRank: 'Bronce', order: 2,
     desc: 'Curso de nivel intermedio-bajo para jugadores Bronce+. Técnicas avanzadas, comunicación y trabajo en equipo.' },
-  { name: 'Amateur', months: 6, minRank: 'Plata', order: 3,
+  { name: 'Amateur', months: 1, minRank: 'Plata', order: 3,
     desc: 'Curso de nivel intermedio para jugadores Plata+. Estrategias, macrogestión y análisis de partidas.' },
-  { name: 'Competitor', months: 6, minRank: 'Oro', order: 4,
+  { name: 'Competitor', months: 1, minRank: 'Oro', order: 4,
     desc: 'Curso de nivel intermedio-alto para jugadores Oro+. Tácticas competitivas, roles especializados y draft.' },
-  { name: 'Elite', months: 6, minRank: 'Platino', order: 5,
+  { name: 'Elite', months: 1, minRank: 'Platino', order: 5,
     desc: 'Curso de nivel avanzado para jugadores Platino+. Alto rendimiento, liderazgo y ejecución estratégica.' },
-  { name: 'Semi-Pro', months: 6, minRank: 'Diamante', order: 6,
+  { name: 'Semi-Pro', months: 1, minRank: 'Diamante', order: 6,
     desc: 'Curso de nivel semi-profesional para jugadores Diamante+. Preparación para escena competitiva profesional.' },
-  { name: 'Pro', months: 6, minRank: 'Ascendente', order: 7,
+  { name: 'Pro', months: 1, minRank: 'Ascendente', order: 7,
     desc: 'Curso de nivel profesional para jugadores Ascendente+. Coaching de élite, análisis profundo y rendimiento máximo.' },
 ]
 
