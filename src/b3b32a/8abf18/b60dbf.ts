@@ -25,7 +25,7 @@ export function mountCoachStudentDetail(): void {
 
   ;(async () => {
     try {
-      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: seasons }, { data: activeSeason }, { data: promotionData }, { data: payments }] = await Promise.all([
+      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: seasons }, { data: activeSeason }, { data: promotionData }, { data: payments }, { data: achievements }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
         supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order), seasons(name)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
         supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
@@ -33,6 +33,7 @@ export function mountCoachStudentDetail(): void {
         supabase.from('seasons').select('id').eq('is_active', true).maybeSingle(),
         supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
         supabase.from('payments').select('season_id, status').eq('profile_id', id),
+        supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
       ])
 
       if (!profile) {
@@ -243,6 +244,39 @@ export function mountCoachStudentDetail(): void {
 
               <div class="mt-4 rounded-lg border border-zinc-800 bg-[#111] p-4">
                 <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
+                  ${Icon('trophy', 14)} Logros (${(achievements ?? []).length})
+                  <button id="btn-add-achievement" class="ml-auto flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 transition hover:bg-zinc-800 hover:text-white">${Icon('plus', 10)} Agregar</button>
+                </h3>
+                <div id="achievements-list" class="space-y-2 mt-2">
+                  ${(achievements ?? []).length === 0
+                    ? '<p class="text-xs text-zinc-500">Sin logros aún.</p>'
+                    : (achievements ?? []).map((a: any) => `
+                      <div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+                        <span class="text-sm">${a.icon === 'award' ? '🏆' : '⭐'}</span>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm font-medium text-white truncate">${escapeHtml(a.title)}</p>
+                          ${a.description ? `<p class="text-xs text-zinc-500 truncate">${escapeHtml(a.description)}</p>` : ''}
+                        </div>
+                        <span class="text-[10px] text-zinc-600">${formatDate(a.unlocked_at)}</span>
+                        <button class="del-achievement text-zinc-600 hover:text-red-400 transition" data-id="${escapeHtml(a.id)}">${Icon('x', 12)}</button>
+                      </div>
+                    `).join('')
+                  }
+                </div>
+
+                <div id="add-achievement-form" class="hidden mt-3 space-y-2 border-t border-zinc-800 pt-3">
+                  <input id="ach-title" type="text" placeholder="Título del logro" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                  <input id="ach-desc" type="text" placeholder="Descripción (opcional)" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                  <div class="flex gap-2">
+                    <button id="btn-save-achievement" class="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">Guardar</button>
+                    <button id="btn-cancel-achievement" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800">Cancelar</button>
+                  </div>
+                  <p id="ach-error" class="hidden text-xs text-red-400"></p>
+                </div>
+              </div>
+
+              <div class="mt-4 rounded-lg border border-zinc-800 bg-[#111] p-4">
+                <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
                   ${Icon('bookOpen', 14)} Inscribir en curso
                 </h3>
                 <form id="form-enroll" class="mt-3 space-y-3">
@@ -299,6 +333,46 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       await supabase.from('payments').update({ status: 'pending' }).eq('profile_id', studentId).eq('status', 'scholarship')
     }
     mountCoachStudentDetail()
+  })
+
+  // Achievements
+  document.getElementById('btn-add-achievement')?.addEventListener('click', () => {
+    document.getElementById('add-achievement-form')?.classList.toggle('hidden')
+  })
+  document.getElementById('btn-cancel-achievement')?.addEventListener('click', () => {
+    document.getElementById('add-achievement-form')?.classList.add('hidden')
+  })
+  document.getElementById('btn-save-achievement')?.addEventListener('click', async () => {
+    const title = (document.getElementById('ach-title') as HTMLInputElement)?.value?.trim()
+    if (!title) {
+      document.getElementById('ach-error')!.textContent = 'El título es obligatorio'
+      document.getElementById('ach-error')!.classList.remove('hidden')
+      return
+    }
+    document.getElementById('ach-error')!.classList.add('hidden')
+    const desc = (document.getElementById('ach-desc') as HTMLInputElement)?.value?.trim() || null
+    const { error } = await supabase.from('member_achievements').insert({
+      profile_id: studentId,
+      badge: 'custom',
+      title,
+      description: desc,
+    })
+    if (error) {
+      document.getElementById('ach-error')!.textContent = error.message
+      document.getElementById('ach-error')!.classList.remove('hidden')
+      return
+    }
+    toast('success', 'Logro agregado')
+    mountCoachStudentDetail()
+  })
+  document.querySelectorAll('.del-achievement').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLElement).dataset.id
+      if (!id || !(await confirmDialog('¿Eliminar este logro?'))) return
+      const { error } = await supabase.from('member_achievements').delete().eq('id', id)
+      if (error) toast('error', error.message)
+      else { toast('success', 'Logro eliminado'); mountCoachStudentDetail() }
+    })
   })
 
   document.querySelectorAll('.btn-unenroll').forEach((btn) => {
