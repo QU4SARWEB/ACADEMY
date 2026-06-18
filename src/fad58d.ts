@@ -126,6 +126,15 @@ function shouldAutoRefresh(path: string): boolean {
   return true
 }
 
+// Debounced reload to avoid rapid re-fetches
+function reloadSoon(path: string): void {
+  const key = `_rt_${path}`
+  if ((window as any)[key]) return
+  ;(window as any)[key] = true
+  setTimeout(() => { (window as any)[key] = false }, 3000)
+  setTimeout(() => location.reload(), 100)
+}
+
 // Dashboard render helper
 function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void>) | (() => void)): void {
   router.on(path, async () => {
@@ -149,16 +158,24 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       // Auto-save drafts for all forms
       initAutoSave()
 
-      // Auto-refresh: poll every 15 seconds (reliable, works on all Supabase plans)
+      // Real-time auto-refresh via Supabase Realtime
       if (shouldAutoRefresh(path) && initFn) {
-        if ((window as any).__rtInterval) clearInterval((window as any).__rtInterval)
-        ;(window as any).__rtInterval = setInterval(() => {
-          const key = `_rt_${path}`
-          if ((window as any)[key]) return
-          ;(window as any)[key] = true
-          setTimeout(() => { (window as any)[key] = false }, 4000)
-          location.reload()
-        }, 15000)
+        try {
+          if ((window as any).__rtChannel) {
+            supabase.removeChannel((window as any).__rtChannel)
+          }
+          const ch = supabase.channel(`rt-${path.replace(/[^a-z0-9]/g, '-')}`)
+          const tables = REALTIME_TABLES[store.get<any>('profile')?.role || 'coach'] || REALTIME_TABLES.coaches
+          for (const table of tables) {
+            ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => { reloadSoon(path) })
+          }
+          ch.subscribe()
+          ;(window as any).__rtChannel = ch
+        } catch (e) {
+          console.warn('Realtime unavailable, falling back to 15s polling')
+          if ((window as any).__rtInterval) clearInterval((window as any).__rtInterval)
+          ;(window as any).__rtInterval = setInterval(() => reloadSoon(path), 15000)
+        }
       }
     } catch (err) {
       console.error('Error rendering dashboard:', err)
