@@ -507,15 +507,27 @@ export async function initPublicProfile(): Promise<void> {
         `
         document.head.appendChild(style)
 
-        // Load dom-to-image-more via dummy image workaround (no font CSS loading)
+        // Load dom-to-image-more
         if (!(window as any).domtoimage) {
-          await new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script')
-            s.src = 'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js'
-            s.onload = () => resolve()
-            s.onerror = () => reject(new Error('Failed to load'))
-            document.head.appendChild(s)
-          })
+          const urls = [
+            'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js',
+            'https://unpkg.com/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js',
+          ]
+          let loaded = false
+          for (const url of urls) {
+            try {
+              await new Promise<void>((resolve, reject) => {
+                const s = document.createElement('script')
+                s.src = url
+                s.onload = () => resolve()
+                s.onerror = () => reject(new Error('Failed: ' + url))
+                document.head.appendChild(s)
+              })
+              loaded = true
+              break
+            } catch {}
+          }
+          if (!loaded) throw new Error('No se pudo cargar la librería de captura')
         }
 
         const dti = (window as any).domtoimage
@@ -537,6 +549,11 @@ export async function initPublicProfile(): Promise<void> {
         link.click()
       } catch (e) {
         console.error('Error generando PNG:', e)
+        const errDiv = document.createElement('div')
+        errDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg'
+        errDiv.textContent = 'Error al generar PNG. Intentá de nuevo o usá "Imprimir" del navegador.'
+        document.body.appendChild(errDiv)
+        setTimeout(() => errDiv.remove(), 4000)
       }
     }
 
