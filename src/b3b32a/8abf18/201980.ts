@@ -309,12 +309,11 @@ export async function initCoachModuleDetail(): Promise<void> {
       let url = (fd.get('url') as string) || null
 
       if (file && file.size > 0) {
-        const uploaded = await uploadFile('uploads', getFilePath('coach', 'materials', file.name), file)
-        if (!uploaded) {
-          toast('error', 'Error al subir archivo')
-          return
-        }
-        url = uploaded
+        const { data: { session } } = await supabase.auth.getSession()
+        const userId = session?.user?.id || 'coach'
+        const { url: uploadedUrl, error: uploadErr } = await uploadFile('uploads', getFilePath(userId, 'materials', file.name), file)
+        if (uploadErr) { toast('error', uploadErr); return }
+        url = uploadedUrl ?? null
       }
 
       const { error } = await supabase
@@ -363,12 +362,11 @@ export async function initCoachModuleDetail(): Promise<void> {
         let url = (fd.get('url') as string) || null
 
         if (file && file.size > 0) {
-          const uploaded = await uploadFile('uploads', getFilePath('coach', 'materials', file.name), file)
-          if (!uploaded) {
-            toast('error', 'Error al subir archivo')
-            return
-          }
-          url = uploaded
+          const { data: { session } } = await supabase.auth.getSession()
+          const userId = session?.user?.id || 'coach'
+          const { url: uploadedUrl, error: uploadErr } = await uploadFile('uploads', getFilePath(userId, 'materials', file.name), file)
+          if (uploadErr) { toast('error', uploadErr); return }
+          url = uploadedUrl ?? null
         }
 
         const { error } = await supabase

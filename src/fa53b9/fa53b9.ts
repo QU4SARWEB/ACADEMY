@@ -94,8 +94,8 @@ export async function updatePassword(password: string): Promise<{ error?: string
   return {}
 }
 
-export async function authGuard(): Promise<boolean> {
-  const hash = location.hash.slice(1) || '/'
+export async function authGuard(destPath?: string): Promise<boolean> {
+  const hash = destPath || location.hash.slice(1) || '/'
   if (hash.startsWith('/p/')) return true
   if (hash === '/login' || hash === '/register' || hash === '/reset-password') return true
 
@@ -118,7 +118,7 @@ export async function authGuard(): Promise<boolean> {
   }
 
   const prefix = ROLE_PREFIX[currentProfile.role]
-  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/mail') && !hash.startsWith('/logs') && !hash.startsWith('/chat') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
+  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/logs') && !hash.startsWith('/chat') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
     return false
   }

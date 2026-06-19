@@ -355,12 +355,9 @@ async function sendMessage(convId: string, content: string, file?: File): Promis
 
   let attachmentUrl: string | null = null
   if (file) {
-    try {
-      attachmentUrl = await uploadFileFromInput('chat', convId, 'attachments', file)
-    } catch {
-      toast('error', 'Error al subir archivo')
-      return
-    }
+    const { url: fileUrl, error: fileErr } = await uploadFileFromInput('chat', convId, 'attachments', file)
+    if (fileErr) { toast('error', fileErr); return }
+    attachmentUrl = fileUrl ?? null
   }
 
   const { error } = await supabase.from('chat_messages').insert({

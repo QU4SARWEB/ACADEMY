@@ -66,7 +66,7 @@ import { renderTickets, initTickets } from '@/b3b32a/9e81e7/d2e1a4'
 import { renderNewTicket, initNewTicket } from '@/b3b32a/9e81e7/f4b5c6'
 import { renderLogs, initLogs } from '@/b3b32a/9e81e7/2165e4'
 
-router.setBeforeNavigate(async () => authGuard())
+router.setBeforeNavigate(async (path) => authGuard(path))
 
 // Public routes
 router.on('/', async () => {
@@ -163,11 +163,11 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
           .maybeSingle()
         isExpired = !!expiredPay
       }
+      ;(window as any).__isExpired = isExpired
       if (isExpired && path !== '/payments') {
         router.navigate('/payments')
         return
       }
-      ;(window as any).__isExpired = isExpired
       const { DashboardLayout, initSidebar } = await import('@/34d59f/dc7161')
       app.innerHTML = DashboardLayout(renderFn())
       initToastContainer()

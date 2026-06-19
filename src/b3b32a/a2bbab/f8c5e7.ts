@@ -126,14 +126,9 @@ export async function initPlayerTaskDetail(): Promise<void> {
           const input = (e.target as HTMLFormElement).querySelector('input[name="files"]') as HTMLInputElement
           if (input?.files) {
             for (const f of Array.from(input.files)) {
-              try {
-                const url = await uploadFileFromInput('uploads', session.user.id, 'tasks', f)
-                if (url) files.push(url)
-              } catch {
-                document.getElementById('submit-error')!.textContent = 'Error al subir archivos'
-                document.getElementById('submit-error')!.classList.remove('hidden')
-                return
-              }
+              const { url, error: uploadErr } = await uploadFileFromInput('uploads', session.user.id, 'tasks', f)
+              if (uploadErr) { toast('error', uploadErr); return }
+              if (url) files.push(url)
             }
           }
         }
@@ -142,7 +137,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
           task_id: taskId,
           enrollment_id: enrollment.id,
           status: 'submitted',
-          text_content: fd.get('textContent') as string,
+          submission_text: fd.get('textContent') as string,
           files,
         })
         if (error) {

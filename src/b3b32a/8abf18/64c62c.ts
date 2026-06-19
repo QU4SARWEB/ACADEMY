@@ -213,9 +213,10 @@ export async function initCoachAttendance(): Promise<void> {
           .eq('id', enrollmentId)
           .maybeSingle()
 
+        if (!enrData?.season_id) throw new Error('Enrollment missing season_id')
         const { data: newRecord, error } = await supabase.from('attendance').insert({
           enrollment_id: enrollmentId,
-          season_id: enrData?.season_id || null,
+          season_id: enrData.season_id,
           date,
           status: newStatus,
         }).select().single()

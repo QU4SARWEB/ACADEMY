@@ -2,6 +2,7 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
+import { toast } from '@/4725dc/4f2900'
 import { formatDate } from '@/2b3583/6b239c'
 import { router } from '@/f3395c'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
@@ -125,7 +126,8 @@ export async function initStudentTaskDetail(): Promise<void> {
           const input = (e.target as HTMLFormElement).querySelector('input[name="files"]') as HTMLInputElement
           if (input?.files) {
             for (const f of Array.from(input.files)) {
-              const url = await uploadFileFromInput('uploads', session.user.id, 'tasks', f)
+              const { url, error: uploadErr } = await uploadFileFromInput('uploads', session.user.id, 'tasks', f)
+              if (uploadErr) { toast('error', uploadErr); return }
               if (url) files.push(url)
             }
           }
@@ -135,7 +137,7 @@ export async function initStudentTaskDetail(): Promise<void> {
           task_id: taskId,
           enrollment_id: enrollment.id,
           status: 'submitted',
-          text_content: fd.get('textContent') as string,
+          submission_text: fd.get('textContent') as string,
           files,
         })
         if (error) {

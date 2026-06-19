@@ -15,7 +15,7 @@ export async function initCoachScrims(): Promise<void> {
     const { data: scrims } = await supabase
       .from('scrims')
       .select('*, teams(name), seasons(name)')
-      .order('scheduled_at', { ascending: false })
+      .order('date', { ascending: false })
 
     const { data: teams } = await supabase
       .from('teams')
@@ -65,7 +65,7 @@ export async function initCoachScrims(): Promise<void> {
                       <p class="mt-0.5 text-xs text-zinc-500">
                         ${escapeHtml(s.teams?.name || 'Sin equipo')}
                         ${s.seasons?.name ? ' · ' + escapeHtml(s.seasons.name) : ''}
-                        · ${formatDate(s.scheduled_at)}
+                        · ${formatDate(s.date)}
                         ${s.score_quasar != null && s.score_opponent != null ? ` · ${s.score_quasar} - ${s.score_opponent}` : ''}
                       </p>
                       ${s.notes ? `<p class="mt-1 text-xs text-zinc-600">${escBr(s.notes)}</p>` : ''}
@@ -172,15 +172,15 @@ export async function initCoachScrims(): Promise<void> {
         const payload: Record<string, any> = {
           team_id: fd.get('teamId'),
           season_id: fd.get('seasonId'),
-          rival: fd.get('opponent'),
-          scheduled_at: fd.get('scheduledAt'),
+          opponent: fd.get('opponent'),
+          date: fd.get('scheduledAt'),
           result: (fd.get('result') as string) || null,
           score_quasar: (fd.get('qu4sarScore') as string) ? parseInt(fd.get('qu4sarScore') as string) : null,
           score_opponent: (fd.get('opponentScore') as string) ? parseInt(fd.get('opponentScore') as string) : null,
           notes: (fd.get('notes') as string) || null,
         }
 
-        if (!payload.team_id || !payload.season_id || !payload.rival || !payload.scheduled_at) {
+        if (!payload.team_id || !payload.season_id || !payload.opponent || !payload.date) {
           toast('warning', 'Completa los campos obligatorios')
           return
         }

@@ -169,7 +169,6 @@ export async function initCoachTeams(): Promise<void> {
       const { error } = await supabase.from('teams').insert({
         name,
         slug,
-        season_id: (fd.get('seasonId') as string) || null,
       })
 
       if (error) {
@@ -234,9 +233,12 @@ export async function initCoachTeams(): Promise<void> {
           return
         }
 
+        const { data: teamSeason } = await supabase.from('teams').select('id').eq('id', teamId).maybeSingle()
+        const { data: activeSeason } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
         const { error } = await supabase.from('team_members').insert({
           team_id: teamId,
           profile_id: profileId,
+          season_id: activeSeason?.id || teamSeason?.id,
           role: role || null,
         })
 

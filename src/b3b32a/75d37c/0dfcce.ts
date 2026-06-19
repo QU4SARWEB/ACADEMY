@@ -49,12 +49,14 @@ export async function initStudentCourses(): Promise<void> {
           .eq('is_active', true)
           .maybeSingle()
 
+        if (!season?.id) return
+
         const { data: enrollment, error: enrError } = await supabase
           .from('enrollments')
           .upsert({
             profile_id: session.user.id,
             course_id: targetCourse.id,
-            season_id: season?.id ?? null,
+            season_id: season.id,
             type: 'student',
             status: 'active',
           }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
@@ -66,6 +68,7 @@ export async function initStudentCourses(): Promise<void> {
             profile_id: session.user.id,
             enrollment_id: enrollment.id,
             season_id: season.id,
+            type: 'student',
             status: profile?.scholarship ? 'scholarship' : 'pending',
             amount: 1.54,
           })
@@ -175,12 +178,13 @@ export async function initStudentCourses(): Promise<void> {
           .eq('is_active', true)
           .maybeSingle()
 
+        if (!season?.id) { toast('error', 'No hay temporada activa'); return }
         const { data: enrollment, error: enrError } = await supabase
           .from('enrollments')
           .upsert({
             profile_id: session.user.id,
             course_id: courseId,
-            season_id: season?.id ?? null,
+            season_id: season.id,
             type: 'student',
             status: 'active',
           }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
@@ -197,6 +201,7 @@ export async function initStudentCourses(): Promise<void> {
             profile_id: session.user.id,
             enrollment_id: enrollment.id,
             season_id: season.id,
+            type: 'student',
             status: profile?.scholarship ? 'scholarship' : 'pending',
             amount: 1.54,
           })

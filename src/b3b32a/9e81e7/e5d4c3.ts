@@ -150,8 +150,9 @@ function initSettingsEvents(userId: string): void {
     const bgInput = document.getElementById('bg-upload') as HTMLInputElement
     let bgUrl: string | null = null
     if (bgInput?.files?.[0]) {
-      bgUrl = await uploadFileFromInput('uploads', userId, 'backgrounds', bgInput.files[0])
-      if (!bgUrl) { errEl.textContent = 'Error al subir la imagen'; errEl.classList.remove('hidden'); return }
+      const { url: bgUrlResult, error: bgErr } = await uploadFileFromInput('uploads', userId, 'backgrounds', bgInput.files[0])
+      if (bgErr) { errEl.textContent = bgErr; errEl.classList.remove('hidden'); return }
+      bgUrl = bgUrlResult ?? null
     }
     const update: any = { role_color: color }
     if (bgUrl) update.custom_bg_url = bgUrl

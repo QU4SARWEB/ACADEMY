@@ -112,11 +112,13 @@ export interface Payment {
   id: string
   profile_id: string
   season_id: string
+  enrollment_id?: string
+  type: string
   amount: number | null
   status: PaymentStatus
-  due_date: string | null
   paid_at: string | null
-  notes: string | null
+  method: string | null
+  receipt_url: string | null
   created_at: string
   updated_at: string
 }
@@ -124,11 +126,11 @@ export interface Payment {
 export interface Task {
   id: string
   module_id: string
+  season_id: string
   title: string
   description: string | null
   due_date: string
   max_score: number | null
-  is_active: boolean
   created_at: string
   updated_at: string
   course_modules?: {
@@ -143,12 +145,16 @@ export interface TaskSubmission {
   task_id: string
   enrollment_id: string
   status: TaskStatus
-  file_url: string | null
-  text_content: string | null
+  submission_text: string | null
+  files: any[] | null
+  links: any[] | null
   score: number | null
   feedback: string | null
+  graded_by: string | null
   submitted_at: string
-  reviewed_at: string | null
+  graded_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface Schedule {
@@ -205,12 +211,16 @@ export interface EvaluationResult {
 
 export interface Scrim {
   id: string
-  team_member_id: string
+  team_id: string
+  season_id: string
   opponent: string
-  scheduled_at: string
+  date: string
   result: string | null
+  score_quasar: number | null
+  score_opponent: number | null
   notes: string | null
-  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface Exam {
@@ -243,13 +253,4 @@ export interface Question {
   created_at: string
 }
 
-export interface Scrim {
-  id: string
-  team_id: string
-  opponent: string
-  scheduled_at: string
-  result: string | null
-  notes: string | null
-  is_active: boolean
-  created_at: string
-}
+

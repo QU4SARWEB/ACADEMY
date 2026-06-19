@@ -100,23 +100,25 @@ export async function initCoachNewTask(): Promise<void> {
       const file = (document.querySelector<HTMLInputElement>('input[name="attachment"]'))?.files?.[0]
       let attachmentUrl: string | null = null
       if (file) {
-        try {
-          attachmentUrl = await uploadFileFromInput('uploads', 'tasks', 'attachments', file)
-        } catch (err) {
-          document.getElementById('form-error')!.textContent = 'Error al subir archivo'
-          document.getElementById('form-error')!.classList.remove('hidden')
-          return
+        const { url: fileUrl, error: fileErr } = await uploadFileFromInput('uploads', fd.get('seasonId') as string || 'tasks', 'attachments', file)
+        if (fileErr) { document.getElementById('form-error')!.textContent = fileErr; document.getElementById('form-error')!.classList.remove('hidden'); return }
+        attachmentUrl = fileUrl ?? null
+      }
+      let seasonId = fd.get('seasonId') as string
+      if (!seasonId) {
+        const { data: mod } = await supabase.from('course_modules').select('course_id').eq('id', fd.get('moduleId')).maybeSingle()
+        if (mod) {
+          const { data: activeS } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+          if (activeS) seasonId = activeS.id
         }
       }
       const { error } = await supabase.from('tasks').insert({
         module_id: fd.get('moduleId') as string,
-        season_id: fd.get('seasonId') as string || null,
+        season_id: seasonId || null,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,
         max_score: parseFloat(fd.get('maxScore') as string) || 100,
-        is_active: fd.get('isActive') === 'on',
-        attachment_url: attachmentUrl,
       })
       if (error) {
         document.getElementById('form-error')!.textContent = error.message

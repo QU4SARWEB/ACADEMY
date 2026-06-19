@@ -29,7 +29,7 @@ export async function initCoachPlayers(): Promise<void> {
       const playerIds = players.map((p: any) => p.id)
       const { data: payments } = await supabase
         .from('payments')
-        .select('profile_id, amount, status, due_date')
+        .select('profile_id, amount, status')
         .in('profile_id', playerIds)
         .eq('season_id', activeSeason.id)
       if (payments) {

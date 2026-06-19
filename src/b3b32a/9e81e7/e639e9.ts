@@ -109,7 +109,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
-              <p class="text-xs text-zinc-500">${p.due_date ? formatDate(p.due_date) : ''} ${p.paid_at ? '· Pagado: ' + formatDate(p.paid_at) : ''}</p>
+              <p class="text-xs text-zinc-500">${p.paid_at ? 'Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
@@ -183,10 +183,10 @@ async function renderStudentPayments(userId: string): Promise<void> {
 
     if (!file || file.size === 0) return
 
-    const url = await uploadFileFromInput('receipts', paymentId, 'receipts', file)
-    if (!url) {
+    const { url, error: uploadErr } = await uploadFileFromInput('receipts', paymentId, 'receipts', file)
+    if (uploadErr) {
       const errEl = document.getElementById('receipt-error')!
-      errEl.textContent = 'Error al subir el comprobante'
+      errEl.textContent = uploadErr
       errEl.classList.remove('hidden')
       return
     }

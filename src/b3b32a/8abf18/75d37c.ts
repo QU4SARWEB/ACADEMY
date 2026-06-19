@@ -190,10 +190,11 @@ function initBulkActions(students: any[]): void {
     const courseId = (document.getElementById('bulk-course-select') as HTMLSelectElement).value
     if (!courseId || !ids.length) return
     const { data: season } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+    if (!season?.id) { toast('error', 'No hay temporada activa'); return }
     let ok = 0, fail = 0
     for (const pid of ids) {
       const { error } = await supabase.from('enrollments').upsert({
-        profile_id: pid, course_id: courseId, season_id: season?.id ?? null, type: 'student', status: 'active', current_module: 1,
+        profile_id: pid, course_id: courseId, season_id: season.id, type: 'student', status: 'active', current_module: 1,
       }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
       if (error) fail++
       else ok++

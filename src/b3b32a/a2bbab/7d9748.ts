@@ -43,9 +43,10 @@ export async function initPlayerProfile(): Promise<void> {
       if (status) status.classList.remove('hidden')
       const ext = file.name.split('.').pop()
       const path = pathFn(userId, `img.${ext}`)
-      const url = await uploadFile(bucket, path, file)
+      const { url, error: uploadErr } = await uploadFile(bucket, path, file)
       input.value = ''
       if (status) status.classList.add('hidden')
+      if (uploadErr) { toast('error', uploadErr); return }
       if (url) {
         const col = bucket === 'avatars' ? 'avatar_url' : 'banner_url'
         await supabase.from('profiles').update({ [col]: url }).eq('id', userId)

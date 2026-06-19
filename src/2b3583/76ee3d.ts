@@ -4,7 +4,7 @@ export async function uploadFile(
   bucket: string,
   path: string,
   file: File
-): Promise<string | null> {
+): Promise<{ url?: string; error?: string }> {
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,
     contentType: file.type || 'application/octet-stream',
@@ -12,11 +12,12 @@ export async function uploadFile(
 
   if (error) {
     console.error('Upload error:', error)
-    return null
+    return { error: error.message }
   }
 
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path)
-  return urlData?.publicUrl ?? null
+  const publicUrl = urlData?.publicUrl ?? null
+  return publicUrl ? { url: `${publicUrl}?t=${Date.now()}` } : { error: 'No se pudo obtener la URL' }
 }
 
 export function getAvatarPath(userId: string, fileName: string): string {
@@ -38,7 +39,7 @@ export function uploadFileFromInput(
   userId: string,
   prefix: string,
   file: File
-): Promise<string | null> {
+): Promise<{ url?: string; error?: string }> {
   return uploadFile(bucket, getFilePath(userId, prefix, file.name), file)
 }
 
@@ -50,7 +51,7 @@ export async function uploadMultipleFiles(
 ): Promise<string[]> {
   const urls: string[] = []
   for (const file of files) {
-    const url = await uploadFileFromInput(bucket, userId, prefix, file)
+    const { url } = await uploadFileFromInput(bucket, userId, prefix, file)
     if (url) urls.push(url)
   }
   return urls
