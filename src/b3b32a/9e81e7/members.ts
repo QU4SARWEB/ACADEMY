@@ -12,11 +12,23 @@ export function renderMembers(): string {
 
 export async function initMembers(): Promise<void> {
   try {
-    const { data: publicProfiles } = await supabase
-      .from('public_profiles')
-      .select('slug, display_name, avatar_url, banner_url, bio, profile_id, profiles!inner(role, full_name, avatar_url, banner_url)')
-      .eq('is_public', true)
-      .order('display_name', { ascending: true })
+    const { data: { session } } = await supabase.auth.getSession()
+    let isCoach = false
+    if (session?.user?.id) {
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
+      if (prof?.role === 'coach') isCoach = true
+    }
+
+    // Coaches see all profiles; others only see public ones
+    let publicProfiles: any[] | null = []
+    if (!isCoach) {
+      const { data } = await supabase
+        .from('public_profiles')
+        .select('slug, display_name, avatar_url, banner_url, bio, profile_id, profiles!inner(role, full_name, avatar_url, banner_url)')
+        .eq('is_public', true)
+        .order('display_name', { ascending: true })
+      publicProfiles = data
+    }
 
     const { data: allProfiles } = await supabase
       .from('profiles')
@@ -37,7 +49,7 @@ export async function initMembers(): Promise<void> {
       }
     })]
     for (const prof of allProfiles ?? []) {
-      if (!withPub.has(prof.id)) {
+      if (isCoach || !withPub.has(prof.id)) {
         combined.push({
           slug: prof.share_slug || `u-${prof.id.slice(0, 8)}`,
           display_name: prof.display_name || prof.full_name || 'Usuario',

@@ -175,13 +175,17 @@ export async function initPublicProfile(): Promise<void> {
       ...(profile.social_tiktok ? { tiktok: profile.social_tiktok } : {}),
       ...(profile.social_github ? { github: profile.social_github } : {}),
       ...(profile.social_website ? { website: profile.social_website } : {}),
+      ...(profile.social_facebook ? { facebook: profile.social_facebook } : {}),
+      ...(profile.social_linkedin ? { linkedin: profile.social_linkedin } : {}),
+      ...(profile.social_steam ? { steam: profile.social_steam } : {}),
+      ...(profile.social_telegram ? { telegram: profile.social_telegram } : {}),
     }
     const playlist = pubProfile.playlist as any[] | null
     const currentUrl = encodeURIComponent(window.location.href)
 
     const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
     const quote = profile.quote as string | null
-    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play', instagram: 'camera', tiktok: 'music', github: 'code2', website: 'globe' }
+    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play', instagram: 'camera', tiktok: 'music', github: 'code2', website: 'globe', facebook: 'facebook', linkedin: 'linkedin', steam: 'steam', telegram: 'send' }
 
     function ytId(url: string): string | null {
       const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)

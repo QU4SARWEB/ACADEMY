@@ -1,0 +1,4 @@
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_facebook TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_linkedin TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_steam TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_telegram TEXT;

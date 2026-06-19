@@ -24,8 +24,10 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
   const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
   const publicUrl = pubSlug ? `${window.location.origin}${window.location.pathname}#/p/${pubSlug}` : ''
   return `
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div class="glass rounded-xl p-6 space-y-6">
+    <div class="flex gap-6 items-start">
+    <div class="w-[600px] shrink-0">
+    <div class="glass rounded-xl p-6 space-y-6">
+      <!-- Box 1: Perfil -->
       <div class="flex items-center gap-4">
         <div class="group relative">
           <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-3xl font-bold text-[#8B5CF6]">
@@ -186,10 +188,13 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
       </div>
     </div>
 
-      <div class="glass rounded-xl p-6 space-y-6">
-      <div>
-        <h3 class="mb-3 text-sm font-medium text-zinc-300">Redes sociales</h3>
-        <div class="grid gap-4 sm:grid-cols-2">
+    </div>
+    <div class="w-[600px] shrink-0">
+    <div class="glass rounded-xl p-6 space-y-6">
+      <h3 class="text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06);padding-bottom:10px;margin-bottom:16px">
+        Redes sociales
+      </h3>
+      <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="block text-xs font-medium text-zinc-400">Discord</label>
             <input name="socialDiscord" value="${escapeHtml(profile.social_discord ?? '')}" placeholder="usuario#0000"
@@ -230,8 +235,27 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             <input name="socialWebsite" value="${escapeHtml(profile.social_website ?? '')}" placeholder="https://tusitio.com"
               class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
           </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Facebook</label>
+            <input name="socialFacebook" value="${escapeHtml(profile.social_facebook ?? '')}" placeholder="https://facebook.com/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">LinkedIn</label>
+            <input name="socialLinkedin" value="${escapeHtml(profile.social_linkedin ?? '')}" placeholder="https://linkedin.com/in/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Steam</label>
+            <input name="socialSteam" value="${escapeHtml(profile.social_steam ?? '')}" placeholder="https://steamcommunity.com/id/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Telegram</label>
+            <input name="socialTelegram" value="${escapeHtml(profile.social_telegram ?? '')}" placeholder="@usuario o https://t.me/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
         </div>
-      </div>
 
       <div class="border-t border-zinc-800 pt-6">
         <h3 class="mb-3 text-sm font-medium text-zinc-300">Playlist de canciones</h3>
@@ -257,9 +281,9 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           </div>
           <div id="pub-slug-field" class="${pubEnabled ? '' : 'hidden'}">
             ${publicUrl ? `
-            <p class="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-              <span>${escapeHtml(publicUrl)}</span>
-              <button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(publicUrl)}')" class="text-[#8B5CF6] hover:underline">Copiar</button>
+            <p class="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+              <a href="${escapeHtml(publicUrl)}" target="_blank" rel="noopener noreferrer" class="text-[#8B5CF6] hover:underline">${escapeHtml(publicUrl)}</a>
+              <button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(publicUrl)}')" class="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400 transition hover:bg-zinc-800 hover:text-white">Copiar</button>
             </p>` : '<p class="text-xs text-zinc-500">Activa el perfil público para generar el enlace</p>'}
           </div>
         </div>
@@ -405,6 +429,10 @@ export function getProfileFormData(form: HTMLFormElement) {
     social_tiktok: (fd.get('socialTiktok') as string) || null,
     social_github: (fd.get('socialGithub') as string) || null,
     social_website: (fd.get('socialWebsite') as string) || null,
+    social_facebook: (fd.get('socialFacebook') as string) || null,
+    social_linkedin: (fd.get('socialLinkedin') as string) || null,
+    social_steam: (fd.get('socialSteam') as string) || null,
+    social_telegram: (fd.get('socialTelegram') as string) || null,
     quote: (fd.get('quote') as string) || null,
   }
 }
