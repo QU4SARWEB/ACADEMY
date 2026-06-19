@@ -276,6 +276,14 @@ async function renderCoachPayments(): Promise<void> {
   const activeSeason = seasons?.find((s: any) => s.is_active)
   const filterSeasonId = selectedSeasonId || activeSeason?.id || null
 
+  // Load ALL students and players
+  const { data: allStudents } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, avatar_url, role')
+    .in('role', ['student', 'player'])
+    .order('full_name')
+
+  // Load payments for the filtered season
   let paymentsQuery = supabase
     .from('payments')
     .select('*, seasons(name), profiles(full_name, email, avatar_url)')
@@ -287,21 +295,19 @@ async function renderCoachPayments(): Promise<void> {
 
   const { data: payments } = await paymentsQuery
 
-  const { count: sCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'student')
+  // Build payment map by profile_id
+  const paymentMap = new Map<string, any>()
+  for (const p of payments ?? []) {
+    if (!paymentMap.has(p.profile_id)) paymentMap.set(p.profile_id, p)
+  }
 
-  const { count: pCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'player')
-
+  const allProfiles = allStudents ?? []
   const paymentList = payments ?? []
-  const totalStudents = (sCount ?? 0) + (pCount ?? 0)
+  const totalStudents = allProfiles.length
   const paidCount = paymentList.filter((p: any) => p.status === 'paid').length
   const pendingCount = paymentList.filter((p: any) => p.status === 'pending').length
   const scholarshipCount = paymentList.filter((p: any) => p.status === 'scholarship').length
+  const noPaymentCount = totalStudents - paidCount - pendingCount - scholarshipCount
 
   const statusColors: Record<string, string> = {
     pending: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
@@ -327,10 +333,10 @@ async function renderCoachPayments(): Promise<void> {
       </select>
     </div>
 
-    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
       <div class="glass rounded-xl p-4 text-center">
         <p class="text-2xl font-bold text-white">${totalStudents}</p>
-        <p class="text-xs text-zinc-500">Total estudiantes/players</p>
+        <p class="text-xs text-zinc-500">Total</p>
       </div>
       <div class="glass rounded-xl p-4 text-center">
         <p class="text-2xl font-bold text-green-400">${paidCount}</p>
@@ -343,6 +349,10 @@ async function renderCoachPayments(): Promise<void> {
       <div class="glass rounded-xl p-4 text-center">
         <p class="text-2xl font-bold text-blue-400">${scholarshipCount}</p>
         <p class="text-xs text-zinc-500">Becas</p>
+      </div>
+      <div class="glass rounded-xl p-4 text-center">
+        <p class="text-2xl font-bold text-zinc-500">${noPaymentCount}</p>
+        <p class="text-xs text-zinc-500">Sin pago</p>
       </div>
     </div>
 
@@ -362,49 +372,54 @@ async function renderCoachPayments(): Promise<void> {
             </tr>
           </thead>
           <tbody>
-            ${paymentList.length === 0
-              ? '<tr><td colspan="8" class="px-4 py-8 text-center text-zinc-500">No hay pagos registrados.</td></tr>'
-              : paymentList.map((p: any) => `
-                <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20" data-payment-id="${escapeHtml(p.id)}">
+            ${allProfiles.length === 0
+              ? '<tr><td colspan="8" class="px-4 py-8 text-center text-zinc-500">No hay estudiantes o jugadores registrados.</td></tr>'
+              : allProfiles.map((prof: any) => {
+                  const pay = paymentMap.get(prof.id)
+                  return `
+                <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20" ${pay ? `data-payment-id="${escapeHtml(pay.id)}"` : ''}>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
                       <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                        ${p.profiles?.avatar_url
-                          ? `<img src="${escapeHtml(p.profiles.avatar_url)}" alt="" class="h-full w-full object-cover" />`
-                          : (p.profiles?.full_name?.charAt(0) ?? '?')
+                        ${prof.avatar_url
+                          ? `<img src="${escapeHtml(prof.avatar_url)}" alt="" class="h-full w-full object-cover" />`
+                          : (prof.full_name?.charAt(0) ?? '?')
                         }
                       </div>
                       <div>
-                        <p class="font-medium text-white">${escapeHtml(p.profiles?.full_name || 'Desconocido')}</p>
-                        <p class="text-xs text-zinc-500">${escapeHtml(p.profiles?.email || '')}</p>
+                        <p class="font-medium text-white">${escapeHtml(prof.full_name || 'Desconocido')}</p>
+                        <p class="text-xs text-zinc-500">${escapeHtml(prof.email || '')}</p>
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-zinc-300">${escapeHtml(p.seasons?.name || '—')}</td>
-                  <td class="px-4 py-3 capitalize text-zinc-300">${escapeHtml(p.type || '—')}</td>
-                  <td class="px-4 py-3 text-zinc-300">${p.amount ? '$' + p.amount : '—'}</td>
+                  <td class="px-4 py-3 text-zinc-300">${pay ? escapeHtml(pay.seasons?.name || '—') : '—'}</td>
+                  <td class="px-4 py-3 capitalize text-zinc-300">${escapeHtml(prof.role)}</td>
+                  <td class="px-4 py-3 text-zinc-300">${pay?.amount ? '$' + pay.amount : '—'}</td>
                   <td class="px-4 py-3">
-                    <span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[p.status] || 'text-zinc-500'}">
-                      ${escapeHtml(p.status)}
-                    </span>
+                    ${pay
+                      ? `<span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[pay.status] || 'text-zinc-500'}">${escapeHtml(pay.status)}</span>`
+                      : '<span class="inline-block rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs font-medium text-zinc-600">Sin pago</span>'
+                    }
                   </td>
                   <td class="px-4 py-3">
-                    ${p.receipt_url
-                      ? `<a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
+                    ${pay?.receipt_url
+                      ? `<a href="${escapeHtml(pay.receipt_url)}" target="_blank" class="text-xs text-[#8B5CF6] hover:underline">Ver comprobante</a>`
                       : '<span class="text-xs text-zinc-600">—</span>'
                     }
                   </td>
-                  <td class="px-4 py-3 text-xs text-zinc-500">${p.paid_at ? formatDate(p.paid_at) : '—'}</td>
+                  <td class="px-4 py-3 text-xs text-zinc-500">${pay?.paid_at ? formatDate(pay.paid_at) : '—'}</td>
                   <td class="px-4 py-3">
-                    <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(p.id)}">
-                      <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                      <option value="paid" ${p.status === 'paid' ? 'selected' : ''}>Pagado</option>
-                      <option value="scholarship" ${p.status === 'scholarship' ? 'selected' : ''}>Beca</option>
-                      <option value="expired" ${p.status === 'expired' ? 'selected' : ''}>Vencido</option>
-                    </select>
+                    ${pay
+                      ? `<select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(pay.id)}">
+                          <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                          <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
+                          <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
+                          <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
+                        </select>`
+                      : '<span class="text-xs text-zinc-600">—</span>'
+                    }
                   </td>
-                </tr>
-              `).join('')
+                </tr>`}).join('')
             }
           </tbody>
         </table>
