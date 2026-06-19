@@ -150,7 +150,10 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
     }
 
     try {
-      await getProfile()
+      await Promise.race([
+        getProfile(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar perfil')), 15000)),
+      ])
       const profile = store.get<any>('profile')
       // Check if user has expired payments (block access except /payments)
       let isExpired = false

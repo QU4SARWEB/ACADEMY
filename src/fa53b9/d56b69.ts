@@ -80,7 +80,7 @@ export function mountLogin(): void {
     }
 
     if (result.redirect) {
-      await router.navigate(result.redirect, true)
+      location.hash = result.redirect
     }
   })
 }
