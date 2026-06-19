@@ -76,7 +76,7 @@ export async function signUp(
 }
 
 export async function signOut(): Promise<void> {
-  await supabase.auth.signOut()
+  try { await supabase.auth.signOut() } catch {}
   store.set<Profile | null>('profile', null)
   store.set('session', null)
   location.hash = '/'
