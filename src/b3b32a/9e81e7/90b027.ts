@@ -2,6 +2,7 @@ import { supabase } from '@/304244'
 import { Spinner } from '@/4725dc/a14fa2'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
+import domtoimage from 'dom-to-image-more'
 
 const ACADEMY_RANKS = [
   { id: 'cosmic1', name: 'Cosmic I',   minXP: 0,     color: '#6b7280', glow: 'rgba(107,114,128,0.3)', icon: 'circle', reward: 'Acceso a clases grupales' },
@@ -507,35 +508,10 @@ export async function initPublicProfile(): Promise<void> {
         `
         document.head.appendChild(style)
 
-        // Load dom-to-image-more
-        if (!(window as any).domtoimage) {
-          const urls = [
-            'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js',
-            'https://unpkg.com/dom-to-image-more@3.1.6/dist/dom-to-image-more.min.js',
-          ]
-          let loaded = false
-          for (const url of urls) {
-            try {
-              await new Promise<void>((resolve, reject) => {
-                const s = document.createElement('script')
-                s.src = url
-                s.onload = () => resolve()
-                s.onerror = () => reject(new Error('Failed: ' + url))
-                document.head.appendChild(s)
-              })
-              loaded = true
-              break
-            } catch {}
-          }
-          if (!loaded) throw new Error('No se pudo cargar la librería de captura')
-        }
-
-        const dti = (window as any).domtoimage
-        const canvas = await dti.toCanvas(card, {
-          bgColor: '#0A0A0A',
+        const canvas = await domtoimage.toCanvas(card, {
+          bgcolor: '#0A0A0A',
           scale: 2,
-          useCORS: true,
-          allowTaint: true,
+          pixelRatio: window.devicePixelRatio || 1,
           filter: (node: any) => node.tagName !== 'SCRIPT',
         })
 
