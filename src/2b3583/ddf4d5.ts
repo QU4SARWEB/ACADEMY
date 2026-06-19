@@ -281,12 +281,18 @@ export function initRankSelector(currentRank?: string | null): void {
   const hidden = document.getElementById('pf-rank-hidden') as HTMLInputElement
   if (!nameSelect || !hidden) return
 
+  // Map old English rank names to Spanish
+  const EN_TO_ES: Record<string, string> = {
+    'Iron': 'Hierro', 'Bronze': 'Bronce', 'Silver': 'Plata', 'Gold': 'Oro',
+    'Platinum': 'Platino', 'Diamond': 'Diamante', 'Ascendant': 'Ascendente',
+    'Immortal': 'Inmortal', 'Radiant': 'Radiante',
+  }
   // Parse existing rank
   let existingName = 'Unranked'
   let existingDiv = ''
   if (currentRank) {
     const parts = currentRank.split(' ')
-    existingName = parts[0]
+    existingName = EN_TO_ES[parts[0]] || parts[0]
     existingDiv = parts.slice(1).join(' ')
   }
 
