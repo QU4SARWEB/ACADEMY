@@ -14,7 +14,7 @@ export async function initMembers(): Promise<void> {
   try {
     const { data: publicProfiles } = await supabase
       .from('public_profiles')
-      .select('slug, display_name, avatar_url, banner_url, bio, profile_id, profiles!inner(role, full_name)')
+      .select('slug, display_name, avatar_url, banner_url, bio, profile_id, profiles!inner(role, full_name, avatar_url, banner_url)')
       .eq('is_public', true)
       .order('display_name', { ascending: true })
 
@@ -25,14 +25,17 @@ export async function initMembers(): Promise<void> {
       .order('full_name')
 
     const withPub = new Set((publicProfiles ?? []).map((p: any) => p.profile_id))
-    const combined = [...(publicProfiles ?? []).map((p: any) => ({
-      slug: p.slug,
-      display_name: p.display_name || (p.profiles as any)?.full_name || 'Usuario',
-      avatar_url: p.avatar_url,
-      banner_url: p.banner_url,
-      bio: p.bio,
-      role: (p.profiles as any)?.role || 'student',
-    }))]
+    const combined = [...(publicProfiles ?? []).map((p: any) => {
+      const prof = p.profiles as any || {}
+      return {
+        slug: p.slug,
+        display_name: p.display_name || prof.full_name || 'Usuario',
+        avatar_url: p.avatar_url || prof.avatar_url,
+        banner_url: p.banner_url || prof.banner_url,
+        bio: p.bio,
+        role: prof.role || 'student',
+      }
+    })]
     for (const prof of allProfiles ?? []) {
       if (!withPub.has(prof.id)) {
         combined.push({
