@@ -322,25 +322,25 @@ export async function initPublicProfile(): Promise<void> {
       </div>` : ''}
 
       <!-- Stats Row -->
-      <div class="grid grid-cols-4 gap-3">
+      <div class="grid grid-cols-4 gap-3" style="background:transparent!important;backdrop-filter:none!important">
         ${(() => {
           const totalAchievements = achievements.length
           const totalVods = vods.length
           const estTasks = Math.floor(xp / 100)
           return `
-          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
+          <div class="glass rounded-xl p-3 text-center">
             <p class="text-lg font-bold text-white">${totalAchievements}</p>
             <p class="text-[10px] text-zinc-500">Logros</p>
           </div>
-          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
+          <div class="glass rounded-xl p-3 text-center">
             <p class="text-lg font-bold text-white">${totalVods}</p>
             <p class="text-[10px] text-zinc-500">VODs</p>
           </div>
-          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
+          <div class="glass rounded-xl p-3 text-center">
             <p class="text-lg font-bold text-white">${estTasks}</p>
             <p class="text-[10px] text-zinc-500">Tareas</p>
           </div>
-          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
+          <div class="glass rounded-xl p-3 text-center">
             <p class="text-lg font-bold text-white">${xp}</p>
             <p class="text-[10px] text-zinc-500">XP total</p>
           </div>`

@@ -74,24 +74,26 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   ]
 
   const isExpired = !!(window as any).__isExpired
-  let items = isCoach
-    ? coachGroups.flat()
-    : navGroups.flat().filter(i => i.show !== false)
-  if (isExpired && !isCoach) {
-    items = items.filter(i => i.href === '/payments')
-  }
+  const rawGroups = isCoach ? coachGroups : navGroups.map(g => g.filter(i => i.show !== false)).filter(g => g.length > 0)
+  const groups = isExpired && !isCoach
+    ? rawGroups.map(g => g.filter(i => i.href === '/payments')).filter(g => g.length > 0)
+    : rawGroups
   const currentHash = location.hash.slice(1)
 
-  const itemsHtml = items.map(it => {
-    const active = currentHash.startsWith(it.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
-    return `
-      <a href="#${escapeHtml(it.href!)}"
-         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-         style="${currentHash.startsWith(it.href!) ? `border-color:${accent}` : ''}">
-        ${Icon(it.icon!, 18)}
-        <span>${escapeHtml(it.label!)}</span>
-      </a>`
-  }).join('')
+  let itemsHtml = ''
+  for (let gi = 0; gi < groups.length; gi++) {
+    if (gi > 0) itemsHtml += '<div class="border-t border-zinc-800/60"></div>'
+    for (const it of groups[gi]) {
+      const active = currentHash.startsWith(it.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+      itemsHtml += `
+        <a href="#${escapeHtml(it.href!)}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
+           style="${currentHash.startsWith(it.href!) ? `border-color:${accent}` : ''}">
+          ${Icon(it.icon!, 18)}
+          <span>${escapeHtml(it.label!)}</span>
+        </a>`
+    }
+  }
 
   const userName = profile?.display_name || profile?.full_name || 'Usuario'
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
