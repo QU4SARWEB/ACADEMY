@@ -96,7 +96,7 @@ export async function updatePassword(password: string): Promise<{ error?: string
 
 export async function authGuard(destPath?: string): Promise<boolean> {
   const hash = destPath || location.hash.slice(1) || '/'
-  if (hash.startsWith('/p/')) return true
+  if (hash.startsWith('/p/') || hash === '/members') return true
   if (hash === '/login' || hash === '/register' || hash === '/reset-password') return true
 
   const session = await getSession()

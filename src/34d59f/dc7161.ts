@@ -65,6 +65,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: `/${prefix}/team`, icon: 'users', label: 'Equipo', show: isPlayer },
     { href: `/${prefix}/scrims`, icon: 'sword', label: 'Scrims', show: isPlayer || isCoach },
     { href: '/support', icon: 'info', label: 'Soporte', show: isStudent || isPlayer },
+    { href: '/members', icon: 'users', label: 'Miembros', show: true },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show: true },
     { href: '/chat', icon: 'mail', label: 'Mensajes', show: true },
   ]
@@ -82,6 +83,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     { href: '/coaches/teams', icon: 'users', label: 'Equipos' },
     { href: '/coaches/scrims', icon: 'sword', label: 'Scrims' },
     { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
+    { href: '/members', icon: 'users', label: 'Miembros' },
     { href: '/chat', icon: 'mail', label: 'Mensajes' },
     { href: '/support', icon: 'info', label: 'Soporte' },
     { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : '') },

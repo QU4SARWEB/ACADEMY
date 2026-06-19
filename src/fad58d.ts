@@ -65,6 +65,7 @@ import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
 import { renderTickets, initTickets } from '@/b3b32a/9e81e7/d2e1a4'
 import { renderNewTicket, initNewTicket } from '@/b3b32a/9e81e7/f4b5c6'
 import { renderLogs, initLogs } from '@/b3b32a/9e81e7/2165e4'
+import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
 
 router.setBeforeNavigate(async (path) => authGuard(path))
 
@@ -259,6 +260,7 @@ dash('/support', () => renderTickets(), initTickets)
 dash('/support/new', () => renderNewTicket(), initNewTicket)
 dash('/support/:id', () => renderTickets(), initTickets)
 dash('/logs', () => renderLogs(), initLogs)
+dash('/members', () => renderMembers(), initMembers)
 
 // 404
 router.fallbackRoute(async () => {
