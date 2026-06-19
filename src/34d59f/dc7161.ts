@@ -90,7 +90,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const isExpired = !!(window as any).__isExpired
   let items = isCoach ? coachItems : navItems.filter(i => i.show)
-  if (isExpired) {
+  if (isExpired && !isCoach) {
     items = items.filter(i => i.href === '/payments')
   }
   const currentHash = location.hash.slice(1)

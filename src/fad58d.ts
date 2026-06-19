@@ -153,7 +153,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       const profile = store.get<any>('profile')
       // Check if user has expired payments (block access except /payments)
       let isExpired = false
-      if (profile) {
+      if (profile && profile.role !== 'coach') {
         const { data: expiredPay } = await supabase
           .from('payments')
           .select('id')
