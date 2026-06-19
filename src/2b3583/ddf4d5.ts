@@ -1,6 +1,17 @@
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 
-const RANKS = ['Unranked', 'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant']
+const RANK_LIST = [
+  { name: 'Unranked', hasDivision: false },
+  { name: 'Hierro', hasDivision: true },
+  { name: 'Bronce', hasDivision: true },
+  { name: 'Plata', hasDivision: true },
+  { name: 'Oro', hasDivision: true },
+  { name: 'Platino', hasDivision: true },
+  { name: 'Diamante', hasDivision: true },
+  { name: 'Ascendente', hasDivision: true },
+  { name: 'Inmortal', hasDivision: false },
+  { name: 'Radiante', hasDivision: false },
+]
 const IN_GAME_ROLES = ['Duelist', 'Controller', 'Initiator', 'Sentinel', 'Flex']
 
 function slugify(text: string): string {
@@ -60,11 +71,27 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
         ${!isCoach ? `
         <div>
           <label class="block text-xs font-medium text-zinc-400">Rango Valorant</label>
-          <select name="rank"
-            class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-            <option value="">Seleccionar...</option>
-            ${RANKS.map(r => `<option value="${r}" ${profile.rank === r ? 'selected' : ''}>${r}</option>`).join('')}
-          </select>
+          <div class="flex items-center gap-2">
+            <select id="pf-rank-name"
+              class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+              ${RANK_LIST.map(r => `<option value="${r.name}">${r.name}</option>`).join('')}
+            </select>
+            <div id="pf-rank-div-container" class="flex h-[42px] w-[60px] shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-[#0A0A0A]">
+              <span id="pf-rank-div-value" class="text-sm text-zinc-500">—</span>
+            </div>
+          </div>
+          <div id="pf-rank-div-picker" class="mt-2 hidden">
+            <div class="flex gap-1">
+              ${[1, 2, 3].map(n => `
+                <button type="button" data-div="${n}" class="pf-rank-div-btn flex-1 rounded-lg border border-zinc-700 px-2 py-1 text-sm text-zinc-400 transition hover:border-[#8B5CF6] hover:text-white">${n}</button>
+              `).join('')}
+            </div>
+          </div>
+          <div id="pf-rank-rr-container" class="mt-2 hidden">
+            <input type="number" id="pf-rank-rr" placeholder="RR (0-100)" min="0" max="100"
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <input type="hidden" name="rank" id="pf-rank-hidden" value="" />
         </div>` : ''}
         <div class="sm:col-span-2">
           <label class="block text-xs font-medium text-zinc-400">Biografía</label>
@@ -242,6 +269,85 @@ export function getPublicProfileFormData(form: HTMLFormElement) {
     is_public: fd.get('pubIsPublic') === 'true',
     playlist,
   }
+}
+
+export function initRankSelector(currentRank?: string | null): void {
+  const nameSelect = document.getElementById('pf-rank-name') as HTMLSelectElement
+  const divContainer = document.getElementById('pf-rank-div-container')!
+  const divValue = document.getElementById('pf-rank-div-value')!
+  const divPicker = document.getElementById('pf-rank-div-picker')!
+  const rrContainer = document.getElementById('pf-rank-rr-container')!
+  const rrInput = document.getElementById('pf-rank-rr') as HTMLInputElement
+  const hidden = document.getElementById('pf-rank-hidden') as HTMLInputElement
+  if (!nameSelect || !hidden) return
+
+  // Parse existing rank
+  let existingName = 'Unranked'
+  let existingDiv = ''
+  if (currentRank) {
+    const parts = currentRank.split(' ')
+    existingName = parts[0]
+    existingDiv = parts.slice(1).join(' ')
+  }
+
+  nameSelect.value = RANK_LIST.some(r => r.name === existingName) ? existingName : 'Unranked'
+
+  let selectedDiv = existingDiv
+
+  function update() {
+    const rankName = nameSelect.value
+    const rank = RANK_LIST.find(r => r.name === rankName)
+    divPicker.classList.add('hidden')
+    rrContainer.classList.add('hidden')
+    divContainer.classList.remove('border-[#8B5CF6]')
+    if (rankName === 'Unranked') {
+      divValue.textContent = '—'
+      selectedDiv = ''
+      hidden.value = 'Unranked'
+    } else if (rank?.hasDivision) {
+      divPicker.classList.remove('hidden')
+      if (selectedDiv && [1, 2, 3].map(String).includes(selectedDiv)) {
+        divValue.textContent = selectedDiv
+        divContainer.classList.add('border-[#8B5CF6]')
+        document.querySelectorAll('.pf-rank-div-btn').forEach(b => {
+          const btn = b as HTMLElement
+          if (btn.dataset.div === selectedDiv) {
+            btn.classList.add('border-[#8B5CF6]', 'bg-[#8B5CF6]/10', 'text-white')
+            btn.classList.remove('text-zinc-400')
+          }
+        })
+      } else {
+        divValue.textContent = selectedDiv || '?'
+      }
+      hidden.value = selectedDiv ? `${rankName} ${selectedDiv}` : rankName
+    } else {
+      rrContainer.classList.remove('hidden')
+      if (rrInput.value || selectedDiv) rrInput.value = selectedDiv
+      divValue.textContent = 'RR'
+      hidden.value = rankName + (rrInput.value ? ` ${rrInput.value}` : '')
+    }
+  }
+
+  nameSelect.addEventListener('change', update)
+  document.querySelectorAll('.pf-rank-div-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pf-rank-div-btn').forEach(b => {
+        b.classList.remove('border-[#8B5CF6]', 'bg-[#8B5CF6]/10', 'text-white')
+        b.classList.add('text-zinc-400')
+      })
+      btn.classList.add('border-[#8B5CF6]', 'bg-[#8B5CF6]/10', 'text-white')
+      btn.classList.remove('text-zinc-400')
+      selectedDiv = (btn as HTMLElement).dataset.div!
+      divValue.textContent = selectedDiv
+      divContainer.classList.add('border-[#8B5CF6]')
+      hidden.value = `${nameSelect.value} ${selectedDiv}`
+    })
+  })
+  rrInput.addEventListener('input', () => {
+    hidden.value = `${nameSelect.value} ${rrInput.value}`
+  })
+
+  update()
 }
 
 export function getProfileFormData(form: HTMLFormElement) {

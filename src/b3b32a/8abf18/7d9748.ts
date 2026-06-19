@@ -1,7 +1,7 @@
 import { supabase } from '@/304244'
 import { toast } from '@/4725dc/4f2900'
 import { Spinner } from '@/4725dc/a14fa2'
-import { renderProfileForm, getProfileFormData, getPublicProfileFormData, initMouseAutoCalc, initPlaylistEditor } from '@/2b3583/ddf4d5'
+import { renderProfileForm, getProfileFormData, getPublicProfileFormData, initMouseAutoCalc, initPlaylistEditor, initRankSelector } from '@/2b3583/ddf4d5'
 import { uploadFile, getAvatarPath, getBannerPath } from '@/2b3583/76ee3d'
 
 export function renderCoachProfile(): string {
@@ -66,6 +66,7 @@ export async function initCoachProfile(): Promise<void> {
 
     initMouseAutoCalc()
     initPlaylistEditor()
+    initRankSelector(profile.rank)
 
     document.getElementById('profile-form')!.addEventListener('submit', async (e) => {
       e.preventDefault()
