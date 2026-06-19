@@ -328,19 +328,19 @@ export async function initPublicProfile(): Promise<void> {
           const totalVods = vods.length
           const estTasks = Math.floor(xp / 100)
           return `
-          <div class="rounded-[14px] border border-zinc-800/50 p-3 text-center">
+          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
             <p class="text-lg font-bold text-white">${totalAchievements}</p>
             <p class="text-[10px] text-zinc-500">Logros</p>
           </div>
-          <div class="rounded-[14px] border border-zinc-800/50 p-3 text-center">
+          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
             <p class="text-lg font-bold text-white">${totalVods}</p>
             <p class="text-[10px] text-zinc-500">VODs</p>
           </div>
-          <div class="rounded-[14px] border border-zinc-800/50 p-3 text-center">
+          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
             <p class="text-lg font-bold text-white">${estTasks}</p>
             <p class="text-[10px] text-zinc-500">Tareas</p>
           </div>
-          <div class="rounded-[14px] border border-zinc-800/50 p-3 text-center">
+          <div class="rounded-xl border border-zinc-800/50 bg-transparent p-3 text-center">
             <p class="text-lg font-bold text-white">${xp}</p>
             <p class="text-[10px] text-zinc-500">XP total</p>
           </div>`
