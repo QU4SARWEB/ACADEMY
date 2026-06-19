@@ -54,59 +54,57 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const cachedUnread = (window as any).__unreadNotifs
   if (cachedUnread !== undefined) unreadNotifs = cachedUnread
 
-  const navItems: Array<{ href: string; icon: string; label: string; show: boolean }> = [
-    { href: `/${prefix}/dashboard`, icon: 'layoutDashboard', label: 'Dashboard', show: true },
-    { href: `/${prefix}/profile`, icon: 'user', label: 'Perfil', show: true },
-    { href: '/payments', icon: 'dollarSign', label: 'Pagos', show: true },
-    { href: `/${prefix}/schedule`, icon: 'calendar', label: 'Horario', show: isStudent || isPlayer },
-    { href: `/${prefix}/tasks`, icon: 'clipboardList', label: 'Tareas', show: isStudent || isPlayer },
-    { href: `/${prefix}/courses`, icon: 'bookOpen', label: 'Cursos', show: isStudent || isPlayer || isCoach },
-    { href: `/${prefix}/grades`, icon: 'scrollText', label: 'Calificaciones', show: isStudent },
-    { href: `/${prefix}/team`, icon: 'users', label: 'Equipo', show: isPlayer },
-    { href: `/${prefix}/scrims`, icon: 'sword', label: 'Scrims', show: isPlayer || isCoach },
-    { href: '/support', icon: 'info', label: 'Soporte', show: isStudent || isPlayer },
-    { href: '/members', icon: 'users', label: 'Miembros', show: true },
-    { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show: true },
-    { href: '/chat', icon: 'mail', label: 'Mensajes', show: true },
+  type NavItem = { href?: string; icon?: string; label?: string; show?: boolean; sep?: boolean }
+  function sep(): NavItem { return { sep: true } }
+  function item(href: string, icon: string, label: string, show = true): NavItem { return { href, icon, label: label + (label === 'Notificaciones' && unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show } }
+
+  const navGroups: NavItem[][] = [
+    [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard'), item('/', 'home', 'Inicio')],
+    [sep()],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Calificaciones', isStudent), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
+    [sep()],
+    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer), item(`/${prefix}/scrims`, 'sword', 'Scrims', isPlayer || isCoach), item('/chat', 'mail', 'Mensajes')],
+    [sep()],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer), item('/notifications', 'bell', 'Notificaciones')],
   ]
 
-  const coachItems: Array<{ href: string; icon: string; label: string }> = [
-    { href: '/coaches/dashboard', icon: 'layoutDashboard', label: 'Dashboard' },
-    { href: '/coaches/profile', icon: 'user', label: 'Perfil' },
-    { href: '/coaches/students', icon: 'users', label: 'Estudiantes' },
-    { href: '/coaches/players', icon: 'sword', label: 'Jugadores' },
-    { href: '/coaches/courses', icon: 'bookOpen', label: 'Cursos' },
-    { href: '/payments', icon: 'dollarSign', label: 'Pagos' },
-    { href: '/coaches/tasks', icon: 'clipboardList', label: 'Tareas' },
-    { href: '/coaches/schedules', icon: 'calendar', label: 'Horarios' },
-    { href: '/coaches/seasons', icon: 'calendar', label: 'Temporadas' },
-    { href: '/coaches/teams', icon: 'users', label: 'Equipos' },
-    { href: '/coaches/scrims', icon: 'sword', label: 'Scrims' },
-    { href: '/coaches/promotions', icon: 'trophy', label: 'Promociones' },
-    { href: '/members', icon: 'users', label: 'Miembros' },
-    { href: '/chat', icon: 'mail', label: 'Mensajes' },
-    { href: '/support', icon: 'info', label: 'Soporte' },
-    { href: '/notifications', icon: 'bell', label: 'Notificaciones' + (unreadNotifs > 0 ? ` (${unreadNotifs})` : '') },
-    { href: '/logs', icon: 'scrollText', label: 'Auditoría' },
+  const coachGroups: NavItem[][] = [
+    [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard'), item('/', 'home', 'Inicio')],
+    [sep()],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios'), item('/coaches/seasons', 'calendar', 'Temporadas')],
+    [sep()],
+    [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Scrims'), item('/coaches/promotions', 'trophy', 'Promociones'), item('/members', 'users', 'Miembros')],
+    [sep()],
+    [item('/chat', 'mail', 'Mensajes'), item('/support', 'info', 'Soporte'), item('/notifications', 'bell', 'Notificaciones')],
+    [sep()],
+    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
+    [sep()],
+    [item('/logs', 'scrollText', 'Auditoría')],
   ]
 
   const isExpired = !!(window as any).__isExpired
-  let items = isCoach ? coachItems : navItems.filter(i => i.show)
+  let groups = isCoach ? coachGroups : navGroups.map(g => g.filter(i => i.show !== false)).filter(g => g.length > 0)
   if (isExpired && !isCoach) {
-    items = items.filter(i => i.href === '/payments')
+    groups = groups.map(g => g.filter(i => i.href === '/payments')).filter(g => g.length > 0)
   }
   const currentHash = location.hash.slice(1)
 
-  const itemsHtml = items.map(item => {
-    const active = currentHash.startsWith(item.href) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
-    return `
-      <a href="#${escapeHtml(item.href)}"
-         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-         style="${currentHash.startsWith(item.href) ? `border-color:${accent}` : ''}">
-        ${Icon(item.icon, 18)}
-        <span>${escapeHtml(item.label)}</span>
-      </a>`
-  }).join('')
+  let itemsHtml = ''
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi]
+    if (gi > 0) itemsHtml += '<div class="my-1 border-t border-zinc-800/60"></div>'
+    for (const item of group) {
+      if (item.sep) continue
+      const active = currentHash.startsWith(item.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+      itemsHtml += `
+        <a href="#${escapeHtml(item.href!)}"
+           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
+           style="${currentHash.startsWith(item.href!) ? `border-color:${accent}` : ''}">
+          ${Icon(item.icon!, 18)}
+          <span>${escapeHtml(item.label!)}</span>
+        </a>`
+    }
+  }
 
   const userName = profile?.display_name || profile?.full_name || 'Usuario'
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
