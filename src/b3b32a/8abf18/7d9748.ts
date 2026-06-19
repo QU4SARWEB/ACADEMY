@@ -44,6 +44,7 @@ export async function initCoachProfile(): Promise<void> {
       const ext = file.name.split('.').pop()
       const path = pathFn(userId, `img.${ext}`)
       const url = await uploadFile(bucket, path, file)
+      input.value = ''
       if (status) status.classList.add('hidden')
       if (url) {
         const col = bucket === 'avatars' ? 'avatar_url' : 'banner_url'
