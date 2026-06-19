@@ -490,19 +490,14 @@ export async function initPublicProfile(): Promise<void> {
     // Download as PNG
     async function downloadProfile() {
       try {
+        const card = document.getElementById('profile-card')
+        if (!card) return
         const page = document.getElementById('profile-page')
         if (!page) return
 
         // Suppress font CSS errors (CORS from Google Fonts)
         const origConsoleError = console.error
         console.error = () => {}
-
-        // Apply background to the page container for capture
-        const origPageBg = page.style.background
-        if (bgUrl) {
-          page.style.background = `url(${bgUrl}) center/cover fixed`
-          page.style.setProperty('background-color', '#0A0A0A', 'important')
-        }
 
         // Override glass styles for clean PNG capture
         const style = document.createElement('style')
@@ -515,16 +510,26 @@ export async function initPublicProfile(): Promise<void> {
         `
         document.head.appendChild(style)
 
-        const canvas = await domtoimage.toCanvas(page, {
+        // Temporarily wrap the card in a cropped container with the background
+        const wrap = document.createElement('div')
+        wrap.style.cssText = `position:relative;display:inline-block;padding:16px;border-radius:20px;${bgUrl ? `background:url(${bgUrl}) center/cover` : ''}`
+        wrap.style.setProperty('background-color', '#0A0A0A', 'important')
+        const parent = card.parentNode!
+        parent.insertBefore(wrap, card)
+        wrap.appendChild(card)
+
+        const canvas = await domtoimage.toCanvas(wrap, {
           bgcolor: bgUrl ? undefined : '#0A0A0A',
           scale: 2,
           pixelRatio: window.devicePixelRatio || 1,
           filter: (node: any) => node.tagName !== 'SCRIPT',
         })
 
-        // Restore
+        // Restore DOM
+        parent.insertBefore(card, wrap)
+        wrap.remove()
+
         document.getElementById('png-capture-override')?.remove()
-        page.style.background = origPageBg || ''
         console.error = origConsoleError
 
         const link = document.createElement('a')
@@ -535,7 +540,7 @@ export async function initPublicProfile(): Promise<void> {
         console.error('Error generando PNG:', e)
         const errDiv = document.createElement('div')
         errDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg'
-        errDiv.textContent = 'Error al generar PNG. Intentá de nuevo o usá "Imprimir" del navegador.'
+        errDiv.textContent = 'Error al generar PNG.'
         document.body.appendChild(errDiv)
         setTimeout(() => errDiv.remove(), 4000)
       }
