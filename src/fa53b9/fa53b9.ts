@@ -23,13 +23,23 @@ export async function autoEnrollStudent(profileId: string, rank?: string | null)
       .eq('status', 'active')
     if (count && count > 0) return
 
-    const targetCourseName = (rank ? RANK_COURSE_MAP[rank] : null) || 'Rookie'
-    const { data: course } = await supabase
+    let targetCourseName = (rank ? RANK_COURSE_MAP[rank] : null) || 'Rookie'
+    let { data: course } = await supabase
       .from('courses')
       .select('id, name')
       .eq('name', targetCourseName)
       .eq('is_active', true)
       .maybeSingle()
+    if (!course) {
+      const { data: anyCourse } = await supabase
+        .from('courses')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      course = anyCourse
+    }
     if (!course) return
 
     const { data: season } = await supabase
@@ -137,7 +147,7 @@ export async function signUp(
   }, { onConflict: 'id', ignoreDuplicates: true })
 
   if (role === 'student' || role === 'player') {
-    autoEnrollStudent(authData.user.id)
+    await autoEnrollStudent(authData.user.id).catch(() => {})
   }
 
   return { success: true }
