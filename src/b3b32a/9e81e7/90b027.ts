@@ -490,14 +490,21 @@ export async function initPublicProfile(): Promise<void> {
     // Download as PNG
     async function downloadProfile() {
       try {
-        const card = document.getElementById('profile-card')
-        if (!card) return
+        const page = document.getElementById('profile-page')
+        if (!page) return
 
         // Suppress font CSS errors (CORS from Google Fonts)
         const origConsoleError = console.error
         console.error = () => {}
 
-        // Override styles for clean PNG capture
+        // Apply background to the page container for capture
+        const origPageBg = page.style.background
+        if (bgUrl) {
+          page.style.background = `url(${bgUrl}) center/cover fixed`
+          page.style.setProperty('background-color', '#0A0A0A', 'important')
+        }
+
+        // Override glass styles for clean PNG capture
         const style = document.createElement('style')
         style.id = 'png-capture-override'
         style.textContent = `
@@ -508,8 +515,8 @@ export async function initPublicProfile(): Promise<void> {
         `
         document.head.appendChild(style)
 
-        const canvas = await domtoimage.toCanvas(card, {
-          bgcolor: '#0A0A0A',
+        const canvas = await domtoimage.toCanvas(page, {
+          bgcolor: bgUrl ? undefined : '#0A0A0A',
           scale: 2,
           pixelRatio: window.devicePixelRatio || 1,
           filter: (node: any) => node.tagName !== 'SCRIPT',
@@ -517,6 +524,7 @@ export async function initPublicProfile(): Promise<void> {
 
         // Restore
         document.getElementById('png-capture-override')?.remove()
+        page.style.background = origPageBg || ''
         console.error = origConsoleError
 
         const link = document.createElement('a')
