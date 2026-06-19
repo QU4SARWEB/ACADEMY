@@ -284,177 +284,188 @@ export async function initPublicProfile(): Promise<void> {
       </nav>
     </div>
   </header>
-  <div class="mx-auto max-w-[640px] px-4 py-8">
-    <div class="flex flex-col gap-5" id="profile-card">
-
-      <div class="relative overflow-hidden rounded-[20px]" style="height:200px">
-        <div class="absolute inset-0 bg-cover bg-center" style="${bannerUrl ? `background-image:url(${bannerUrl})` : 'background-color:#0a0514'}"></div>
-        <div class="absolute inset-0" style="background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.08),transparent 70%)"></div>
-        <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background:linear-gradient(transparent,rgba(10,5,20,0.95))"></div>
-        <div class="absolute bottom-0 left-0 right-0 flex justify-between items-end px-6 pb-4">
-          <div class="flex items-center gap-3">
-            <div class="relative">
-              <div class="h-[90px] w-[90px] rounded-full border-[3px] overflow-hidden" style="border-color:${rankColor}">
-                ${avatarUrl
-                  ? `<img src="${escapeHtml(avatarUrl)}" alt="" class="h-full w-full object-cover" />`
-                  : `<div class="flex h-full w-full items-center justify-center bg-zinc-800">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                     </div>`
-                }
-              </div>
-            </div>
-            <div>
-              <h1 class="font-heading text-[22px] font-bold text-white">${escapeHtml(displayName)}</h1>
-              <div class="flex items-center gap-3 mt-1">
-                <span class="text-sm font-medium flex items-center gap-1.5" style="color:${rankColor}">${rankSvg(rank.icon, rank.color)}${rank.name}</span>
-                <span class="text-xs text-zinc-500">${xp} XP</span>
-                ${profile.role === 'coach' ? `<span class="rounded-full px-2 py-0.5 text-[10px]" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">Coach</span>` : profile.role === 'player' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">Player</span>` : ''}
-              </div>
-            </div>
-          </div>
-          <button id="download-btn-2" class="rounded-lg bg-white/10 px-4 py-2 text-sm text-white backdrop-blur transition hover:bg-white/20 flex items-center gap-2">${Icon('download', 14)} Descargar</button>
-        </div>
-      </div>
-
-      ${quote ? `
-      <div class="glass rounded-[18px] px-7 py-5 text-center">
-        <p class="text-sm italic text-zinc-400">"${escapeHtml(quote)}"</p>
-      </div>` : ''}
-
-      <!-- Stats Row -->
-      <div class="grid grid-cols-4 gap-3" style="background:transparent!important;backdrop-filter:none!important">
-        ${(() => {
-          const totalAchievements = achievements.length
-          const totalVods = vods.length
-          const estTasks = Math.floor(xp / 100)
-          return `
-          <div class="glass rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-white">${totalAchievements}</p>
-            <p class="text-[10px] text-zinc-500">Logros</p>
-          </div>
-          <div class="glass rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-white">${totalVods}</p>
-            <p class="text-[10px] text-zinc-500">VODs</p>
-          </div>
-          <div class="glass rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-white">${estTasks}</p>
-            <p class="text-[10px] text-zinc-500">Tareas</p>
-          </div>
-          <div class="glass rounded-xl p-3 text-center">
-            <p class="text-lg font-bold text-white">${xp}</p>
-            <p class="text-[10px] text-zinc-500">XP total</p>
-          </div>`
-        })()}
-      </div>
-
-      <div class="glass rounded-[18px] px-7 pb-5 pt-5">
-        <div class="flex flex-wrap gap-2">
-          ${profile.in_game_role ? `<span class="rounded-full px-3 py-0.5 text-xs" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">${escapeHtml(profile.in_game_role)}</span>` : ''}
-          ${profile.region ? `<span class="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-0.5 text-xs text-zinc-400">${escapeHtml(profile.region)}</span>` : ''}
-          ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${escapeHtml(profile.rank)}</span>` : ''}
-        </div>
-        <div class="mt-3 flex flex-wrap justify-start gap-x-4 gap-y-1 text-xs text-zinc-500">
-          ${profile.riot_id ? `<span class="flex items-center gap-1">${Icon('target', 12)} ${escapeHtml(profile.riot_id)}</span>` : ''}
-          ${profile.country ? `<span class="flex items-center gap-1">${Icon('mapPin', 12)} ${escapeHtml(profile.country)}</span>` : ''}
-          <span class="flex items-center gap-1">${Icon('calendar', 12)} Miembro desde ${new Date(profile.created_at).getFullYear()}</span>
-        </div>
-        ${bio ? `<p class="mt-3 text-sm text-zinc-400 leading-relaxed">${escBr(bio)}</p>` : ''}
+  <div class="mx-auto max-w-[1200px] px-4 py-8">
+    <div class="flex flex-col gap-6 lg:flex-row">
+      <!-- Left column: social & playlist -->
+      <div class="w-full lg:w-80 shrink-0 flex flex-col gap-5">
         ${socialLinks && Object.keys(socialLinks).length > 0 ? `
-        <div class="mt-4 flex flex-wrap gap-2">
-          ${Object.entries(socialLinks).map(([key, url]) => `
-            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="hover-accent-border flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-sm text-zinc-300 transition hover:text-white">
-              ${Icon(socialIcons[key] || 'externalLink', 14)} ${key.charAt(0).toUpperCase() + key.slice(1)}
-            </a>
-          `).join('')}
+        <div class="glass rounded-[18px] p-5">
+          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
+            ${Icon('share2', 14)} Redes
+          </h3>
+          <div class="flex flex-col gap-2">
+            ${Object.entries(socialLinks).map(([key, url]) => `
+              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="hover-accent-border flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 transition hover:text-white">
+                ${Icon(socialIcons[key] || 'externalLink', 16)}
+                <span>${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+              </a>
+            `).join('')}
+          </div>
         </div>` : ''}
+
+        ${playlist && playlist.length > 0 ? `
+        <div class="glass rounded-[18px] p-5">
+          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
+            ${Icon('music', 14)} Playlist
+          </h3>
+          <div id="playlist-tracks" class="space-y-2">
+            ${playlist.map((item: any, i: number) => {
+              const id = ytId(item.url)
+              return id ? `
+            <div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 transition hover:border-zinc-700" data-idx="${i}">
+              <div class="playlist-thumb h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 14)}</div>
+              </div>
+              <p class="min-w-0 flex-1 truncate text-xs text-zinc-300">${escapeHtml(item.title)}</p>
+              <button type="button" data-idx="${i}" class="playlist-play-btn hover-accent-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:text-white" aria-label="Reproducir">${Icon('play', 14)}</button>
+            </div>` : ''
+            }).join('')}
+          </div>
+        </div>
+        <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
       </div>
 
-      <div class="glass rounded-[18px] p-6">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-sm text-zinc-500">Progreso hacia ${next ? next.name : 'máximo'}</span>
-          <span class="text-xs text-zinc-500" style="color:${rankColor}">${xpPct}%</span>
+      <!-- Right column: main profile -->
+      <div class="flex-1 min-w-0 flex flex-col gap-5" id="profile-card">
+
+        <div class="relative overflow-hidden rounded-[20px]" style="height:200px">
+          <div class="absolute inset-0 bg-cover bg-center" style="${bannerUrl ? `background-image:url(${bannerUrl})` : 'background-color:#0a0514'}"></div>
+          <div class="absolute inset-0" style="background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.08),transparent 70%)"></div>
+          <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background:linear-gradient(transparent,rgba(10,5,20,0.95))"></div>
+          <div class="absolute bottom-0 left-0 right-0 flex justify-between items-end px-6 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <div class="h-[90px] w-[90px] rounded-full border-[3px] overflow-hidden" style="border-color:${rankColor}">
+                  ${avatarUrl
+                    ? `<img src="${escapeHtml(avatarUrl)}" alt="" class="h-full w-full object-cover" />`
+                    : `<div class="flex h-full w-full items-center justify-center bg-zinc-800">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                       </div>`
+                  }
+                </div>
+              </div>
+              <div>
+                <h1 class="font-heading text-[22px] font-bold text-white">${escapeHtml(displayName)}</h1>
+                <div class="flex items-center gap-3 mt-1">
+                  <span class="text-sm font-medium flex items-center gap-1.5" style="color:${rankColor}">${rankSvg(rank.icon, rank.color)}${rank.name}</span>
+                  <span class="text-xs text-zinc-500">${xp} XP</span>
+                  ${profile.role === 'coach' ? `<span class="rounded-full px-2 py-0.5 text-[10px]" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">Coach</span>` : profile.role === 'player' ? `<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">Player</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <button id="download-btn-2" class="rounded-lg bg-white/10 px-4 py-2 text-sm text-white backdrop-blur transition hover:bg-white/20 flex items-center gap-2">${Icon('download', 14)} Descargar</button>
+          </div>
         </div>
-        <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
-          <div class="h-full rounded-full transition-all" style="width:${xpPct}%;background:${rankColor}"></div>
+
+        ${quote ? `
+        <div class="glass rounded-[18px] px-7 py-5 text-center">
+          <p class="text-sm italic text-zinc-400">"${escapeHtml(quote)}"</p>
+        </div>` : ''}
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-4 gap-3" style="background:transparent!important;backdrop-filter:none!important">
+          ${(() => {
+            const totalAchievements = achievements.length
+            const totalVods = vods.length
+            const estTasks = Math.floor(xp / 100)
+            return `
+            <div class="glass rounded-xl p-3 text-center">
+              <p class="text-lg font-bold text-white">${totalAchievements}</p>
+              <p class="text-[10px] text-zinc-500">Logros</p>
+            </div>
+            <div class="glass rounded-xl p-3 text-center">
+              <p class="text-lg font-bold text-white">${totalVods}</p>
+              <p class="text-[10px] text-zinc-500">VODs</p>
+            </div>
+            <div class="glass rounded-xl p-3 text-center">
+              <p class="text-lg font-bold text-white">${estTasks}</p>
+              <p class="text-[10px] text-zinc-500">Tareas</p>
+            </div>
+            <div class="glass rounded-xl p-3 text-center">
+              <p class="text-lg font-bold text-white">${xp}</p>
+              <p class="text-[10px] text-zinc-500">XP total</p>
+            </div>`
+          })()}
         </div>
-        <div class="mt-2 flex justify-between text-xs text-zinc-600">
-          <span>${rank.name} (${xp - rank.minXP} XP)</span>
-          <span>${next ? next.name + ` (${next.minXP - xp} XP restantes)` : 'Máximo alcanzado'}</span>
+
+        <div class="glass rounded-[18px] px-7 pb-5 pt-5">
+          <div class="flex flex-wrap gap-2">
+            ${profile.in_game_role ? `<span class="rounded-full px-3 py-0.5 text-xs" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">${escapeHtml(profile.in_game_role)}</span>` : ''}
+            ${profile.region ? `<span class="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-0.5 text-xs text-zinc-400">${escapeHtml(profile.region)}</span>` : ''}
+            ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${escapeHtml(profile.rank)}</span>` : ''}
+          </div>
+          <div class="mt-3 flex flex-wrap justify-start gap-x-4 gap-y-1 text-xs text-zinc-500">
+            ${profile.riot_id ? `<span class="flex items-center gap-1">${Icon('target', 12)} ${escapeHtml(profile.riot_id)}</span>` : ''}
+            ${profile.country ? `<span class="flex items-center gap-1">${Icon('mapPin', 12)} ${escapeHtml(profile.country)}</span>` : ''}
+            <span class="flex items-center gap-1">${Icon('calendar', 12)} Miembro desde ${new Date(profile.created_at).getFullYear()}</span>
+          </div>
+          ${bio ? `<p class="mt-3 text-sm text-zinc-400 leading-relaxed">${escBr(bio)}</p>` : ''}
         </div>
+
+        <div class="glass rounded-[18px] p-6">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-zinc-500">Progreso hacia ${next ? next.name : 'máximo'}</span>
+            <span class="text-xs text-zinc-500" style="color:${rankColor}">${xpPct}%</span>
+          </div>
+          <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
+            <div class="h-full rounded-full transition-all" style="width:${xpPct}%;background:${rankColor}"></div>
+          </div>
+          <div class="mt-2 flex justify-between text-xs text-zinc-600">
+            <span>${rank.name} (${xp - rank.minXP} XP)</span>
+            <span>${next ? next.name + ` (${next.minXP - xp} XP restantes)` : 'Máximo alcanzado'}</span>
+          </div>
+        </div>
+
+        ${hasConfig ? `
+        <div class="glass rounded-[18px] p-6">
+          <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Configuración
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            ${profile.mouse_dpi ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">DPI</p><p class="mt-0.5 text-sm font-medium text-white">${profile.mouse_dpi}</p></div>` : ''}
+            ${profile.mouse_sens != null ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Sensibilidad</p><p class="mt-0.5 text-sm font-medium text-white">${Number(profile.mouse_sens).toFixed(2)}</p></div>` : ''}
+            ${profile.mouse_scope_sens != null ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Scope Sens</p><p class="mt-0.5 text-sm font-medium text-white">${Number(profile.mouse_scope_sens).toFixed(2)}</p></div>` : ''}
+            ${profile.edpi ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">eDPI</p><p class="mt-0.5 text-sm font-medium text-white">${profile.edpi}</p></div>` : ''}
+            ${profile.mouse_hertz ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Frecuencia</p><p class="mt-0.5 text-sm font-medium text-white">${profile.mouse_hertz} Hz</p></div>` : ''}
+          </div>
+        </div>` : ''}
+
+        ${vods.length > 0 ? `
+        <div class="glass rounded-[18px] p-6">
+          <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            VOD Reviews
+          </h3>
+          <div class="space-y-3">
+            ${vods.map((vod: any) => `
+            <a href="${escapeHtml(vod.url)}" target="_blank" rel="noopener noreferrer" class="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium text-white">${escapeHtml(vod.title)}</p>
+                ${vod.notes ? `<p class="mt-0.5 text-xs text-zinc-500">${escapeHtml(vod.notes)}</p>` : ''}
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>`).join('')}
+          </div>
+        </div>` : ''}
+
+        ${achievements.length > 0 ? `
+        <div class="glass rounded-[18px] p-6">
+          <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
+            ${Icon('trophy', 14)} Logros
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            ${achievements.map((ach: any) => `
+            <div class="hover-accent-border group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition">
+              ${Icon('trophy', 12)}
+              <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
+              ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
+            </div>`).join('')}
+          </div>
+        </div>` : ''}
+
       </div>
-
-      ${hasConfig ? `
-      <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Configuración
-        </h3>
-        <div class="grid grid-cols-2 gap-4">
-          ${profile.mouse_dpi ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">DPI</p><p class="mt-0.5 text-sm font-medium text-white">${profile.mouse_dpi}</p></div>` : ''}
-          ${profile.mouse_sens != null ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Sensibilidad</p><p class="mt-0.5 text-sm font-medium text-white">${Number(profile.mouse_sens).toFixed(2)}</p></div>` : ''}
-          ${profile.mouse_scope_sens != null ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Scope Sens</p><p class="mt-0.5 text-sm font-medium text-white">${Number(profile.mouse_scope_sens).toFixed(2)}</p></div>` : ''}
-          ${profile.edpi ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">eDPI</p><p class="mt-0.5 text-sm font-medium text-white">${profile.edpi}</p></div>` : ''}
-          ${profile.mouse_hertz ? `<div><p class="text-[10px] uppercase tracking-wider text-zinc-500">Frecuencia</p><p class="mt-0.5 text-sm font-medium text-white">${profile.mouse_hertz} Hz</p></div>` : ''}
-        </div>
-      </div>` : ''}
-
-      ${vods.length > 0 ? `
-      <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          VOD Reviews
-        </h3>
-        <div class="space-y-3">
-          ${vods.map((vod: any) => `
-          <a href="${escapeHtml(vod.url)}" target="_blank" rel="noopener noreferrer" class="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-white">${escapeHtml(vod.title)}</p>
-              ${vod.notes ? `<p class="mt-0.5 text-xs text-zinc-500">${escapeHtml(vod.notes)}</p>` : ''}
-            </div>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>`).join('')}
-        </div>
-      </div>` : ''}
-
-      ${achievements.length > 0 ? `
-      <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
-          ${Icon('trophy', 14)} Logros
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          ${achievements.map((ach: any) => `
-          <div class="hover-accent-border group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition">
-            ${Icon('trophy', 12)}
-            <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
-            ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
-          </div>`).join('')}
-        </div>
-      </div>` : ''}
-
-      ${playlist && playlist.length > 0 ? `
-      <div class="glass rounded-[18px] p-6">
-        <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
-          ${Icon('music', 14)} Playlist
-        </h3>
-        <div id="playlist-tracks" class="space-y-3">
-          ${playlist.map((item: any, i: number) => {
-            const id = ytId(item.url)
-            return id ? `
-          <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 transition hover:border-zinc-700" data-idx="${i}">
-            <div class="playlist-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-              <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 18)}</div>
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-zinc-300">${escapeHtml(item.title)}</p>
-            </div>
-            <button type="button" data-idx="${i}" class="playlist-play-btn hover-accent-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:text-white" aria-label="Reproducir">${Icon('play', 16)}</button>
-          </div>` : ''
-          }).join('')}
-        </div>
-      </div>
-      <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
-
     </div>
   </div>
 </div>`
