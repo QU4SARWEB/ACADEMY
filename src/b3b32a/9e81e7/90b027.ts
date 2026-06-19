@@ -85,6 +85,7 @@ export async function initPublicProfile(): Promise<void> {
     }
 
     if (!pubProfile) {
+      // Try by share_slug
       const { data: profileBySlug } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, display_name, bio')
@@ -101,6 +102,36 @@ export async function initPublicProfile(): Promise<void> {
           bio: profileBySlug.bio,
           social_links: {},
           playlist: [],
+        }
+      }
+    }
+
+    // Coach fallback: allow viewing any profile by ID prefix (u-{id})
+    if (!pubProfile && slug.startsWith('u-')) {
+      const idPrefix = slug.slice(2)
+      const { data: coachProfile } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, display_name, bio, role, banner_url')
+        .like('id', `${idPrefix}%`)
+        .limit(1)
+        .maybeSingle()
+      if (coachProfile) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user?.id) {
+          const { data: viewer } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
+          if (viewer?.role === 'coach') {
+            pubProfile = {
+              profile_id: coachProfile.id,
+              slug: `u-${coachProfile.id.slice(0, 8)}`,
+              is_public: false,
+              display_name: coachProfile.display_name ?? coachProfile.full_name,
+              avatar_url: coachProfile.avatar_url,
+              banner_url: coachProfile.banner_url,
+              bio: coachProfile.bio,
+              social_links: {},
+              playlist: [],
+            }
+          }
         }
       }
     }
