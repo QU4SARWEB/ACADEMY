@@ -104,7 +104,6 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
         </div>
       </div>
-      </div>
 
       <div>
         <label class="block text-xs font-medium text-zinc-400 mb-1">Banner / Portada</label>
