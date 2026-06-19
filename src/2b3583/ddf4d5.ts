@@ -208,6 +208,26 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
             <input name="socialTwitch" value="${escapeHtml(profile.social_twitch ?? '')}" placeholder="https://twitch.tv/..."
               class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
           </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Instagram</label>
+            <input name="socialInstagram" value="${escapeHtml(profile.social_instagram ?? '')}" placeholder="@usuario o https://instagram.com/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">TikTok</label>
+            <input name="socialTiktok" value="${escapeHtml(profile.social_tiktok ?? '')}" placeholder="@usuario o https://tiktok.com/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">GitHub</label>
+            <input name="socialGithub" value="${escapeHtml(profile.social_github ?? '')}" placeholder="https://github.com/..."
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-zinc-400">Sitio web</label>
+            <input name="socialWebsite" value="${escapeHtml(profile.social_website ?? '')}" placeholder="https://tusitio.com"
+              class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
+          </div>
         </div>
       </div>
 
@@ -377,6 +397,10 @@ export function getProfileFormData(form: HTMLFormElement) {
     social_youtube: (fd.get('socialYoutube') as string) || null,
     social_twitter: (fd.get('socialTwitter') as string) || null,
     social_twitch: (fd.get('socialTwitch') as string) || null,
+    social_instagram: (fd.get('socialInstagram') as string) || null,
+    social_tiktok: (fd.get('socialTiktok') as string) || null,
+    social_github: (fd.get('socialGithub') as string) || null,
+    social_website: (fd.get('socialWebsite') as string) || null,
     quote: (fd.get('quote') as string) || null,
   }
 }

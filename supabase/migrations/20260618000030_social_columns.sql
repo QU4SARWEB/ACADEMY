@@ -1,0 +1,4 @@
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_instagram TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_tiktok TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_github TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_website TEXT;

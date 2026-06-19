@@ -165,13 +165,23 @@ export async function initPublicProfile(): Promise<void> {
     const avatarUrl = pubProfile.avatar_url ?? profile.avatar_url
     const bannerUrl = pubProfile.banner_url ?? profile.banner_url
     const bio = pubProfile.bio ?? profile.bio
-    const socialLinks = pubProfile.social_links as Record<string, string> | null
+    const socialLinks = {
+      ...(pubProfile.social_links as Record<string, string> || {}),
+      ...(profile.social_discord ? { discord: profile.social_discord } : {}),
+      ...(profile.social_youtube ? { youtube: profile.social_youtube } : {}),
+      ...(profile.social_twitter ? { twitter: profile.social_twitter } : {}),
+      ...(profile.social_twitch ? { twitch: profile.social_twitch } : {}),
+      ...(profile.social_instagram ? { instagram: profile.social_instagram } : {}),
+      ...(profile.social_tiktok ? { tiktok: profile.social_tiktok } : {}),
+      ...(profile.social_github ? { github: profile.social_github } : {}),
+      ...(profile.social_website ? { website: profile.social_website } : {}),
+    }
     const playlist = pubProfile.playlist as any[] | null
     const currentUrl = encodeURIComponent(window.location.href)
 
     const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
     const quote = profile.quote as string | null
-    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play' }
+    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play', instagram: 'camera', tiktok: 'music', github: 'code2', website: 'globe' }
 
     function ytId(url: string): string | null {
       const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
@@ -286,46 +296,7 @@ export async function initPublicProfile(): Promise<void> {
   </header>
   <div class="mx-auto max-w-[1200px] px-4 py-8">
     <div class="flex flex-col gap-6 lg:flex-row">
-      <!-- Left column: social & playlist -->
-      <div class="w-full lg:w-80 shrink-0 flex flex-col gap-5">
-        ${socialLinks && Object.keys(socialLinks).length > 0 ? `
-        <div class="glass rounded-[18px] p-5">
-          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
-            ${Icon('share2', 14)} Redes
-          </h3>
-          <div class="flex flex-col gap-2">
-            ${Object.entries(socialLinks).map(([key, url]) => `
-              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="hover-accent-border flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 transition hover:text-white">
-                ${Icon(socialIcons[key] || 'externalLink', 16)}
-                <span>${key.charAt(0).toUpperCase() + key.slice(1)}</span>
-              </a>
-            `).join('')}
-          </div>
-        </div>` : ''}
-
-        ${playlist && playlist.length > 0 ? `
-        <div class="glass rounded-[18px] p-5">
-          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
-            ${Icon('music', 14)} Playlist
-          </h3>
-          <div id="playlist-tracks" class="space-y-2">
-            ${playlist.map((item: any, i: number) => {
-              const id = ytId(item.url)
-              return id ? `
-            <div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 transition hover:border-zinc-700" data-idx="${i}">
-              <div class="playlist-thumb h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-                <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 14)}</div>
-              </div>
-              <p class="min-w-0 flex-1 truncate text-xs text-zinc-300">${escapeHtml(item.title)}</p>
-              <button type="button" data-idx="${i}" class="playlist-play-btn hover-accent-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:text-white" aria-label="Reproducir">${Icon('play', 14)}</button>
-            </div>` : ''
-            }).join('')}
-          </div>
-        </div>
-        <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
-      </div>
-
-      <!-- Right column: main profile -->
+      <!-- Left column: main profile -->
       <div class="flex-1 min-w-0 flex flex-col gap-5" id="profile-card">
 
         <div class="relative overflow-hidden rounded-[20px]" style="height:200px">
@@ -465,6 +436,45 @@ export async function initPublicProfile(): Promise<void> {
           </div>
         </div>` : ''}
 
+      </div>
+
+      <!-- Right column: social & playlist -->
+      <div class="w-full lg:w-80 shrink-0 flex flex-col gap-5">
+        ${socialLinks && Object.keys(socialLinks).length > 0 ? `
+        <div class="glass rounded-[18px] p-5">
+          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
+            ${Icon('share2', 14)} Redes
+          </h3>
+          <div class="flex flex-col gap-2">
+            ${Object.entries(socialLinks).map(([key, url]) => `
+              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="hover-accent-border flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300 transition hover:text-white">
+                ${Icon(socialIcons[key] || 'externalLink', 16)}
+                <span>${key.charAt(0).toUpperCase() + key.slice(1)}</span>
+              </a>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${playlist && playlist.length > 0 ? `
+        <div class="glass rounded-[18px] p-5">
+          <h3 class="mb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06);padding-bottom:10px">
+            ${Icon('music', 14)} Playlist
+          </h3>
+          <div id="playlist-tracks" class="space-y-2">
+            ${playlist.map((item: any, i: number) => {
+              const id = ytId(item.url)
+              return id ? `
+            <div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 transition hover:border-zinc-700" data-idx="${i}">
+              <div class="playlist-thumb h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                <div class="flex h-full w-full items-center justify-center text-zinc-600">${Icon('music', 14)}</div>
+              </div>
+              <p class="min-w-0 flex-1 truncate text-xs text-zinc-300">${escapeHtml(item.title)}</p>
+              <button type="button" data-idx="${i}" class="playlist-play-btn hover-accent-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/50 text-zinc-400 transition hover:text-white" aria-label="Reproducir">${Icon('play', 14)}</button>
+            </div>` : ''
+            }).join('')}
+          </div>
+        </div>
+        <div id="yt-player-wrap" style="position:fixed;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden"></div>` : ''}
       </div>
     </div>
   </div>
