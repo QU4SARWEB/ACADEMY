@@ -3,15 +3,10 @@ import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
+import { autoEnrollStudent } from '@/fa53b9/fa53b9'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
-}
-
-const RANK_COURSE_MAP: Record<string, string> = {
-  'Unranked': 'Rookie', 'Hierro': 'Rookie', 'Bronce': 'Trainee',
-  'Plata': 'Amateur', 'Oro': 'Competitor', 'Platino': 'Elite',
-  'Diamante': 'Semi-Pro', 'Ascendente': 'Pro', 'Inmortal': 'Pro', 'Radiante': 'Pro',
 }
 
 export async function initStudentCourses(): Promise<void> {
@@ -25,59 +20,15 @@ export async function initStudentCourses(): Promise<void> {
       .eq('id', session.user.id)
       .maybeSingle()
 
+    // Auto-enroll if no active enrollments
+    await autoEnrollStudent(session.user.id, profile?.rank)
+
     const { data: enrollments } = await supabase
       .from('enrollments')
       .select('*, courses(name, slug, display_order, duration_months), seasons(name, id)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
       .order('enrolled_at', { ascending: false })
-
-    // Auto-enroll if no active enrollments
-    if ((enrollments ?? []).length === 0 && profile?.rank) {
-      const targetCourseName = RANK_COURSE_MAP[profile.rank] || 'Rookie'
-      const { data: targetCourse } = await supabase
-        .from('courses')
-        .select('id, name')
-        .eq('name', targetCourseName)
-        .eq('is_active', true)
-        .maybeSingle()
-
-      if (targetCourse) {
-        const { data: season } = await supabase
-          .from('seasons')
-          .select('id')
-          .eq('is_active', true)
-          .maybeSingle()
-
-        if (!season?.id) return
-
-        const { data: enrollment, error: enrError } = await supabase
-          .from('enrollments')
-          .upsert({
-            profile_id: session.user.id,
-            course_id: targetCourse.id,
-            season_id: season.id,
-            type: 'student',
-            status: 'active',
-          }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
-          .select()
-          .maybeSingle()
-
-        if (!enrError && enrollment && season?.id) {
-          await supabase.from('payments').insert({
-            profile_id: session.user.id,
-            enrollment_id: enrollment.id,
-            season_id: season.id,
-            type: 'student',
-            status: profile?.scholarship ? 'scholarship' : 'pending',
-            amount: 1.54,
-          })
-        }
-        // Reload to show the new enrollment
-        initStudentCourses()
-        return
-      }
-    }
 
     const seasonIds = [...new Set((enrollments ?? []).map((e: any) => e.season_id).filter(Boolean))]
     const pm = new Map<string, string>()

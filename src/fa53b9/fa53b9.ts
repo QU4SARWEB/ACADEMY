@@ -8,6 +8,69 @@ const ROLE_PREFIX: Record<string, string> = {
   player: 'players',
 }
 
+const RANK_COURSE_MAP: Record<string, string> = {
+  'Unranked': 'Rookie', 'Hierro': 'Rookie', 'Bronce': 'Trainee',
+  'Plata': 'Amateur', 'Oro': 'Competitor', 'Platino': 'Elite',
+  'Diamante': 'Semi-Pro', 'Ascendente': 'Pro', 'Inmortal': 'Pro', 'Radiante': 'Pro',
+}
+
+export async function autoEnrollStudent(profileId: string, rank?: string | null): Promise<void> {
+  try {
+    const { count } = await supabase
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', profileId)
+      .eq('status', 'active')
+    if (count && count > 0) return
+
+    const targetCourseName = (rank ? RANK_COURSE_MAP[rank] : null) || 'Rookie'
+    const { data: course } = await supabase
+      .from('courses')
+      .select('id, name')
+      .eq('name', targetCourseName)
+      .eq('is_active', true)
+      .maybeSingle()
+    if (!course) return
+
+    const { data: season } = await supabase
+      .from('seasons')
+      .select('id')
+      .eq('is_active', true)
+      .maybeSingle()
+    if (!season) return
+
+    const { data: enrollment } = await supabase
+      .from('enrollments')
+      .upsert({
+        profile_id: profileId,
+        course_id: course.id,
+        season_id: season.id,
+        type: 'student',
+        status: 'active',
+      }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+      .select()
+      .maybeSingle()
+
+    if (enrollment) {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('scholarship')
+        .eq('id', profileId)
+        .maybeSingle()
+      await supabase.from('payments').upsert({
+        profile_id: profileId,
+        enrollment_id: enrollment.id,
+        season_id: season.id,
+        type: 'student',
+        status: prof?.scholarship ? 'scholarship' : 'pending',
+        amount: 1.54,
+      }, { onConflict: 'enrollment_id', ignoreDuplicates: true })
+    }
+  } catch (err) {
+    console.error('autoEnrollStudent error:', err)
+  }
+}
+
 export async function getSession() {
   const { data } = await supabase.auth.getSession()
   return data.session
@@ -42,7 +105,10 @@ export async function signIn(email: string, password: string): Promise<{ error?:
     return { error: 'Tu cuenta está desactivada. Contacta a un coach.' }
   }
 
-  await getProfile()
+  const fullProfile = await getProfile()
+  if (profile.role === 'student' || profile.role === 'player') {
+    autoEnrollStudent(data.user.id, (fullProfile as any)?.rank)
+  }
   return { redirect: `/${ROLE_PREFIX[profile.role] || profile.role}/dashboard` }
 }
 
@@ -69,6 +135,10 @@ export async function signUp(
     role,
     is_active: true,
   }, { onConflict: 'id', ignoreDuplicates: true })
+
+  if (role === 'student' || role === 'player') {
+    autoEnrollStudent(authData.user.id)
+  }
 
   return { success: true }
 }
