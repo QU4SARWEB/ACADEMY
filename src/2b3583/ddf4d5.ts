@@ -24,8 +24,8 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
   const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
   const publicUrl = pubSlug ? `${window.location.origin}${window.location.pathname}#/p/${pubSlug}` : ''
   return `
-    <div class="flex flex-col gap-6 lg:flex-row">
-      <div class="flex-1 min-w-0 space-y-6">
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="glass rounded-xl p-6 space-y-6">
       <div class="flex items-center gap-4">
         <div class="group relative">
           <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-3xl font-bold text-[#8B5CF6]">
@@ -186,7 +186,7 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
       </div>
     </div>
 
-      <div class="w-full lg:w-96 shrink-0 space-y-6">
+      <div class="glass rounded-xl p-6 space-y-6">
       <div>
         <h3 class="mb-3 text-sm font-medium text-zinc-300">Redes sociales</h3>
         <div class="grid gap-4 sm:grid-cols-2">
@@ -273,6 +273,7 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
         class="btn-glow rounded-lg bg-[#8B5CF6] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
         Guardar cambios
       </button>
+    </div>
     </div>
     </div>`
 }
