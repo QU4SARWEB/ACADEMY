@@ -62,6 +62,7 @@ export class Router {
       location.hash = path
     }
     this.currentPath = path
+    await this.resolve()
   }
 
   async resolve(): Promise<void> {
