@@ -54,57 +54,44 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const cachedUnread = (window as any).__unreadNotifs
   if (cachedUnread !== undefined) unreadNotifs = cachedUnread
 
-  type NavItem = { href?: string; icon?: string; label?: string; show?: boolean; sep?: boolean }
-  function sep(): NavItem { return { sep: true } }
+  type NavItem = { href?: string; icon?: string; label?: string; show?: boolean }
   function item(href: string, icon: string, label: string, show = true): NavItem { return { href, icon, label: label + (label === 'Notificaciones' && unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show } }
 
   const navGroups: NavItem[][] = [
-    [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard'), item('/', 'home', 'Inicio')],
-    [sep()],
+    [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
     [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Calificaciones', isStudent), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
-    [sep()],
     [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer), item(`/${prefix}/scrims`, 'sword', 'Scrims', isPlayer || isCoach), item('/chat', 'mail', 'Mensajes')],
-    [sep()],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer), item('/notifications', 'bell', 'Notificaciones')],
   ]
 
   const coachGroups: NavItem[][] = [
-    [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard'), item('/', 'home', 'Inicio')],
-    [sep()],
+    [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios'), item('/coaches/seasons', 'calendar', 'Temporadas')],
-    [sep()],
     [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Scrims'), item('/coaches/promotions', 'trophy', 'Promociones'), item('/members', 'users', 'Miembros')],
-    [sep()],
     [item('/chat', 'mail', 'Mensajes'), item('/support', 'info', 'Soporte'), item('/notifications', 'bell', 'Notificaciones')],
-    [sep()],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
-    [sep()],
     [item('/logs', 'scrollText', 'Auditoría')],
   ]
 
   const isExpired = !!(window as any).__isExpired
-  let groups = isCoach ? coachGroups : navGroups.map(g => g.filter(i => i.show !== false)).filter(g => g.length > 0)
+  let items = isCoach
+    ? coachGroups.flat()
+    : navGroups.flat().filter(i => i.show !== false)
   if (isExpired && !isCoach) {
-    groups = groups.map(g => g.filter(i => i.href === '/payments')).filter(g => g.length > 0)
+    items = items.filter(i => i.href === '/payments')
   }
   const currentHash = location.hash.slice(1)
 
-  let itemsHtml = ''
-  for (let gi = 0; gi < groups.length; gi++) {
-    const group = groups[gi]
-    if (gi > 0) itemsHtml += '<div class="my-1 border-t border-zinc-800/60"></div>'
-    for (const item of group) {
-      if (item.sep) continue
-      const active = currentHash.startsWith(item.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
-      itemsHtml += `
-        <a href="#${escapeHtml(item.href!)}"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-           style="${currentHash.startsWith(item.href!) ? `border-color:${accent}` : ''}">
-          ${Icon(item.icon!, 18)}
-          <span>${escapeHtml(item.label!)}</span>
-        </a>`
-    }
-  }
+  const itemsHtml = items.map(it => {
+    const active = currentHash.startsWith(it.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+    return `
+      <a href="#${escapeHtml(it.href!)}"
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
+         style="${currentHash.startsWith(it.href!) ? `border-color:${accent}` : ''}">
+        ${Icon(it.icon!, 18)}
+        <span>${escapeHtml(it.label!)}</span>
+      </a>`
+  }).join('')
 
   const userName = profile?.display_name || profile?.full_name || 'Usuario'
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
