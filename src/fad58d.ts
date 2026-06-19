@@ -1,6 +1,6 @@
 import { supabase } from '@/304244'
 import { router } from '@/f3395c'
-import { authGuard, getProfile } from '@/fa53b9/fa53b9'
+import { authGuard, getProfile, autoEnrollStudent } from '@/fa53b9/fa53b9'
 import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
@@ -155,6 +155,10 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar perfil')), 15000)),
       ])
       const profile = store.get<any>('profile')
+      // Auto-enroll if student/player without enrollments (safety net)
+      if (profile && (profile.role === 'student' || profile.role === 'player')) {
+        await autoEnrollStudent(profile.id, profile.rank)
+      }
       // Check if user has expired payments (block access except /payments)
       let isExpired = false
       if (profile && profile.role !== 'coach') {

@@ -107,7 +107,7 @@ export async function signIn(email: string, password: string): Promise<{ error?:
 
   const fullProfile = await getProfile()
   if (profile.role === 'student' || profile.role === 'player') {
-    autoEnrollStudent(data.user.id, (fullProfile as any)?.rank)
+    await autoEnrollStudent(data.user.id, (fullProfile as any)?.rank)
   }
   return { redirect: `/${ROLE_PREFIX[profile.role] || profile.role}/dashboard` }
 }
