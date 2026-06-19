@@ -3,7 +3,6 @@ import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
-import { autoEnrollStudent } from '@/fa53b9/fa53b9'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -19,9 +18,6 @@ export async function initStudentCourses(): Promise<void> {
       .select('rank, scholarship')
       .eq('id', session.user.id)
       .maybeSingle()
-
-    // Auto-enroll if no active enrollments
-    await autoEnrollStudent(session.user.id, profile?.rank)
 
     const { data: enrollments } = await supabase
       .from('enrollments')
