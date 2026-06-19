@@ -63,13 +63,10 @@ export async function initMembers(): Promise<void> {
           ${combined.map((m) => `
           <a href="#/p/${escapeHtml(m.slug)}"
              class="group glass relative flex flex-col overflow-hidden rounded-xl transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5">
-            <div class="relative h-16 overflow-hidden bg-zinc-800">
-              ${m.banner_url
-                ? `<img src="${escapeHtml(m.banner_url)}" alt="" class="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />`
-                : `<div class="h-full w-full" style="background:linear-gradient(135deg,#1a1a2e,#16213e)"></div>`
-              }
-            </div>
-            <div class="flex flex-col items-center px-3 pb-4 pt-0 -mt-7">
+            ${m.banner_url ? `<div class="relative h-14 overflow-hidden bg-zinc-800">
+                <img src="${escapeHtml(m.banner_url)}" alt="" class="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+              </div>` : ''}
+            <div class="flex flex-col items-center px-3 pb-4 pt-0 ${m.banner_url ? '-mt-6' : 'mt-4'}">
               <div class="relative mb-2 h-12 w-12 overflow-hidden rounded-full border-2 border-zinc-800 bg-zinc-900 shadow-lg">
                 ${m.avatar_url
                   ? `<img src="${escapeHtml(m.avatar_url)}" alt="" class="h-full w-full object-cover" loading="lazy" />`
