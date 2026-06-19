@@ -416,7 +416,7 @@ async function renderCoachPayments(): Promise<void> {
                           <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
                           <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
                         </select>`
-                      : '<span class="text-xs text-zinc-600">—</span>'
+                      : `<button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-season-id="${filterSeasonId || ''}" data-role="${escapeHtml(prof.role)}">${Icon('plus', 12)} Crear pago</button>`
                     }
                   </td>
                 </tr>`}).join('')
@@ -446,6 +446,25 @@ async function renderCoachPayments(): Promise<void> {
       if (newStatus !== 'paid') updateData.paid_at = null
 
       await supabase.from('payments').update(updateData).eq('id', paymentId)
+      renderCoachPayments()
+    })
+  })
+
+  document.querySelectorAll('.create-payment-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const profileId = (btn as HTMLElement).dataset.profileId
+      const seasonId = (btn as HTMLElement).dataset.seasonId
+      const role = (btn as HTMLElement).dataset.role
+      if (!profileId || !seasonId) return
+
+      const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
+      await supabase.from('payments').insert({
+        profile_id: profileId,
+        season_id: seasonId,
+        type: role || 'student',
+        status: profile?.scholarship ? 'scholarship' : 'pending',
+        amount: 1.54,
+      })
       renderCoachPayments()
     })
   })
