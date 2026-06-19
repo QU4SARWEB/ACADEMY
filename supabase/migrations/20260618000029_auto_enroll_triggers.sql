@@ -34,13 +34,15 @@ DECLARE
   v_course_id UUID;
   v_season_id UUID;
   v_course_name TEXT;
+  v_rank_base TEXT;
   v_enrollment_id UUID;
 BEGIN
   -- Solo para students/players
   IF NEW.role NOT IN ('student', 'player') THEN RETURN NEW; END IF;
 
-  -- Mapear rango a nombre de curso
-  v_course_name := CASE COALESCE(NEW.rank, 'Unranked')
+  -- Extraer rango base (ej: 'Hierro 2' -> 'Hierro', 'Inmortal 400' -> 'Inmortal')
+  v_rank_base := SPLIT_PART(COALESCE(NEW.rank, 'Unranked'), ' ', 1);
+  v_course_name := CASE v_rank_base
     WHEN 'Unranked' THEN 'Rookie'
     WHEN 'Hierro' THEN 'Rookie'
     WHEN 'Bronce' THEN 'Trainee'
