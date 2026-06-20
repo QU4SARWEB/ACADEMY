@@ -14,7 +14,8 @@ export async function initPracticalScore(): Promise<void> {
     const examId = params.id
     if (!examId) { document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">ID no encontrado</p>'; return }
 
-    let exam: any = (await supabase.from('practical_exams').select('*, courses!inner(name)').eq('id', examId).maybeSingle()).data
+    let exam: any = (await supabase.from('practical_exams').select('*').eq('id', examId).maybeSingle()).data
+    if (exam?.course_id) { const { data: c } = await supabase.from('courses').select('name').eq('id', exam.course_id).maybeSingle(); if (c) exam.course_name = (c as any)?.name || '' }
     if (!exam) { document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Examen no encontrado</p>'; return }
 
     if (exam.status === 'draft') await initExam(exam)
@@ -22,7 +23,7 @@ export async function initPracticalScore(): Promise<void> {
 
     async function initExam(exam: any) {
       const today = new Date().toISOString().split('T')[0]
-      const { data: enrolls } = await supabase.from('enrollments').select('id, profile_id, profiles!profile_id(id, full_name, riot_id, social_discord, avatar_url)').eq('course_id', exam.course_id).eq('status', 'active')
+      const { data: enrolls } = await supabase.from('enrollments').select('id, profile_id').eq('course_id', exam.course_id).eq('status', 'active')
       const enrollIds = (enrolls ?? []).map((e: any) => e.id)
       const { data: attRecords } = await supabase.from('attendance').select('enrollment_id, status').in('enrollment_id', enrollIds.length ? enrollIds : ['none']).eq('date', today)
       const attMap = new Map((attRecords ?? []).map((r: any) => [r.enrollment_id, r.status]))
@@ -57,7 +58,23 @@ export async function initPracticalScore(): Promise<void> {
 
     async function renderScore(exam: any) {
       const { data: rubrics } = await supabase.from('practical_rubrics').select('*').eq('practical_exam_id', examId).order('order_num')
-      const { data: teams } = await supabase.from('practical_teams').select('*, practical_team_members(*, enrollments!inner(profile_id, profiles!profile_id(id, full_name, riot_id, social_discord, avatar_url)))').eq('practical_exam_id', examId).order('order_num')
+      const { data: teams } = await supabase.from('practical_teams').select('*').eq('practical_exam_id', examId).order('order_num')
+      const teamIds = (teams ?? []).map((t: any) => t.id)
+      const { data: members } = await supabase.from('practical_team_members').select('id, team_number, practical_team_id, enrollment_id').in('practical_team_id', teamIds.length > 0 ? teamIds : ['none'])
+      const enrollIds2 = [...new Set((members ?? []).map((m: any) => m.enrollment_id))]
+      const { data: profs2 } = await supabase.from('enrollments').select('id, profile_id').in('id', enrollIds2.length > 0 ? enrollIds2 : ['none'])
+      const profIds2 = [...new Set((profs2 ?? []).map((e: any) => e.profile_id))]
+      const { data: profiles2 } = await supabase.from('profiles').select('id, full_name, riot_id, social_discord, avatar_url').in('id', profIds2.length > 0 ? profIds2 : ['none'])
+      const profileMap2: Record<string, any> = {}
+      for (const p of profiles2 ?? []) profileMap2[p.id] = p
+      const enrollProfMap: Record<string, any> = {}
+      for (const e of profs2 ?? []) enrollProfMap[e.id] = profileMap2[e.profile_id] || {}
+      const membersByTeam: Record<string, any[]> = {}
+      for (const m of members ?? []) {
+        if (!membersByTeam[m.practical_team_id]) membersByTeam[m.practical_team_id] = []
+        membersByTeam[m.practical_team_id].push({ ...m, profiles: enrollProfMap[m.enrollment_id] || {} })
+      }
+
       const { data: scores } = await supabase.from('practical_scores').select('*')
       const scoreMap: Record<string, any> = {}; for (const s of scores ?? []) scoreMap[s.practical_team_member_id + '_' + s.practical_rubric_id + '_' + s.phase] = s
 
@@ -70,7 +87,7 @@ export async function initPracticalScore(): Promise<void> {
       document.getElementById('page-content')!.innerHTML = `
       <div class="mb-4"><a href="#/coaches/exams/practical" class="flex items-center gap-2 text-sm text-zinc-400 hover:text-white">${Icon('arrowLeft', 16)} Volver</a></div>
       <div class="mb-6 flex items-center justify-between">
-        <div><h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1><p class="mt-1 text-sm text-zinc-500">${escapeHtml(exam.courses?.name || '')} · ${statusBadge}</p></div>
+        <div><h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>        <p class="mt-1 text-sm text-zinc-500">${escapeHtml(exam.course_name || '')} · ${statusBadge}</p></div>
         <div class="flex gap-2">
           ${exam.status === 'active' ? '<button id="toggle-ot-btn" class="rounded-lg border border-orange-500/30 px-3 py-1.5 text-xs text-orange-400 hover:bg-orange-500/10">' + Icon('zap', 12) + ' ' + (exam.has_overtime ? 'OT activado' : 'Activar OT') + '</button><button id="close-exam-btn" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Cerrar examen</button>' : ''}
         </div>
@@ -82,9 +99,9 @@ export async function initPracticalScore(): Promise<void> {
             <tr class="border-b border-zinc-700">${rubrics?.length ? '<th class="sticky left-0 z-10 bg-[#0A0A0A] px-3 py-2 text-left text-xs text-zinc-500 min-w-[200px]">Alumno</th>' : ''}${(rubrics ?? []).map((r: any) => phases.map(p => '<th class="px-2 py-2 text-center text-xs text-zinc-500 min-w-[60px] border-l border-zinc-800">' + escapeHtml(r.name) + '<br><span class="text-[10px]">' + phaseLabels[p] + '</span></th>')).flat().join('')}<th class="px-3 py-2 text-center text-xs text-zinc-500 min-w-[60px]">Total</th></tr>
           </thead>
           <tbody>${(teams ?? []).map((team: any) => {
-            const members = (team as any).practical_team_members || []
+            const members = membersByTeam[team.id] || []
             return '<tr class="bg-zinc-900/50"><td colspan="' + (1 + (rubrics?.length || 0) * phases.length + 1) + '" class="px-3 py-2 text-xs font-medium text-[#8B5CF6]">' + escapeHtml(team.name) + ' (' + members.length + ')</td></tr>' + members.map((m: any) => {
-              const prof: any = m.enrollments?.profiles || {}
+              const prof: any = m.profiles || {}
               const dn = [prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || prof.full_name || 'Unknown'
               let cells = '<td class="sticky left-0 z-10 bg-[#0A0A0A] px-3 py-2 border-t border-zinc-800"><div class="flex items-center gap-2">' + (prof.avatar_url ? '<img src="' + escapeHtml(prof.avatar_url) + '" class="h-6 w-6 rounded-full object-cover" />' : '') + '<span class="text-xs text-white truncate max-w-[150px]">' + escapeHtml(dn) + '</span></div></td>'
               let total = 0; let count = 0

@@ -16,7 +16,12 @@ export async function initPracticalView(): Promise<void> {
     const { data: enroll } = await supabase.from('enrollments').select('id').eq('profile_id', session.user.id).maybeSingle()
     if (!enroll) { document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">No estás inscrito en este curso.</p>'; return }
 
-    const { data: exam } = await supabase.from('practical_exams').select('*, courses!inner(name)').eq('id', examId).maybeSingle()
+    const { data: exam } = await supabase.from('practical_exams').select('*').eq('id', examId).maybeSingle()
+    let courseName = ''
+    if (exam?.course_id) {
+      const { data: c } = await supabase.from('courses').select('name').eq('id', exam.course_id).maybeSingle()
+      if (c) courseName = c.name
+    }
     if (!exam) { document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Examen no encontrado</p>'; return }
 
     if (exam.status !== 'closed') {
@@ -43,7 +48,7 @@ export async function initPracticalView(): Promise<void> {
     document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6"><a href="#/students/courses" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">${Icon('arrowLeft', 16)} Volver</a>
         <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>
-        <p class="text-sm text-zinc-500">${escapeHtml(myMember.practical_teams?.name || '')} · ${escapeHtml(exam.courses?.name || '')}</p>
+        <p class="text-sm text-zinc-500">${escapeHtml(myMember.practical_teams?.name || '')} · ${escapeHtml(courseName)}</p>
       </div>
       <div class="glass rounded-xl p-6">
         <table class="w-full text-sm"><thead><tr class="border-b border-zinc-700"><th class="pb-2 pr-4 text-left text-xs text-zinc-500">Rúbrica</th>${phases.map(p => '<th class="pb-2 px-3 text-center text-xs text-zinc-500">' + phaseLabels[p] + '</th>').join('')}<th class="pb-2 pl-3 text-center text-xs text-zinc-500">Promedio</th></tr></thead><tbody>
