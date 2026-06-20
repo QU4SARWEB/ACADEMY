@@ -14,7 +14,7 @@ export function mountCoachStudents(): void {
   ;(async () => {
     try {
       const [{ data: students }, { data: activeSeason }, { data: courses }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('role', 'student').order('full_name'),
+        supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, rank, scholarship, is_active, created_at, social_discord, display_name').eq('role', 'student').order('full_name'),
         supabase.from('seasons').select('id').eq('is_active', true).maybeSingle(),
         supabase.from('courses').select('id, name').eq('is_active', true).order('name'),
       ])
@@ -81,9 +81,8 @@ export function mountCoachStudents(): void {
               <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                 <th class="pb-3 pr-2 font-medium"><input type="checkbox" id="select-all" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"></th>
                 <th class="pb-3 pr-4 font-medium"></th>
-                <th class="pb-3 pr-4 font-medium">Nombre</th>
+                <th class="pb-3 pr-4 font-medium">Nombre / Riot</th>
                 <th class="pb-3 pr-4 font-medium">Email</th>
-                <th class="pb-3 pr-4 font-medium">Riot ID</th>
                 <th class="pb-3 pr-4 font-medium">Rango</th>
                 <th class="pb-3 pr-4 font-medium">Beca</th>
                 <th class="pb-3 pr-4 font-medium">Pago</th>
@@ -98,7 +97,8 @@ export function mountCoachStudents(): void {
                 : (students ?? []).map((s: any) => {
                     const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false }
                     const paymentStatus = paymentMap.get(s.id)
-                    const initial = (s.full_name || '?').charAt(0).toUpperCase()
+                    const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
+                    const initial = (displayName || '?').charAt(0).toUpperCase()
                     return `
                       <tr class="border-b border-zinc-800/50">
                         <td class="py-3 pr-2"><input type="checkbox" class="student-cb h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
@@ -107,9 +107,8 @@ export function mountCoachStudents(): void {
                             ${s.avatar_url ? `<img src="${escapeHtml(s.avatar_url)}" alt="" class="h-full w-full rounded-full object-cover" />` : escapeHtml(initial)}
                           </div>
                         </td>
-                        <td class="py-3 pr-4"><a href="#/coaches/students/${escapeHtml(s.id)}" class="text-white hover:text-[#8B5CF6] transition">${escapeHtml(s.full_name || 'Desconocido')}</a></td>
+                        <td class="py-3 pr-4"><a href="#/coaches/students/${escapeHtml(s.id)}" class="text-white hover:text-[#8B5CF6] transition">${escapeHtml(displayName)}</a></td>
                         <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.email || '-')}</td>
-                        <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.riot_id || '-')}</td>
                         <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.rank || 'Unranked')}</td>
                         <td class="py-3 pr-4"><span class="text-xs ${s.scholarship ? 'text-yellow-400' : 'text-zinc-600'}">${s.scholarship ? 'Sí' : 'No'}</span></td>
                         <td class="py-3 pr-4">${paymentStatus ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${escapeHtml(paymentStatus)}</span>` : '<span class="text-xs text-zinc-600">—</span>'}</td>
