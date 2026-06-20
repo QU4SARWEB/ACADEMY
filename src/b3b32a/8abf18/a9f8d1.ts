@@ -891,7 +891,7 @@ export async function initCoachExams(): Promise<void> {
       const profileIds = [...new Set((enrollmentsData ?? []).map(e => e.profile_id))]
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, riot_id, social_discord')
         .in('id', profileIds.length > 0 ? profileIds : ['none'])
       const profileMap: Record<string, any> = {}
       for (const p of profilesData ?? []) profileMap[p.id] = p
@@ -919,7 +919,7 @@ export async function initCoachExams(): Promise<void> {
       aList.innerHTML = attempts.map((att: any) => {
         const answers = answersByAtt[att.id] || []
         const prof = profByEnroll[att.enrollment_id] || {}
-        const displayName = prof.full_name || 'Unknown'
+        const displayName = [prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || 'Unknown'
         const attId = att.id
         return `
           <div class="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
@@ -1215,8 +1215,12 @@ export async function initCoachExamAttempt(): Promise<void> {
   }
   const { data: attempt } = await supabase.from('exam_attempts').select('*').eq('id', attemptId).maybeSingle()
   if (!attempt) { document.getElementById('exam-attempt-content')!.innerHTML = '<p class="text-zinc-500">Intento no encontrado</p>'; return }
-  const { data: enroll } = await supabase.from('enrollments').select('profile_id, profiles!profile_id(full_name, avatar_url)').eq('id', attempt.enrollment_id).maybeSingle()
-  const prof: any = enroll?.profiles || {}
+  const { data: enroll } = await supabase.from('enrollments').select('profile_id').eq('id', attempt.enrollment_id).maybeSingle()
+  let prof: any = {}
+  if (enroll?.profile_id) {
+    const { data: p } = await supabase.from('profiles').select('id, full_name, avatar_url, riot_id, social_discord').eq('id', enroll.profile_id).maybeSingle()
+    if (p) prof = p
+  }
   const { data: answers } = await supabase.from('student_answers').select('*').eq('attempt_id', attemptId)
   const qIds = [...new Set((answers ?? []).map(a => a.question_id))]
   const { data: questions } = await supabase.from('questions').select('*, question_options(*)').in('id', qIds.length ? qIds : ['none'])
@@ -1228,7 +1232,7 @@ export async function initCoachExamAttempt(): Promise<void> {
       <div class="flex items-center gap-3 mb-4">
         ${prof.avatar_url ? `<img src="${escapeHtml(prof.avatar_url)}" class="h-10 w-10 rounded-full object-cover" />` : ''}
         <div>
-          <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(prof.full_name || 'Unknown')}</h1>
+          <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml([prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || 'Unknown')}</h1>
           <p class="text-sm text-zinc-500">Intento ${attempt.attempt_num} · ${attempt.score !== null ? attempt.score + '%' : 'Pendiente'} · <span class="rounded px-2 py-0.5 text-[10px] ${attempt.status === 'graded' ? 'bg-green-500/20 text-green-400' : attempt.status === 'submitted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-500/20 text-zinc-400'}">${attempt.status}</span></p>
         </div>
       </div>
