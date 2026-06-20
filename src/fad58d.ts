@@ -34,6 +34,8 @@ import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7
 import { renderCoachExams, initCoachExams, renderCoachExamAttempt, initCoachExamAttempt } from '@/b3b32a/8abf18/a9f8d1'
 import { renderCoachStudentGrades, initCoachStudentGrades } from '@/b3b32a/8abf18/f1a2b3'
 import { renderCoachGradesList, initCoachGradesList } from '@/b3b32a/8abf18/c1d2e3'
+import { renderCoachExamsOverview, initCoachExamsOverview } from '@/b3b32a/8abf18/d4e5f6'
+import { renderCoachAttendanceOverview, initCoachAttendanceOverview } from '@/b3b32a/8abf18/g7h8i9'
 import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/c5e3f2'
 import { renderCoachNewModule, initCoachNewModule } from '@/b3b32a/8abf18/b7d4a6'
 import { renderCoachModuleDetail, initCoachModuleDetail } from '@/b3b32a/8abf18/201980'
@@ -225,6 +227,8 @@ dash('/coaches/courses/:id/modules/:mid', () => renderCoachModuleDetail(), initC
 dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
 dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
 dash('/coaches/students/:id', () => renderCoachStudentDetail(), mountCoachStudentDetail)
+dash('/coaches/exams', () => renderCoachExamsOverview(), initCoachExamsOverview)
+dash('/coaches/attendance', () => renderCoachAttendanceOverview(), initCoachAttendanceOverview)
 dash('/coaches/grades', () => renderCoachGradesList(), initCoachGradesList)
 dash('/coaches/students/:id/grades', () => renderCoachStudentGrades(), initCoachStudentGrades)
 dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
