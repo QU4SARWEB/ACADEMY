@@ -48,8 +48,7 @@ function rankSvg(icon: string, color: string): string {
 }
 
 export function renderPublicProfile(): string {
-  document.body.style.background = '#0A0A0A'
-  return `<div id="page-content" class="min-h-screen bg-[#0A0A0A]">${Spinner()}</div>`
+  return `<div id="page-content">${Spinner()}</div>`
 }
 
 export async function initPublicProfile(): Promise<void> {
@@ -150,7 +149,7 @@ export async function initPublicProfile(): Promise<void> {
     const profileId = pubProfile.profile_id
 
     const [profileRes, achievementsRes, vodsRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', profileId).maybeSingle(),
+      supabase.from('profiles').select('id, full_name, avatar_url, banner_url, display_name, bio, role, rank, country, riot_id, in_game_role, region, quote, mouse_dpi, mouse_sens, mouse_scope_sens, mouse_hertz, edpi, social_discord, social_youtube, social_twitter, social_twitch, social_instagram, social_tiktok, social_github, social_website, social_facebook, social_linkedin, social_steam, social_telegram, custom_bg_url, role_color, created_at').eq('id', profileId).maybeSingle(),
       supabase.from('member_achievements').select('*').eq('profile_id', profileId).order('unlocked_at', { ascending: false }),
       supabase.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
     ])
