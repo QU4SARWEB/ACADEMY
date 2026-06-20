@@ -533,29 +533,22 @@ export async function initPublicProfile(): Promise<void> {
 
     // Fade in profile after content is painted
     requestAnimationFrame(() => {
-      const imgs = document.querySelectorAll<HTMLImageElement>('#profile-page img')
-      let loaded = 0
-      if (imgs.length === 0) {
-        document.getElementById('profile-loading')?.remove()
-        document.getElementById('profile-page')!.style.opacity = '1'
-        return
+      function fadeIn() {
+        const loadingEl = document.getElementById('profile-loading')
+        const pageEl = document.getElementById('profile-page')
+        if (loadingEl) loadingEl.remove()
+        if (pageEl) pageEl.style.opacity = '1'
       }
+      const imgs = document.querySelectorAll<HTMLImageElement>('#profile-page img')
+      if (imgs.length === 0) { fadeIn(); return }
+      let loaded = 0
       imgs.forEach(img => {
         if (img.complete) { loaded++; checkDone(); return }
         img.onload = () => { loaded++; checkDone() }
         img.onerror = () => { loaded++; checkDone() }
       })
-      function checkDone() {
-        if (loaded >= imgs.length) {
-          document.getElementById('profile-loading')?.remove()
-          document.getElementById('profile-page')!.style.opacity = '1'
-        }
-      }
-      // Safety timeout
-      setTimeout(() => {
-        document.getElementById('profile-loading')?.remove()
-        document.getElementById('profile-page')!.style.opacity = '1'
-      }, 5000)
+      function checkDone() { if (loaded >= imgs.length) fadeIn() }
+      setTimeout(fadeIn, 5000)
     })
 
     // Init mini player for playlist
@@ -648,7 +641,10 @@ export async function initPublicProfile(): Promise<void> {
 
     // Real-time: reload public profile when data changes
     if (profileId) {
-      const rtChannel = supabase.channel(`pub-profile-${profileId}`)
+      const chName = `pub-profile-${profileId}`
+      const existing = supabase.getChannels().find(c => c.topic === chName)
+      if (existing) supabase.removeChannel(existing)
+      const rtChannel = supabase.channel(chName)
       rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
       rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'public_profiles', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
       rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'member_achievements', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
