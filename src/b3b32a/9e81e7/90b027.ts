@@ -115,7 +115,7 @@ export async function initPublicProfile(): Promise<void> {
       const end = (hex + 1).toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
       const { data: coachProfile } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, display_name, bio, role, banner_url')
+        .select('id, full_name, avatar_url, display_name, bio, role, banner_url, custom_bg_url, role_color')
         .gte('id', start)
         .lt('id', end)
         .limit(1)
@@ -125,6 +125,7 @@ export async function initPublicProfile(): Promise<void> {
         if (session?.user?.id) {
           const { data: viewer } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
           if (viewer?.role === 'coach') {
+            const { data: ppReal } = await supabase.from('public_profiles').select('playlist, social_links').eq('profile_id', coachProfile.id).maybeSingle()
             pubProfile = {
               profile_id: coachProfile.id,
               slug: `u-${coachProfile.id.slice(0, 8)}`,
@@ -133,8 +134,8 @@ export async function initPublicProfile(): Promise<void> {
               avatar_url: coachProfile.avatar_url,
               banner_url: coachProfile.banner_url,
               bio: coachProfile.bio,
-              social_links: {},
-              playlist: [],
+              social_links: (ppReal as any)?.social_links || {},
+              playlist: (ppReal as any)?.playlist || [],
             }
           }
         }
