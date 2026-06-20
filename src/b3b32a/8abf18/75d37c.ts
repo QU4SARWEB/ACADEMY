@@ -27,18 +27,20 @@ export function mountCoachStudents(): void {
           ? supabase.from('payments').select('profile_id, status').eq('season_id', seasonId).in('profile_id', studentIds)
           : Promise.resolve({ data: [] }),
         studentIds.length > 0
-          ? supabase.from('enrollments').select('profile_id, status').in('profile_id', studentIds)
+          ? supabase.from('enrollments').select('profile_id, status, courses!inner(name)').in('profile_id', studentIds)
           : Promise.resolve({ data: [] }),
       ])
 
       const paymentMap = new Map<string, string>()
       for (const p of payments ?? []) paymentMap.set(p.profile_id, p.status)
 
-      const enrollmentMap = new Map<string, { count: number; anyActive: boolean }>()
+      const enrollmentMap = new Map<string, { count: number; anyActive: boolean; courses: string[] }>()
       for (const e of enrollments ?? []) {
-        const current = enrollmentMap.get(e.profile_id) || { count: 0, anyActive: false }
+        const current = enrollmentMap.get(e.profile_id) || { count: 0, anyActive: false, courses: [] }
         current.count++
         if (e.status === 'active' || e.status === 'recovery') current.anyActive = true
+        const courseName = (e as any).courses?.name
+        if (courseName && !current.courses.includes(courseName)) current.courses.push(courseName)
         enrollmentMap.set(e.profile_id, current)
       }
 
@@ -87,7 +89,7 @@ export function mountCoachStudents(): void {
                 <th class="pb-3 pr-4 font-medium">Beca</th>
                 <th class="pb-3 pr-4 font-medium">Pago</th>
                 <th class="pb-3 pr-4 font-medium">Activo</th>
-                <th class="pb-3 pr-4 font-medium">Inscripciones</th>
+                <th class="pb-3 pr-4 font-medium">Cursos</th>
                 <th class="pb-3 font-medium">Registro</th>
               </tr>
             </thead>
@@ -95,7 +97,7 @@ export function mountCoachStudents(): void {
               ${(students ?? []).length === 0
                 ? '<tr><td colspan="11" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
                 : (students ?? []).map((s: any) => {
-                    const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false }
+                    const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false, courses: [] }
                     const paymentStatus = paymentMap.get(s.id)
                     const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
                     const initial = (displayName || '?').charAt(0).toUpperCase()
@@ -113,7 +115,7 @@ export function mountCoachStudents(): void {
                         <td class="py-3 pr-4"><span class="text-xs ${s.scholarship ? 'text-yellow-400' : 'text-zinc-600'}">${s.scholarship ? 'Sí' : 'No'}</span></td>
                         <td class="py-3 pr-4">${paymentStatus ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${escapeHtml(paymentStatus)}</span>` : '<span class="text-xs text-zinc-600">—</span>'}</td>
                         <td class="py-3 pr-4"><span class="inline-block h-2.5 w-2.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-500'}"></span></td>
-                        <td class="py-3 pr-4 text-zinc-400">${enrollment.count}</td>
+                        <td class="py-3 pr-4 text-zinc-400 text-xs max-w-[120px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
                         <td class="py-3 text-zinc-500 text-xs">${formatDate(s.created_at)}</td>
                       </tr>`
                   }).join('')
