@@ -253,4 +253,17 @@ export interface Question {
   created_at: string
 }
 
+export interface Grade {
+  id: string
+  profile_id: string
+  coach_id: string
+  title: string
+  category: string
+  score: number
+  comment: string | null
+  source: string
+  source_id: string | null
+  created_at: string
+}
+
 
