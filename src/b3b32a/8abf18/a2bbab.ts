@@ -14,7 +14,7 @@ export async function initCoachPlayers(): Promise<void> {
   try {
     const { data: players } = await supabase
       .from('profiles')
-      .select('id, full_name, email, avatar_url, riot_id, rank, is_active, scholarship, created_at')
+      .select('id, full_name, email, avatar_url, riot_id, rank, is_active, scholarship, created_at, social_discord')
       .eq('role', 'player')
       .order('full_name')
 
@@ -60,9 +60,8 @@ export async function initCoachPlayers(): Promise<void> {
           <thead>
             <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
               <th class="pb-3 pr-2 font-medium"><input type="checkbox" id="select-all" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"></th>
-              <th class="pb-3 pr-4 font-medium">Nombre</th>
+              <th class="pb-3 pr-4 font-medium">Nombre / Riot</th>
               <th class="pb-3 pr-4 font-medium">Email</th>
-              <th class="pb-3 pr-4 font-medium">Riot ID</th>
               <th class="pb-3 pr-4 font-medium">Rango</th>
               <th class="pb-3 pr-4 font-medium">Beca</th>
               <th class="pb-3 pr-4 font-medium">Pago</th>
@@ -74,7 +73,8 @@ export async function initCoachPlayers(): Promise<void> {
             ${(players ?? []).length === 0
               ? '<tr><td colspan="9" class="pt-4 text-zinc-500">No hay jugadores registrados.</td></tr>'
               : (players ?? []).map((p: any) => {
-                  const initial = (p.full_name || '?')[0]
+                  const displayName = [p.riot_id || p.full_name, p.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
+                  const initial = (displayName || '?')[0]
                   const pPayments = paymentsByPlayer[p.id] || []
                   const payStatus = pPayments.length > 0
                     ? pPayments.some((pp: any) => pp.status === 'paid') ? 'pagado' : 'pendiente'
@@ -86,11 +86,10 @@ export async function initCoachPlayers(): Promise<void> {
                       <td class="py-3 pr-4">
                         <div class="flex items-center gap-2">
                           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">${escapeHtml(initial)}</div>
-                          <span class="text-white">${escapeHtml(p.full_name || 'Desconocido')}</span>
+                          <span class="text-white">${escapeHtml(displayName)}</span>
                         </div>
                       </td>
                       <td class="py-3 pr-4 text-zinc-400">${escapeHtml(p.email || '-')}</td>
-                      <td class="py-3 pr-4 text-zinc-400">${escapeHtml(p.riot_id || '-')}</td>
                       <td class="py-3 pr-4 text-zinc-400">${escapeHtml(p.rank || '-')}</td>
                       <td class="py-3 pr-4">${p.scholarship ? '<span class="rounded bg-green-500/10 px-2 py-0.5 text-xs text-green-400">Sí</span>' : '<span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-500">No</span>'}</td>
                       <td class="py-3 pr-4"><span class="text-xs ${payColor}">${escapeHtml(payStatus)}</span></td>
