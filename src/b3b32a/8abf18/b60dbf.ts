@@ -417,15 +417,11 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       const statusText = parent?.querySelector('.capitalize')?.textContent?.trim() || ''
       const isInactive = statusText.startsWith('inactive')
       if (!await confirmDialog(isInactive ? '¿Eliminar permanentemente esta inscripción inactiva?' : '¿Dar de baja esta inscripción?')) return
-      if (isInactive) {
-        const { error } = await supabase.from('enrollments').delete().eq('id', enrollmentId)
-        if (error) toast('error', error.message)
-        else mountCoachStudentDetail()
-      } else {
-        const { error } = await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
-        if (error) toast('error', error.message)
-        else mountCoachStudentDetail()
-      }
+      const { error } = isInactive
+        ? await supabase.from('enrollments').delete().eq('id', enrollmentId)
+        : await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
+      if (error) { toast('error', error.message); return }
+      window.location.reload()
     })
   })
 

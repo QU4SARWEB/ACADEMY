@@ -43,6 +43,14 @@ async function renderStudentPayments(userId: string): Promise<void> {
     .eq('profile_id', userId)
     .order('created_at', { ascending: false })
 
+  // Build a map of enrollment_id → course name
+  const { data: allEnrolls } = await supabase
+    .from('enrollments')
+    .select('id, courses!course_id(name)')
+    .eq('profile_id', userId)
+  const courseByEnroll: Record<string, string> = {}
+  for (const e of allEnrolls ?? []) courseByEnroll[e.id] = (e as any).courses?.name || ''
+
   const { data: enrollments } = await supabase
     .from('enrollments')
     .select('*, courses(name), seasons(name, id)')
@@ -108,7 +116,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
           <div class="payment-item glass rounded-xl p-4 space-y-3" data-payment-id="${escapeHtml(p.id)}">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <p class="text-sm font-medium text-white">${escapeHtml(p.seasons?.name || 'Pago')}</p>
+                <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || p.seasons?.name || 'Pago')}</p>
               <p class="text-xs text-zinc-500">${p.paid_at ? 'Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
             ${p.status === 'scholarship'
@@ -295,6 +303,15 @@ async function renderCoachPayments(): Promise<void> {
 
   const { data: payments } = await paymentsQuery
 
+  // Get course names for each payment
+  const payEnrollIds = [...new Set((payments ?? []).map((p: any) => p.enrollment_id).filter(Boolean))]
+  const { data: enrollsForName } = await supabase
+    .from('enrollments')
+    .select('id, courses!course_id(name)')
+    .in('id', payEnrollIds.length > 0 ? payEnrollIds : ['none'])
+  const courseByEnrollId: Record<string, string> = {}
+  for (const e of enrollsForName ?? []) courseByEnrollId[e.id] = (e as any).courses?.name || ''
+
   // Build payment map by profile_id
   const paymentMap = new Map<string, any>()
   for (const p of payments ?? []) {
@@ -392,7 +409,7 @@ async function renderCoachPayments(): Promise<void> {
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-zinc-300">${pay ? escapeHtml(pay.seasons?.name || '—') : '—'}</td>
+                  <td class="px-4 py-3 text-zinc-300">${pay ? escapeHtml(courseByEnrollId[pay.enrollment_id] || pay.seasons?.name || '—') : '—'}</td>
                   <td class="px-4 py-3 capitalize text-zinc-300">${escapeHtml(prof.role)}</td>
                   <td class="px-4 py-3 text-zinc-300">${pay?.amount ? '$' + pay.amount : '—'}</td>
                   <td class="px-4 py-3">
