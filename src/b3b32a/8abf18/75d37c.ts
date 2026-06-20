@@ -90,12 +90,13 @@ export function mountCoachStudents(): void {
                 <th class="pb-3 pr-4 font-medium">Pago</th>
                 <th class="pb-3 pr-4 font-medium">Activo</th>
                 <th class="pb-3 pr-4 font-medium">Cursos</th>
-                <th class="pb-3 font-medium">Registro</th>
+                <th class="pb-3 pr-4 font-medium">Registro</th>
+                <th class="pb-3 font-medium"></th>
               </tr>
             </thead>
             <tbody>
               ${(students ?? []).length === 0
-                ? '<tr><td colspan="11" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
+                ? '<tr><td colspan="12" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
                 : (students ?? []).map((s: any) => {
                     const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false, courses: [] }
                     const paymentStatus = paymentMap.get(s.id)
@@ -117,6 +118,7 @@ export function mountCoachStudents(): void {
                         <td class="py-3 pr-4"><span class="inline-block h-2.5 w-2.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-500'}"></span></td>
                         <td class="py-3 pr-4 text-zinc-400 text-xs max-w-[120px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
                         <td class="py-3 text-zinc-500 text-xs">${formatDate(s.created_at)}</td>
+                        <td class="py-3 pl-2">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
                       </tr>`
                   }).join('')
               }
@@ -205,10 +207,10 @@ function initBulkActions(students: any[]): void {
     window.location.reload()
   })
 
-  // Bulk delete
+  // Bulk delete (soft: set inactive)
   document.getElementById('bulk-delete')?.addEventListener('click', async () => {
     const ids = getSelectedIds()
-    if (!ids.length || !(await confirmDialog(`¿Eliminar ${ids.length} estudiantes? Esta acción no se puede deshacer.`))) return
+    if (!ids.length || !(await confirmDialog(`¿Desactivar ${ids.length} estudiantes?`))) return
     let ok = 0, fail = 0
     for (const id of ids) {
       const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', id)
@@ -217,5 +219,18 @@ function initBulkActions(students: any[]): void {
     }
     toast('success', `${ok} desactivados, ${fail} errores`)
     window.location.reload()
+  })
+
+  // Hard delete individual inactive students
+  document.querySelectorAll('.hard-delete-student').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLElement).dataset.id
+      const name = (btn as HTMLElement).dataset.name
+      if (!id || !(await confirmDialog(`¿Eliminar PERMANENTEMENTE a ${name}? Se borrarán todos sus datos (inscripciones, pagos, respuestas). Esta acción NO se puede deshacer.`, 'Eliminar permanentemente'))) return
+      const { error } = await supabase.from('profiles').delete().eq('id', id).eq('is_active', false)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Estudiante eliminado permanentemente')
+      window.location.reload()
+    })
   })
 }

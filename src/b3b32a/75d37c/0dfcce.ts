@@ -15,9 +15,14 @@ export async function initStudentCourses(): Promise<void> {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('rank, scholarship')
+      .select('rank, scholarship, is_active')
       .eq('id', session.user.id)
       .maybeSingle()
+
+    if (profile && profile.is_active === false) {
+      document.getElementById('page-content')!.innerHTML = '<div class="flex flex-col items-center justify-center min-h-[50vh] text-center"><p class="text-red-400 text-lg font-bold mb-2">Cuenta desactivada</p><p class="text-sm text-zinc-500">Tu cuenta ha sido desactivada. Contacta con un coach para más información.</p></div>'
+      return
+    }
 
     const { data: enrollments } = await supabase
       .from('enrollments')
@@ -104,9 +109,11 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('rank, scholarship')
+          .select('rank, scholarship, is_active')
           .eq('id', session.user.id)
           .maybeSingle()
+
+        if (profile?.is_active === false) { toast('error', 'Cuenta desactivada'); return }
 
         const { data: course } = await supabase
           .from('courses')
