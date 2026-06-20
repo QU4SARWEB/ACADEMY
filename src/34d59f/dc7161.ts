@@ -84,11 +84,14 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   for (let gi = 0; gi < groups.length; gi++) {
     if (gi > 0) itemsHtml += '<div class="border-t border-zinc-800/60"></div>'
     for (const it of groups[gi]) {
-      const active = currentHash.startsWith(it.href!) ? `bg-zinc-800 text-white border-l-2` : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+      const hrefParts = it.href!.split('/').filter(Boolean)
+      const hashParts = currentHash.split('/').filter(Boolean)
+      const isActive = hrefParts.length <= hashParts.length && hrefParts.every((p, i) => p === hashParts[i])
+      const active = isActive ? 'bg-zinc-800 text-white border-l-2' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
       itemsHtml += `
         <a href="#${escapeHtml(it.href!)}"
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-           style="${currentHash.startsWith(it.href!) ? `border-color:${accent}` : ''}">
+           style="${isActive ? `border-color:${accent}` : ''}">
           ${Icon(it.icon!, 18)}
           <span>${escapeHtml(it.label!)}</span>
         </a>`
@@ -127,13 +130,13 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
            class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
           ${Icon('settings', 14)} Personalizar
         </a>
-        <button id="logout-btn"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-800/50 hover:text-red-400">
-          ${Icon('logOut', 18)}
-          <span>Cerrar sesión</span>
-        </button>
       </div>
-    </aside>`
+    </aside>
+    <button id="logout-btn"
+       class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl bg-zinc-900/90 px-4 py-3 text-sm text-zinc-400 shadow-lg backdrop-blur-md transition hover:bg-red-600 hover:text-white border border-zinc-800">
+      ${Icon('logOut', 18)}
+      <span>Cerrar sesión</span>
+    </button>`
 }
 
 export function initSidebar(): void {

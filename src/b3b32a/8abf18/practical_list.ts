@@ -10,16 +10,21 @@ export function renderPracticalExams(): string { return `<div id="page-content">
 export async function initPracticalExams(): Promise<void> {
   try {
     const { data: courses } = await supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order')
+    const courseIds = (courses ?? []).map(c => c.id)
+    const { data: exams } = await supabase.from('practical_exams').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['none'])
+    const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['none'])
+    const examCount: Record<string, number> = {}; const studentCount: Record<string, number> = {}
+    for (const e of exams ?? []) { if (!examCount[e.course_id]) examCount[e.course_id] = 0; examCount[e.course_id]++ }
+    for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }
 
-    // Show course grid by default
     document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6 flex items-center justify-between">
-        <div><h1 class="font-heading text-2xl font-bold text-white">Exámenes Prácticos</h1><p class="mt-1 text-sm text-zinc-500">Selecciona un curso</p></div>
+        <div><h1 class="font-heading text-2xl font-bold text-white">Exámenes Prácticos</h1><p class="mt-1 text-sm text-zinc-500">${(exams ?? []).length} exámenes · ${(enrolls ?? []).length} inscripciones</p></div>
         <a href="#/coaches/exams/practical/new" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">${Icon('plus', 14)} Nuevo práctico</a>
       </div>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${(courses ?? []).map(c => {
-          return '<button class="course-practical-btn glass rounded-xl p-5 text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5" data-course-id="' + c.id + '" data-course-name="' + escapeHtml(c.name) + '"><div class="flex items-center justify-between"><div><h3 class="font-medium text-white">' + escapeHtml(c.name) + '</h3></div>' + Icon('chevronRight', 20) + '</div></button>'
+          return '<button class="course-practical-btn glass rounded-xl p-5 text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5" data-course-id="' + c.id + '" data-course-name="' + escapeHtml(c.name) + '"><div class="flex items-center justify-between"><div><h3 class="font-medium text-white">' + escapeHtml(c.name) + '</h3><p class="mt-1 text-sm text-zinc-500">' + (examCount[c.id] || 0) + ' exámenes · ' + (studentCount[c.id] || 0) + ' estudiantes</p></div>' + Icon('chevronRight', 20) + '</div></button>'
         }).join('')}
       </div>`
 
