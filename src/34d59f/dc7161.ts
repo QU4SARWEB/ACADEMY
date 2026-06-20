@@ -84,9 +84,8 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   for (let gi = 0; gi < groups.length; gi++) {
     if (gi > 0) itemsHtml += '<div class="border-t border-zinc-800/60"></div>'
     for (const it of groups[gi]) {
-      const hrefParts = it.href!.split('/').filter(Boolean)
-      const hashParts = currentHash.split('/').filter(Boolean)
-      const isActive = hrefParts.length <= hashParts.length && hrefParts.every((p, i) => p === hashParts[i])
+      const href = it.href!
+      const isActive = currentHash === href || (currentHash.startsWith(href + '/') && !currentHash.startsWith(href + '/practical'))
       const active = isActive ? 'bg-zinc-800 text-white border-l-2' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
       itemsHtml += `
         <a href="#${escapeHtml(it.href!)}"
