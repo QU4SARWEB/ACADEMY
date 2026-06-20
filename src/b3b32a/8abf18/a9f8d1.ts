@@ -52,7 +52,7 @@ export async function initCoachExams(): Promise<void> {
         </div>
       </div>
 
-      <div class="flex gap-6 justify-center flex-wrap">
+      <div class="flex gap-6 items-start">
         <div class="w-[600px] shrink-0">
         <div class="glass rounded-xl p-6">
           <h2 class="mb-4 font-heading text-lg font-bold text-white">Crear nuevo examen</h2>
