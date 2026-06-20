@@ -30,7 +30,7 @@ export async function initMembers(): Promise<void> {
       const pubIds = [...new Set((pubData ?? []).map((p: any) => p.profile_id))]
       const { data: pubProfiles } = await supabase
         .from('profiles')
-        .select('id, full_name, role')
+        .select('id, full_name, role, avatar_url, banner_url')
         .in('id', pubIds.length ? pubIds : ['none'])
       const profMap: Record<string, any> = {}
       for (const p of pubProfiles ?? []) profMap[p.id] = p
@@ -39,8 +39,8 @@ export async function initMembers(): Promise<void> {
         return {
           slug: p.slug,
           display_name: p.display_name || prof.full_name || 'Usuario',
-          avatar_url: p.avatar_url,
-          banner_url: p.banner_url,
+          avatar_url: p.avatar_url || prof.avatar_url,
+          banner_url: p.banner_url || prof.banner_url,
           bio: p.bio,
           role: prof.role || 'student',
           profId: p.profile_id,
