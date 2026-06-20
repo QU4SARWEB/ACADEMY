@@ -27,7 +27,7 @@ export async function initPracticalNew(): Promise<void> {
           <div class="glass rounded-xl p-6">
             <h2 class="font-heading text-base font-bold text-white mb-4">Datos del examen</h2>
             <div class="space-y-3">
-              <div><label class="mb-1 block text-sm text-zinc-400">Curso</label><select id="p-course" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">' + (courses ?? []).map((c: any) => '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>').join('') + '</select></div>
+              <div><label class="mb-1 block text-sm text-zinc-400">Curso</label><select id="p-course" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${(courses ?? []).map((c: any) => '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>').join('')}</select></div>
               <div><label class="mb-1 block text-sm text-zinc-400">Título</label><input id="p-title" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
               <div><label class="mb-1 block text-sm text-zinc-400">Descripción</label><textarea id="p-desc" rows="3" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></textarea></div>
               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="p-ot" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" /> <span class="text-sm text-zinc-300">Habilitar Overtime</span></label>
@@ -36,9 +36,9 @@ export async function initPracticalNew(): Promise<void> {
         </div>
         <div class="flex-1 min-w-0">
           <div class="glass rounded-xl p-6">
-            <div class="flex items-center justify-between mb-4"><h2 class="font-heading text-base font-bold text-white">Rúbricas</h2><div class="flex gap-2">' + ((templates ?? []).length > 0 ? '<select id="load-template" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white outline-none focus:border-[#8B5CF6]"><option value="">Cargar plantilla...</option>' + (templates ?? []).map((t: any) => '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>').join('') + '</select>' : '') + '<button type="button" id="add-criteria" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">' + Icon('plus', 12) + ' Agregar</button></div></div>
+            <div class="flex items-center justify-between mb-4"><h2 class="font-heading text-base font-bold text-white">Rúbricas</h2><div class="flex gap-2">${(templates ?? []).length > 0 ? '<select id="load-template" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white outline-none focus:border-[#8B5CF6]"><option value="">Cargar plantilla...</option>' + (templates ?? []).map((t: any) => '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>').join('') + '</select>' : ''}<button type="button" id="add-criteria" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">${Icon('plus', 12)} Agregar</button></div></div>
             <div id="criteria-list" class="space-y-2 mb-3"></div>
-            <p class="text-xs text-zinc-500 mb-3">Cada rúbrica tiene Fase 1 y Fase 2' + ('' ? ' + Overtime' : '') + '</p>
+            <p class="text-xs text-zinc-500 mb-3">Cada rúbrica tiene Fase 1 y Fase 2${' (marcando OT se agrega Fase 3)'}</p>
             <button type="button" id="save-template" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:text-white mr-2">${Icon('save', 12)} Guardar plantilla</button>
             <button type="button" id="create-practical" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">${Icon('plus', 14)} Crear examen práctico</button>
             <p id="p-error" class="mt-2 hidden text-xs text-red-400"></p>
