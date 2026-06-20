@@ -971,12 +971,8 @@ export async function initCoachExams(): Promise<void> {
                         `}
                         ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                           <div class="mt-2 flex items-center gap-2" data-sa-id="${sa.id}">
-                            <select class="grade-select rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:border-[#8B5CF6]">
-                              <option value="">Calificar...</option>
-                              <option value="correct" ${sa.is_correct === true ? 'selected' : ''}>Correcta</option>
-                              <option value="incorrect" ${sa.is_correct === false ? 'selected' : ''}>Incorrecta</option>
-                            </select>
-                            <input type="number" class="grade-score w-16 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                            <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-100" min="0" max="100" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                            <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
                             <button type="button" class="grade-save-btn text-[10px] text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                           </div>
                         ` : ''}
@@ -1020,11 +1016,11 @@ export async function initCoachExams(): Promise<void> {
       if (!saveBtn) return
       const container = saveBtn.closest('[data-sa-id]') as HTMLElement
       const saId = container?.getAttribute('data-sa-id')
-      const select = container?.querySelector<HTMLSelectElement>('.grade-select')
       const scoreInput = container?.querySelector<HTMLInputElement>('.grade-score')
-      if (!saId || !select?.value) return
-      const isCorrect = select.value === 'correct'
-      const score = parseFloat(scoreInput?.value || '0') || (isCorrect ? 100 : 0)
+      if (!saId) return
+      const score = parseFloat(scoreInput?.value || '0')
+      if (isNaN(score) || score < 0 || score > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+      const isCorrect = score > 0
       const { error } = await supabase.from('student_answers').update({ is_correct: isCorrect, score }).eq('id', saId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Calificación guardada')
@@ -1289,12 +1285,8 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
                 `}
                 ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                   <div class="mt-3 flex items-center gap-2" data-sa-id="${sa.id}">
-                    <select class="grade-select rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]">
-                      <option value="">Calificar...</option>
-                      <option value="correct" ${sa.is_correct === true ? 'selected' : ''}>Correcta</option>
-                      <option value="incorrect" ${sa.is_correct === false ? 'selected' : ''}>Incorrecta</option>
-                    </select>
-                    <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                    <input type="number" class="grade-score w-24 rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-100" min="0" max="100" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                    <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
                     <button type="button" class="grade-save-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                   </div>
                 ` : ''}
@@ -1315,11 +1307,11 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
     if (!saveBtn) return
     const container = saveBtn.closest('[data-sa-id]') as HTMLElement
     const saId = container?.getAttribute('data-sa-id')
-    const select = container?.querySelector<HTMLSelectElement>('.grade-select')
     const scoreInput = container?.querySelector<HTMLInputElement>('.grade-score')
-    if (!saId || !select?.value) return
-    const isCorrect = select.value === 'correct'
-    const score = parseFloat(scoreInput?.value || '0') || (isCorrect ? 100 : 0)
+    if (!saId) return
+    const score = parseFloat(scoreInput?.value || '0')
+    if (isNaN(score) || score < 0 || score > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+    const isCorrect = score > 0
     const { error } = await supabase.from('student_answers').update({ is_correct: isCorrect, score }).eq('id', saId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Calificación guardada')
