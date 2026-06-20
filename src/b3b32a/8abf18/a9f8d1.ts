@@ -208,7 +208,7 @@ export async function initCoachExams(): Promise<void> {
           </form>
         </div>
       </div>
-        <div class="w-[600px] shrink-0">
+        <div class="w-[800px] shrink-0">
         <div class="glass rounded-xl p-6">
         <h2 class="mb-4 font-heading text-lg font-bold text-white">Exámenes (${(exams ?? []).length})</h2>
         <div class="space-y-3">
