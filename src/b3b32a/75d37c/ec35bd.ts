@@ -97,10 +97,6 @@ export async function initStudentCourseDetail(): Promise<void> {
         ${statusBadge}
 
         <div class="mb-6 flex gap-3">
-          <a href="#/students/courses/${escapeHtml(id)}/exams"
-             class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
-            ${Icon('scrollText', 14)} Exámenes
-          </a>
           <a href="#/payments"
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30">
             ${Icon('dollarSign', 14)} Pagos
