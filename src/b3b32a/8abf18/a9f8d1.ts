@@ -52,8 +52,9 @@ export async function initCoachExams(): Promise<void> {
         </div>
       </div>
 
-      <div class="mb-8">
-        <div class="glass max-w-2xl rounded-xl p-6">
+      <div class="flex gap-6 justify-center flex-wrap">
+        <div class="w-[600px] shrink-0">
+        <div class="glass rounded-xl p-6">
           <h2 class="mb-4 font-heading text-lg font-bold text-white">Crear nuevo examen</h2>
           <form id="create-exam-form">
             <div class="mb-4">
@@ -207,8 +208,8 @@ export async function initCoachExams(): Promise<void> {
           </form>
         </div>
       </div>
-
-      <div>
+        <div class="w-[600px] shrink-0">
+        <div class="glass rounded-xl p-6">
         <h2 class="mb-4 font-heading text-lg font-bold text-white">Exámenes (${(exams ?? []).length})</h2>
         <div class="space-y-3">
           ${(exams ?? []).length === 0
@@ -339,6 +340,7 @@ export async function initCoachExams(): Promise<void> {
               </div>
             `).join('')
           }
+        </div>
         </div>
       </div>
 
