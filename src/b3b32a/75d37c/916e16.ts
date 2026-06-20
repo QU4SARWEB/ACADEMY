@@ -457,7 +457,7 @@ export async function initStudentExamTake(): Promise<void> {
       const submitBtn = document.getElementById('submit-exam-btn')
       if (submitBtn) {
         submitBtn.addEventListener('click', async () => {
-          if (await confirmDialog('¿Estás seguro de que deseas finalizar el examen? Esta acción no se puede deshacer.')) {
+          if (await confirmDialog('¿Estás seguro de que deseas finalizar el examen? Esta acción no se puede deshacer.', 'Finalizar')) {
             submitExam()
           }
         })

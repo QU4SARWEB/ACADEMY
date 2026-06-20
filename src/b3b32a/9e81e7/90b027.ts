@@ -109,10 +109,15 @@ export async function initPublicProfile(): Promise<void> {
     // Coach fallback: allow viewing any profile by ID prefix (u-{id})
     if (!pubProfile && slug.startsWith('u-')) {
       const idPrefix = slug.slice(2)
+      const prefix = idPrefix.toLowerCase().slice(0, 8).padEnd(8, '0')
+      const hex = parseInt(prefix, 16)
+      const start = hex.toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
+      const end = (hex + 1).toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
       const { data: coachProfile } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, display_name, bio, role, banner_url')
-        .like('id', `${idPrefix}%`)
+        .gte('id', start)
+        .lt('id', end)
         .limit(1)
         .maybeSingle()
       if (coachProfile) {
@@ -177,10 +182,13 @@ export async function initPublicProfile(): Promise<void> {
         ${bgUrl ? `
           body { background: url(${bgUrl}) center/cover fixed !important; }
           #profile-page { background: transparent !important; }
-          header { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
-          #profile-card .glass, #profile-card > div { background: rgba(20,20,30,0.92) !important; backdrop-filter: blur(12px) !important; }
-          #profile-page .btn-glow { background: var(--accent) !important; }
-        ` : ''}
+        ` : `
+          body { background: linear-gradient(135deg, ${accent}11, #0a0014, #050510) fixed !important; }
+          #profile-page { background: transparent !important; }
+        `}
+        header { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
+        #profile-card .glass, #profile-card > div { background: rgba(20,20,30,0.92) !important; backdrop-filter: blur(12px) !important; }
+        #profile-page .btn-glow { background: var(--accent) !important; }
         .hover-accent-border:hover { border-color: var(--accent) !important; }
       </style>`
     document.head.insertAdjacentHTML('beforeend', themeStyle)
@@ -319,7 +327,13 @@ export async function initPublicProfile(): Promise<void> {
     }
 
     const html = `
-<div class="min-h-screen bg-[#0A0A0A]" id="profile-page">
+<div id="profile-loading" class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0A0A0A]" style="opacity:1;transition:opacity .4s">
+  <div class="flex flex-col items-center gap-3">
+    <svg class="animate-spin h-8 w-8 text-[#8B5CF6]" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+    <p class="text-sm text-zinc-500">Cargando perfil...</p>
+  </div>
+</div>
+<div class="min-h-screen bg-[#0A0A0A]" id="profile-page" style="opacity:0;transition:opacity .4s">
   <header class="border-b border-zinc-800/50 bg-[#0A0A0A]/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3">
       <a href="#/" class="flex items-center gap-2"><img src="qu4sar.ico" alt="QU4SAR" class="h-6 w-6" /><span class="font-heading text-lg font-bold tracking-wider text-white">QU<span style="color:${accent}">4</span>SAR</span></a>
@@ -335,7 +349,7 @@ export async function initPublicProfile(): Promise<void> {
       <div class="flex-1 min-w-0 flex flex-col gap-5" id="profile-card">
 
         <div class="relative overflow-hidden rounded-[20px]" style="height:200px">
-          <div class="absolute inset-0 bg-cover bg-center" style="${bannerUrl ? `background-image:url(${bannerUrl})` : 'background-color:#0a0514'}"></div>
+          <div class="absolute inset-0 bg-cover bg-center" style="${bannerUrl ? `background-image:url(${bannerUrl})` : `background:linear-gradient(135deg,${accent}22,#0a0514)`}"></div>
           <div class="absolute inset-0" style="background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.08),transparent 70%)"></div>
           <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background:linear-gradient(transparent,rgba(10,5,20,0.95))"></div>
           <div class="absolute bottom-0 left-0 right-0 flex justify-between items-end px-6 pb-4">
@@ -516,6 +530,33 @@ export async function initPublicProfile(): Promise<void> {
 </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Fade in profile after content is painted
+    requestAnimationFrame(() => {
+      const imgs = document.querySelectorAll<HTMLImageElement>('#profile-page img')
+      let loaded = 0
+      if (imgs.length === 0) {
+        document.getElementById('profile-loading')?.remove()
+        document.getElementById('profile-page')!.style.opacity = '1'
+        return
+      }
+      imgs.forEach(img => {
+        if (img.complete) { loaded++; checkDone(); return }
+        img.onload = () => { loaded++; checkDone() }
+        img.onerror = () => { loaded++; checkDone() }
+      })
+      function checkDone() {
+        if (loaded >= imgs.length) {
+          document.getElementById('profile-loading')?.remove()
+          document.getElementById('profile-page')!.style.opacity = '1'
+        }
+      }
+      // Safety timeout
+      setTimeout(() => {
+        document.getElementById('profile-loading')?.remove()
+        document.getElementById('profile-page')!.style.opacity = '1'
+      }, 5000)
+    })
 
     // Init mini player for playlist
     if (playlist && playlist.length > 0) {

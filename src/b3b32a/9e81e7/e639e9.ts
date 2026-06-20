@@ -410,7 +410,7 @@ async function renderCoachPayments(): Promise<void> {
                   <td class="px-4 py-3 text-xs text-zinc-500">${pay?.paid_at ? formatDate(pay.paid_at) : '—'}</td>
                   <td class="px-4 py-3">
                     ${pay
-                      ? `<select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(pay.id)}">
+                      ? `<select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(pay.profile_id)}" data-old-status="${escapeHtml(pay.status)}">
                           <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
                           <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
                           <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
@@ -438,7 +438,9 @@ async function renderCoachPayments(): Promise<void> {
     sel.addEventListener('change', async () => {
       const select = sel as HTMLSelectElement
       const newStatus = select.value
+      const oldStatus = select.dataset.oldStatus || ''
       const paymentId = select.dataset.paymentId
+      const profileId = select.dataset.profileId
       if (!paymentId) return
 
       const updateData: Record<string, any> = { status: newStatus }
@@ -446,6 +448,23 @@ async function renderCoachPayments(): Promise<void> {
       if (newStatus !== 'paid') updateData.paid_at = null
 
       await supabase.from('payments').update(updateData).eq('id', paymentId)
+      select.dataset.oldStatus = newStatus
+
+      // Sync profiles.scholarship
+      if (newStatus === 'scholarship' && profileId) {
+        await supabase.from('profiles').update({ scholarship: true }).eq('id', profileId)
+      } else if (oldStatus === 'scholarship' && profileId) {
+        const { data: otherScholarships } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('status', 'scholarship')
+          .neq('id', paymentId)
+        if (!otherScholarships || otherScholarships.length === 0) {
+          await supabase.from('profiles').update({ scholarship: false }).eq('id', profileId)
+        }
+      }
+
       renderCoachPayments()
     })
   })

@@ -19,15 +19,33 @@ export async function initMembers(): Promise<void> {
       if (prof?.role === 'coach') isCoach = true
     }
 
-    // Coaches see all profiles; others only see public ones
-    let publicProfiles: any[] | null = []
+    // Fetch public profiles (for non-coaches) + all profiles
+    let combined: any[] = []
     if (!isCoach) {
-      const { data } = await supabase
+      const { data: pubData } = await supabase
         .from('public_profiles')
-        .select('slug, display_name, avatar_url, banner_url, bio, profile_id, profiles!inner(role, full_name, avatar_url, banner_url)')
+        .select('slug, display_name, avatar_url, banner_url, bio, profile_id')
         .eq('is_public', true)
         .order('display_name', { ascending: true })
-      publicProfiles = data
+      const pubIds = [...new Set((pubData ?? []).map((p: any) => p.profile_id))]
+      const { data: pubProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .in('id', pubIds.length ? pubIds : ['none'])
+      const profMap: Record<string, any> = {}
+      for (const p of pubProfiles ?? []) profMap[p.id] = p
+      combined = (pubData ?? []).map((p: any) => {
+        const prof = profMap[p.profile_id] || {}
+        return {
+          slug: p.slug,
+          display_name: p.display_name || prof.full_name || 'Usuario',
+          avatar_url: p.avatar_url,
+          banner_url: p.banner_url,
+          bio: p.bio,
+          role: prof.role || 'student',
+          profId: p.profile_id,
+        }
+      })
     }
 
     const { data: allProfiles } = await supabase
@@ -36,20 +54,9 @@ export async function initMembers(): Promise<void> {
       .in('role', ['student', 'player', 'coach'])
       .order('full_name')
 
-    const withPub = new Set((publicProfiles ?? []).map((p: any) => p.profile_id))
-    const combined = [...(publicProfiles ?? []).map((p: any) => {
-      const prof = p.profiles as any || {}
-      return {
-        slug: p.slug,
-        display_name: p.display_name || prof.full_name || 'Usuario',
-        avatar_url: p.avatar_url || prof.avatar_url,
-        banner_url: p.banner_url || prof.banner_url,
-        bio: p.bio,
-        role: prof.role || 'student',
-      }
-    })]
+    const existingIds = new Set(combined.map((m: any) => m.profId))
     for (const prof of allProfiles ?? []) {
-      if (isCoach || !withPub.has(prof.id)) {
+      if (isCoach || !existingIds.has(prof.id)) {
         combined.push({
           slug: prof.share_slug || `u-${prof.id.slice(0, 8)}`,
           display_name: prof.display_name || prof.full_name || 'Usuario',
@@ -57,6 +64,7 @@ export async function initMembers(): Promise<void> {
           banner_url: prof.banner_url,
           bio: null,
           role: prof.role,
+          profId: prof.id,
         })
       }
     }
