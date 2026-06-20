@@ -114,6 +114,7 @@ export function mountCoachStudentDetail(): void {
               <button id="btn-toggle-active" class="rounded-lg border px-4 py-2 text-sm transition ${(profile as any).is_active ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}">
                 ${(profile as any).is_active ? 'Desactivar' : 'Activar'}
               </button>
+              ${!(profile as any).is_active ? '<button id="btn-hard-delete" class="rounded-lg border border-red-700 px-4 py-2 text-sm text-red-400 transition hover:bg-red-900/30">' + Icon('trash', 14) + ' Eliminar permanentemente</button>' : ''}
               <button id="btn-toggle-scholarship" class="flex items-center gap-2 rounded-lg border border-yellow-500/30 px-4 py-2 text-sm text-yellow-400 transition hover:bg-yellow-500/10">
                 ${Icon('trophy', 14)}
                 ${(profile as any).scholarship ? 'Quitar beca' : 'Dar beca'}
@@ -354,6 +355,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       await supabase.from('payments').update({ status: 'pending' }).eq('profile_id', studentId).eq('status', 'scholarship')
     }
     mountCoachStudentDetail()
+  })
+
+  document.getElementById('btn-hard-delete')?.addEventListener('click', async () => {
+    if (!await confirmDialog('¿Eliminar PERMANENTEMENTE a este estudiante? Se borrarán todos sus datos. Esta acción NO se puede deshacer.', 'Eliminar permanentemente')) return
+    const { error } = await supabase.from('profiles').delete().eq('id', studentId)
+    if (error) { toast('error', error.message); return }
+    toast('success', 'Estudiante eliminado permanentemente')
+    window.location.hash = '#/coaches/students'
   })
 
   // Achievements
