@@ -48,7 +48,8 @@ function rankSvg(icon: string, color: string): string {
 }
 
 export function renderPublicProfile(): string {
-  return `<div id="page-content">${Spinner()}</div>`
+  document.body.style.background = '#0A0A0A'
+  return `<div id="page-content" class="min-h-screen bg-[#0A0A0A]">${Spinner()}</div>`
 }
 
 export async function initPublicProfile(): Promise<void> {
