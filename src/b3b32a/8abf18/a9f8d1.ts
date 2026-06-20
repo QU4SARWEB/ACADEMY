@@ -1211,10 +1211,21 @@ export function renderCoachExamAttempt(): string {
 export async function initCoachExamAttempt(): Promise<void> {
   const params = router.getParams()
   const courseId = params.id, examId = params.examId, attemptId = params.attemptId
-  if (!courseId || !examId || !attemptId) {
+  if (!examId || !attemptId) {
     document.getElementById('exam-attempt-content')!.innerHTML = '<p class="text-zinc-500">Parámetros inválidos</p>'
     return
   }
+  await loadAttempt(examId, attemptId, courseId || '')
+}
+
+export async function initCoachExamAttemptStandalone(): Promise<void> {
+  const params = router.getParams()
+  const examId = params.examId, attemptId = params.attemptId
+  if (!examId || !attemptId) { document.getElementById('exam-attempt-content')!.innerHTML = '<p class="text-zinc-500">Parámetros inválidos</p>'; return }
+  await loadAttempt(examId, attemptId, '')
+}
+
+async function loadAttempt(examId: string, attemptId: string, courseId: string): Promise<void> {
   const { data: attempt } = await supabase.from('exam_attempts').select('*').eq('id', attemptId).maybeSingle()
   if (!attempt) { document.getElementById('exam-attempt-content')!.innerHTML = '<p class="text-zinc-500">Intento no encontrado</p>'; return }
   const { data: enroll } = await supabase.from('enrollments').select('profile_id').eq('id', attempt.enrollment_id).maybeSingle()
@@ -1230,7 +1241,7 @@ export async function initCoachExamAttempt(): Promise<void> {
   for (const q of questions ?? []) qMap[q.id] = q
   const html = `
     <div class="mb-6">
-      <a href="#/coaches/courses/${escapeHtml(courseId)}/exams" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">${Icon('arrowLeft', 16)} Volver a exámenes</a>
+      <a href="${courseId ? '#/coaches/courses/' + escapeHtml(courseId) + '/exams' : '#/coaches/exams'}" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">${Icon('arrowLeft', 16)} Volver a exámenes</a>
       <div class="flex items-center gap-3 mb-4">
         ${prof.avatar_url ? `<img src="${escapeHtml(prof.avatar_url)}" class="h-10 w-10 rounded-full object-cover" />` : ''}
         <div>
