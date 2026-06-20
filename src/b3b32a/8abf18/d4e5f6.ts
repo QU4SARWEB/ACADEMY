@@ -12,7 +12,7 @@ export async function initCoachExamsOverview(): Promise<void> {
   try {
     const { data: allCourses } = await supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order')
     const courses = allCourses ?? []
-    let selectedCourseId = courses.length > 0 ? courses[0].id : ''
+    let selectedCourseId = ''
 
     async function render(courseId: string) {
       const { data: exams } = courseId
@@ -50,7 +50,7 @@ export async function initCoachExamsOverview(): Promise<void> {
         <form id="create-exam-form" class="space-y-3">
           <div><label class="mb-1 block text-sm text-zinc-400">Curso</label>
             <select name="course_id" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-              ${courses.map((c: any) => '<option value="' + c.id + '" ' + (c.id === courseId ? 'selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('')}
+              ${courses.map((c: any) => '<option value="' + c.id + '" ' + (c.id === (courseId || courses[0]?.id) ? 'selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('')}
             </select>
           </div>
           <div><label class="mb-1 block text-sm text-zinc-400">Título</label><input name="title" required maxlength="200" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></div>
