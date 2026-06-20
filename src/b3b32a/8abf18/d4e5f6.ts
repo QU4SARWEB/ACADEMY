@@ -80,7 +80,7 @@ export async function initCoachExamsOverview(): Promise<void> {
           <div class="border-t border-zinc-700 pt-3"><label class="mb-2 block text-sm text-zinc-400">Asignar a</label><div class="flex gap-4 mb-2"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="assign_type" value="course" checked class="h-4 w-4 border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none" onchange="document.getElementById('assign-students').classList.add('hidden')"> <span class="text-sm text-zinc-300">Todo el curso</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="assign_type" value="individual" class="h-4 w-4 border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none" onchange="document.getElementById('assign-students').classList.remove('hidden')"> <span class="text-sm text-zinc-300">Alumnos específicos</span></label></div><div id="assign-students" class="hidden"><select name="assigned_students" multiple class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" size="4"></select><p class="mt-1 text-xs text-zinc-500">Ctrl+click para seleccionar varios</p></div></div>
           <div class="flex items-center gap-4"><label class="flex items-center gap-2 cursor-pointer"><input name="is_published" type="checkbox" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"> <span class="text-sm text-zinc-400">Publicado</span></label><label class="flex items-center gap-2 cursor-pointer"><input name="shuffle" type="checkbox" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"> <span class="text-sm text-zinc-400">Aleatorio</span></label><label class="flex items-center gap-2 cursor-pointer"><input name="is_active" type="checkbox" checked class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"> <span class="text-sm text-zinc-400">Activo</span></label></div>
           <div class="border-t border-zinc-700 pt-3 mt-3">
-            <div class="flex items-center justify-between mb-2"><h3 class="font-heading text-sm font-bold text-white">Preguntas del examen</h3><button type="button" id="add-manual-q-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">${Icon('plus', 12)} Agregar pregunta manual</button></div>
+            <h3 class="font-heading text-sm font-bold text-white mb-2">Preguntas del examen</h3>
             <div id="manual-questions-list" class="space-y-2 mb-2"></div>
             <div id="manual-q-form" class="hidden rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 mb-2">
               <div class="flex flex-wrap gap-2 mb-2"><input id="manual-q-text" placeholder="Texto de la pregunta" class="flex-1 min-w-[200px] rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /><select id="manual-q-type" class="w-28 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"><option value="multiple_choice">Opción múltiple</option><option value="true_false">V/F</option><option value="open_ended">Desarrollo</option><option value="short_answer">Corta</option></select><input id="manual-q-points" type="number" step="0.5" value="5" class="w-16 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /><button type="button" id="manual-q-close" class="text-zinc-600 hover:text-red-400">&times;</button></div>
@@ -91,6 +91,7 @@ export async function initCoachExamsOverview(): Promise<void> {
             </div>
             <button type="button" id="paste-full-exam-btn" class="flex items-center gap-2 text-xs text-zinc-500 hover:text-white">${Icon('clipboardList', 12)} Pegar examen completo</button>
             <div id="paste-full-exam-area" class="hidden mt-2"><textarea rows="5" placeholder="Pega aquí el examen completo (título, descripción, preguntas con opciones...)" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-xs text-white outline-none focus:border-[#8B5CF6]"></textarea><div class="flex gap-2 mt-1"><button type="button" id="apply-full-exam-btn" class="text-xs text-[#8B5CF6] hover:text-[#7C3AED]">Aplicar</button><button type="button" id="cancel-full-exam-btn" class="text-xs text-zinc-500 hover:text-white">Cancelar</button></div></div>
+            <button type="button" id="add-manual-q-btn" class="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-xs text-zinc-400 hover:text-white hover:border-zinc-500 w-full justify-center transition">${Icon('plus', 12)} Agregar pregunta manual</button>
           </div>
           <p id="exam-error" class="hidden text-sm text-red-400"></p>
           <button type="submit" class="btn-glow rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">${Icon('plus', 14)} Crear examen${'<span id="exam-q-count" class="ml-1 text-xs opacity-70"></span>'}</button>
@@ -123,9 +124,15 @@ export async function initCoachExamsOverview(): Promise<void> {
 
       document.getElementById('create-exam-form')?.addEventListener('submit', async (e) => {
         e.preventDefault()
+        // Loading overlay
+        const loadOverlay = document.createElement('div')
+        loadOverlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/60'
+        loadOverlay.innerHTML = '<div class="flex flex-col items-center gap-3"><svg class="animate-spin h-8 w-8 text-[#8B5CF6]" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><p class="text-sm text-zinc-300">Creando examen...</p></div>'
+        document.body.appendChild(loadOverlay)
+        try {
         const fd = new FormData(e.target as HTMLFormElement)
         const course_id = fd.get('course_id') as string
-        if (!course_id) { showError('Selecciona un curso'); return }
+        if (!course_id) { showError('Selecciona un curso'); loadOverlay.remove(); return }
         const payload: Record<string, any> = {
           course_id, title: fd.get('title'), description: fd.get('description'), module_id: fd.get('module_id') || null,
           passing_score: parseFloat(fd.get('passing_score') as string) || 60, time_limit: parseInt(fd.get('time_limit') as string) || null,
@@ -155,6 +162,8 @@ export async function initCoachExamsOverview(): Promise<void> {
           pendingQuestions = []
         }
         toast('success', 'Examen creado'); document.getElementById('new-exam-form')?.classList.add('hidden'); renderExamList(courseId)
+        } catch (err) { console.error(err); toast('error', 'Error al crear examen')
+        } finally { loadOverlay.remove() }
       })
 
       // Manual question builder
@@ -163,7 +172,7 @@ export async function initCoachExamsOverview(): Promise<void> {
         const list = document.getElementById('manual-questions-list')!
         const countEl = document.getElementById('exam-q-count')!
         if (pendingQuestions.length === 0) { list.innerHTML = ''; countEl.textContent = ''; return }
-        list.innerHTML = pendingQuestions.map((q, qi) => '<div class="flex items-center justify-between rounded border border-zinc-700 bg-zinc-900/30 px-3 py-2"><span class="text-xs text-white truncate flex-1">' + (qi + 1) + '. ' + escapeHtml(q.stem.slice(0, 60)) + '</span><button type="button" class="remove-pending-q text-zinc-600 hover:text-red-400 shrink-0 ml-2" data-idx="' + qi + '">' + Icon('x', 12) + '</button></div>').join('')
+        list.innerHTML = pendingQuestions.map((q, qi) => '<div class="flex items-center justify-between rounded border border-zinc-700 bg-zinc-900/30 px-3 py-2"><span class="text-xs text-white truncate flex-1">' + (qi + 1) + '. ' + escapeHtml(q.stem) + '</span><button type="button" class="remove-pending-q text-zinc-600 hover:text-red-400 shrink-0 ml-2" data-idx="' + qi + '">' + Icon('x', 12) + '</button></div>').join('')
         countEl.textContent = '(' + pendingQuestions.length + ' preg.)'
       }
       function syncManualOpts() {
