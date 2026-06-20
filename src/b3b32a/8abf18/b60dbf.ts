@@ -152,11 +152,9 @@ export function mountCoachStudentDetail(): void {
                             }
                           </div>
                         </div>
-                        ${(enr.status === 'active' || enr.status === 'recovery') ? `
-                          <button class="btn-unenroll text-xs text-red-400 hover:text-red-300" data-enrollment-id="${escapeHtml(enr.id)}">
-                            ${Icon('trash', 14)}
-                          </button>
-                        ` : ''}
+                        <button class="btn-unenroll text-xs ${enr.status === 'active' || enr.status === 'recovery' ? 'text-red-400 hover:text-red-300' : 'text-zinc-600 hover:text-red-400'}" data-enrollment-id="${escapeHtml(enr.id)}">
+                          ${Icon('trash', 14)}
+                        </button>
                       </div>
                     </div>`
                 }).join('')}
@@ -414,10 +412,20 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
   document.querySelectorAll('.btn-unenroll').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const enrollmentId = (btn as HTMLElement).dataset.enrollmentId
-      if (!enrollmentId || !(await confirmDialog('¿Dar de baja esta inscripción?'))) return
-      const { error } = await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
-      if (error) toast('error', error.message)
-      else mountCoachStudentDetail()
+      if (!enrollmentId) return
+      const parent = (btn as HTMLElement).closest('[data-enrollment-id]') as HTMLElement
+      const statusText = parent?.querySelector('.capitalize')?.textContent?.trim() || ''
+      const isInactive = statusText === 'inactive'
+      if (!await confirmDialog(isInactive ? '¿Eliminar permanentemente esta inscripción inactiva?' : '¿Dar de baja esta inscripción?')) return
+      if (isInactive) {
+        const { error } = await supabase.from('enrollments').delete().eq('id', enrollmentId)
+        if (error) toast('error', error.message)
+        else mountCoachStudentDetail()
+      } else {
+        const { error } = await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
+        if (error) toast('error', error.message)
+        else mountCoachStudentDetail()
+      }
     })
   })
 

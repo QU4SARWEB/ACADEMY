@@ -51,6 +51,7 @@ export async function initStudentExamList(): Promise<void> {
         .select('id')
         .eq('course_id', id)
         .eq('profile_id', session.user.id)
+        .eq('status', 'active')
         .maybeSingle()
       enrollment = enr
 
