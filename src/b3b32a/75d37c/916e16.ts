@@ -207,10 +207,10 @@ export async function initStudentExamTake(): Promise<void> {
 
     const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
 
-    // Get ALL attempts to count them (column is started_at, not created_at)
+    // Get ALL attempts with answers
     const { data: allAttempts } = await supabase
       .from('exam_attempts')
-      .select('*')
+      .select('*, student_answers(*)')
       .eq('exam_id', examId)
       .eq('enrollment_id', enrollment.id)
       .order('started_at', { ascending: false })
