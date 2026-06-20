@@ -83,6 +83,17 @@ export async function initCoachExamsOverview(): Promise<void> {
               </select>
             </div>
           </div>
+          <div class="border-t border-zinc-700 pt-3">
+            <label class="mb-2 block text-sm text-zinc-400">Asignar a</label>
+            <div class="flex gap-4 mb-2">
+              <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="assign_type" value="course" checked class="h-4 w-4 border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none" onchange="document.getElementById('assign-students').classList.add('hidden')"> <span class="text-sm text-zinc-300">Todo el curso</span></label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="assign_type" value="individual" class="h-4 w-4 border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none" onchange="document.getElementById('assign-students').classList.remove('hidden')"> <span class="text-sm text-zinc-300">Alumnos específicos</span></label>
+            </div>
+            <div id="assign-students" class="hidden">
+              <select name="assigned_students" multiple class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" size="4"></select>
+              <p class="mt-1 text-xs text-zinc-500">Ctrl+click para seleccionar varios</p>
+            </div>
+          </div>
           <div class="flex items-center gap-4">
             <label class="flex items-center gap-2 cursor-pointer"><input name="is_published" type="checkbox" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none"> <span class="text-sm text-zinc-400">Publicado</span></label>
             <label class="flex items-center gap-2 cursor-pointer"><input name="shuffle" type="checkbox" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none"> <span class="text-sm text-zinc-400">Aleatorio</span></label>
@@ -113,17 +124,24 @@ export async function initCoachExamsOverview(): Promise<void> {
 
       document.getElementById('add-exam-btn')?.addEventListener('click', () => {
         document.getElementById('new-exam-form')?.classList.remove('hidden')
-        // Re-fetch modules for selected course
-        if (selectedCourseId) {
-          supabase.from('course_modules').select('id, name').eq('course_id', selectedCourseId).order('display_order').then(({ data: mods }) => {
+        document.getElementById('assign-students')?.classList.add('hidden')
+        document.querySelector<HTMLInputElement>('input[name="assign_type"][value="course"]')!.checked = true
+        const courseIdVal = document.querySelector<HTMLSelectElement>('select[name="course_id"]')?.value || selectedCourseId
+        loadStudentsForCourse(courseIdVal)
+        // Re-fetch modules
+        if (courseIdVal) {
+          supabase.from('course_modules').select('id, name').eq('course_id', courseIdVal).order('display_order').then(({ data: mods }) => {
             const sel = document.querySelector<HTMLSelectElement>('#create-exam-form select[name="module_id"]')
             if (sel) {
-              const current = sel.value
               sel.innerHTML = '<option value="">— Sin módulo —</option>' + (mods ?? []).map((m: any) => '<option value="' + m.id + '">' + escapeHtml(m.name) + '</option>').join('')
-              sel.value = current
             }
           })
         }
+      })
+
+      document.querySelector<HTMLSelectElement>('select[name="course_id"]')?.addEventListener('change', (e) => {
+        const val = (e.target as HTMLSelectElement).value
+        if (val) loadStudentsForCourse(val)
       })
 
       document.getElementById('create-exam-form')?.addEventListener('submit', async (e) => {
@@ -140,8 +158,21 @@ export async function initCoachExamsOverview(): Promise<void> {
           eval_type: (fd.get('eval_type') as string) || 'exam', month: fd.get('month') ? parseInt(fd.get('month') as string) : null,
           is_active: fd.get('is_active') === 'on',
         }
-        const { error } = await supabase.from('exams').insert(payload)
-        if (error) { showError(error.message); return }
+        const { data: newExam, error } = await supabase.from('exams').insert(payload).select().maybeSingle()
+        if (error || !newExam) { showError(error?.message || 'Error'); return }
+
+        // Handle individual assignments
+        if (fd.get('assign_type') === 'individual') {
+          const sel = document.querySelector<HTMLSelectElement>('select[name="assigned_students"]')
+          if (sel) {
+            const ids = Array.from(sel.selectedOptions).map(o => o.value)
+            if (ids.length > 0) {
+              const rows = ids.map(pid => ({ exam_id: newExam.id, profile_id: pid }))
+              await supabase.from('exam_assignments').insert(rows)
+            }
+          }
+        }
+
         toast('success', 'Examen creado')
         document.getElementById('new-exam-form')?.classList.add('hidden')
         render(selectedCourseId)
@@ -210,6 +241,18 @@ export async function initCoachExamsOverview(): Promise<void> {
           if (examId) window.location.hash = '#/coaches/courses/' + selectedCourseId + '/exams?focus=answers&exam=' + examId
         })
       })
+    }
+
+    async function loadStudentsForCourse(courseIdVal: string) {
+      if (!courseIdVal) return
+      const { data: enrolls } = await supabase.from('enrollments').select('profile_id, profiles!profile_id(full_name, riot_id, social_discord)').eq('course_id', courseIdVal).eq('status', 'active')
+      const sel = document.querySelector<HTMLSelectElement>('select[name="assigned_students"]')
+      if (!sel) return
+      sel.innerHTML = (enrolls ?? []).map((e: any) => {
+        const p: any = e.profiles || {}
+        const name = [p.riot_id || p.full_name, p.social_discord].filter(Boolean).join(' | ') || p.full_name || 'Unknown'
+        return '<option value="' + e.profile_id + '">' + escapeHtml(name) + '</option>'
+      }).join('')
     }
 
     function showError(msg: string) {

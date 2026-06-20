@@ -30,7 +30,18 @@ export async function initStudentExamList(): Promise<void> {
       .eq('course_id', id)
       .order('created_at', { ascending: false })
 
-    const examList = (examsAll ?? []).filter((e: any) => e.is_published)
+    // Also fetch individually assigned exams
+    const { data: myAssignments } = await supabase
+      .from('exam_assignments')
+      .select('exam_id')
+      .eq('profile_id', session.user.id)
+    const assignExamIds = (myAssignments ?? []).map((a: any) => a.exam_id).filter((id: string) => !examsAll?.some((e: any) => e.id === id))
+    let assignedExams: any[] = []
+    if (assignExamIds.length > 0) {
+      const { data: ae } = await supabase.from('exams').select('*, course_modules(name)').in('id', assignExamIds)
+      assignedExams = ae ?? []
+    }
+    const examList = [...(examsAll ?? []), ...assignedExams].filter((e: any) => e.is_published)
 
     let enrollment: any = null
     let attemptsByExam: Record<string, any> = {}
