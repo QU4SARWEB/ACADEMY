@@ -415,7 +415,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       if (!enrollmentId) return
       const parent = (btn as HTMLElement).closest('[data-enrollment-id]') as HTMLElement
       const statusText = parent?.querySelector('.capitalize')?.textContent?.trim() || ''
-      const isInactive = statusText === 'inactive'
+      const isInactive = statusText.startsWith('inactive')
       if (!await confirmDialog(isInactive ? '¿Eliminar permanentemente esta inscripción inactiva?' : '¿Dar de baja esta inscripción?')) return
       if (isInactive) {
         const { error } = await supabase.from('enrollments').delete().eq('id', enrollmentId)
