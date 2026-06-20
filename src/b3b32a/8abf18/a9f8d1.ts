@@ -967,19 +967,15 @@ export async function initCoachExams(): Promise<void> {
                             <span class="text-white">${escapeHtml(sa.text_answer || '(sin respuesta)')}</span>
                           </div>
                         `}
-                        ${sa.score !== null ? `
-                          <div class="mt-1 text-xs ${sa.is_correct ? 'text-green-400' : 'text-red-400'}">
-                            ${sa.is_correct ? 'Correcta' : 'Incorrecta'} (${sa.score} pts)
-                          </div>
-                        ` : (q.type === 'open_ended' || q.type === 'short_answer') ? `
+                        ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                           <div class="mt-2 flex items-center gap-2" data-sa-id="${sa.id}">
                             <select class="grade-select rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:border-[#8B5CF6]">
                               <option value="">Calificar...</option>
-                              <option value="correct">Correcta</option>
-                              <option value="incorrect">Incorrecta</option>
+                              <option value="correct" ${sa.is_correct === true ? 'selected' : ''}>Correcta</option>
+                              <option value="incorrect" ${sa.is_correct === false ? 'selected' : ''}>Incorrecta</option>
                             </select>
-                            <input type="number" class="grade-score w-16 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" />
-                            <button type="button" class="grade-save-btn text-[10px] text-[#8B5CF6] hover:text-[#7C3AED] transition">Guardar</button>
+                            <input type="number" class="grade-score w-16 rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                            <button type="button" class="grade-save-btn text-[10px] text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                           </div>
                         ` : ''}
                       </div>
@@ -1236,6 +1232,12 @@ export async function initCoachExamAttempt(): Promise<void> {
           <p class="text-sm text-zinc-500">Intento ${attempt.attempt_num} · ${attempt.score !== null ? attempt.score + '%' : 'Pendiente'} · <span class="rounded px-2 py-0.5 text-[10px] ${attempt.status === 'graded' ? 'bg-green-500/20 text-green-400' : attempt.status === 'submitted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-500/20 text-zinc-400'}">${attempt.status}</span></p>
         </div>
       </div>
+      <div class="mb-4 flex items-center gap-3">
+        <label class="text-sm text-zinc-400">Nota general:</label>
+        <input type="number" id="overall-score-input" class="w-24 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" min="0" max="100" step="0.01" value="${attempt.score !== null ? attempt.score : ''}" placeholder="—" />
+        <span class="text-sm text-zinc-500">%</span>
+        <button type="button" id="save-overall-score" class="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">Guardar nota</button>
+      </div>
     </div>
     <div class="space-y-4">
       ${(answers ?? []).map((sa: any, idx: number) => {
@@ -1268,17 +1270,15 @@ export async function initCoachExamAttempt(): Promise<void> {
                 ` : `
                   <div class="rounded-lg bg-zinc-900/50 p-3 text-sm text-white">${escapeHtml(sa.text_answer || '(sin respuesta)')}</div>
                 `}
-                ${sa.score !== null ? `
-                  <div class="mt-2 text-xs ${sa.is_correct ? 'text-green-400' : 'text-red-400'}">${sa.is_correct ? 'Correcta' : 'Incorrecta'} (${sa.score} pts)</div>
-                ` : (q.type === 'open_ended' || q.type === 'short_answer') ? `
+                ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                   <div class="mt-3 flex items-center gap-2" data-sa-id="${sa.id}">
                     <select class="grade-select rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]">
                       <option value="">Calificar...</option>
-                      <option value="correct">Correcta</option>
-                      <option value="incorrect">Incorrecta</option>
+                      <option value="correct" ${sa.is_correct === true ? 'selected' : ''}>Correcta</option>
+                      <option value="incorrect" ${sa.is_correct === false ? 'selected' : ''}>Incorrecta</option>
                     </select>
-                    <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" />
-                    <button type="button" class="grade-save-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition">Guardar</button>
+                    <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]" placeholder="Pts" min="0" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                    <button type="button" class="grade-save-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                   </div>
                 ` : ''}
               </div>
@@ -1316,6 +1316,19 @@ export async function initCoachExamAttempt(): Promise<void> {
       const { error } = await supabase.from('exam_attempts').update({ status: 'graded' }).eq('id', attemptId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Intento marcado como revisado')
+      initCoachExamAttempt()
+    })
+  }
+
+  const overallBtn = document.getElementById('save-overall-score')
+  if (overallBtn) {
+    overallBtn.addEventListener('click', async () => {
+      const inp = document.getElementById('overall-score-input') as HTMLInputElement
+      const val = parseFloat(inp?.value)
+      if (isNaN(val) || val < 0 || val > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+      const { error } = await supabase.from('exam_attempts').update({ score: val }).eq('id', attemptId)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Nota general actualizada')
       initCoachExamAttempt()
     })
   }
