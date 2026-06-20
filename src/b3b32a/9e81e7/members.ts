@@ -30,7 +30,7 @@ export async function initMembers(): Promise<void> {
       const pubIds = [...new Set((pubData ?? []).map((p: any) => p.profile_id))]
       const { data: pubProfiles } = await supabase
         .from('profiles')
-        .select('id, full_name, role, avatar_url, banner_url')
+        .select('id, full_name, role, avatar_url, banner_url, riot_id, social_discord')
         .in('id', pubIds.length ? pubIds : ['none'])
       const profMap: Record<string, any> = {}
       for (const p of pubProfiles ?? []) profMap[p.id] = p
@@ -38,7 +38,7 @@ export async function initMembers(): Promise<void> {
         const prof = profMap[p.profile_id] || {}
         return {
           slug: p.slug,
-          display_name: p.display_name || prof.full_name || 'Usuario',
+          display_name: [prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || 'Usuario',
           avatar_url: p.avatar_url || prof.avatar_url,
           banner_url: p.banner_url || prof.banner_url,
           bio: p.bio,
@@ -50,7 +50,7 @@ export async function initMembers(): Promise<void> {
 
     const { data: allProfiles } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, banner_url, role, display_name, share_slug')
+      .select('id, full_name, avatar_url, banner_url, role, display_name, share_slug, riot_id, social_discord')
       .in('role', ['student', 'player', 'coach'])
       .order('full_name')
 
@@ -59,7 +59,7 @@ export async function initMembers(): Promise<void> {
       if (isCoach || !existingIds.has(prof.id)) {
         combined.push({
           slug: prof.share_slug || `u-${prof.id.slice(0, 8)}`,
-          display_name: prof.display_name || prof.full_name || 'Usuario',
+          display_name: [prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || 'Usuario',
           avatar_url: prof.avatar_url,
           banner_url: prof.banner_url,
           bio: null,
