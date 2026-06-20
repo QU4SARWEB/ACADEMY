@@ -68,7 +68,7 @@ export async function initCoachGradesList(): Promise<void> {
 
       ${(students ?? []).length === 0 ? '<p class="text-zinc-500">No hay estudiantes.</p>' : `
       <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
-        <th class="pb-3 pr-4 font-medium">Estudiante</th><th class="pb-3 pr-4 font-medium">Rango</th><th class="pb-3 pr-4 font-medium">Manuales</th><th class="pb-3 pr-4 font-medium">Exámenes</th><th class="pb-3 pr-4 font-medium">Tareas</th><th class="pb-3 pr-4 font-medium">Promedio</th><th class="pb-3 font-medium"></th>
+        <th class="pb-3 pr-4 font-medium">Estudiante</th><th class="pb-3 pr-4 font-medium">Rango</th><th class="pb-3 pr-4 font-medium">Práctico</th><th class="pb-3 pr-4 font-medium">Exámenes</th><th class="pb-3 pr-4 font-medium">Tareas</th><th class="pb-3 pr-4 font-medium">Promedio</th><th class="pb-3 font-medium"></th>
       </tr></thead><tbody>
       ${(students ?? []).map((s: any) => {
         const manualScores = gradeMap[s.id] || []
