@@ -82,7 +82,7 @@ export async function initStudentCourses(): Promise<void> {
                 <p class="mt-1 text-xs text-zinc-500">${course.duration_months} meses${course.min_rank ? ` · Rango mínimo: ${escapeHtml(course.min_rank)}` : ''}</p>
                 ${course.description ? `<p class="mt-1 text-xs text-zinc-400">${escBr(course.description)}</p>` : ''}
                 <form class="mt-3" data-enroll-form data-course-id="${escapeHtml(course.id)}">
-                  <button type="submit"
+                  <button type="submit" data-enroll-btn="${escapeHtml(course.id)}"
                     class="flex w-full items-center justify-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
                     ${Icon('plus', 14)} Inscribirme
                   </button>
@@ -106,6 +106,10 @@ export async function initStudentCourses(): Promise<void> {
         e.preventDefault()
         const courseId = (form as HTMLElement).dataset.courseId
         if (!courseId) return
+
+        const btn = document.querySelector(`[data-enroll-btn="${courseId}"]`) as HTMLButtonElement
+        if (btn?.disabled) return
+        if (btn) { btn.disabled = true; btn.textContent = 'Inscribiendo...' }
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -147,6 +151,7 @@ export async function initStudentCourses(): Promise<void> {
 
         if (enrError) {
           toast('error', 'Error al inscribirse: ' + enrError.message)
+          if (btn) { btn.disabled = false; btn.innerHTML = `${Icon('plus', 14)} Inscribirme` }
           return
         }
 
@@ -172,6 +177,7 @@ export async function initStudentCourses(): Promise<void> {
         }
 
         toast('success', `¡Inscrito en ${course?.name ?? 'el curso'}!`)
+        if (btn) btn.disabled = false
         location.reload()
       })
     })

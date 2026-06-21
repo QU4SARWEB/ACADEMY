@@ -390,6 +390,7 @@ async function renderCoachPayments(): Promise<void> {
     scholarship: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
     expired: 'text-red-400 bg-red-500/10 border-red-500/30',
   }
+  const statusLabels: Record<string, string> = { pending: 'Pendiente', paid: 'Pagado', scholarship: 'Beca', expired: 'Vencido' }
 
   const seasonOptions = (seasons ?? []).map((s: any) =>
     `<option value="${escapeHtml(s.id)}" ${s.id === filterSeasonId ? 'selected' : ''}>${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
@@ -473,7 +474,7 @@ async function renderCoachPayments(): Promise<void> {
                   <td class="px-4 py-3 text-zinc-300">${pay?.amount ? '$' + pay.amount : '—'}</td>
                   <td class="px-4 py-3">
                     ${pay
-                      ? `<span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[pay.status] || 'text-zinc-500'}">${escapeHtml(pay.status)}</span>`
+                      ? `<span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[pay.status] || 'text-zinc-500'}">${statusLabels[pay.status] || escapeHtml(pay.status)}</span>`
                       : '<span class="inline-block rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs font-medium text-zinc-600">Sin pago</span>'
                     }
                   </td>
