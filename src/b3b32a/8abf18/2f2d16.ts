@@ -189,6 +189,14 @@ export async function initCoachTaskDetail(): Promise<void> {
           toast('error', error.message)
         } else {
           toast('success', 'Calificación guardada')
+          // Recalc enrollment grade
+          const { data: sub } = await supabase.from('task_submissions').select('enrollment_id').eq('id', subId).maybeSingle()
+          if (sub?.enrollment_id) {
+            const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
+            await recalcFinalGrade(sub.enrollment_id)
+            const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', sub.enrollment_id).maybeSingle()
+            if (enr) await checkAutoPromotion(sub.enrollment_id, enr.course_id, enr.profile_id)
+          }
           router.navigate(`/coaches/tasks/${id}`)
         }
       })

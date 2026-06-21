@@ -181,6 +181,12 @@ export async function initCoachGrades(): Promise<void> {
       }
 
       toast('success', 'Nota actualizada correctamente')
+      // Auto-promotion check
+      const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', enrollmentId).maybeSingle()
+      if (enr) {
+        const { checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
+        await checkAutoPromotion(enrollmentId, enr.course_id, enr.profile_id)
+      }
       initCoachGrades()
     })
   } catch (err) {

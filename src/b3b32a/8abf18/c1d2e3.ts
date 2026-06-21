@@ -112,6 +112,8 @@ export async function initCoachGradesList(): Promise<void> {
       const { error } = await supabase.from('grades').insert({ profile_id: profileId, coach_id: session.user.id, title, category, score, comment, source: 'manual' })
       if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return }
       toast('success', 'Nota agregada')
+      const { recalcAllEnrollmentsForProfile } = await import('@/b3b32a/8abf18/grade_utils')
+      await recalcAllEnrollmentsForProfile(profileId)
       modal.classList.add('hidden')
       initCoachGradesList()
     })

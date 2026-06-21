@@ -154,6 +154,17 @@ export async function initPracticalScore(): Promise<void> {
         document.getElementById('close-exam-btn')?.addEventListener('click', async () => {
           if (!await confirmDialog('¿Cerrar el examen? Los alumnos podrán ver sus notas.')) return
           await supabase.from('practical_exams').update({ status: 'closed' }).eq('id', examId)
+          // Recalc grades for all members
+          const { data: allMembers } = await supabase.from('practical_team_members').select('enrollment_id').eq('practical_team_id', examId)
+          const enrollIds = [...new Set((allMembers ?? []).map((m: any) => m.enrollment_id).filter(Boolean))]
+          if (enrollIds.length > 0) {
+            const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
+            for (const eid of enrollIds) {
+              await recalcFinalGrade(eid)
+              const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', eid).maybeSingle()
+              if (enr) await checkAutoPromotion(eid, enr.course_id, enr.profile_id)
+            }
+          }
           toast('success', 'Examen cerrado'); renderScore(exam)
         })
       }

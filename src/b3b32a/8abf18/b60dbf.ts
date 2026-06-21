@@ -513,14 +513,15 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    // Check if student already has a payment for this course
-    const { data: existingForCourse } = await supabase
-      .from('payments')
-      .select('id, enrollments!enrollment_id(course_id)')
+    // Check if student already passed this course (no new payment needed if passed)
+    const { data: prevPassed } = await supabase
+      .from('enrollments')
+      .select('final_grade, promoted')
       .eq('profile_id', profileId)
-    const alreadyPaidCourse = (existingForCourse ?? []).some((p: any) => (p as any).enrollments?.course_id === courseId)
+      .eq('course_id', courseId)
+    const alreadyPassed = (prevPassed ?? []).some((e: any) => e.final_grade !== null && e.final_grade >= 70 && e.promoted)
 
-    if (!alreadyPaidCourse) {
+    if (!alreadyPassed) {
       const { data: studentProfile } = await supabase
         .from('profiles')
         .select('scholarship')

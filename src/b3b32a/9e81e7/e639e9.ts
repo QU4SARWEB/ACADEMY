@@ -62,15 +62,18 @@ async function renderStudentPayments(userId: string): Promise<void> {
     .eq('status', 'active')
     .order('enrolled_at', { ascending: false })
 
-  // Auto-create missing payments for active enrollments (one per course)
-  const paidCourses = new Set<string>()
+  // Auto-create payments: one per course, but allow new if previous was failed
+  const paidPassedCourses = new Set<string>()
   for (const p of payments ?? []) {
     const enr = allEnrolls?.find((x: any) => x.id === p.enrollment_id)
-    if (enr) paidCourses.add((enr as any).course_id)
+    if (enr) {
+      const alreadyPassed = (enrollments ?? []).some((e2: any) => e2.course_id === (enr as any).course_id && e2.final_grade !== null && e2.final_grade >= 70 && e2.promoted)
+      if (alreadyPassed) paidPassedCourses.add((enr as any).course_id)
+    }
   }
   for (const e of enrollments ?? []) {
     const seasonId = e.seasons?.id ?? e.season_id
-    if (seasonId && !paidCourses.has(e.course_id)) {
+    if (seasonId && !paidPassedCourses.has(e.course_id)) {
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', userId).maybeSingle()
       await supabase.from('payments').insert({
         profile_id: userId,
@@ -80,7 +83,6 @@ async function renderStudentPayments(userId: string): Promise<void> {
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: 1.54,
       })
-      paidCourses.add(e.course_id)
     }
   }
 

@@ -1338,6 +1338,13 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
       const { error } = await supabase.from('exam_attempts').update({ score: val }).eq('id', attemptId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Nota general actualizada')
+      const { data: att } = await supabase.from('exam_attempts').select('enrollment_id').eq('id', attemptId).maybeSingle()
+      if (att?.enrollment_id) {
+        const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
+        await recalcFinalGrade(att.enrollment_id)
+        const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', att.enrollment_id).maybeSingle()
+        if (enr) await checkAutoPromotion(att.enrollment_id, enr.course_id, enr.profile_id)
+      }
       initCoachExamAttempt()
     })
   }
@@ -1355,4 +1362,12 @@ async function recalcExamScore(saId: string): Promise<void> {
   const total = answers.reduce((s: number, a: any) => s + (a.score || 0), 0)
   const avg = Math.round(total / answers.length)
   await supabase.from('exam_attempts').update({ score: avg }).eq('id', sa.attempt_id)
+  // Also recalc enrollment final grade
+  const { data: attempt } = await supabase.from('exam_attempts').select('enrollment_id').eq('id', sa.attempt_id).maybeSingle()
+  if (attempt?.enrollment_id) {
+    const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
+    await recalcFinalGrade(attempt.enrollment_id)
+    const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', attempt.enrollment_id).maybeSingle()
+    if (enr) await checkAutoPromotion(attempt.enrollment_id, enr.course_id, enr.profile_id)
+  }
 }

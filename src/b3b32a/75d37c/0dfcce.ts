@@ -151,13 +151,15 @@ export async function initStudentCourses(): Promise<void> {
         }
 
         if (season?.id && enrollment?.id) {
-          // Only create payment if no existing payment for this course
-          const { data: existingCoursePay } = await supabase
-            .from('payments')
-            .select('id, enrollments!enrollment_id(course_id)')
+          // Check if course was already passed (if so, no new payment needed)
+          const { data: prevEnrolls } = await supabase
+            .from('enrollments')
+            .select('final_grade, promoted')
             .eq('profile_id', session.user.id)
-          const alreadyPaid = (existingCoursePay ?? []).some((p: any) => (p as any).enrollments?.course_id === courseId)
-          if (!alreadyPaid) {
+            .eq('course_id', courseId)
+            .neq('id', enrollment.id)
+          const alreadyPassed = (prevEnrolls ?? []).some((e: any) => e.final_grade !== null && e.final_grade >= 70 && e.promoted)
+          if (!alreadyPassed) {
             await supabase.from('payments').insert({
               profile_id: session.user.id,
               enrollment_id: enrollment.id,
