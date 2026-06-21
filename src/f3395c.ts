@@ -34,7 +34,7 @@ export class Router {
   }
 
   getParams(): Record<string, string> {
-    const hash = location.hash.slice(1) || '/'
+    const hash = (location.hash.slice(1).split('?')[0]) || '/'
     for (const route of this.routes) {
       const match = hash.match(route.pattern)
       if (match) {
@@ -49,7 +49,8 @@ export class Router {
   }
 
   async navigate(path: string, replace = false): Promise<void> {
-    if (path === this.currentPath) return
+    const cleanPath = path.split('?')[0]
+    if (cleanPath === this.currentPath) return
 
     if (this.beforeNavigate) {
       const allowed = await this.beforeNavigate(path)
@@ -61,12 +62,12 @@ export class Router {
     } else {
       location.hash = path
     }
-    this.currentPath = path
+    this.currentPath = cleanPath
     await this.resolve()
   }
 
   async resolve(): Promise<void> {
-    const hash = location.hash.slice(1) || '/'
+    const hash = (location.hash.slice(1).split('?')[0]) || '/'
 
     for (const route of this.routes) {
       const match = hash.match(route.pattern)
@@ -93,7 +94,7 @@ export class Router {
   }
 
   start(): void {
-    this.currentPath = location.hash.slice(1) || '/'
+    this.currentPath = (location.hash.slice(1).split('?')[0]) || '/'
     this.resolve()
     window.addEventListener('hashchange', () => this.resolve())
   }

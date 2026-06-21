@@ -72,7 +72,9 @@ async function renderStudentPayments(userId: string): Promise<void> {
 
   // Auto-create payments: one per course, but allow new if previous was failed
   const paidPassedCourses = new Set<string>()
+  const enrollWithPayment = new Set<string>()
   for (const p of payments ?? []) {
+    if (p.enrollment_id) enrollWithPayment.add(p.enrollment_id)
     const enr = allEnrolls?.find((x: any) => x.id === p.enrollment_id)
     if (enr) {
       const alreadyPassed = (enrollments ?? []).some((e2: any) => e2.course_id === (enr as any).course_id && e2.final_grade !== null && e2.final_grade >= 70 && e2.promoted)
@@ -81,9 +83,9 @@ async function renderStudentPayments(userId: string): Promise<void> {
   }
   for (const e of enrollments ?? []) {
     const seasonId = e.seasons?.id ?? e.season_id
-    if (seasonId && !paidPassedCourses.has(e.course_id)) {
+    if (seasonId && !paidPassedCourses.has(e.course_id) && !enrollWithPayment.has(e.id)) {
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', userId).maybeSingle()
-      await supabase.from('payments').insert({
+      const { error: insErr } = await supabase.from('payments').insert({
         profile_id: userId,
         enrollment_id: e.id,
         season_id: seasonId,
@@ -91,6 +93,11 @@ async function renderStudentPayments(userId: string): Promise<void> {
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: 1.54,
       })
+      if (insErr && insErr.code === '23505') {
+        // Duplicate - payment already exists for this enrollment, ignore
+      } else if (insErr) {
+        console.error('Error creating payment:', insErr)
+      }
     }
   }
 
@@ -148,18 +155,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
           ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 172800000}"></span>` : ''}
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2 border-b border-zinc-800 pb-2">
-              <button class="pay-method-tab text-xs font-medium px-3 py-1 rounded transition" data-method="paypal" data-payment-id="${escapeHtml(p.id)}" style="background:#8B5CF620;color:#8B5CF6">PayPal</button>
-              <button class="pay-method-tab text-xs font-medium px-3 py-1 rounded transition text-zinc-500 hover:text-white" data-method="stripe" data-payment-id="${escapeHtml(p.id)}">Tarjeta (Stripe)</button>
-            </div>
-            <div class="pay-method-content" data-method="paypal" data-payment-id="${escapeHtml(p.id)}">
-              <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}"></div>
-            </div>
-            <div class="pay-method-content hidden" data-method="stripe" data-payment-id="${escapeHtml(p.id)}">
-              <button class="stripe-pay-btn w-full rounded-lg bg-[#635BFF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#5850EC]" data-payment-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}" data-course="${escapeHtml(courseByEnroll[p.enrollment_id] || 'QU4SAR Academy')}">
-                ${Icon('creditCard', 16)} Pagar con Stripe
-              </button>
-            </div>
+            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}"></div>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span class="text-zinc-600">O</span>
               ${p.receipt_url
@@ -259,105 +255,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
     }
   }
 
-  // Payment method tabs
-  document.querySelectorAll('.pay-method-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const paymentId = (tab as HTMLElement).dataset.paymentId
-      const method = (tab as HTMLElement).dataset.method
-      if (!paymentId || !method) return
-
-      document.querySelectorAll(`.pay-method-tab[data-payment-id="${paymentId}"]`).forEach(t => {
-        (t as HTMLElement).style.background = ''
-        ;(t as HTMLElement).style.color = '#999'
-      })
-      ;(tab as HTMLElement).style.background = '#8B5CF620'
-      ;(tab as HTMLElement).style.color = '#8B5CF6'
-
-      document.querySelectorAll(`.pay-method-content[data-payment-id="${paymentId}"]`).forEach(c => c.classList.add('hidden'))
-      const content = document.querySelector(`.pay-method-content[data-method="${method}"][data-payment-id="${paymentId}"]`)
-      if (content) content.classList.remove('hidden')
-    })
-  })
-
-  // Stripe pay buttons
-  document.querySelectorAll('.stripe-pay-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const paymentId = (btn as HTMLElement).dataset.paymentId
-      const amount = (btn as HTMLElement).dataset.amount
-      const courseName = (btn as HTMLElement).dataset.course
-      if (!paymentId || !amount) return
-
-      ;(btn as HTMLButtonElement).disabled = true
-      ;(btn as HTMLElement).textContent = 'Redirigiendo...'
-
-      try {
-        const origin = window.location.origin
-        const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-          body: {
-            action: 'create',
-            paymentId,
-            amount: parseFloat(amount),
-            courseName: courseName || 'Pago QU4SAR Academy',
-            successUrl: `${origin}/#/payments?stripe=success&session_id={CHECKOUT_SESSION_ID}&payment_id=${paymentId}`,
-            cancelUrl: `${origin}/#/payments?stripe=cancel`,
-          },
-        })
-
-        if (error || !data?.url) {
-          toast('error', 'Error al conectar con Stripe: ' + (error?.message || 'sin respuesta'))
-          ;(btn as HTMLButtonElement).disabled = false
-          ;(btn as HTMLElement).innerHTML = `${Icon('creditCard', 16)} Pagar con Stripe`
-          return
-        }
-
-        window.location.href = data.url
-      } catch (err: any) {
-        toast('error', 'Error: ' + (err.message || 'desconocido'))
-        ;(btn as HTMLButtonElement).disabled = false
-        ;(btn as HTMLElement).innerHTML = `${Icon('creditCard', 16)} Pagar con Stripe`
-      }
-    })
-  })
-
-  // Handle Stripe return (query params after hash)
-  const hashQuery = location.hash.split('?')[1] || ''
-  const params = new URLSearchParams(hashQuery)
-  if (params.get('stripe') === 'success') {
-    const sessionId = params.get('session_id')
-    const paymentId = params.get('payment_id')
-    if (sessionId && paymentId) {
-      handleStripeReturn(sessionId, paymentId)
-    }
-  }
-
   startPaymentCountdown()
-}
-
-async function handleStripeReturn(sessionId: string, paymentId: string): Promise<void> {
-  try {
-    const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-      body: { action: 'verify', sessionId, paymentId },
-    })
-
-    if (data?.verified) {
-      await supabase.from('payments').update({
-        status: 'paid',
-        paid_at: new Date().toISOString(),
-        method: 'stripe',
-      }).eq('id', paymentId)
-
-      toast('success', 'Pago confirmado vía Stripe')
-
-      const cleanHash = location.hash.split('?')[0]
-      window.history.replaceState({}, '', cleanHash || '#/payments')
-
-      setTimeout(() => initPayments(), 1500)
-    } else {
-      toast('error', 'El pago no se completó o está pendiente de verificación.')
-    }
-  } catch (err: any) {
-    toast('error', 'Error al verificar pago: ' + (err.message || 'desconocido'))
-  }
 }
 
 function startPaymentCountdown(): void {
