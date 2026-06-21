@@ -127,7 +127,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       ${!isCoach ? `
       <div id="sidebar-payment-countdown" class="mt-2 hidden rounded-lg px-3 py-3 transition text-center" style="background:${accent}15;color:${accent};border:1px solid ${accent}30">
         <a href="#/payments" class="flex flex-col items-center gap-1">
-          <span class="text-xs font-medium opacity-80">Pago pendiente</span>
+          <span class="text-xs font-medium opacity-80">Su inscripción<br>se vence en</span>
           <span id="sidebar-countdown-time" class="text-lg font-bold tracking-wide" style="color:${accent}">—</span>
         </a>
       </div>` : ''}
