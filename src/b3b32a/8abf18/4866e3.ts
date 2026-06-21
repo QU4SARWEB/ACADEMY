@@ -46,8 +46,8 @@ export async function initCoachDashboard(): Promise<void> {
     const failRate = total > 0 ? Math.round((failed / total) * 100) : 0
 
     // Payments about to expire (pending older than 4 days = within 3 days of 7-day expiry)
-    const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+    const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
+    const SOON_MS = 24 * 60 * 60 * 1000
     const now = Date.now()
     const { data: pendingPayments } = await supabase
       .from('payments')
@@ -56,7 +56,7 @@ export async function initCoachDashboard(): Promise<void> {
       .order('created_at', { ascending: true })
 
     const expiringPayments = (pendingPayments ?? []).filter((p: any) =>
-      p.created_at && (now - new Date(p.created_at).getTime()) > WEEK_MS - THREE_DAYS_MS
+      p.created_at && (now - new Date(p.created_at).getTime()) > EXPIRE_MS - SOON_MS
     )
     const expiringCount = expiringPayments.length
 
@@ -206,7 +206,7 @@ export async function initCoachDashboard(): Promise<void> {
             const name = prof.display_name || prof.full_name || prof.email || 'Desconocido'
             const courseName = p.enrollments?.courses?.name || ''
             const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0
-            const expiresAt = createdAt + WEEK_MS
+            const expiresAt = createdAt + EXPIRE_MS
             const remaining = expiresAt - now
             const daysLeft = Math.floor(remaining / 86400000)
             const hoursLeft = Math.floor((remaining % 86400000) / 3600000)

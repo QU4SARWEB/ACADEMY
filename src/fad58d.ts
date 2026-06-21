@@ -169,14 +169,14 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       const profile = store.get<any>('profile')
       // Auto-expire pending payments older than 7 days
       if (profile && profile.role !== 'coach') {
-        const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+        const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
         const { data: pendingPays } = await supabase
           .from('payments')
           .select('id, created_at')
           .eq('profile_id', profile.id)
           .eq('status', 'pending')
         for (const pp of pendingPays ?? []) {
-          if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > WEEK_MS) {
+          if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > EXPIRE_MS) {
             await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
           }
         }

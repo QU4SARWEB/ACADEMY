@@ -186,9 +186,9 @@ export function initSidebar(): void {
         countdownEl.classList.add('hidden')
         return
       }
+      const EXPIRE_MS = 172800000
 
-      const WEEK_MS = 604800000
-      const expiresAt = new Date(pay.created_at).getTime() + WEEK_MS
+      const expiresAt = new Date(pay.created_at).getTime() + EXPIRE_MS
       const diff = expiresAt - Date.now()
 
       if (diff <= 0) {

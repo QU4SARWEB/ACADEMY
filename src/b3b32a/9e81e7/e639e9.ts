@@ -38,10 +38,10 @@ export async function initPayments(): Promise<void> {
 
 async function renderStudentPayments(userId: string): Promise<void> {
   // Auto-expire pending payments older than 7 days
-  const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+  const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
   const { data: pendingPays } = await supabase.from('payments').select('id, created_at').eq('profile_id', userId).eq('status', 'pending')
   for (const pp of pendingPays ?? []) {
-    if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > WEEK_MS) {
+    if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > EXPIRE_MS) {
       await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
     }
   }
@@ -145,7 +145,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
               : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.54}</span>`
             }
           </div>
-          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 604800000}"></span>` : ''}
+          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 172800000}"></span>` : ''}
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
             <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}"></div>
@@ -479,7 +479,7 @@ async function renderCoachPayments(): Promise<void> {
                   <td class="px-4 py-3 text-xs text-zinc-500">${pay?.paid_at ? formatDate(pay.paid_at) : '—'}</td>
                   <td class="px-4 py-3">
                     ${pay && pay.status === 'pending' && pay.created_at
-                      ? `<span class="payment-countdown text-xs whitespace-nowrap" data-expires="${new Date(pay.created_at).getTime() + 604800000}"></span>`
+                      ? `<span class="payment-countdown text-xs whitespace-nowrap" data-expires="${new Date(pay.created_at).getTime() + 172800000}"></span>`
                       : '<span class="text-xs text-zinc-600">—</span>'
                     }
                   </td>
