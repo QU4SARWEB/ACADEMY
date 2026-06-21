@@ -47,6 +47,17 @@ export function mountCoachStudentDetail(): void {
         supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
       ])
 
+      // Track recent student visit
+      try {
+        const raw = localStorage.getItem('recentStudents')
+        const recent: { id: string; name: string; ts: number }[] = raw ? JSON.parse(raw) : []
+        const name = profile?.display_name || profile?.full_name || profile?.email || 'Alumno'
+        const existing = recent.findIndex((r: any) => r.id === id)
+        if (existing !== -1) recent.splice(existing, 1)
+        recent.push({ id, name, ts: Date.now() })
+        localStorage.setItem('recentStudents', JSON.stringify(recent.slice(-20)))
+      } catch {}
+
       if (!profile) {
         document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-400">Estudiante no encontrado.</p>'
         return

@@ -224,6 +224,26 @@ export async function initCoachDashboard(): Promise<void> {
         </div>
       </div>` : ''}
 
+      ${(() => {
+        const raw = localStorage.getItem('recentStudents')
+        const recent: { id: string; name: string; ts: number }[] = raw ? JSON.parse(raw) : []
+        const sorted = recent.sort((a, b) => b.ts - a.ts).slice(0, 5)
+        return sorted.length > 0 ? `
+      <div class="mb-6 glass rounded-xl p-5">
+        <h2 class="mb-3 font-heading text-base font-bold text-white flex items-center gap-2">
+          ${Icon('clock', 16)} Alumnos recientes
+        </h2>
+        <div class="flex flex-wrap gap-2">
+          ${sorted.map(s => `
+            <a href="#/coaches/students/${escapeHtml(s.id)}"
+               class="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/30 px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
+              ${Icon('user', 14)} ${escapeHtml(s.name)}
+            </a>
+          `).join('')}
+        </div>
+      </div>` : ''
+      })()}
+
       <div class="grid gap-6 lg:grid-cols-2">
         <div class="glass rounded-xl p-5">
           <h2 class="mb-4 font-heading text-base font-bold text-white flex items-center gap-2">
