@@ -37,6 +37,14 @@ export async function initPayments(): Promise<void> {
 }
 
 async function renderStudentPayments(userId: string): Promise<void> {
+  // Auto-expire pending payments older than 7 days
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+  const { data: pendingPays } = await supabase.from('payments').select('id, created_at').eq('profile_id', userId).eq('status', 'pending')
+  for (const pp of pendingPays ?? []) {
+    if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > WEEK_MS) {
+      await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
+    }
+  }
   let { data: payments } = await supabase
     .from('payments')
     .select('*, seasons(name)')
