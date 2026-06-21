@@ -33,9 +33,10 @@ export function DashboardLayout(contentHtml: string): string {
 
   return `
     ${style}
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-zinc-900 focus:text-white focus:text-sm focus:border focus:border-zinc-700">Saltar al contenido</a>
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
-      <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+      <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8" tabindex="-1">
         ${contentHtml}
       </main>
     </div>`

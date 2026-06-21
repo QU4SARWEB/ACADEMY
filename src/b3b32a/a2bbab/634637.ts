@@ -36,7 +36,10 @@ export async function initPlayerScrims(): Promise<void> {
       .order('date', { ascending: false })
 
     const html = `
-      <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Scrims</h1></div>
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="font-heading text-2xl font-bold text-white">Scrims</h1>
+        <a href="#/players/dashboard" class="text-xs text-zinc-500 hover:text-white transition flex items-center gap-1">${Icon('arrowLeft', 14)} Volver</a>
+      </div>
       <div class="space-y-3">
         ${(scrims ?? []).length === 0
           ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay scrims registrados todavía.</p></div>'
