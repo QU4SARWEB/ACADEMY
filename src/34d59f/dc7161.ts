@@ -139,16 +139,50 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         </a>
       </div>
     </aside>
+    ${isCoach ? `
+    <!-- Coach quick actions panel (retractable) -->
+    <div id="coach-panel" class="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex transition-transform duration-300" style="transform:translateX(0)">
+      <button id="cp-toggle" class="flex items-center justify-center w-7 h-14 rounded-l-lg border border-zinc-700 bg-zinc-900/90 text-zinc-400 hover:text-white transition cursor-pointer" title="Mostrar/Ocultar">
+        <span id="cp-chevron">${Icon('chevronRight', 14)}</span>
+      </button>
+      <div class="flex flex-col gap-1.5 rounded-l-lg border border-zinc-700 bg-zinc-900/90 px-2.5 py-2.5 shadow-lg backdrop-blur-md">
+        <a href="#/students/dashboard" target="_blank"
+           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap">
+          ${Icon('eye', 14)} Vista Alumno
+        </a>
+        <a href="#/players/dashboard" target="_blank"
+           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap">
+          ${Icon('eye', 14)} Vista Player
+        </a>
+        <button id="logout-btn"
+           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-red-600 hover:text-white whitespace-nowrap">
+          ${Icon('logOut', 14)} Cerrar sesión
+        </button>
+      </div>
+    </div>` : `
     <button id="logout-btn"
        class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl bg-zinc-900/90 px-4 py-3 text-sm text-zinc-400 shadow-lg backdrop-blur-md transition hover:bg-red-600 hover:text-white border border-zinc-800">
       ${Icon('logOut', 18)}
       <span>Cerrar sesión</span>
-    </button>`
+    </button>`}`
 }
 
 export function initSidebar(): void {
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await signOut()
+  })
+
+  // Coach panel toggle
+  const coachPanel = document.getElementById('coach-panel')
+  const cpToggle = document.getElementById('cp-toggle')
+  let panelExpanded = true
+  cpToggle?.addEventListener('click', () => {
+    panelExpanded = !panelExpanded
+    if (coachPanel) {
+      coachPanel.style.transform = panelExpanded ? 'translateX(0)' : 'translateX(calc(100% - 28px))'
+    }
+    const chevron = document.getElementById('cp-chevron')
+    if (chevron) chevron.style.transform = panelExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
   })
 
   // Fetch unread notification count
