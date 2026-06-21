@@ -171,7 +171,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
       })()}
     </div>
 
-    <div id="receipt-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
+    <div id="receipt-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="Subir comprobante">
       <div class="glass max-w-md rounded-xl p-6">
         <h3 class="mb-4 font-heading text-lg font-bold text-white">Subir comprobante de pago</h3>
         <form id="receipt-form">

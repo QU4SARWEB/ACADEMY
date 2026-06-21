@@ -109,11 +109,11 @@ export async function initPlayerSchedule(): Promise<void> {
 
     // Schedule item overlay
     const modalHtml = `
-      <div id="sched-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" onclick="if(event.target===this)document.getElementById('sched-modal')?.classList.add('hidden')">
-        <div class="glass max-w-md w-full mx-4 rounded-xl p-6" onclick="event.stopPropagation()">
+      <div id="sched-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-labelledby="sched-modal-title">
+        <div class="glass max-w-md w-full mx-4 rounded-xl p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 id="sched-modal-title" class="font-heading text-lg font-bold text-white"></h3>
-            <button onclick="document.getElementById('sched-modal')?.classList.add('hidden')" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
+            <button id="sched-modal-close" class="text-zinc-500 hover:text-white" aria-label="Cerrar">${Icon('x', 18)}</button>
           </div>
           <div class="space-y-3 text-sm">
             <div class="flex items-center gap-2 text-zinc-300">${Icon('clock', 16)} <span id="sched-modal-time"></span></div>
@@ -143,9 +143,19 @@ export async function initPlayerSchedule(): Promise<void> {
         const descEl = document.getElementById('sched-modal-desc')!
         if (el.dataset.desc) { descEl.classList.remove('hidden'); descEl.querySelector('p')!.textContent = el.dataset.desc }
         else descEl.classList.add('hidden')
-        document.getElementById('sched-modal')!.classList.remove('hidden')
+        const modal = document.getElementById('sched-modal')!
+        modal.classList.remove('hidden')
+        modal.focus()
       })
     })
+
+    // Modal controls
+    const schedModal = document.getElementById('sched-modal')!
+    const closeModal = () => schedModal.classList.add('hidden')
+    document.getElementById('sched-modal-close')?.addEventListener('click', closeModal)
+    schedModal.addEventListener('click', (e) => { if (e.target === schedModal) closeModal() })
+    schedModal.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })
+    schedModal.setAttribute('tabindex', '-1')
 
     document.querySelectorAll('.day-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
