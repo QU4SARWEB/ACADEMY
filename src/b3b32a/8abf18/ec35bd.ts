@@ -5,6 +5,7 @@ import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { Breadcrumb } from '@/2b3583/breadcrumb'
 
 export function renderCoachCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -41,11 +42,11 @@ export function mountCoachCourseDetail(): void {
         .eq('status', 'active')
 
       const html = `
-        <div class="mb-6">
-          <a href="#/coaches/courses" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
-            ${Icon('arrowLeft', 16)} Volver a cursos
-          </a>
-          <div class="flex items-center justify-between">
+        ${Breadcrumb([
+          { label: 'Cursos', href: '#/coaches/courses' },
+          { label: (course as any).name || 'Detalle' },
+        ])}
+        <div class="flex items-center justify-between">
             <div>
               <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml((course as any).name)}</h1>
               <p class="mt-1 text-sm text-zinc-500">
