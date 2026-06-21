@@ -119,6 +119,17 @@ export async function authGuard(destPath?: string): Promise<boolean> {
     return false
   }
 
+  // Allow preview mode for coaches
+  const previewRole = sessionStorage.getItem('previewRole')
+  if (previewRole) {
+    const previewPrefix = ROLE_PREFIX[previewRole]
+    if (previewPrefix && !hash.startsWith(`/${previewPrefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
+      location.hash = `/${previewPrefix}/dashboard`
+      return false
+    }
+    return true
+  }
+
   const prefix = ROLE_PREFIX[currentProfile.role]
   if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/logs') && !hash.startsWith('/chat') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
