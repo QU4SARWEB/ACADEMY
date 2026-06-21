@@ -6,6 +6,7 @@ import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { Breadcrumb } from '@/2b3583/breadcrumb'
 
 const statusColors: Record<string, string> = {
   pending: 'text-yellow-400',
@@ -64,9 +65,10 @@ export async function initCoachTaskDetail(): Promise<void> {
 
     const html = `
       <div>
-        <a href="#/coaches/tasks" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
-          ${Icon('arrowLeft', 16)} Volver a tareas
-        </a>
+        ${Breadcrumb([
+          { label: 'Tareas', href: '#/coaches/tasks' },
+          { label: task.title },
+        ])}
         <div class="mb-6">
           <div class="flex items-start justify-between">
             <div>
