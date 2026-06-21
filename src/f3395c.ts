@@ -59,12 +59,15 @@ export class Router {
     }
 
     this.currentPath = cleanPath
-    this.resolving = true  // prevent hashchange from triggering another resolve
+    // block hashchange from triggering resolve
+    this.resolving = true
     if (replace) {
       location.replace(`#${path}`)
     } else {
       location.hash = path
     }
+    // now let our own resolve through
+    this.resolving = false
     await this.resolve()
   }
 
@@ -100,7 +103,6 @@ export class Router {
 
   start(): void {
     this.currentPath = (location.hash.slice(1).split('?')[0]) || '/'
-    this.resolving = true
     this.resolve()
     window.addEventListener('hashchange', () => {
       if (!this.resolving) this.resolve()
