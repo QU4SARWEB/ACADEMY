@@ -46,10 +46,14 @@ async function renderStudentPayments(userId: string): Promise<void> {
   // Build a map of enrollment_id → course name
   const { data: allEnrolls } = await supabase
     .from('enrollments')
-    .select('id, courses!course_id(name)')
+    .select('id, courses!course_id(name), status')
     .eq('profile_id', userId)
   const courseByEnroll: Record<string, string> = {}
-  for (const e of allEnrolls ?? []) courseByEnroll[e.id] = (e as any).courses?.name || ''
+  const activeEnrollIds = new Set<string>()
+  for (const e of allEnrolls ?? []) {
+    courseByEnroll[e.id] = (e as any).courses?.name || ''
+    if ((e as any).status === 'active') activeEnrollIds.add(e.id)
+  }
 
   const { data: enrollments } = await supabase
     .from('enrollments')
@@ -110,9 +114,11 @@ async function renderStudentPayments(userId: string): Promise<void> {
 
     <div class="space-y-3">
       <h2 class="font-heading text-lg font-bold text-white">Historial de pagos</h2>
-      ${(payments ?? []).length === 0
-        ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
-        : (payments ?? []).map((p: any) => `
+      ${(() => {
+        const visiblePayments = (payments ?? []).filter((p: any) => !p.enrollment_id || activeEnrollIds.has(p.enrollment_id))
+        return visiblePayments.length === 0
+          ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
+          : visiblePayments.map((p: any) => `
           <div class="payment-item glass rounded-xl p-4 space-y-3" data-payment-id="${escapeHtml(p.id)}">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -139,7 +145,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
           <div class="text-xs"><a href="${escapeHtml(p.receipt_url)}" target="_blank" class="text-[#8B5CF6] hover:underline">${Icon('fileText', 12)} Ver comprobante</a></div>` : ''}
         </div>
         `).join('')
-      }
+      })()}
     </div>
 
     <div id="receipt-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
