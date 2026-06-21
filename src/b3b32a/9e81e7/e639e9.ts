@@ -145,6 +145,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
               : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.54}</span>`
             }
           </div>
+          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 604800000}"></span>` : ''}
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
             <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 1.54}"></div>
@@ -246,6 +247,33 @@ async function renderStudentPayments(userId: string): Promise<void> {
       renderPaypalButtons(paypalContainers)
     }
   }
+
+  startPaymentCountdown()
+}
+
+function startPaymentCountdown(): void {
+  const els = document.querySelectorAll<HTMLElement>('.payment-countdown')
+  if (els.length === 0) return
+  const tick = () => {
+    const now = Date.now()
+    els.forEach(el => {
+      const expires = parseInt(el.dataset.expires || '0')
+      if (!expires) return
+      const diff = expires - now
+      if (diff <= 0) {
+        el.textContent = 'Vencido'
+        el.className = 'payment-countdown block text-xs mt-1 text-red-400'
+        return
+      }
+      const days = Math.floor(diff / 86400000)
+      const hours = Math.floor((diff % 86400000) / 3600000)
+      const mins = Math.floor((diff % 3600000) / 60000)
+      el.textContent = `Vence en: ${days}d ${hours}h ${mins}m`
+      el.className = 'payment-countdown block text-xs mt-1' + (diff < 86400000 ? ' text-red-400' : diff < 172800000 ? ' text-yellow-400' : ' text-zinc-400')
+    })
+  }
+  tick()
+  setInterval(tick, 60000)
 }
 
 function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
@@ -406,12 +434,13 @@ async function renderCoachPayments(): Promise<void> {
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Estado</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Comprobante</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Pagado</th>
+              <th class="px-4 py-3 text-left font-medium text-zinc-400">Vence en</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Acciones</th>
             </tr>
           </thead>
           <tbody>
             ${allProfiles.length === 0
-              ? '<tr><td colspan="8" class="px-4 py-8 text-center text-zinc-500">No hay estudiantes o jugadores registrados.</td></tr>'
+              ? '<tr><td colspan="9" class="px-4 py-8 text-center text-zinc-500">No hay estudiantes o jugadores registrados.</td></tr>'
               : allProfiles.map((prof: any) => {
                   const pay = paymentMap.get(prof.id)
                   return `
@@ -447,13 +476,24 @@ async function renderCoachPayments(): Promise<void> {
                   </td>
                   <td class="px-4 py-3 text-xs text-zinc-500">${pay?.paid_at ? formatDate(pay.paid_at) : '—'}</td>
                   <td class="px-4 py-3">
+                    ${pay && pay.status === 'pending' && pay.created_at
+                      ? `<span class="payment-countdown text-xs whitespace-nowrap" data-expires="${new Date(pay.created_at).getTime() + 604800000}"></span>`
+                      : '<span class="text-xs text-zinc-600">—</span>'
+                    }
+                  </td>
+                  <td class="px-4 py-3">
                     ${pay
-                      ? `<select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(pay.profile_id)}" data-old-status="${escapeHtml(pay.status)}">
+                      ? `<div class="flex items-center gap-1">` +
+                        `<select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none" data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(pay.profile_id)}" data-old-status="${escapeHtml(pay.status)}">
                           <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
                           <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
                           <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
                           <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
-                        </select>`
+                        </select>` +
+                        (pay.status === 'pending' && pay.created_at && (new Date().getTime() - new Date(pay.created_at).getTime()) > 432000000
+                          ? `<button class="notify-payment-btn text-xs text-yellow-400 hover:text-yellow-300" data-profile-id="${escapeHtml(pay.profile_id)}" data-payment-id="${escapeHtml(pay.id)}" title="Notificar recordatorio">${Icon('bell', 12)}</button>`
+                          : '') +
+                        `</div>`
                       : `<button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-season-id="${filterSeasonId || ''}" data-role="${escapeHtml(prof.role)}">${Icon('plus', 12)} Crear pago</button>`
                     }
                   </td>
@@ -525,4 +565,22 @@ async function renderCoachPayments(): Promise<void> {
       renderCoachPayments()
     })
   })
+
+  document.querySelectorAll('.notify-payment-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const profileId = (btn as HTMLElement).dataset.profileId
+      const paymentId = (btn as HTMLElement).dataset.paymentId
+      if (!profileId || !paymentId) return
+      await supabase.from('notifications').insert({
+        profile_id: profileId,
+        type: 'payment',
+        title: 'Recordatorio de pago',
+        body: 'Tu pago está por vencer. Realízalo pronto para evitar la suspensión del servicio.',
+        link: '/payments',
+      })
+      toast('success', 'Recordatorio enviado al estudiante')
+    })
+  })
+
+  startPaymentCountdown()
 }

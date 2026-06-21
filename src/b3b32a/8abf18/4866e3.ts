@@ -45,6 +45,21 @@ export async function initCoachDashboard(): Promise<void> {
     const passRate = total > 0 ? Math.round((passed / total) * 100) : 0
     const failRate = total > 0 ? Math.round((failed / total) * 100) : 0
 
+    // Payments about to expire (pending older than 4 days = within 3 days of 7-day expiry)
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+    const now = Date.now()
+    const { data: pendingPayments } = await supabase
+      .from('payments')
+      .select('id, created_at, amount, profiles!inner(full_name, display_name, email, id), seasons(name), enrollments!inner(courses!inner(name))')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+
+    const expiringPayments = (pendingPayments ?? []).filter((p: any) =>
+      p.created_at && (now - new Date(p.created_at).getTime()) > WEEK_MS - THREE_DAYS_MS
+    )
+    const expiringCount = expiringPayments.length
+
     // Students at risk (final_grade < 11)
     const { data: riskEnrollments } = await supabase
       .from('enrollments')
@@ -80,6 +95,7 @@ export async function initCoachDashboard(): Promise<void> {
       { icon: 'target', label: 'Exámenes publicados', value: String(examsCount ?? 0), color: '#10B981' },
       { icon: 'clipboardList', label: 'Tareas por revisar', value: String(pendingSubs ?? 0), color: '#F59E0B' },
       { icon: 'alertTriangle', label: 'Tickets abiertos', value: String(openTickets ?? 0), color: '#EF4444' },
+      { icon: 'dollarSign', label: 'Pagos por vencer', value: String(expiringCount), color: '#F59E0B' },
     ]
 
     const chartMax = Math.max(...courseAvgs.map((c) => c.avg), 20)
@@ -176,6 +192,37 @@ export async function initCoachDashboard(): Promise<void> {
           ${chartHtml}
         </div>
       </div>
+
+      ${pendingPayments && pendingPayments.length > 0 ? `
+      <div class="mb-6 glass rounded-xl p-5">
+        <h2 class="mb-4 font-heading text-base font-bold text-white flex items-center gap-2">
+          ${Icon('dollarSign', 16)} Pagos pendientes
+          <span class="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs text-yellow-400">${pendingPayments.length}</span>
+          <a href="#/payments" class="ml-auto text-xs text-[#8B5CF6] hover:underline">Gestionar →</a>
+        </h2>
+        <div class="space-y-2">
+          ${pendingPayments.map((p: any) => {
+            const prof = p.profiles || {}
+            const name = prof.display_name || prof.full_name || prof.email || 'Desconocido'
+            const courseName = p.enrollments?.courses?.name || ''
+            const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0
+            const expiresAt = createdAt + WEEK_MS
+            const remaining = expiresAt - now
+            const daysLeft = Math.floor(remaining / 86400000)
+            const hoursLeft = Math.floor((remaining % 86400000) / 3600000)
+            const isUrgent = remaining < 86400000
+            const isSoon = remaining < 172800000
+            return `
+            <div class="flex items-center justify-between rounded-lg border ${isUrgent ? 'border-red-500/20 bg-red-500/5' : isSoon ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-zinc-700/30 bg-zinc-800/20'} px-3 py-2 text-sm">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="${isUrgent ? 'text-red-300' : isSoon ? 'text-yellow-300' : 'text-zinc-300'} truncate">${escapeHtml(name)}</span>
+                ${courseName ? `<span class="text-zinc-500 text-xs shrink-0">${escapeHtml(courseName)}</span>` : ''}
+              </div>
+              <span class="shrink-0 text-xs font-mono ${isUrgent ? 'text-red-400' : isSoon ? 'text-yellow-400' : 'text-zinc-400'}">${daysLeft > 0 ? daysLeft + 'd ' : ''}${hoursLeft}h restantes</span>
+            </div>`
+          }).join('')}
+        </div>
+      </div>` : ''}
 
       <div class="grid gap-6 lg:grid-cols-2">
         <div class="glass rounded-xl p-5">
