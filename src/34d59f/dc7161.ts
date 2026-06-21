@@ -124,6 +124,14 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         ${itemsHtml}
       </nav>
 
+      ${!isCoach ? `
+      <div id="sidebar-payment-countdown" class="mt-2 hidden rounded-lg px-3 py-2 text-xs transition" style="background:${accent}15;color:${accent};border:1px solid ${accent}30">
+        <a href="#/payments" class="flex items-center gap-2">
+          ${Icon('dollarSign', 14)}
+          <span id="sidebar-countdown-text">Pago pendiente</span>
+        </a>
+      </div>` : ''}
+
       <div class="mt-auto flex flex-col gap-1 pt-4">
         <a href="#/settings"
            class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
@@ -157,5 +165,48 @@ export function initSidebar(): void {
           if (span) span.textContent = n > 0 ? 'Notificaciones (' + n + ')' : 'Notificaciones'
         })
       })
+
+    // Sidebar payment countdown for non-coach
+    const profile = store.get<any>('profile')
+    if (profile?.role === 'coach') return
+    const countdownEl = document.getElementById('sidebar-payment-countdown')
+    if (!countdownEl) return
+
+    const tick = async () => {
+      const { data: pendingPays } = await supabase
+        .from('payments')
+        .select('created_at')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+        .limit(1)
+
+      const pay = pendingPays?.[0]
+      if (!pay?.created_at) {
+        countdownEl.classList.add('hidden')
+        return
+      }
+
+      const WEEK_MS = 604800000
+      const expiresAt = new Date(pay.created_at).getTime() + WEEK_MS
+      const diff = expiresAt - Date.now()
+
+      if (diff <= 0) {
+        countdownEl.classList.add('hidden')
+        return
+      }
+
+      countdownEl.classList.remove('hidden')
+      const textEl = document.getElementById('sidebar-countdown-text')
+      if (!textEl) return
+
+      const days = Math.floor(diff / 86400000)
+      const hours = Math.floor((diff % 86400000) / 3600000)
+      const mins = Math.floor((diff % 3600000) / 60000)
+      textEl.textContent = `Vence en: ${days}d ${hours}h ${mins}m`
+    }
+
+    tick()
+    setInterval(tick, 60000)
   })
 }
