@@ -4,6 +4,7 @@ import { store } from '@/9ed39e/8cd892'
 import { supabase } from '@/304244'
 import type { Profile } from '@/d14a80'
 import { signOut } from '@/fa53b9/fa53b9'
+import { router } from '@/f3395c'
 
 export function DashboardLayout(contentHtml: string): string {
   const profile = store.get<Profile>('profile')
@@ -199,7 +200,7 @@ export function initSidebar(): void {
       const role = (btn as HTMLElement).dataset.role
       if (role) {
         sessionStorage.setItem('previewRole', role)
-        location.hash = `/${role}/dashboard`
+        router.navigate(`/${role}/dashboard`)
       }
     })
   })
@@ -207,7 +208,7 @@ export function initSidebar(): void {
   // Exit preview
   document.getElementById('exit-preview')?.addEventListener('click', () => {
     sessionStorage.removeItem('previewRole')
-    location.reload()
+    router.navigate('/coaches/dashboard')
   })
 
   // Fetch unread notification count
