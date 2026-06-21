@@ -152,7 +152,7 @@ export function mountCoachStudentDetail(): void {
                             }
                           </div>
                         </div>
-                        <button class="btn-unenroll text-xs ${enr.status === 'active' || enr.status === 'recovery' ? 'text-red-400 hover:text-red-300' : 'text-zinc-600 hover:text-red-400'}" data-enrollment-id="${escapeHtml(enr.id)}">
+                        <button class="btn-unenroll text-xs ${enr.status === 'active' || enr.status === 'recovery' ? 'text-red-400 hover:text-red-300' : 'text-zinc-600 hover:text-red-400'}" data-enrollment-id="${escapeHtml(enr.id)}" data-status="${escapeHtml(enr.status)}">
                           ${Icon('trash', 14)}
                         </button>
                       </div>
@@ -412,16 +412,17 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
   document.querySelectorAll('.btn-unenroll').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const enrollmentId = (btn as HTMLElement).dataset.enrollmentId
+      const enrollmentStatus = (btn as HTMLElement).dataset.status || ''
       if (!enrollmentId) return
-      const parent = (btn as HTMLElement).closest('[data-enrollment-id]') as HTMLElement
-      const statusText = parent?.querySelector('.capitalize')?.textContent?.trim() || ''
-      const isInactive = statusText.startsWith('inactive')
+      const isInactive = enrollmentStatus === 'inactive'
       if (!await confirmDialog(isInactive ? '¿Eliminar permanentemente esta inscripción inactiva?' : '¿Dar de baja esta inscripción?')) return
-      const { error } = isInactive
-        ? await supabase.from('enrollments').delete().eq('id', enrollmentId)
-        : await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
-      if (error) { toast('error', error.message); return }
-      window.location.reload()
+      try {
+        const { error } = isInactive
+          ? await supabase.from('enrollments').delete().eq('id', enrollmentId)
+          : await supabase.from('enrollments').update({ status: 'inactive' }).eq('id', enrollmentId)
+        if (error) { toast('error', error.message); return }
+        window.location.reload()
+      } catch (err: any) { toast('error', err?.message || 'Error al eliminar'); console.error(err) }
     })
   })
 
