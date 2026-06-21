@@ -1,4 +1,4 @@
-export function LoadingSkeleton(type: 'card' | 'list' | 'page' | 'table', count = 3): string {
+export function LoadingSkeleton(type: 'card' | 'list' | 'table', count = 3): string {
   const card = `
     <div class="animate-pulse rounded-xl bg-zinc-800/50 p-4">
       <div class="mb-3 h-4 w-3/4 rounded bg-zinc-700" />
@@ -29,7 +29,7 @@ export function Spinner(): string {
   return `
     <div class="flex flex-col items-center justify-center p-12">
       <div class="relative flex h-24 w-24 items-center justify-center">
-        <div class="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[#8B5CF6]" style="animation-duration: 1s;"></div>
+        <div class="absolute inset-0 animate-spin rounded-full border-2 border-transparent" style="border-top-color:var(--accent,#8B5CF6);animation-duration:1s"></div>
         <img src="qu4sar.ico" alt="QU4SAR" class="h-14 w-14 animate-logo-pulse" />
       </div>
     </div>`
