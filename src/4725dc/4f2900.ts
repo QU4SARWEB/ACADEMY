@@ -23,10 +23,10 @@ export function toast(type: ToastType, message: string): void {
 
   const id = `toast-${Math.random().toString(36).slice(2)}`
   const html = `
-    <div id="${id}" class="glass flex items-center gap-3 rounded-lg border ${borderColors[type]} px-4 py-3 text-sm text-white shadow-lg">
+    <div id="${id}" class="glass flex items-center gap-3 rounded-lg border ${borderColors[type]} px-4 py-3 text-sm text-white shadow-lg" role="status">
       ${icons[type]}
       <span class="flex-1">${escapeHtml(message)}</span>
-      <button class="toast-close text-zinc-500 hover:text-white" data-toast="${id}">
+      <button class="toast-close text-zinc-500 hover:text-white" data-toast="${id}" aria-label="Cerrar">
         ${Icon('x', 14)}
       </button>
     </div>`
@@ -45,6 +45,7 @@ export function initToastContainer(): void {
     const div = document.createElement('div')
     div.id = 'toast-container'
     div.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2'
+    div.setAttribute('aria-live', 'polite')
     document.body.appendChild(div)
   }
 }
