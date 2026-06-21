@@ -1,11 +1,15 @@
-import { Spinner } from '@/4725dc/a14fa2'
+import { Spinner, LoadingSkeleton } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 
 export function renderStudentDashboard(): string {
-  return `<div id="page-content">${Spinner()}</div>`
+  return `<div id="page-content">
+    <div class="mb-6">${LoadingSkeleton('list', 1)}</div>
+    <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-4">${LoadingSkeleton('card', 4)}</div>
+    <div>${LoadingSkeleton('card', 3)}</div>
+  </div>`
 }
 
 export async function initStudentDashboard(): Promise<void> {
