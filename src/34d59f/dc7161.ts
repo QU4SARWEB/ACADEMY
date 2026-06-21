@@ -7,7 +7,10 @@ import { signOut } from '@/fa53b9/fa53b9'
 
 export function DashboardLayout(contentHtml: string): string {
   const profile = store.get<Profile>('profile')
-  const role = profile?.role || ''
+  // Preview mode: a coach can preview student/player views
+  const previewRole = sessionStorage.getItem('previewRole') || ''
+  const effectiveRole = previewRole || profile?.role || ''
+  const role = effectiveRole
   const prefix = role === 'coach' ? 'coaches' : role === 'student' ? 'students' : 'players'
   const accent = (profile as any)?.role_color || '#8B5CF6'
   const bgUrl = (profile as any)?.custom_bg_url || ''
@@ -45,9 +48,11 @@ function hexToRgb(hex: string): string {
 }
 
 function Sidebar(role: string, prefix: string, profile: Profile | undefined): string {
-  const isCoach = role === 'coach'
-  const isStudent = role === 'student'
-  const isPlayer = role === 'player'
+  const previewRole = sessionStorage.getItem('previewRole') || ''
+  const effectiveRole = previewRole || role
+  const isCoach = effectiveRole === 'coach'
+  const isStudent = effectiveRole === 'student'
+  const isPlayer = effectiveRole === 'player'
   const accent = (profile as any)?.role_color || '#8B5CF6'
 
   let unreadNotifs = 0
@@ -120,6 +125,11 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         </div>
       </div>
 
+      ${previewRole ? `
+      <div class="mb-2 rounded-lg px-3 py-2 text-xs text-center" style="background:${accent}20;color:${accent};border:1px solid ${accent}30">
+        <p class="font-medium mb-1">Vista previa: ${previewRole === 'student' ? 'Alumno' : 'Player'}</p>
+        <button id="exit-preview" class="underline opacity-80 hover:opacity-100">Salir de vista previa</button>
+      </div>` : ''}
       <nav class="flex flex-col gap-1">
         ${itemsHtml}
       </nav>
@@ -146,14 +156,12 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         <span id="cp-chevron" style="transition:transform 0.3s">${Icon('chevronRight', 14)}</span>
       </button>
       <div class="flex flex-col gap-1.5 rounded-l-lg border border-zinc-700 bg-zinc-900/90 px-2.5 py-2.5 shadow-lg backdrop-blur-md">
-        <a href="#/students/dashboard" target="_blank"
-           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap">
+        <button class="preview-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap w-full text-left" data-role="student">
           ${Icon('eye', 14)} Vista Alumno
-        </a>
-        <a href="#/players/dashboard" target="_blank"
-           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap">
+        </button>
+        <button class="preview-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap w-full text-left" data-role="player">
           ${Icon('eye', 14)} Vista Player
-        </a>
+        </button>
         <button id="logout-btn"
            class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-red-600 hover:text-white whitespace-nowrap">
           ${Icon('logOut', 14)} Cerrar sesión
@@ -183,6 +191,23 @@ export function initSidebar(): void {
     }
     const chevron = document.getElementById('cp-chevron')
     if (chevron) chevron.style.transform = panelExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
+  })
+
+  // Preview buttons
+  document.querySelectorAll('.preview-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const role = (btn as HTMLElement).dataset.role
+      if (role) {
+        sessionStorage.setItem('previewRole', role)
+        location.hash = `/${role}/dashboard`
+      }
+    })
+  })
+
+  // Exit preview
+  document.getElementById('exit-preview')?.addEventListener('click', () => {
+    sessionStorage.removeItem('previewRole')
+    location.reload()
   })
 
   // Fetch unread notification count
