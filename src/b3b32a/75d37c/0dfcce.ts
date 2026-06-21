@@ -151,14 +151,22 @@ export async function initStudentCourses(): Promise<void> {
         }
 
         if (season?.id && enrollment?.id) {
-          await supabase.from('payments').insert({
-            profile_id: session.user.id,
-            enrollment_id: enrollment.id,
-            season_id: season.id,
-            type: 'student',
-            status: profile?.scholarship ? 'scholarship' : 'pending',
-            amount: 1.54,
-          })
+          // Only create payment if no existing payment for this course
+          const { data: existingCoursePay } = await supabase
+            .from('payments')
+            .select('id, enrollments!enrollment_id(course_id)')
+            .eq('profile_id', session.user.id)
+          const alreadyPaid = (existingCoursePay ?? []).some((p: any) => (p as any).enrollments?.course_id === courseId)
+          if (!alreadyPaid) {
+            await supabase.from('payments').insert({
+              profile_id: session.user.id,
+              enrollment_id: enrollment.id,
+              season_id: season.id,
+              type: 'student',
+              status: profile?.scholarship ? 'scholarship' : 'pending',
+              amount: 1.54,
+            })
+          }
         }
 
         toast('success', `¡Inscrito en ${course?.name ?? 'el curso'}!`)
