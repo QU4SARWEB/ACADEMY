@@ -33,7 +33,7 @@ export async function initPlayerScrims(): Promise<void> {
       .from('scrims')
       .select('*')
       .eq('team_id', teamMember.team_id)
-      .order('scheduled_at', { ascending: false })
+      .order('date', { ascending: false })
 
     const html = `
       <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Scrims</h1></div>
@@ -46,8 +46,8 @@ export async function initPlayerScrims(): Promise<void> {
                 <div class="flex items-center gap-3">
                   <span class="text-green-400">${Icon('sword', 18)}</span>
                   <div>
-                    <h3 class="font-medium text-white">vs ${escapeHtml(s.rival || s.opponent)}</h3>
-                    <p class="text-xs text-zinc-500">${formatDate(s.scheduled_at)}</p>
+                    <h3 class="font-medium text-white">vs ${escapeHtml(s.opponent || '?')}</h3>
+                    <p class="text-xs text-zinc-500">${s.date ? formatDate(s.date) : '—'}</p>
                   </div>
                 </div>
                 <div class="text-right">
@@ -55,7 +55,7 @@ export async function initPlayerScrims(): Promise<void> {
                     <p class="text-sm font-bold ${s.result === 'win' ? 'text-green-400' : s.result === 'loss' ? 'text-red-400' : s.result === 'draw' ? 'text-yellow-400' : 'text-zinc-400'}">
                       ${s.result === 'win' ? 'Victoria' : s.result === 'loss' ? 'Derrota' : s.result === 'draw' ? 'Empate' : escapeHtml(s.result)}
                     </p>
-                    ${s.score ? `<p class="text-xs text-zinc-500">${escapeHtml(s.score)}</p>` : ''}
+                    ${s.score_quasar != null ? `<p class="text-xs text-zinc-500">${escapeHtml(String(s.score_quasar))} - ${escapeHtml(String(s.score_opponent ?? 0))}</p>` : ''}
                   ` : '<p class="text-sm text-zinc-500">Programado</p>'}
                 </div>
               </div>

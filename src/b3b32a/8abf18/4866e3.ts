@@ -39,8 +39,8 @@ export async function initCoachDashboard(): Promise<void> {
 
     const grades = (gradeData ?? []).map((e: any) => e.final_grade).filter((g: any) => g !== null)
     const avgGrade = grades.length > 0 ? (grades.reduce((a: number, b: number) => a + b, 0) / grades.length).toFixed(1) : '—'
-    const passed = (gradeData ?? []).filter((e: any) => e.final_grade >= 11).length
-    const failed = (gradeData ?? []).filter((e: any) => e.final_grade < 11).length
+    const passed = (gradeData ?? []).filter((e: any) => e.final_grade >= 70).length
+    const failed = (gradeData ?? []).filter((e: any) => e.final_grade < 70).length
     const total = passed + failed
     const passRate = total > 0 ? Math.round((passed / total) * 100) : 0
     const failRate = total > 0 ? Math.round((failed / total) * 100) : 0
@@ -60,12 +60,12 @@ export async function initCoachDashboard(): Promise<void> {
     )
     const expiringCount = expiringPayments.length
 
-    // Students at risk (final_grade < 11)
+    // Students at risk (final_grade < 70)
     const { data: riskEnrollments } = await supabase
       .from('enrollments')
       .select('*, profiles(full_name, display_name), courses(name)')
       .eq('status', 'active')
-      .lt('final_grade', 11)
+      .lt('final_grade', 70)
       .order('final_grade')
       .limit(6)
 

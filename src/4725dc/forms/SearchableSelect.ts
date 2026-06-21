@@ -83,9 +83,9 @@ export function initSearchableSelect(container: HTMLElement): void {
     display.addEventListener('click', () => toggleDropdown())
     display.addEventListener('focus', () => toggleDropdown(true))
 
-    document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target as Node)) toggleDropdown(false)
-    })
+    wrapper.addEventListener('focusout', ((e: FocusEvent) => {
+      if (!wrapper.contains(e.relatedTarget as Node)) toggleDropdown(false)
+    }) as EventListener)
 
     search?.addEventListener('input', () => filterOptions(search.value))
 

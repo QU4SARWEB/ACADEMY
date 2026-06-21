@@ -273,7 +273,8 @@ function startPaymentCountdown(): void {
     })
   }
   tick()
-  setInterval(tick, 60000)
+  if ((window as any).__intvCountdown) clearInterval((window as any).__intvCountdown)
+  ;(window as any).__intvCountdown = setInterval(tick, 60000)
 }
 
 function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
@@ -306,6 +307,7 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
             }
             toast('success', 'Pago confirmado vía PayPal')
             container.innerHTML = '<span class="text-xs text-green-400">✓ Pagado</span>'
+            ;(window as any).__isExpired = false
             setTimeout(() => initPayments(), 1500)
           } else {
             console.warn('PayPal capture status:', details.status)

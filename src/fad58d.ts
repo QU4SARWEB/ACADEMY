@@ -107,12 +107,12 @@ router.on('/p/:slug', async () => {
 const REALTIME_TABLES: Record<string, string[]> = {
   coaches: [
     'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
-    'evaluations', 'exams', 'exam_questions', 'exam_attempts', 'schedules', 'seasons',
+    'exams', 'exam_questions', 'exam_attempts', 'schedules', 'seasons',
     'teams', 'scrims', 'promotions', 'questions', 'attendance', 'profiles', 'payments',
   ],
   students: [
     'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
-    'exams', 'exam_questions', 'exam_attempts', 'evaluations', 'schedules', 'payments', 'profiles',
+    'exams', 'exam_questions', 'exam_attempts', 'schedules', 'payments', 'profiles',
   ],
   players: [
     'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
@@ -122,7 +122,7 @@ const REALTIME_TABLES: Record<string, string[]> = {
 
 // Routes that should NOT auto-refresh (forms, exams in progress, etc.)
 // Only skip auto-refresh for form/edit pages and exam-taking (with :examId param)
-const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/questions/new']
+const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/questions/new', '/settings']
 
 // Also skip routes where path has /exams/ followed by another segment (exam taking)
 function shouldAutoRefresh(path: string): boolean {
@@ -151,11 +151,15 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
     const app = document.getElementById('app')!
     app.innerHTML = FullPageSpinner()
 
-    // Clean up previous realtime channel (needed because hash navigation doesn't call router.navigate)
+    // Clean up previous realtime channel and intervals
     if ((window as any).__rtChannel) {
       supabase.removeChannel((window as any).__rtChannel)
       ;(window as any).__rtChannel = null
     }
+    // Clear any previous intervals
+    ;['__intvCountdown', '__intvSidebar'].forEach(k => {
+      if ((window as any)[k]) { clearInterval((window as any)[k]); (window as any)[k] = null }
+    })
 
     try {
       await Promise.race([
@@ -342,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Store toast reference for real-time notifications
       if (!(window as any).__toast) {
-        import('@/4725dc/4f2900').then((m) => { (window as any).__toast = m.toast })
+        import('@/4725dc/4f2900').then((m) => { (window as any).__toast = m.toast }).catch(() => {})
       }
     }
 
@@ -352,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const prefix = profile.role === 'coach' ? 'coaches' : profile.role === 'student' ? 'students' : 'players'
           location.hash = `/${prefix}/dashboard`
         }
-      })
+      }).catch(() => {})
     }
-  })
+  }).catch(() => {})
 })

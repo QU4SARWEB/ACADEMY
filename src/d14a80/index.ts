@@ -8,7 +8,7 @@ export interface Profile {
   role: Role
   avatar_url: string | null
   banner_url: string | null
-  bio: string
+  bio: string | null
   riot_id: string | null
   rank: string
   country: string | null
@@ -21,6 +21,26 @@ export interface Profile {
   is_active: boolean
   created_at: string
   updated_at: string
+  region: string | null
+  mouse_dpi: number | null
+  mouse_sens: number | null
+  mouse_scope_sens: number | null
+  mouse_hertz: number | null
+  edpi: number | null
+  role_color: string | null
+  share_slug: string | null
+  in_game_role: string | null
+  skills: any | null
+  quote: string | null
+  custom_bg_url: string | null
+  social_instagram: string | null
+  social_tiktok: string | null
+  social_github: string | null
+  social_website: string | null
+  social_facebook: string | null
+  social_linkedin: string | null
+  social_steam: string | null
+  social_telegram: string | null
 }
 
 export interface Season {
@@ -62,7 +82,7 @@ export interface Material {
   id: string
   module_id: string
   title: string
-  type: 'video' | 'pdf' | 'doc' | 'link' | 'other'
+  type: 'video' | 'pdf' | 'image' | 'link' | 'embed'
   url: string
   description: string | null
   display_order: number
@@ -131,6 +151,11 @@ export interface Task {
   description: string | null
   due_date: string
   max_score: number | null
+  allow_pdf: boolean | null
+  allow_image: boolean | null
+  allow_video: boolean | null
+  allow_audio: boolean | null
+  allow_link: boolean | null
   created_at: string
   updated_at: string
   course_modules?: {
@@ -159,54 +184,37 @@ export interface TaskSubmission {
 
 export interface Schedule {
   id: string
-  module_id: string
-  title: string
+  season_id: string
+  week_number: number
   day_of_week: number
   start_time: string
   end_time: string
   type: ScheduleType
+  title: string | null
+  description: string | null
   location: string | null
-  is_active: boolean
+  timezone: string | null
 }
 
 export interface Team {
   id: string
   name: string
-  game: string
+  slug: string
+  description: string | null
   logo_url: string | null
   is_active: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface TeamMember {
   id: string
   team_id: string
   profile_id: string
+  season_id: string
   role: string
+  status: string | null
   joined_at: string
-}
-
-export interface Evaluation {
-  id: string
-  course_id: string
-  title: string
-  description: string | null
-  max_score: number | null
-  month: number | null
-  type: string | null
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface EvaluationResult {
-  id: string
-  evaluation_id: string
-  enrollment_id: string
-  score: number | null
-  feedback: string | null
-  graded_by: string | null
-  graded_at: string | null
 }
 
 export interface Scrim {
@@ -226,11 +234,20 @@ export interface Scrim {
 export interface Exam {
   id: string
   course_id: string
+  module_id: string | null
   title: string
   description: string | null
   time_limit_minutes: number | null
   passing_score: number
+  max_score: number | null
   is_published: boolean
+  weight: number | null
+  shuffle: boolean | null
+  max_attempts: number | null
+  eval_type: string | null
+  month: number | null
+  is_active: boolean | null
+  due_date: string | null
   created_at: string
   updated_at: string
 }
@@ -239,18 +256,25 @@ export interface ExamAttempt {
   id: string
   exam_id: string
   enrollment_id: string
+  attempt_num: number | null
   score: number | null
+  status: string | null
   started_at: string
-  completed_at: string | null
+  submitted_at: string | null
 }
 
 export interface Question {
   id: string
+  course_id: string | null
   text: string
+  stem: string | null
   type: string
-  category: string | null
+  explanation: string | null
+  difficulty: number | null
+  points: number | null
   is_active: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface Grade {
@@ -265,5 +289,3 @@ export interface Grade {
   source_id: string | null
   created_at: string
 }
-
-

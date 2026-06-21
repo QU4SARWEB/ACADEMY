@@ -4,7 +4,6 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
-import { store } from '@/9ed39e/8cd892'
 
 const PRESET_COLORS = ['#8B5CF6','#6D28D9','#EC4899','#EF4444','#F59E0B','#10B981','#3B82F6','#06B6D4','#14B8A6','#F97316']
 
@@ -125,7 +124,8 @@ function initSettingsEvents(userId: string): void {
       const reader = new FileReader()
       reader.onload = (e) => {
         const preview = document.getElementById('bg-preview')!
-        preview.innerHTML = `<img src="${e.target?.result}" class="h-full w-full object-cover" />`
+        const url = (e.target as any)?.result
+        if (url) preview.innerHTML = `<img src="${escapeHtml(url)}" class="h-full w-full object-cover" />`
       }
       reader.readAsDataURL(file)
     }

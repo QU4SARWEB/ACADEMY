@@ -59,7 +59,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Mis Notas', isStudent || isPlayer), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Mis Notas', isStudent), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
     [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer), item(`/${prefix}/scrims`, 'sword', 'Scrims', isPlayer || isCoach), item('/chat', 'mail', 'Mensajes')],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer), item('/notifications', 'bell', 'Notificaciones')],
   ]
@@ -207,6 +207,7 @@ export function initSidebar(): void {
     }
 
     tick()
-    setInterval(tick, 60000)
+    if ((window as any).__intvSidebar) clearInterval((window as any).__intvSidebar)
+    ;(window as any).__intvSidebar = setInterval(tick, 60000)
   })
 }

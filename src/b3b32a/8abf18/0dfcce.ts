@@ -1,4 +1,4 @@
-import { Spinner, LoadingSkeleton } from '@/4725dc/a14fa2'
+import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'

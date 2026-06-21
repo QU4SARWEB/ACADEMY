@@ -1,10 +1,3 @@
-export function IconSpinner(size = 16): string {
-  return `<svg class="animate-spin" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none">
-    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-  </svg>`
-}
-
 const ICONS: Record<string, string> = {
   arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
   arrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',

@@ -1,4 +1,4 @@
-import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
+import { escapeHtml } from '@/2b3583/e0ebc3'
 
 const RANK_LIST = [
   { name: 'Unranked', hasDivision: false },

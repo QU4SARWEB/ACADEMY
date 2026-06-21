@@ -32,7 +32,7 @@ export async function initPlayerDashboard(): Promise<void> {
         .from('scrims')
         .select('*')
         .eq('team_id', teamId)
-        .order('scheduled_at', { ascending: false })
+        .order('date', { ascending: false })
 
       totalScrims = allScrims?.length ?? 0
       wins = allScrims?.filter((s: any) => s.result === 'win').length ?? 0
@@ -43,8 +43,8 @@ export async function initPlayerDashboard(): Promise<void> {
         .from('scrims')
         .select('*')
         .eq('team_id', teamId)
-        .gte('scheduled_at', new Date().toISOString())
-        .order('scheduled_at')
+        .gte('date', new Date().toISOString())
+        .order('date')
         .limit(5)
       upcomingScrims = upcoming ?? []
     }
@@ -148,8 +148,8 @@ export async function initPlayerDashboard(): Promise<void> {
             ? '<p class="text-sm text-zinc-500">No hay scrims programados.</p>'
             : upcomingScrims.map((s: any) => `
               <div class="flex items-center justify-between rounded-lg bg-zinc-800/50 px-3 py-2.5 mb-2 text-sm">
-                <span class="text-white">vs ${escapeHtml(s.rival || s.opponent || '?')}</span>
-                <span class="text-xs text-zinc-500">${formatDate(s.scheduled_at)}</span>
+                <span class="text-white">vs ${escapeHtml(s.opponent || '?')}</span>
+                <span class="text-xs text-zinc-500">${s.date ? formatDate(s.date) : '—'}</span>
               </div>
             `).join('')
           }

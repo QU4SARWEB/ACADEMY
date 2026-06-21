@@ -511,7 +511,7 @@ async function initChatEvents(userId: string): Promise<void> {
     const input = document.getElementById('msg-attach') as HTMLInputElement
     const label = document.getElementById('attach-name')!
     if (input?.files?.[0]) {
-      label.innerHTML = `${Icon('paperclip', 12)} ${input.files[0].name}`
+      label.innerHTML = `${Icon('paperclip', 12)} ${escapeHtml(input.files[0].name)}`
       label.classList.remove('hidden')
     } else {
       label.classList.add('hidden')
