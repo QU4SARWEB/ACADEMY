@@ -125,10 +125,10 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </nav>
 
       ${!isCoach ? `
-      <div id="sidebar-payment-countdown" class="mt-2 hidden rounded-lg px-3 py-2 text-xs transition" style="background:${accent}15;color:${accent};border:1px solid ${accent}30">
-        <a href="#/payments" class="flex items-center gap-2">
-          ${Icon('dollarSign', 14)}
-          <span id="sidebar-countdown-text">Pago pendiente</span>
+      <div id="sidebar-payment-countdown" class="mt-2 hidden rounded-lg px-3 py-3 transition text-center" style="background:${accent}15;color:${accent};border:1px solid ${accent}30">
+        <a href="#/payments" class="flex flex-col items-center gap-1">
+          <span class="text-xs font-medium opacity-80">Pago pendiente</span>
+          <span id="sidebar-countdown-time" class="text-lg font-bold tracking-wide" style="color:${accent}">—</span>
         </a>
       </div>` : ''}
 
@@ -197,13 +197,13 @@ export function initSidebar(): void {
       }
 
       countdownEl.classList.remove('hidden')
-      const textEl = document.getElementById('sidebar-countdown-text')
-      if (!textEl) return
+      const timeEl = document.getElementById('sidebar-countdown-time')
+      if (!timeEl) return
 
       const days = Math.floor(diff / 86400000)
       const hours = Math.floor((diff % 86400000) / 3600000)
       const mins = Math.floor((diff % 3600000) / 60000)
-      textEl.textContent = `Vence en: ${days}d ${hours}h ${mins}m`
+      timeEl.textContent = `${days}d ${hours}h ${mins}m`
     }
 
     tick()
