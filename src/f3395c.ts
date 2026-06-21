@@ -11,7 +11,6 @@ export class Router {
   private currentPath = ''
   private fallback: RouteHandler | null = null
   private beforeNavigate: ((path: string) => Promise<boolean>) | null = null
-  private resolving = false
 
   on(pattern: string, handler: RouteHandler): void {
     const paramNames: string[] = []
@@ -59,21 +58,17 @@ export class Router {
     }
 
     this.currentPath = cleanPath
-    // block hashchange from triggering resolve
-    this.resolving = true
     if (replace) {
       location.replace(`#${path}`)
     } else {
       location.hash = path
     }
-    // now let our own resolve through
-    this.resolving = false
+    // hashchange will trigger resolve() — await it via microtask
+    await new Promise(resolve => setTimeout(resolve, 0))
     await this.resolve()
   }
 
   async resolve(): Promise<void> {
-    if (this.resolving) return
-    this.resolving = true
     const hash = (location.hash.slice(1).split('?')[0]) || '/'
 
     for (const route of this.routes) {
@@ -98,15 +93,12 @@ export class Router {
     if (this.fallback) {
       await this.fallback()
     }
-    this.resolving = false
   }
 
   start(): void {
     this.currentPath = (location.hash.slice(1).split('?')[0]) || '/'
     this.resolve()
-    window.addEventListener('hashchange', () => {
-      if (!this.resolving) this.resolve()
-    })
+    window.addEventListener('hashchange', () => this.resolve())
   }
 }
 
