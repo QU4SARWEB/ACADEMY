@@ -6,6 +6,7 @@ import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { Breadcrumb } from '@/2b3583/breadcrumb'
 
 const ACH_PRESETS = [
   { badge: 'attendance', title: 'Asistencia perfecta', desc: '100% de asistencia en el mes', icon: 'checkCircle' },
@@ -102,12 +103,11 @@ export function mountCoachStudentDetail(): void {
       const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
       const html = `
-        <div class="mb-6">
-          <a href="#/coaches/students" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
-            ${Icon('arrowLeft', 16)} Volver a estudiantes
-          </a>
-
-          <div class="mb-6 flex items-start justify-between">
+        ${Breadcrumb([
+          { label: 'Estudiantes', href: '#/coaches/students' },
+          { label: (profile as any).full_name || 'Detalle' },
+        ])}
+        <div class="mb-6 flex items-start justify-between">
             <div class="flex items-center gap-4">
               <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-2xl font-bold text-purple-400">
                 ${(profile as any).avatar_url

@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { router } from '@/f3395c'
+import { Breadcrumb } from '@/2b3583/breadcrumb'
 
 export function renderStudentCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -82,10 +83,10 @@ export async function initStudentCourseDetail(): Promise<void> {
 
     const html = `
       <div>
-        <a href="#/students/courses" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
-          ${Icon('arrowLeft', 16)} Volver a mis cursos
-        </a>
-
+        ${Breadcrumb([
+          { label: 'Cursos', href: '#/students/courses' },
+          { label: course.name },
+        ])}
         <div class="mb-6">
           <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(course.name)}</h1>
           <p class="mt-1 text-sm text-zinc-400">
