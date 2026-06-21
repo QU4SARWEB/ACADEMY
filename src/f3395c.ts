@@ -11,6 +11,7 @@ export class Router {
   private currentPath = ''
   private fallback: RouteHandler | null = null
   private beforeNavigate: ((path: string) => Promise<boolean>) | null = null
+  private resolving = false
 
   on(pattern: string, handler: RouteHandler): void {
     const paramNames: string[] = []
@@ -57,16 +58,19 @@ export class Router {
       if (!allowed) return
     }
 
+    this.currentPath = cleanPath
+    this.resolving = true  // prevent hashchange from triggering another resolve
     if (replace) {
       location.replace(`#${path}`)
     } else {
       location.hash = path
     }
-    this.currentPath = cleanPath
     await this.resolve()
   }
 
   async resolve(): Promise<void> {
+    if (this.resolving) return
+    this.resolving = true
     const hash = (location.hash.slice(1).split('?')[0]) || '/'
 
     for (const route of this.routes) {
@@ -91,12 +95,16 @@ export class Router {
     if (this.fallback) {
       await this.fallback()
     }
+    this.resolving = false
   }
 
   start(): void {
     this.currentPath = (location.hash.slice(1).split('?')[0]) || '/'
+    this.resolving = true
     this.resolve()
-    window.addEventListener('hashchange', () => this.resolve())
+    window.addEventListener('hashchange', () => {
+      if (!this.resolving) this.resolve()
+    })
   }
 }
 
