@@ -67,24 +67,20 @@ export async function initCoachDashboard(): Promise<void> {
     )
     const expiringCount = expiringPayments.length
 
-    // Students at risk (final_grade < 70)
-    const { data: riskEnrollments } = await supabase
+    // Students at risk + course averages (consolidated)
+    const { data: allEnrollData } = await supabase
       .from('enrollments')
-      .select('*, profiles(full_name, display_name), courses(name)')
-      .eq('status', 'active')
-      .lt('final_grade', 70)
-      .order('final_grade')
-      .limit(6)
-
-    // Grades by course (for chart)
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('course_id, final_grade, courses(name)')
+      .select('course_id, final_grade, promoted, profiles!inner(full_name, display_name), courses(name)')
       .eq('status', 'active')
       .not('final_grade', 'is', null)
 
+    const riskEnrollments = (allEnrollData ?? [])
+      .filter((e: any) => e.final_grade < 70)
+      .sort((a: any, b: any) => a.final_grade - b.final_grade)
+      .slice(0, 6)
+
     const byCourse: Record<string, { grades: number[]; name: string }> = {}
-    for (const e of enrollments ?? []) {
+    for (const e of allEnrollData ?? []) {
       const cid = e.course_id
       const courseObj = e.courses as { name?: string } | null
       if (!byCourse[cid]) byCourse[cid] = { grades: [], name: courseObj?.name || 'Curso' }
