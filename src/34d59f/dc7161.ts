@@ -140,10 +140,10 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </div>
     </aside>
     ${isCoach ? `
-    <!-- Coach quick actions panel (retractable) -->
-    <div id="coach-panel" class="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex transition-transform duration-300" style="transform:translateX(0)">
-      <button id="cp-toggle" class="flex items-center justify-center w-7 h-14 rounded-l-lg border border-zinc-700 bg-zinc-900/90 text-zinc-400 hover:text-white transition cursor-pointer" title="Mostrar/Ocultar">
-        <span id="cp-chevron">${Icon('chevronRight', 14)}</span>
+    <!-- Coach quick actions panel (retractable, bottom-right) -->
+    <div id="coach-panel" class="fixed bottom-4 right-0 z-50 flex items-end transition-transform duration-300" style="transform:translateX(0)">
+      <button id="cp-toggle" class="flex items-center justify-center w-7 h-16 rounded-l-lg border border-zinc-700 bg-zinc-900/90 text-zinc-400 hover:text-white transition cursor-pointer mb-1" title="Mostrar/Ocultar">
+        <span id="cp-chevron" style="transition:transform 0.3s">${Icon('chevronRight', 14)}</span>
       </button>
       <div class="flex flex-col gap-1.5 rounded-l-lg border border-zinc-700 bg-zinc-900/90 px-2.5 py-2.5 shadow-lg backdrop-blur-md">
         <a href="#/students/dashboard" target="_blank"
