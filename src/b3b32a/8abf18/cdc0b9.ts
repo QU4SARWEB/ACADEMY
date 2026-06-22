@@ -13,7 +13,7 @@ export function renderCoachNewTask(): string {
 export async function initCoachNewTask(): Promise<void> {
   try {
     const { data: modules } = await supabase
-      .from('course_modules')
+      .from('exams') 
       .select('id, name, course_id, courses(name)')
       .order('course_id')
     const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
@@ -106,7 +106,7 @@ export async function initCoachNewTask(): Promise<void> {
       }
       let seasonId = fd.get('seasonId') as string
       if (!seasonId) {
-        const { data: mod } = await supabase.from('course_modules').select('course_id').eq('id', fd.get('moduleId')).maybeSingle()
+        const { data: mod } = await supabase.from('exams') .select('course_id').eq('id', fd.get('moduleId')).maybeSingle()
         if (mod) {
           const { data: activeS } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
           if (activeS) seasonId = activeS.id

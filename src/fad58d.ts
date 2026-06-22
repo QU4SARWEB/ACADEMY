@@ -24,7 +24,6 @@ import { renderCoachProfile, initCoachProfile } from '@/b3b32a/8abf18/7d9748'
 import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
 import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/2cb1ad'
 import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
-import { renderCoachSeasons, initCoachSeasons } from '@/b3b32a/8abf18/85ed15'
 import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
@@ -42,8 +41,6 @@ import { renderPracticalNew, initPracticalNew } from '@/b3b32a/8abf18/practical_
 import { renderPracticalScore, initPracticalScore } from '@/b3b32a/8abf18/practical_score'
 import { renderPracticalView, initPracticalView } from '@/b3b32a/75d37c/practical_view'
 import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/c5e3f2'
-import { renderCoachNewModule, initCoachNewModule } from '@/b3b32a/8abf18/b7d4a6'
-import { renderCoachModuleDetail, initCoachModuleDetail } from '@/b3b32a/8abf18/201980'
 import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
 import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
@@ -107,16 +104,16 @@ router.on('/p/:slug', async () => {
 // Tables that affect the current page — grouped by route prefix
 const REALTIME_TABLES: Record<string, string[]> = {
   coaches: [
-    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
-    'exams', 'exam_questions', 'exam_attempts', 'schedules', 'seasons',
+    'courses', 'enrollments', 'tasks', 'task_submissions',
+    'exams', 'exam_questions', 'exam_attempts', 'schedules',
     'teams', 'scrims', 'promotions', 'questions', 'attendance', 'profiles', 'payments',
   ],
   students: [
-    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
+    'courses', 'enrollments', 'tasks', 'task_submissions',
     'exams', 'exam_questions', 'exam_attempts', 'schedules', 'payments', 'profiles',
   ],
   players: [
-    'courses', 'course_modules', 'materials', 'enrollments', 'tasks', 'task_submissions',
+    'courses', 'enrollments', 'tasks', 'task_submissions',
     'teams', 'team_members', 'scrims', 'schedules', 'payments', 'profiles',
   ],
 }
@@ -257,8 +254,7 @@ dash('/coaches/courses/:id/exams', () => renderCoachExams(), initCoachExams)
 dash('/coaches/courses/:id/exams/:examId/attempt/:attemptId', () => renderCoachExamAttempt(), initCoachExamAttempt)
 dash('/coaches/courses/:id/attendance', () => renderCoachAttendance(), initCoachAttendance)
 dash('/coaches/courses/:id/grades', () => renderCoachGrades(), initCoachGrades)
-dash('/coaches/courses/:id/modules/new', () => renderCoachNewModule(), initCoachNewModule)
-dash('/coaches/courses/:id/modules/:mid', () => renderCoachModuleDetail(), initCoachModuleDetail)
+
 dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
 dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
 dash('/coaches/students/:id', () => renderCoachStudentDetail(), mountCoachStudentDetail)
@@ -275,7 +271,6 @@ dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
 dash('/coaches/tasks/new', () => renderCoachNewTask(), initCoachNewTask)
 dash('/coaches/tasks/:id', () => renderCoachTaskDetail(), initCoachTaskDetail)
 dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
-dash('/coaches/seasons', () => renderCoachSeasons(), initCoachSeasons)
 dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
 dash('/coaches/promotions', () => renderCoachPromotions(), initCoachPromotions)

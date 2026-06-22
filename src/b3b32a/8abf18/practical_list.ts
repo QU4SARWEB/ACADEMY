@@ -11,8 +11,8 @@ export async function initPracticalExams(): Promise<void> {
   try {
     const { data: courses } = await supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order')
     const courseIds = (courses ?? []).map(c => c.id)
-    const { data: exams } = await supabase.from('practical_exams').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['none'])
-    const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['none'])
+    const { data: exams } = await supabase.from('practical_exams').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000'])
+    const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000'])
     const examCount: Record<string, number> = {}; const studentCount: Record<string, number> = {}
     for (const e of exams ?? []) { if (!examCount[e.course_id]) examCount[e.course_id] = 0; examCount[e.course_id]++ }
     for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }

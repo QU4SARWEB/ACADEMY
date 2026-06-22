@@ -9,8 +9,6 @@ import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzone'
 import type { Profile } from '@/d14a80'
 
-let selectedSeasonId: string | null = null
-
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false // false = live, true = sandbox
 
@@ -47,7 +45,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
   }
   let { data: payments } = await supabase
     .from('payments')
-    .select('*, seasons(name)')
+    .select('*')
     .eq('profile_id', userId)
     .order('created_at', { ascending: false })
 
@@ -65,7 +63,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
 
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('*, courses(name), seasons(name, id)')
+    .select('*, courses(name)')
     .eq('profile_id', userId)
     .eq('status', 'active')
     .order('enrolled_at', { ascending: false })
@@ -81,14 +79,17 @@ async function renderStudentPayments(userId: string): Promise<void> {
       if (alreadyPassed) paidPassedCourses.add((enr as any).course_id)
     }
   }
+  // Fetch course prices to skip free courses
+  const { data: coursePrices } = await supabase.from('courses').select('id, price').in('id', [...new Set((enrollments ?? []).map((e: any) => e.course_id))])
+  const freeCourses = new Set((coursePrices ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
+
   for (const e of enrollments ?? []) {
-    const seasonId = e.seasons?.id ?? e.season_id
-    if (seasonId && !paidPassedCourses.has(e.course_id) && !enrollWithPayment.has(e.id)) {
+    if (freeCourses.has(e.course_id)) continue
+    if (!paidPassedCourses.has(e.course_id) && !enrollWithPayment.has(e.id)) {
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', userId).maybeSingle()
       const { error: insErr } = await supabase.from('payments').insert({
         profile_id: userId,
         enrollment_id: e.id,
-        season_id: seasonId,
         type: e.type || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: 1.54,
@@ -105,7 +106,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
   if ((payments ?? []).length === 0 && (enrollments ?? []).length > 0) {
     const { data: refreshed } = await supabase
       .from('payments')
-      .select('*, seasons(name)')
+      .select('*')
       .eq('profile_id', userId)
       .order('created_at', { ascending: false })
     if (refreshed) payments = refreshed
@@ -127,7 +128,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
           <div class="glass rounded-xl p-4 flex items-center justify-between">
             <div>
               <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
-              <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')}</p>
+              <p class="text-xs text-zinc-500">${escapeHtml(e.courses?.name || '')}</p>
             </div>
             <span class="text-xs ${statusColors[e.type === 'student' ? 'paid' : 'pending']}">${e.type === 'student' ? 'Activo' : 'Pendiente'}</span>
           </div>
@@ -144,7 +145,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
           <div class="payment-item glass rounded-xl p-4 space-y-3" data-payment-id="${escapeHtml(p.id)}">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || p.seasons?.name || 'Pago')}</p>
+                <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || 'Pago')}</p>
               <p class="text-xs text-zinc-500">${p.paid_at ? 'Pagado: ' + formatDate(p.paid_at) : ''}</p>
             </div>
             ${p.status === 'scholarship'
@@ -334,14 +335,6 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
 }
 
 async function renderCoachPayments(): Promise<void> {
-  const { data: seasons } = await supabase
-    .from('seasons')
-    .select('id, name, is_active')
-    .order('start_date', { ascending: false })
-
-  const activeSeason = seasons?.find((s: any) => s.is_active)
-  const filterSeasonId = selectedSeasonId || activeSeason?.id || null
-
   // Load ALL students and players
   const { data: allStudents } = await supabase
     .from('profiles')
@@ -349,24 +342,18 @@ async function renderCoachPayments(): Promise<void> {
     .in('role', ['student', 'player'])
     .order('full_name')
 
-  // Load payments for the filtered season
-  let paymentsQuery = supabase
+  // Load all payments
+  const { data: payments } = await supabase
     .from('payments')
-    .select('*, seasons(name), profiles(full_name, email, avatar_url)')
+    .select('*, profiles(full_name, email, avatar_url)')
     .order('created_at', { ascending: false })
-
-  if (filterSeasonId) {
-    paymentsQuery = paymentsQuery.eq('season_id', filterSeasonId)
-  }
-
-  const { data: payments } = await paymentsQuery
 
   // Get course names for each payment
   const payEnrollIds = [...new Set((payments ?? []).map((p: any) => p.enrollment_id).filter(Boolean))]
   const { data: enrollsForName } = await supabase
     .from('enrollments')
     .select('id, courses!course_id(name)')
-    .in('id', payEnrollIds.length > 0 ? payEnrollIds : ['none'])
+    .in('id', payEnrollIds.length > 0 ? payEnrollIds : ['00000000-0000-0000-0000-000000000000'])
   const courseByEnrollId: Record<string, string> = {}
   for (const e of enrollsForName ?? []) courseByEnrollId[e.id] = (e as any).courses?.name || ''
 
@@ -392,21 +379,10 @@ async function renderCoachPayments(): Promise<void> {
   }
   const statusLabels: Record<string, string> = { pending: 'Pendiente', paid: 'Pagado', scholarship: 'Beca', expired: 'Vencido' }
 
-  const seasonOptions = (seasons ?? []).map((s: any) =>
-    `<option value="${escapeHtml(s.id)}" ${s.id === filterSeasonId ? 'selected' : ''}>${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
-  ).join('')
-
   const html = `
     <div class="mb-6">
       <h1 class="font-heading text-2xl font-bold text-white">Gestión de Pagos</h1>
       <p class="mt-1 text-sm text-zinc-500">Panel de administración de pagos</p>
-    </div>
-
-    <div class="mb-4">
-      <select id="season-filter" class="w-full max-w-xs rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-        <option value="">Todas las temporadas</option>
-        ${seasonOptions}
-      </select>
     </div>
 
     <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -438,7 +414,6 @@ async function renderCoachPayments(): Promise<void> {
           <thead>
             <tr class="border-b border-zinc-800">
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Estudiante</th>
-              <th class="px-4 py-3 text-left font-medium text-zinc-400">Temporada</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Tipo</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Monto</th>
               <th class="px-4 py-3 text-left font-medium text-zinc-400">Estado</th>
@@ -450,7 +425,7 @@ async function renderCoachPayments(): Promise<void> {
           </thead>
           <tbody>
             ${allProfiles.length === 0
-              ? '<tr><td colspan="9" class="px-4 py-8 text-center text-zinc-500">No hay estudiantes o jugadores registrados.</td></tr>'
+              ? '<tr><td colspan="8" class="px-4 py-8 text-center text-zinc-500">No hay estudiantes o jugadores registrados.</td></tr>'
               : allProfiles.map((prof: any) => {
                   const pay = paymentMap.get(prof.id)
                   return `
@@ -469,7 +444,6 @@ async function renderCoachPayments(): Promise<void> {
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-zinc-300">${pay ? escapeHtml(courseByEnrollId[pay.enrollment_id] || pay.seasons?.name || '—') : '—'}</td>
                   <td class="px-4 py-3 capitalize text-zinc-300">${escapeHtml(prof.role)}</td>
                   <td class="px-4 py-3 text-zinc-300">${pay?.amount ? '$' + pay.amount : '—'}</td>
                   <td class="px-4 py-3">
@@ -504,7 +478,7 @@ async function renderCoachPayments(): Promise<void> {
                           ? `<button class="notify-payment-btn text-xs text-yellow-400 hover:text-yellow-300" data-profile-id="${escapeHtml(pay.profile_id)}" data-payment-id="${escapeHtml(pay.id)}" title="Notificar recordatorio">${Icon('bell', 12)}</button>`
                           : '') +
                         `</div>`
-                      : `<button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-season-id="${filterSeasonId || ''}" data-role="${escapeHtml(prof.role)}">${Icon('plus', 12)} Crear pago</button>`
+                      : `<button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-role="${escapeHtml(prof.role)}">${Icon('plus', 12)} Crear pago</button>`
                     }
                   </td>
                 </tr>`}).join('')
@@ -515,12 +489,6 @@ async function renderCoachPayments(): Promise<void> {
     </div>`
 
   document.getElementById('page-content')!.innerHTML = html
-
-  document.getElementById('season-filter')?.addEventListener('change', (e) => {
-    const val = (e.target as HTMLSelectElement).value
-    selectedSeasonId = val || null
-    renderCoachPayments()
-  })
 
   document.querySelectorAll('.pay-status-select').forEach(sel => {
     sel.addEventListener('change', async () => {
@@ -560,14 +528,12 @@ async function renderCoachPayments(): Promise<void> {
   document.querySelectorAll('.create-payment-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const profileId = (btn as HTMLElement).dataset.profileId
-      const seasonId = (btn as HTMLElement).dataset.seasonId
       const role = (btn as HTMLElement).dataset.role
-      if (!profileId || !seasonId) return
+      if (!profileId) return
 
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
       await supabase.from('payments').insert({
         profile_id: profileId,
-        season_id: seasonId,
         type: role || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: 1.54,

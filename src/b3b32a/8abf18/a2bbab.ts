@@ -18,20 +18,13 @@ export async function initCoachPlayers(): Promise<void> {
       .eq('role', 'player')
       .order('full_name')
 
-    const { data: activeSeason } = await supabase
-      .from('seasons')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle()
-
     let paymentsByPlayer: Record<string, any[]> = {}
-    if (activeSeason && players && players.length > 0) {
+    if (players && players.length > 0) {
       const playerIds = players.map((p: any) => p.id)
       const { data: payments } = await supabase
         .from('payments')
         .select('profile_id, amount, status')
         .in('profile_id', playerIds)
-        .eq('season_id', activeSeason.id)
       if (payments) {
         for (const p of payments) {
           if (!paymentsByPlayer[p.profile_id]) paymentsByPlayer[p.profile_id] = []

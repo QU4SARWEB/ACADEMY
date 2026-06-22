@@ -14,7 +14,7 @@ export async function initCoachTasks(): Promise<void> {
   try {
     const { data } = await supabase
       .from('tasks')
-      .select('*, course_modules(name, course_id, courses(name))')
+      .select('*')
       .order('due_date', { ascending: false })
 
     const html = `

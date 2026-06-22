@@ -34,8 +34,8 @@ export async function initCoachExamsOverview(): Promise<void> {
     async function renderGrid() {
       currentCourseId = ''
       const courseIds = courses.map(c => c.id)
-      const { data: exams } = await supabase.from('exams').select('course_id').in('course_id', courseIds.length ? courseIds : ['none'])
-      const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length ? courseIds : ['none'])
+      const { data: exams } = await supabase.from('exams').select('course_id').in('course_id', courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000'])
+      const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000'])
       const examCount: Record<string, number> = {}; const studentCount: Record<string, number> = {}
       for (const e of exams ?? []) { if (!examCount[e.course_id]) examCount[e.course_id] = 0; examCount[e.course_id]++ }
       for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }
@@ -54,8 +54,8 @@ export async function initCoachExamsOverview(): Promise<void> {
     }
 
     async function renderExamList(courseId: string) {
-      const { data: exams } = await supabase.from('exams').select('*, course_modules(name)').eq('course_id', courseId).order('created_at', { ascending: false })
-      const { data: modules } = await supabase.from('course_modules').select('id, name').eq('course_id', courseId).order('display_order')
+      const { data: exams } = await supabase.from('exams').select('*').eq('course_id', courseId).order('created_at', { ascending: false })
+      const { data: modules } = await supabase.from('exams') .select('id, name').eq('course_id', courseId).order('display_order')
       const { data: allQ } = await supabase.from('exam_questions').select('exam_id, question_id')
       const qCountByExam: Record<string, number> = {}
       for (const eq of allQ ?? []) { if (!qCountByExam[eq.exam_id]) qCountByExam[eq.exam_id] = 0; qCountByExam[eq.exam_id]++ }
@@ -272,7 +272,7 @@ export async function initCoachExamsOverview(): Promise<void> {
         qsList.innerHTML = '<p class="text-sm text-zinc-500">Cargando...</p>'
         const { data: eqs } = await supabase.from('exam_questions').select('*, questions(*)').eq('exam_id', examId).order('order_num')
         const qIds = [...new Set((eqs ?? []).map((eq: any) => eq.question_id))]
-        const { data: opts } = await supabase.from('question_options').select('*').in('question_id', qIds.length ? qIds : ['none'])
+        const { data: opts } = await supabase.from('question_options').select('*').in('question_id', qIds.length ? qIds : ['00000000-0000-0000-0000-000000000000'])
         const optsByQ: Record<string, any[]> = {}; for (const o of opts ?? []) { if (!optsByQ[o.question_id]) optsByQ[o.question_id] = []; optsByQ[o.question_id].push(o) }
         if ((eqs ?? []).length === 0) { qsList.innerHTML = '<p class="text-sm text-zinc-500">No hay preguntas.</p>' } else {
           qsList.innerHTML = (eqs ?? []).map((eq: any) => { const q = eq.questions; const qOpts = optsByQ[q.id] || []; return '<div class="rounded-lg border border-zinc-700 bg-zinc-900/50 p-3" data-eq-id="' + eq.id + '"><div class="flex items-start justify-between gap-2"><div class="min-w-0 flex-1"><div class="flex items-center gap-2"><span class="text-xs font-medium text-[#8B5CF6]">' + (eq.order_num + 1) + '.</span><p class="text-sm text-white">' + escapeHtml(q.stem || '') + '</p><span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">' + (q.type || '') + '</span><span class="text-xs text-zinc-500">' + eq.points + ' pts</span></div>' + (qOpts.length > 0 ? '<div class="mt-2 space-y-1 pl-4">' + qOpts.map((o: any) => '<div class="flex items-center gap-2 text-xs ' + (o.is_correct ? 'text-green-400' : 'text-zinc-500') + '"><span class="w-4 text-right">' + String.fromCharCode(65 + o.order_num) + '.</span><span>' + escapeHtml(o.text) + '</span>' + (o.is_correct ? '<span class="text-green-400">' + Icon('checkCircle', 10) + '</span>' : '') + '</div>').join('') + '</div>' : '') + '</div><button class="remove-eq-btn text-zinc-600 hover:text-red-400" data-eq-id="' + eq.id + '">' + Icon('x', 14) + '</button></div></div>' }).join('')

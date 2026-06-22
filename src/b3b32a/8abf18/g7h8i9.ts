@@ -15,7 +15,7 @@ export async function initCoachAttendanceOverview(): Promise<void> {
 
     async function renderGrid() {
       const courseIds = courses.map(c => c.id)
-      const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length ? courseIds : ['none'])
+      const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000'])
       const studentCount: Record<string, number> = {}
       for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }
       document.getElementById('page-content')!.innerHTML = `

@@ -25,7 +25,7 @@ export async function initStudentDashboard(): Promise<void> {
 
     const { data: enrollments } = await supabase
       .from('enrollments')
-      .select('*, courses(name, id), seasons(name, id)')
+      .select('*, courses(name, id)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
       .order('enrolled_at', { ascending: false })
@@ -55,7 +55,7 @@ export async function initStudentDashboard(): Promise<void> {
     // Course progress
     const courseProgress = await Promise.all((enrollments ?? []).map(async (e: any) => {
       const { count: totalMods } = await supabase
-        .from('course_modules')
+        .from('exams') 
         .select('*', { count: 'exact', head: true })
         .eq('course_id', e.course_id)
       const progress = totalMods && totalMods > 0 ? Math.min(Math.round(((e.current_module || 0) / totalMods) * 100), 100) : 0

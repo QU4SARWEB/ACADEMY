@@ -19,24 +19,16 @@ export async function initStudentTasks(): Promise<void> {
     if (!session?.user?.id) return
 
     const { data: enrollments } = await supabase.from('enrollments').select('id, course_id').eq('profile_id', session.user.id).eq('status', 'active')
-    const courseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
-    if (courseIds.length === 0) { document.getElementById('page-content')!.innerHTML = '<p class="text-sm text-zinc-500">No hay tareas asignadas.</p>'; return }
-
-    const { data: modules } = await supabase.from('course_modules').select('id').in('course_id', courseIds)
-    const moduleIds = (modules ?? []).map((m: any) => m.id)
-    if (moduleIds.length === 0) { document.getElementById('page-content')!.innerHTML = '<p class="text-sm text-zinc-500">No hay tareas asignadas.</p>'; return }
-
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('*, course_modules(name, course_id, courses(name))')
-      .in('module_id', moduleIds)
+      .select('*')
       .order('due_date', { ascending: false })
 
     const enrollmentIds = (enrollments ?? []).map((e: any) => e.id)
     const { data: submissions } = await supabase
       .from('task_submissions')
       .select('task_id, status, score')
-      .in('enrollment_id', enrollmentIds.length > 0 ? enrollmentIds : ['none'])
+      .in('enrollment_id', enrollmentIds.length > 0 ? enrollmentIds : ['00000000-0000-0000-0000-000000000000'])
 
     const smap: Record<string, any> = {}
     for (const sub of submissions ?? []) smap[sub.task_id] = sub

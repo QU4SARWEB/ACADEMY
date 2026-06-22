@@ -166,7 +166,7 @@ export async function initStudentExamTake(): Promise<void> {
     if (!session?.user?.id) return
 
     // Fetch exam + questions in separate queries (deep nesting is unreliable)
-    const { data: exam } = await supabase.from('exams').select('*, course_modules(name)').eq('id', examId).maybeSingle()
+    const { data: exam } = await supabase.from('exams').select('*').eq('id', examId).maybeSingle()
     if (!exam) {
       document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500 py-10 text-center">Examen no encontrado.</p>'
       return

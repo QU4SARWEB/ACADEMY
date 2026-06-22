@@ -37,14 +37,12 @@ export function mountCoachStudentDetail(): void {
 
   ;(async () => {
     try {
-      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: seasons }, { data: activeSeason }, { data: promotionData }, { data: payments }, { data: achievements }] = await Promise.all([
+      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: promotionData }, { data: payments }, { data: achievements }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
-        supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order), seasons(name)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
+        supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
         supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
-        supabase.from('seasons').select('id, name, is_active').order('name'),
-        supabase.from('seasons').select('id').eq('is_active', true).maybeSingle(),
         supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
-        supabase.from('payments').select('season_id, status').eq('profile_id', id),
+        supabase.from('payments').select('status').eq('profile_id', id),
         supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
       ])
 
@@ -65,8 +63,8 @@ export function mountCoachStudentDetail(): void {
       }
 
       const enrollments = (enrollData ?? []) as any[]
-      const paymentMap = new Map<string, string>()
-      for (const p of payments ?? []) paymentMap.set(p.season_id, p.status)
+      const paymentMap = new Set<string>()
+      for (const p of payments ?? []) if (p.status === 'paid' || p.status === 'scholarship') paymentMap.add('paid')
 
       const enrolledCourseIds = enrollments.map((e: any) => e.course_id)
       const { data: available } = enrolledCourseIds.length > 0
@@ -142,14 +140,14 @@ export function mountCoachStudentDetail(): void {
               <div class="space-y-3" id="enrollments-list">
                 ${enrollments.length === 0 ? '<p class="text-sm text-zinc-500">Sin inscripciones.</p>' : ''}
                 ${enrollments.map((enr: any) => {
-                  const paymentStatus = paymentMap.get(enr.season_id)
+                  const paymentStatus = paymentMap.has('paid') ? 'paid' : null
                   const statusColor = enr.status === 'active' ? 'text-green-400' : enr.status === 'recovery' ? 'text-yellow-400' : 'text-zinc-400'
                   return `
                     <div class="rounded-lg border border-zinc-800 bg-[#111] p-4" data-enrollment-id="${escapeHtml(enr.id)}">
                       <div class="flex items-center justify-between">
                         <div>
                           <p class="font-medium text-white">${escapeHtml(enr.courses?.name || '')}</p>
-                          <p class="text-xs text-zinc-500">${escapeHtml(enr.seasons?.name || '')}</p>
+                          <p class="text-xs text-zinc-500">${escapeHtml(enr.courses?.name || enr.type || '')}</p>
                         </div>
                         <div class="text-right">
                           <p class="text-sm capitalize ${statusColor}">
@@ -232,7 +230,7 @@ export function mountCoachStudentDetail(): void {
                       </div>
                       <form id="form-promote" class="space-y-3">
                         <input type="hidden" name="enrollmentId" value="${escapeHtml(lastEnr.id)}" />
-                        <input type="hidden" name="seasonId" value="${escapeHtml((activeSeason as any)?.id || '')}" />
+                        <input type="hidden" name="seasonId" value="" />
                         <div>
                           <label class="block text-sm font-medium text-zinc-300">${nextCourse ? 'Próximo curso' : 'Nuevo curso'}</label>
                           ${nextCourse
@@ -319,9 +317,7 @@ export function mountCoachStudentDetail(): void {
                     </select>
                   </div>
                   <div class="flex gap-2">
-                    <select name="seasonId" required class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                      ${(seasons ?? []).map((s: any) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('')}
-                    </select>
+                    <input type="hidden" name="seasonId" value="" />
                     <select name="type" class="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                       <option value="student">Alumno</option>
                       <option value="player">Jugador</option>
@@ -442,8 +438,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     const fd = new FormData(e.target as HTMLFormElement)
     const enrollmentId = fd.get('enrollmentId') as string
     const newCourseId = fd.get('newCourseId') as string
-    const seasonId = fd.get('seasonId') as string
-
     const { data: enr } = await supabase
       .from('enrollments')
       .select('*, profiles(rank)')
@@ -468,7 +462,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     if (newCourseId) {
       const { error: err3 } = await supabase.from('enrollments').upsert({
         profile_id: studentId,
-        season_id: seasonId,
         course_id: newCourseId,
         type: 'student',
         status: 'active',
@@ -486,11 +479,10 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     const fd = new FormData(e.target as HTMLFormElement)
     const profileId = fd.get('profileId') as string
     const courseId = fd.get('courseId') as string
-    const seasonId = fd.get('seasonId') as string
     const type = (fd.get('type') as string) || 'student'
 
-    if (!courseId || !seasonId) {
-      document.getElementById('enroll-error')!.textContent = 'Selecciona un curso y temporada'
+    if (!courseId) {
+      document.getElementById('enroll-error')!.textContent = 'Selecciona un curso'
       document.getElementById('enroll-error')!.classList.remove('hidden')
       return
     }
@@ -500,23 +492,20 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       .select('id')
       .eq('profile_id', profileId)
       .eq('course_id', courseId)
-      .eq('season_id', seasonId)
       .maybeSingle()
 
     if (existing) {
-      document.getElementById('enroll-error')!.textContent = 'Ya está inscrito en este curso esta temporada'
+      document.getElementById('enroll-error')!.textContent = 'Ya está inscrito en este curso'
       document.getElementById('enroll-error')!.classList.remove('hidden')
       return
     }
 
-    const { error } = await supabase.from('enrollments').upsert({
+    const { error } = await supabase.from('enrollments').insert({
       profile_id: profileId,
       course_id: courseId,
-      season_id: seasonId,
       type,
       status: 'active',
-      current_module: 1,
-    }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+    })
 
     if (error) {
       document.getElementById('enroll-error')!.textContent = error.message
@@ -541,7 +530,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
 
       const { error: payErr } = await supabase.from('payments').insert({
         profile_id: profileId,
-        season_id: seasonId,
         type,
         status: studentProfile?.scholarship ? 'scholarship' : 'pending',
         amount: 1.54,

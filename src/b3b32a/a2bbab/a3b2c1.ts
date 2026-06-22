@@ -28,7 +28,7 @@ export async function initPlayerCourseDetail(): Promise<void> {
     }
 
     const { data: mods } = await supabase
-      .from('course_modules')
+      .from('exams') 
       .select('*')
       .eq('course_id', id)
       .order('display_order')
@@ -38,7 +38,7 @@ export async function initPlayerCourseDetail(): Promise<void> {
     const { data: mats } = await supabase
       .from('materials')
       .select('*')
-      .in('module_id', moduleIds.length > 0 ? moduleIds : ['none'])
+      .in('module_id', moduleIds.length > 0 ? moduleIds : ['00000000-0000-0000-0000-000000000000'])
       .order('display_order')
 
     const byModule: Record<string, any[]> = {}

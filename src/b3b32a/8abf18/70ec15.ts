@@ -17,7 +17,7 @@ export async function initCoachSchedules(): Promise<void> {
   try {
     const { data: schedules } = await supabase
       .from('schedules')
-      .select('*, seasons(name)')
+      .select('*')
       .order('week_number')
       .order('day_of_week')
       .order('start_time')

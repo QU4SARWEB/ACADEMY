@@ -26,7 +26,7 @@ export async function initStudentCourses(): Promise<void> {
 
     const { data: enrollments } = await supabase
       .from('enrollments')
-      .select('*, courses(name, slug, display_order, duration_months), seasons(name, id)')
+      .select('*, courses(name, slug, display_order, duration_months)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
       .order('enrolled_at', { ascending: false })

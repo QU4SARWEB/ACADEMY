@@ -26,7 +26,7 @@ export async function initStudentExamList(): Promise<void> {
 
     const { data: examsAll } = await supabase
       .from('exams')
-      .select('*, course_modules(name)')
+      .select('*')
       .eq('course_id', id)
       .order('created_at', { ascending: false })
 
@@ -38,7 +38,7 @@ export async function initStudentExamList(): Promise<void> {
     const assignExamIds = (myAssignments ?? []).map((a: any) => a.exam_id).filter((id: string) => !examsAll?.some((e: any) => e.id === id))
     let assignedExams: any[] = []
     if (assignExamIds.length > 0) {
-      const { data: ae } = await supabase.from('exams').select('*, course_modules(name)').in('id', assignExamIds)
+      const { data: ae } = await supabase.from('exams').select('*').in('id', assignExamIds)
       assignedExams = ae ?? []
     }
     const examList = [...(examsAll ?? []), ...assignedExams].filter((e: any) => e.is_published)
@@ -60,7 +60,7 @@ export async function initStudentExamList(): Promise<void> {
         const { data: attempts } = await supabase
           .from('exam_attempts')
           .select('*')
-          .in('exam_id', examIds.length > 0 ? examIds : ['none'])
+          .in('exam_id', examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000'])
           .eq('enrollment_id', enr.id)
         // Track last attempt AND submitted count per exam
         const lastAttempt: Record<string, any> = {}

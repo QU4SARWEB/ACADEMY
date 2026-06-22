@@ -26,28 +26,22 @@ export async function initCoachGrades(): Promise<void> {
       return
     }
 
-    const { data: modules } = await supabase
-      .from('course_modules')
-      .select('id, name')
-      .eq('course_id', id)
-      .order('display_order')
-
     const { data: enrollments } = await supabase
       .from('enrollments')
       .select('*, profiles(full_name, display_name, rank)')
       .eq('course_id', id)
       .order('created_at')
 
-    const moduleIds = (modules ?? []).map((m: any) => m.id)
-
-    const { data: allExams } = moduleIds.length > 0
-      ? await supabase.from('exams').select('id, title, module_id, max_score, weight').in('module_id', moduleIds).order('title')
-      : { data: [] }
+    const { data: allExams } = await supabase
+      .from('exams')
+      .select('id, title, max_score, weight')
+      .eq('course_id', id)
+      .order('title')
 
     const examIds = (allExams ?? []).map((e: any) => e.id)
 
     const { data: allAttempts } = examIds.length > 0
-      ? await supabase.from('exam_attempts').select('*').in('exam_id', examIds.length > 0 ? examIds : ['none'])
+      ? await supabase.from('exam_attempts').select('*').in('exam_id', examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000'])
       : { data: [] }
 
     const resultsByEnrollment: Record<string, any[]> = {}

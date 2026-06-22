@@ -31,7 +31,7 @@ export async function initMembers(): Promise<void> {
       const { data: pubProfiles } = await supabase
         .from('profiles')
         .select('id, full_name, role, avatar_url, banner_url, riot_id, social_discord')
-        .in('id', pubIds.length ? pubIds : ['none'])
+        .in('id', pubIds.length ? pubIds : ['00000000-0000-0000-0000-000000000000'])
       const profMap: Record<string, any> = {}
       for (const p of pubProfiles ?? []) profMap[p.id] = p
       combined = (pubData ?? []).map((p: any) => {

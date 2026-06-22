@@ -20,7 +20,7 @@ export async function initStudentCourseDetail(): Promise<void> {
 
     const { data: course } = await supabase
       .from('courses')
-      .select('*, seasons(name)')
+      .select('*')
       .eq('id', id)
       .maybeSingle()
     if (!course) {
@@ -28,30 +28,10 @@ export async function initStudentCourseDetail(): Promise<void> {
       return
     }
 
-    const { data: mods } = await supabase
-      .from('course_modules')
-      .select('*')
-      .eq('course_id', id)
-      .order('display_order')
-    const modList = mods ?? []
-
-    const moduleIds = modList.map((m: any) => m.id)
-    const { data: mats } = await supabase
-      .from('materials')
-      .select('*')
-      .in('module_id', moduleIds.length > 0 ? moduleIds : ['none'])
-      .order('display_order')
-
-    const byModule: Record<string, any[]> = {}
-    for (const mat of mats ?? []) {
-      if (!byModule[mat.module_id]) byModule[mat.module_id] = []
-      byModule[mat.module_id]!.push(mat)
-    }
-
-    let paymentStatus = 'pending'
+    let paymentStatus: string | null = null
     const { data: enrollment } = await supabase
       .from('enrollments')
-      .select('season_id')
+      .select('id')
       .eq('profile_id', session.user.id)
       .eq('course_id', id)
       .eq('status', 'active')
@@ -61,7 +41,6 @@ export async function initStudentCourseDetail(): Promise<void> {
         .from('payments')
         .select('status')
         .eq('profile_id', session.user.id)
-        .eq('season_id', enrollment.season_id)
         .order('created_at', { ascending: false })
         .maybeSingle()
       if (payment) paymentStatus = payment.status
@@ -79,7 +58,17 @@ export async function initStudentCourseDetail(): Promise<void> {
       ? `<div class="mb-6 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-400">
           Este curso está cubierto por una beca.
         </div>`
-      : ''
+      : course.price && course.price > 0 ? ''
+        : `<div class="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-400">
+            Curso gratuito. ¡Disfruta del curso!
+          </div>`
+
+    const { data: examList } = await supabase
+      .from('exams')
+      .select('id, title')
+      .eq('course_id', id)
+      .eq('is_published', true)
+      .order('created_at')
 
     const html = `
       <div>
@@ -90,7 +79,7 @@ export async function initStudentCourseDetail(): Promise<void> {
         <div class="mb-6">
           <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(course.name)}</h1>
           <p class="mt-1 text-sm text-zinc-400">
-            ${escapeHtml(course.seasons?.name || '')} · ${course.duration_months} meses · Rango mínimo: ${escapeHtml(course.min_rank)}
+            ${course.duration_months} meses · Rango mínimo: ${escapeHtml(course.min_rank)}${course.price && course.price > 0 ? ` · $${course.price}/mes` : ' · Gratis'}
           </p>
           ${course.description ? `<p class="mt-2 text-sm text-zinc-300">${escBr(course.description)}</p>` : ''}
         </div>
@@ -100,7 +89,7 @@ export async function initStudentCourseDetail(): Promise<void> {
         <div class="mb-6 flex gap-3">
           <a href="#/students/courses/${escapeHtml(id)}/exams"
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
-            ${Icon('scrollText', 14)} Exámenes
+            ${Icon('scrollText', 14)} Exámenes (${examList?.length ?? 0})
           </a>
           <a href="#/payments"
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30">
@@ -108,41 +97,20 @@ export async function initStudentCourseDetail(): Promise<void> {
           </a>
         </div>
 
-        <div class="space-y-4">
-          ${modList.length === 0
-            ? '<p class="text-sm text-zinc-500">No hay módulos disponibles todavía.</p>'
-            : modList.map((mod: any) => {
-                const materials = byModule[mod.id] ?? []
-                return `
-                  <div class="glass rounded-xl p-5">
-                    <div class="mb-3 flex items-center gap-3">
-                      ${Icon('bookOpen', 18)}
-                      <div>
-                        <h2 class="font-medium text-white">${escapeHtml(mod.name)}</h2>
-                        <p class="text-xs text-zinc-500">Mes ${mod.month_number}</p>
-                      </div>
-                    </div>
-                    ${materials.length > 0
-                      ? `<div class="ml-8 space-y-2">
-                          ${materials.map((mat: any) => `
-                            <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#0A0A0A] px-4 py-2.5">
-                              ${mat.type === 'video' ? Icon('play', 14) : mat.type === 'link' ? Icon('externalLink', 14) : Icon('scrollText', 14)}
-                              <span class="flex-1 text-sm text-zinc-300">${escapeHtml(mat.title)}</span>
-                              ${mat.url
-                                ? `<a href="${escapeHtml(mat.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#8B5CF6] hover:underline">
-                                    ${mat.type === 'link' ? 'Abrir' : 'Descargar'}
-                                  </a>`
-                                : ''
-                              }
-                            </div>
-                          `).join('')}
-                        </div>`
-                      : '<p class="ml-8 text-sm text-zinc-600">Sin materiales todavía.</p>'
-                    }
-                  </div>`
-              }).join('')
-          }
-        </div>
+        ${(examList ?? []).length > 0 ? `
+        <div class="glass rounded-xl p-5">
+          <h2 class="mb-3 font-heading text-base font-bold text-white">Exámenes disponibles</h2>
+          <div class="space-y-2">
+            ${(examList ?? []).map((ex: any) => `
+              <a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(ex.id)}"
+                 class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#0A0A0A] px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800/50">
+                ${Icon('scrollText', 14)}
+                <span>${escapeHtml(ex.title)}</span>
+                ${Icon('arrowRight', 14)}
+              </a>
+            `).join('')}
+          </div>
+        </div>` : ''}
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html

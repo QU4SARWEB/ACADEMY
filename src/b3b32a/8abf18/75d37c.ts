@@ -13,18 +13,16 @@ export function renderCoachStudents(): string {
 export function mountCoachStudents(): void {
   ;(async () => {
     try {
-      const [{ data: students }, { data: activeSeason }, { data: courses }] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, rank, scholarship, is_active, created_at, social_discord, display_name').eq('role', 'student').order('full_name'),
-        supabase.from('seasons').select('id').eq('is_active', true).maybeSingle(),
-        supabase.from('courses').select('id, name').eq('is_active', true).order('name'),
+      const [{ data: students }, { data: courses }] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, created_at').eq('role', 'student').order('full_name'),
+        supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order'),
       ])
 
-      const seasonId = (activeSeason as any)?.id
       const studentIds = (students ?? []).map((s: any) => s.id)
 
       const [{ data: payments }, { data: enrollments }] = await Promise.all([
-        seasonId && studentIds.length > 0
-          ? supabase.from('payments').select('profile_id, status').eq('season_id', seasonId).in('profile_id', studentIds)
+        studentIds.length > 0
+          ? supabase.from('payments').select('profile_id, status').in('profile_id', studentIds)
           : Promise.resolve({ data: [] }),
         studentIds.length > 0
           ? supabase.from('enrollments').select('profile_id, status, courses!inner(name)').in('profile_id', studentIds)
@@ -192,13 +190,11 @@ function initBulkActions(students: any[]): void {
     const ids = getSelectedIds()
     const courseId = (document.getElementById('bulk-course-select') as HTMLSelectElement).value
     if (!courseId || !ids.length) return
-    const { data: season } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
-    if (!season?.id) { toast('error', 'No hay temporada activa'); return }
     let ok = 0, fail = 0
     for (const pid of ids) {
       const { error } = await supabase.from('enrollments').upsert({
-        profile_id: pid, course_id: courseId, season_id: season.id, type: 'student', status: 'active', current_module: 1,
-      }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+        profile_id: pid, course_id: courseId, type: 'student', status: 'active',
+      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
       if (error) fail++
       else ok++
     }

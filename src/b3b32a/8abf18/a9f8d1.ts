@@ -31,14 +31,14 @@ export async function initCoachExams(): Promise<void> {
     }
 
     const { data: modules } = await supabase
-      .from('course_modules')
+      .from('exams') 
       .select('id, name')
       .eq('course_id', id)
       .order('display_order')
 
     const { data: exams } = await supabase
       .from('exams')
-      .select('*, course_modules(name)')
+      .select('*')
       .eq('course_id', id)
       .order('created_at', { ascending: false })
 
@@ -809,7 +809,7 @@ export async function initCoachExams(): Promise<void> {
         .select('*')
         .in('question_id', [...new Set((eqs ?? []).map((eq: any) => eq.question_id))].length > 0
           ? [...new Set((eqs ?? []).map((eq: any) => eq.question_id))]
-          : ['none'])
+          : ['00000000-0000-0000-0000-000000000000'])
 
       const optsByQ: Record<string, any[]> = {}
       for (const o of options ?? []) {
@@ -901,12 +901,12 @@ export async function initCoachExams(): Promise<void> {
       const { data: enrollmentsData } = await supabase
         .from('enrollments')
         .select('id, profile_id')
-        .in('id', enrollIds.length > 0 ? enrollIds : ['none'])
+        .in('id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
       const profileIds = [...new Set((enrollmentsData ?? []).map(e => e.profile_id))]
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, riot_id, social_discord')
-        .in('id', profileIds.length > 0 ? profileIds : ['none'])
+        .in('id', profileIds.length > 0 ? profileIds : ['00000000-0000-0000-0000-000000000000'])
       const profileMap: Record<string, any> = {}
       for (const p of profilesData ?? []) profileMap[p.id] = p
       const profByEnroll: Record<string, any> = {}
@@ -917,12 +917,12 @@ export async function initCoachExams(): Promise<void> {
       const { data: answersRaw } = await supabase
         .from('student_answers')
         .select('*')
-        .in('attempt_id', attemptIds.length > 0 ? attemptIds : ['none'])
+        .in('attempt_id', attemptIds.length > 0 ? attemptIds : ['00000000-0000-0000-0000-000000000000'])
       const qIds = [...new Set((answersRaw ?? []).map(a => a.question_id))]
       const { data: questionsRaw } = await supabase
         .from('questions')
         .select('*, question_options(*)')
-        .in('id', qIds.length > 0 ? qIds : ['none'])
+        .in('id', qIds.length > 0 ? qIds : ['00000000-0000-0000-0000-000000000000'])
       const answersByAtt: Record<string, any[]> = {}
       for (const a of answersRaw ?? []) {
         if (!answersByAtt[a.attempt_id]) answersByAtt[a.attempt_id] = []
@@ -1244,7 +1244,7 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
   }
   const { data: answers } = await supabase.from('student_answers').select('*').eq('attempt_id', attemptId)
   const qIds = [...new Set((answers ?? []).map(a => a.question_id))]
-  const { data: questions } = await supabase.from('questions').select('*, question_options(*)').in('id', qIds.length ? qIds : ['none'])
+  const { data: questions } = await supabase.from('questions').select('*, question_options(*)').in('id', qIds.length ? qIds : ['00000000-0000-0000-0000-000000000000'])
   const qMap: Record<string, any> = {}
   for (const q of questions ?? []) qMap[q.id] = q
   const html = `

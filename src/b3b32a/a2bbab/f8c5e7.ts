@@ -22,7 +22,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
 
     const { data: task } = await supabase
       .from('tasks')
-      .select('*, course_modules(name, courses(name))')
+      .select('*')
       .eq('id', taskId)
       .maybeSingle()
 

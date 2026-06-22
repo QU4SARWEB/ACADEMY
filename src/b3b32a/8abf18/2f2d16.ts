@@ -36,7 +36,7 @@ export async function initCoachTaskDetail(): Promise<void> {
 
     const { data: task } = await supabase
       .from('tasks')
-      .select('*, course_modules(name, course_id, courses(name))')
+      .select('*')
       .eq('id', id)
       .maybeSingle()
 
@@ -54,7 +54,7 @@ export async function initCoachTaskDetail(): Promise<void> {
       supabase
         .from('enrollments')
         .select('id, profile_id, profiles(full_name, email)')
-        .eq('course_id', task.course_modules?.course_id)
+        .eq('id', '00000000-0000-0000-0000-000000000000')
         .eq('status', 'active'),
     ])
 
@@ -74,7 +74,7 @@ export async function initCoachTaskDetail(): Promise<void> {
             <div>
               <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(task.title)}</h1>
               <p class="mt-1 text-sm text-zinc-400">
-                ${escapeHtml(task.course_modules?.courses?.name || '')} / ${escapeHtml(task.course_modules?.name || '')}
+                ${escapeHtml((task as any).courses?.name || '')}
               </p>
               <p class="text-sm text-zinc-500">
                 Límite: ${task.due_date ? formatDate(task.due_date) : '—'} · Máx: ${task.max_score ?? '—'} pts

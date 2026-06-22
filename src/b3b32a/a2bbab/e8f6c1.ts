@@ -31,7 +31,7 @@ export async function initPlayerTasks(): Promise<void> {
     }
 
     const { data: modules } = await supabase
-      .from('course_modules')
+      .from('exams') 
       .select('id, course_id')
       .in('course_id', courseIds)
 
@@ -39,7 +39,7 @@ export async function initPlayerTasks(): Promise<void> {
 
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('*, course_modules(name, course_id, courses(name))')
+      .select('*')
       .in('module_id', moduleIds)
       .order('due_date', { ascending: false })
 

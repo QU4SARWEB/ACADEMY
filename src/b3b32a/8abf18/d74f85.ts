@@ -30,9 +30,6 @@ export function renderCoachNewCourse(): string {
 
 export async function initCoachNewCourse(): Promise<void> {
   try {
-    const { data: seasons } = await supabase.from('seasons').select('id, name').eq('is_active', true).order('name')
-  const activeSeason = seasons?.[0]
-
     const html = `
       <div class="max-w-2xl">
         <a href="#/coaches/courses" class="mb-4 flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
@@ -67,13 +64,6 @@ export async function initCoachNewCourse(): Promise<void> {
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
-              <label class="mb-1 block text-xs font-medium text-zinc-400">Temporada</label>
-              <select name="seasonId"
-                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
-                ${(seasons ?? []).map((s: any) => `<option value="${escapeHtml(s.id)}" ${s.id === activeSeason?.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
-              </select>
-            </div>
-            <div>
               <label class="mb-1 block text-xs font-medium text-zinc-400">Duración (meses)</label>
               <input type="number" name="durationMonths" id="field-months" value="3" min="1" max="24"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
@@ -91,16 +81,23 @@ export async function initCoachNewCourse(): Promise<void> {
               <input type="number" name="displayOrder" id="field-order" value="0"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
             </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-zinc-400">Precio (USD)</label>
+              <div class="flex items-center gap-3">
+                <input type="number" name="price" id="field-price" value="1.54" min="0" step="0.01"
+                  class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
+                <label class="flex items-center gap-1.5 text-xs text-zinc-400 shrink-0">
+                  <input type="checkbox" name="isFree" id="field-free"
+                    class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
+                  Gratis
+                </label>
+              </div>
+            </div>
           </div>
           <label class="flex items-center gap-2 text-sm text-zinc-300">
             <input type="checkbox" name="isActive" checked
               class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
             Curso activo
-          </label>
-          <label class="flex items-center gap-2 text-sm text-zinc-300">
-            <input type="checkbox" name="createModules" id="create-modules" checked
-              class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
-            Crear módulos automáticos (1 por mes)
           </label>
           <p id="form-error" class="hidden text-xs text-red-400"></p>
           <div class="flex gap-3">
@@ -117,6 +114,14 @@ export async function initCoachNewCourse(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Free course toggle
+    document.getElementById('field-free')?.addEventListener('change', function(this: HTMLInputElement) {
+      const priceInput = document.getElementById('field-price') as HTMLInputElement
+      priceInput.disabled = this.checked
+      priceInput.value = this.checked ? '0' : '1.54'
+      priceInput.classList.toggle('opacity-50', this.checked)
+    })
 
     // Template selection
     document.querySelectorAll('.template-btn').forEach((btn) => {
@@ -141,16 +146,15 @@ export async function initCoachNewCourse(): Promise<void> {
       const name = fd.get('name') as string
       const duration = parseInt(fd.get('durationMonths') as string) || 3
       const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-      const createMods = fd.get('createModules') === 'on'
 
       const { data: course, error } = await supabase.from('courses').insert({
         name,
         slug,
         description: (fd.get('description') as string) || null,
-        season_id: fd.get('seasonId') as string,
         duration_months: duration,
         min_rank: (fd.get('minRank') as string) || '',
         display_order: parseInt(fd.get('displayOrder') as string) || 0,
+        price: fd.get('isFree') === 'on' ? 0 : (parseFloat(fd.get('price') as string) || 1.54),
         is_active: fd.get('isActive') === 'on',
       }).select().maybeSingle()
 
@@ -160,22 +164,7 @@ export async function initCoachNewCourse(): Promise<void> {
         return
       }
 
-      // Auto-create modules (use template module count if available)
-      const selectedTemplate = COURSE_TEMPLATES.find((t) => t.name === name)
-      const moduleCount = selectedTemplate?.modules ?? duration
-      if (createMods && course) {
-        const modules = Array.from({ length: moduleCount }, (_, i) => ({
-          course_id: course.id,
-          name: `Módulo ${i + 1}`,
-          description: `Módulo ${i + 1} de ${moduleCount}`,
-          month_number: i + 1,
-          display_order: i + 1,
-        }))
-        const { error: modErr } = await supabase.from('course_modules').insert(modules)
-        if (modErr) console.error('Error creating modules:', modErr)
-      }
-
-      toast('success', 'Curso creado correctamente' + (createMods && course ? ` con ${moduleCount} módulos` : ''))
+      toast('success', 'Curso creado correctamente')
       router.navigate('/coaches/courses')
     })
   } catch (err) {

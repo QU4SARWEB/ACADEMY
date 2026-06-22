@@ -25,7 +25,7 @@ export async function initPracticalScore(): Promise<void> {
       const today = new Date().toISOString().split('T')[0]
       const { data: enrolls } = await supabase.from('enrollments').select('id, profile_id').eq('course_id', exam.course_id).eq('status', 'active')
       const enrollIds = (enrolls ?? []).map((e: any) => e.id)
-      const { data: attRecords } = await supabase.from('attendance').select('enrollment_id, status').in('enrollment_id', enrollIds.length ? enrollIds : ['none']).eq('date', today)
+      const { data: attRecords } = await supabase.from('attendance').select('enrollment_id, status').in('enrollment_id', enrollIds.length ? enrollIds : ['00000000-0000-0000-0000-000000000000']).eq('date', today)
       const attMap = new Map((attRecords ?? []).map((r: any) => [r.enrollment_id, r.status]))
       const presentEnrolls = (enrolls ?? []).filter((e: any) => { const s = attMap.get(e.id); return s === 'present' || s === 'late' })
       if (presentEnrolls.length < 2) { document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Se necesitan al menos 2 alumnos presentes para iniciar.</p>'; return }
@@ -60,11 +60,11 @@ export async function initPracticalScore(): Promise<void> {
       const { data: rubrics } = await supabase.from('practical_rubrics').select('*').eq('practical_exam_id', examId).order('order_num')
       const { data: teams } = await supabase.from('practical_teams').select('*').eq('practical_exam_id', examId).order('order_num')
       const teamIds = (teams ?? []).map((t: any) => t.id)
-      const { data: members } = await supabase.from('practical_team_members').select('id, team_number, practical_team_id, enrollment_id').in('practical_team_id', teamIds.length > 0 ? teamIds : ['none'])
+      const { data: members } = await supabase.from('practical_team_members').select('id, team_number, practical_team_id, enrollment_id').in('practical_team_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000'])
       const enrollIds2 = [...new Set((members ?? []).map((m: any) => m.enrollment_id))]
-      const { data: profs2 } = await supabase.from('enrollments').select('id, profile_id').in('id', enrollIds2.length > 0 ? enrollIds2 : ['none'])
+      const { data: profs2 } = await supabase.from('enrollments').select('id, profile_id').in('id', enrollIds2.length > 0 ? enrollIds2 : ['00000000-0000-0000-0000-000000000000'])
       const profIds2 = [...new Set((profs2 ?? []).map((e: any) => e.profile_id))]
-      const { data: profiles2 } = await supabase.from('profiles').select('id, full_name, riot_id, social_discord, avatar_url').in('id', profIds2.length > 0 ? profIds2 : ['none'])
+      const { data: profiles2 } = await supabase.from('profiles').select('id, full_name, riot_id, social_discord, avatar_url').in('id', profIds2.length > 0 ? profIds2 : ['00000000-0000-0000-0000-000000000000'])
       const profileMap2: Record<string, any> = {}
       for (const p of profiles2 ?? []) profileMap2[p.id] = p
       const enrollProfMap: Record<string, any> = {}
