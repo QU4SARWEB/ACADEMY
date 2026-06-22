@@ -42,7 +42,7 @@ export function mountCoachStudentDetail(): void {
         supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
         supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
         supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
-        supabase.from('payments').select('status').eq('profile_id', id),
+        supabase.from('payments').select('status, amount, enrollment_id').eq('profile_id', id),
         supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
       ])
 
@@ -63,8 +63,14 @@ export function mountCoachStudentDetail(): void {
       }
 
       const enrollments = (enrollData ?? []) as any[]
-      const paymentMap = new Set<string>()
-      for (const p of payments ?? []) if (p.status === 'paid' || p.status === 'scholarship') paymentMap.add('paid')
+      const paymentByEnroll = new Map<string, string>()
+      for (const p of payments ?? []) {
+        const key = p.enrollment_id || 'none'
+        if (!paymentByEnroll.has(key)) {
+          if (p.status === 'paid' || p.status === 'scholarship') paymentByEnroll.set(key, 'paid')
+          else paymentByEnroll.set(key, p.status)
+        }
+      }
 
       const enrolledCourseIds = enrollments.map((e: any) => e.course_id)
       const { data: available } = enrolledCourseIds.length > 0
@@ -140,7 +146,8 @@ export function mountCoachStudentDetail(): void {
               <div class="space-y-3" id="enrollments-list">
                 ${enrollments.length === 0 ? '<p class="text-sm text-zinc-500">Sin inscripciones.</p>' : ''}
                 ${enrollments.map((enr: any) => {
-                  const paymentStatus = paymentMap.has('paid') ? 'paid' : null
+                  const payStat = paymentByEnroll.get(enr.id)
+                  const paymentStatus = payStat === 'paid' || payStat === 'scholarship' ? 'paid' : payStat || null
                   const statusColor = enr.status === 'active' ? 'text-green-400' : enr.status === 'recovery' ? 'text-yellow-400' : 'text-zinc-400'
                   return `
                     <div class="rounded-lg border border-zinc-800 bg-[#111] p-4" data-enrollment-id="${escapeHtml(enr.id)}">
