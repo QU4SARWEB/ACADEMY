@@ -165,46 +165,43 @@ export async function initStudentExamTake(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: exam } = await supabase
-      .from('exams')
-      .select('*, course_modules(name), exam_questions(*, questions(*))')
-      .eq('id', examId)
-      .maybeSingle()
-
+    // Fetch exam + questions in separate queries (deep nesting is unreliable)
+    const { data: exam } = await supabase.from('exams').select('*, course_modules(name)').eq('id', examId).maybeSingle()
     if (!exam) {
       document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500 py-10 text-center">Examen no encontrado.</p>'
       return
     }
-    console.log('Exam loaded:', exam.title, 'questions:', exam.exam_questions?.length)
 
-    // Load question_options separately (deep nesting sometimes fails)
-    const questionIds = [...new Set((exam.exam_questions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
+    const { data: examQuestions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_num')
+    const questionIds = [...new Set((examQuestions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
+
+    let questions: any[] = []
     let allOptions: any[] = []
     if (questionIds.length > 0) {
-      const { data: opts, error: optsErr } = await supabase.from('question_options').select('*').in('question_id', questionIds).order('order_num')
-      if (optsErr) console.error('Error loading question_options:', optsErr)
-      allOptions = opts ?? []
-    }
-    const optionsByQ: Record<string, any[]> = {}
-    for (const opt of allOptions) {
-      if (!optionsByQ[opt.question_id]) optionsByQ[opt.question_id] = []
-      optionsByQ[opt.question_id].push(opt)
-    }
+      const [qRes, oRes] = await Promise.all([
+        supabase.from('questions').select('*').in('id', questionIds),
+        supabase.from('question_options').select('*').in('question_id', questionIds).order('order_num'),
+      ])
+      if (qRes.error) console.error('Error loading questions:', qRes.error)
+      if (oRes.error) console.error('Error loading question_options:', oRes.error)
+      allOptions = oRes.data ?? []
 
-    // Fallback: if questions(*) nesting failed, fetch questions separately
-    const missingQIds = (exam.exam_questions ?? []).filter((eq: any) => !eq.questions).map((eq: any) => eq.question_id)
-    if (missingQIds.length > 0) {
-      const { data: qFallback } = await supabase.from('questions').select('*').in('id', missingQIds)
       const qMap: Record<string, any> = {}
-      for (const q of qFallback ?? []) qMap[q.id] = q
-      for (const eq of exam.exam_questions ?? []) {
-        if (!eq.questions && qMap[eq.question_id]) eq.questions = qMap[eq.question_id]
-      }
-    }
+      for (const q of qRes.data ?? []) qMap[q.id] = q
 
-    // Attach options to questions
-    for (const eq of exam.exam_questions ?? []) {
-      if (eq.questions) eq.questions.question_options = optionsByQ[eq.question_id] || []
+      const optionsByQ: Record<string, any[]> = {}
+      for (const opt of allOptions) {
+        if (!optionsByQ[opt.question_id]) optionsByQ[opt.question_id] = []
+        optionsByQ[opt.question_id].push(opt)
+      }
+
+      questions = (examQuestions ?? [])
+        .filter((eq: any) => qMap[eq.question_id])
+        .map((eq: any) => {
+          const q = { ...qMap[eq.question_id], question_options: optionsByQ[eq.question_id] || [] }
+          return { ...eq, questions: q }
+        })
+        .sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
     }
 
     const { data: enrollment } = await supabase
@@ -219,8 +216,6 @@ export async function initStudentExamTake(): Promise<void> {
       document.getElementById('page-content')!.innerHTML = '<p class="text-yellow-400 text-sm py-10 text-center">No estás inscrito en este curso.</p>'
       return
     }
-
-    const questions = (exam.exam_questions ?? []).sort((a: any, b: any) => (a.order_num ?? 0) - (b.order_num ?? 0))
 
     // Get ALL attempts with answers
     const { data: allAttempts } = await supabase
