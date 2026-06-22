@@ -16,23 +16,19 @@ export async function initStudentSchedule(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const [{ data: seasons }, { data: schedules }] = await Promise.all([
-      supabase.from('courses').select('id, name').eq('is_active', true).maybeSingle(),
-      supabase.from('schedules').select('*').eq('type', 'academic').order('day_of_week').order('start_time'),
-    ])
+    const { data: schedules } = await supabase
+      .from('schedules')
+      .select('*')
+      .order('day_of_week')
+      .order('start_time')
 
-    if (!seasons) {
-      document.getElementById('page-content')!.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay curso activo.</p></div>'
-      return
-    }
-
-    const seasonScheds = (schedules ?? []).filter((s: any) => s.season_id === seasons.id)
+    const seasonScheds = (schedules ?? [])
     const today = new Date().getDay()
 
     const html = `
       <div class="mb-6">
-        <h1 class="font-heading text-2xl font-bold text-white">${Icon('calendar', 22)} Horario académico</h1>
-        <p class="mt-1 text-sm text-zinc-500">${escapeHtml(seasons.name)}</p>
+        <h1 class="font-heading text-2xl font-bold text-white">${Icon('calendar', 22)} Horarios</h1>
+        <p class="mt-1 text-sm text-zinc-500">${seasonScheds.length} horario${seasonScheds.length !== 1 ? 's' : ''} publicados</p>
       </div>
 
       <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
