@@ -351,6 +351,7 @@ async function renderCoachPayments(): Promise<void> {
 
   const studentCount: Record<string, number> = {}
   const paidCount: Record<string, number> = {}
+  const scholarshipCount: Record<string, number> = {}
   const pendingCount: Record<string, number> = {}
   const expiredCount: Record<string, number> = {}
   const freeCount: Record<string, number> = {}
@@ -362,6 +363,7 @@ async function renderCoachPayments(): Promise<void> {
     const cid = (enrolls ?? []).find((e: any) => e.id === p.enrollment_id)?.course_id
     if (!cid) continue
     if (p.status === 'paid') paidCount[cid] = (paidCount[cid] || 0) + 1
+    else if (p.status === 'scholarship') scholarshipCount[cid] = (scholarshipCount[cid] || 0) + 1
     else if (p.status === 'pending') pendingCount[cid] = (pendingCount[cid] || 0) + 1
     else if (p.status === 'expired') expiredCount[cid] = (expiredCount[cid] || 0) + 1
     if (p.status === 'paid' && (!p.amount || p.amount <= 0)) freeCount[cid] = (freeCount[cid] || 0) + 1
@@ -392,6 +394,7 @@ async function renderCoachPayments(): Promise<void> {
           const pending = pendingCount[c.id] || 0
           const expired = expiredCount[c.id] || 0
           const isFree = !c.price || c.price <= 0
+          const scholar = scholarshipCount[c.id] || 0
           return `
           <button class="course-pay-btn glass rounded-xl p-5 text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5" data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}">
             <div class="flex items-center justify-between mb-3">
@@ -403,6 +406,7 @@ async function renderCoachPayments(): Promise<void> {
               ${isFree
                 ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratis</span>`
                 : `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">${paid} pagados</span>
+                   ${scholar > 0 ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">${scholar} becados</span>` : ''}
                    <span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">${pending} pendientes</span>
                    ${expired > 0 ? `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">${expired} vencidos</span>` : ''}`
               }
