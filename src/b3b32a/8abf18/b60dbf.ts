@@ -8,6 +8,8 @@ import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 
+const CLASE_GENERAL_ID = 'e7f7f24d-8c5a-4006-99cf-7a74907ff3b0'
+
 const ACH_PRESETS = [
   { badge: 'attendance', title: 'Asistencia perfecta', desc: '100% de asistencia en el mes', icon: 'checkCircle' },
   { badge: 'improvement', title: 'Mejora continua', desc: 'Progreso significativo enrank', icon: 'trendingUp' },
@@ -74,8 +76,8 @@ export function mountCoachStudentDetail(): void {
 
       const enrolledCourseIds = enrollments.map((e: any) => e.course_id)
       const { data: available } = enrolledCourseIds.length > 0
-        ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).order('name')
-        : await supabase.from('courses').select('id, name').eq('is_active', true).order('name')
+        ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).neq('slug', 'clase-general').order('name')
+        : await supabase.from('courses').select('id, name').eq('is_active', true).neq('slug', 'clase-general').order('name')
 
       const lastEnr = enrollments.find((e: any) => e.status === 'active' || e.status === 'recovery')
       let eligibility: any = null
@@ -440,6 +442,18 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     })
   })
 
+  async function autoEnrollClaseGeneral(profileId: string, type: string): Promise<void> {
+    const { data: exists } = await supabase.from('enrollments').select('id').eq('profile_id', profileId).eq('course_id', CLASE_GENERAL_ID).maybeSingle()
+    if (exists) return
+    const { data: enr, error } = await supabase.from('enrollments').insert({
+      profile_id: profileId, course_id: CLASE_GENERAL_ID, type, status: 'active',
+    }).select('id').maybeSingle()
+    if (error || !enr) { console.error('Error enrolling in CLASE GENERAL:', error); return }
+    await supabase.from('payments').insert({
+      profile_id: profileId, enrollment_id: enr.id, type, status: 'paid', amount: 0,
+    }).then(({ error: pe }) => { if (pe) console.error('Error creating payment for CLASE GENERAL:', pe) })
+  }
+
   document.getElementById('form-promote')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     const fd = new FormData(e.target as HTMLFormElement)
@@ -480,12 +494,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         const { data: promCourse } = await supabase.from('courses').select('price').eq('id', newCourseId).maybeSingle()
         const promPrice = promCourse?.price ?? 1.54
         const { data: promProf } = await supabase.from('profiles').select('scholarship').eq('id', studentId).maybeSingle()
+        const promPayStatus = promPrice === 0 ? 'paid' : (promProf?.scholarship ? 'scholarship' : 'pending')
         const { error: payErr } = await supabase.from('payments').insert({
           profile_id: studentId, enrollment_id: promEnroll.id,
           type: 'student', amount: promPrice,
-          status: promPrice === 0 ? 'paid' : (promProf?.scholarship ? 'scholarship' : 'pending'),
+          status: promPayStatus,
         })
         if (payErr) console.error('Error creating payment on promote:', payErr)
+        else if (promPayStatus === 'paid' || promPayStatus === 'scholarship') autoEnrollClaseGeneral(studentId, 'student')
       }
     }
 
@@ -554,6 +570,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           toast('error', 'Pago no creado: ' + payErr.message)
         } else {
           toast('success', 'Pago creado (' + payStatus + ')')
+          if (payStatus === 'paid' || payStatus === 'scholarship') autoEnrollClaseGeneral(profileId, type)
         }
       }
 
