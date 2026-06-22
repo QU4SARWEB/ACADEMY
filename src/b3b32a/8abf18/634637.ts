@@ -102,11 +102,11 @@ export async function initCoachScrims(): Promise<void> {
                 </select>
               </div>
               <div>
-                <label class="mb-1 block text-xs text-zinc-400">Temporada</label>
+                <label class="mb-1 block text-xs text-zinc-400">Curso</label>
                 <select name="seasonId" required
                   class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  <option value="">Seleccionar temporada...</option>
-                  ${seasonsOptions || '<option value="" disabled>No hay temporadas</option>'}
+                  <option value="">Seleccionar curso...</option>
+                  ${seasonsOptions || '<option value="" disabled>No hay cursos</option>'}
                 </select>
               </div>
               <div>

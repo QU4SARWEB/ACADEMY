@@ -22,7 +22,7 @@ export async function initPlayerSchedule(): Promise<void> {
     ])
 
     if (!seasons) {
-      document.getElementById('page-content')!.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay temporada activa.</p></div>'
+      document.getElementById('page-content')!.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay curso activo.</p></div>'
       return
     }
 
@@ -102,7 +102,7 @@ export async function initPlayerSchedule(): Promise<void> {
         }).join('')}
       </div>
 
-      ${seasonScheds.length === 0 ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horario competitivo publicado todavía.</p></div>' : ''}
+      ${seasonScheds.length === 0 ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horario competitivo publicadoía.</p></div>' : ''}
     `
 
     document.getElementById('page-content')!.innerHTML = html

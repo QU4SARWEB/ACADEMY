@@ -66,10 +66,10 @@ export async function initCoachTeams(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
             </div>
             <div>
-              <label class="mb-1 block text-xs text-zinc-400">Temporada</label>
+              <label class="mb-1 block text-xs text-zinc-400">Curso</label>
               <select name="seasonId"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                <option value="">Sin temporada</option>
+                <option value="">Sin curso</option>
                 ${(allSeasons ?? []).map((s: any) =>
                   `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
                 ).join('')}

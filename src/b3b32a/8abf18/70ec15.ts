@@ -34,7 +34,7 @@ export async function initCoachSchedules(): Promise<void> {
 
     const groupedBySeason: Record<string, any[]> = {}
     for (const s of schedules ?? []) {
-      const key = s.seasons?.name || 'Sin temporada'
+      const key = s.seasons?.name || 'Sin curso'
       if (!groupedBySeason[key]) groupedBySeason[key] = []
       groupedBySeason[key].push(s)
     }
@@ -112,10 +112,10 @@ export async function initCoachSchedules(): Promise<void> {
               <div>
                 ${renderSearchableSelect({
                   name: 'seasonId',
-                  label: 'Temporada',
+                  label: 'Curso',
                   options: seasonOpts,
                   value: activeSeason?.id || '',
-                  placeholder: 'Seleccionar temporada...',
+                  placeholder: 'Seleccionar curso...',
                   required: true,
                 })}
               </div>
