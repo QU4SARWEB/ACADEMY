@@ -35,25 +35,30 @@ export function mountCoachStudents(): void {
       // Build per-enrollment payment status and per-student counts (excluding free courses)
       const paymentByEnrollId: Record<string, string> = {}
       const paidCountPerProfile: Record<string, number> = {}
+      const scholarCountPerProfile: Record<string, number> = {}
       const enrollCountPerProfile: Record<string, number> = {}
       for (const p of payments ?? []) {
         const eid = p.enrollment_id
         if (eid && !paymentByEnrollId[eid]) {
-          const isPaid = p.status === 'paid' || p.status === 'scholarship'
-          paymentByEnrollId[eid] = isPaid ? 'paid' : p.status
+          paymentByEnrollId[eid] = p.status
         }
       }
       for (const e of enrollments ?? []) {
-        if (freeCourseIds.has(e.course_id)) continue // skip free courses from payment count
+        if (freeCourseIds.has(e.course_id)) continue
         if (!enrollCountPerProfile[e.profile_id]) enrollCountPerProfile[e.profile_id] = 0
         enrollCountPerProfile[e.profile_id]++
-        if (paymentByEnrollId[e.id] === 'paid') {
+        const st = paymentByEnrollId[e.id]
+        if (st === 'paid') {
           if (!paidCountPerProfile[e.profile_id]) paidCountPerProfile[e.profile_id] = 0
           paidCountPerProfile[e.profile_id]++
+        } else if (st === 'scholarship') {
+          if (!scholarCountPerProfile[e.profile_id]) scholarCountPerProfile[e.profile_id] = 0
+          scholarCountPerProfile[e.profile_id]++
         }
       }
       for (const pid of Object.keys(enrollCountPerProfile)) {
         if (!paidCountPerProfile[pid]) paidCountPerProfile[pid] = 0
+        if (!scholarCountPerProfile[pid]) scholarCountPerProfile[pid] = 0
       }
 
       const enrollmentMap = new Map<string, { count: number; anyActive: boolean; courses: string[] }>()
@@ -137,11 +142,16 @@ export function mountCoachStudents(): void {
                         <td class="py-3 pr-4"><span class="text-xs ${s.scholarship ? 'text-yellow-400' : 'text-zinc-600'}">${s.scholarship ? 'Sí' : 'No'}</span></td>
                         <td class="py-3 pr-4">${(() => {
                           const paid = paidCountPerProfile[s.id] || 0
+                          const scholar = scholarCountPerProfile[s.id] || 0
                           const total = enrollCountPerProfile[s.id] || 0
                           if (total === 0) return '<span class="text-xs text-zinc-600">—</span>'
-                          const pct = Math.round((paid / total) * 100)
-                          const color = pct >= 100 ? 'text-green-400 bg-green-500/10' : pct > 0 ? 'text-yellow-400 bg-yellow-500/10' : 'text-zinc-500 bg-zinc-800/30'
-                          return `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${color}">${paid}/${total}</span>`
+                          const paidTotal = paid + scholar
+                          const parts: string[] = []
+                          if (paid > 0) parts.push(`<span class="text-green-400">${paid} pagados</span>`)
+                          if (scholar > 0) parts.push(`<span class="text-blue-400">${scholar} becados</span>`)
+                          const pct = Math.round((paidTotal / total) * 100)
+                          const color = pct >= 100 ? 'bg-green-500/10' : pct > 0 ? 'bg-yellow-500/10' : 'bg-zinc-800/30'
+                          return `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${color}">${paidTotal > 0 ? parts.join(' · ') : `<span class="text-zinc-500">0/${total}</span>`}</span>`
                         })()}</td>
                         <td class="py-3 pr-4"><span class="inline-block h-2.5 w-2.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-500'}"></span></td>
                         <td class="py-3 pr-4 text-zinc-400 text-xs max-w-[120px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
