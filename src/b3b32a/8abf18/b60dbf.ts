@@ -7,8 +7,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
-
-const CLASE_GENERAL_ID = 'e7f7f24d-8c5a-4006-99cf-7a74907ff3b0'
+import { autoEnrollGeneralCourses } from '@/2b3583/course_utils'
 
 const ACH_PRESETS = [
   { badge: 'attendance', title: 'Asistencia perfecta', desc: '100% de asistencia en el mes', icon: 'checkCircle' },
@@ -442,18 +441,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     })
   })
 
-  async function autoEnrollClaseGeneral(profileId: string, type: string): Promise<void> {
-    const { data: exists } = await supabase.from('enrollments').select('id').eq('profile_id', profileId).eq('course_id', CLASE_GENERAL_ID).maybeSingle()
-    if (exists) return
-    const { data: enr, error } = await supabase.from('enrollments').insert({
-      profile_id: profileId, course_id: CLASE_GENERAL_ID, type, status: 'active',
-    }).select('id').maybeSingle()
-    if (error || !enr) { console.error('Error enrolling in CLASE GENERAL:', error); return }
-    await supabase.from('payments').insert({
-      profile_id: profileId, enrollment_id: enr.id, type, status: 'free', amount: 0,
-    }).then(({ error: pe }) => { if (pe) console.error('Error creating payment for CLASE GENERAL:', pe) })
-  }
-
   document.getElementById('form-promote')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     const fd = new FormData(e.target as HTMLFormElement)
@@ -501,7 +488,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           status: promPayStatus,
         })
         if (payErr) console.error('Error creating payment on promote:', payErr)
-        else if (promPayStatus === 'scholarship' && promPrice > 0) autoEnrollClaseGeneral(studentId, 'student')
+        else if (promPayStatus === 'scholarship' && promPrice > 0) autoEnrollGeneralCourses(studentId, 'student')
       }
     }
 
@@ -570,7 +557,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           toast('error', 'Pago no creado: ' + payErr.message)
         } else {
           toast('success', 'Pago creado (' + payStatus + ')')
-          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollClaseGeneral(profileId, type)
+          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollGeneralCourses(profileId, type)
         }
       }
 

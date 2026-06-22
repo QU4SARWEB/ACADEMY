@@ -8,6 +8,7 @@ import { store } from '@/9ed39e/8cd892'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzone'
 import type { Profile } from '@/d14a80'
+import { autoEnrollGeneralCourses } from '@/2b3583/course_utils'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
@@ -274,6 +275,8 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
     const data = await res.json()
     if (data?.verified) {
       await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe' }).eq('id', paymentId)
+      const { data: payData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
+      if (payData) autoEnrollGeneralCourses(payData.profile_id, 'student')
       toast('success', 'Pago confirmado vía Stripe')
       const cleanHash = location.hash.split('?')[0]
       window.history.replaceState({}, '', cleanHash || '#/payments')
@@ -333,6 +336,8 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
           if (details.status === 'COMPLETED') {
             const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal' }).eq('id', paymentId)
             if (upErr) { console.error('Error updating payment:', upErr); toast('error', 'Pago realizado pero error al actualizar. Contacta al coach.'); return }
+            const { data: ppData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
+            if (ppData) autoEnrollGeneralCourses(ppData.profile_id, 'student')
             toast('success', 'Pago confirmado vía PayPal')
             container.innerHTML = '<span class="text-xs text-green-400">✓ Pagado</span>'
             ;(window as any).__isExpired = false
@@ -557,6 +562,10 @@ async function renderCoachPayments(): Promise<void> {
         } else if (c.oldStatus === 'scholarship' && c.profileId) {
           const { data: otherScholarships } = await supabase.from('payments').select('id').eq('profile_id', c.profileId).eq('status', 'scholarship').neq('id', c.paymentId)
           if (!otherScholarships || otherScholarships.length === 0) await supabase.from('profiles').update({ scholarship: false }).eq('id', c.profileId)
+        }
+        // Auto-enroll in general courses when payment becomes paid
+        if (c.newStatus === 'paid' && c.profileId) {
+          autoEnrollGeneralCourses(c.profileId, 'student')
         }
       }
     }
