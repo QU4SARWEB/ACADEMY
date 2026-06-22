@@ -593,6 +593,10 @@ export async function initCoachExams(): Promise<void> {
         ? `Examen creado con ${createdCount} preguntas${qErrors > 0 ? ` (${qErrors} fallaron)` : ''}`
         : 'Error: ninguna pregunta pudo crearse'
       toast(qErrors > 0 && createdCount === 0 ? 'error' : 'success', msg)
+      if (createdCount === 0 && newExam?.id) {
+        await supabase.from('exams').delete().eq('id', newExam.id)
+        console.warn('Deleted exam with zero questions:', newExam.id)
+      }
       initCoachExams()
     })
 
@@ -713,6 +717,11 @@ export async function initCoachExams(): Promise<void> {
         : 'Error: ninguna pregunta pudo crearse'
       toast(qErrors > 0 && qSaved === 0 ? 'error' : 'success', msg)
       if (qErrors > 0) console.warn('Paste exam: questions saved:', qSaved, 'errors:', qErrors)
+      // Protection: if no questions were linked, delete the exam
+      if (qSaved === 0 && newExam?.id) {
+        await supabase.from('exams').delete().eq('id', newExam.id)
+        console.warn('Deleted exam with zero questions:', newExam.id)
+      }
       initCoachExams()
     })
 
