@@ -4,7 +4,6 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
-import { renderSearchableSelect, initSearchableSelect } from '@/4725dc/forms/SearchableSelect'
 import { to12h } from '@/2b3583/2938a7'
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -21,16 +20,6 @@ export async function initCoachSchedules(): Promise<void> {
       .order('week_number')
       .order('day_of_week')
       .order('start_time')
-
-    const { data: allSeasons } = await supabase
-      .from('courses')
-      .select('id, name, is_active')
-
-    const { data: activeSeason } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle()
 
     const groupedBySeason: Record<string, any[]> = { 'Horarios': [] }
     for (const s of schedules ?? []) {
@@ -94,10 +83,6 @@ export async function initCoachSchedules(): Promise<void> {
     document.getElementById('page-content')!.innerHTML = html
 
     function renderScheduleForm(): string {
-      const seasonOpts = (allSeasons ?? []).map((s: any) => ({
-        value: s.id,
-        label: `${s.name}${s.is_active ? ' (Activa)' : ''}`
-      }))
       return `
         <div class="glass rounded-xl p-4">
           <h3 class="mb-3 font-medium text-white">Nuevo horario</h3>
@@ -107,16 +92,6 @@ export async function initCoachSchedules(): Promise<void> {
                 <label class="mb-1 block text-xs text-zinc-400">Título</label>
                 <input type="text" name="title" required
                   class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
-              </div>
-              <div>
-                ${renderSearchableSelect({
-                  name: 'seasonId',
-                  label: 'Curso',
-                  options: seasonOpts,
-                  value: activeSeason?.id || '',
-                  placeholder: 'Seleccionar curso...',
-                  required: true,
-                })}
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Semana</label>
@@ -175,7 +150,6 @@ export async function initCoachSchedules(): Promise<void> {
       const container = document.getElementById('schedule-form-container')!
       container.innerHTML = renderScheduleForm()
       container.classList.remove('hidden')
-      initSearchableSelect(container)
 
       document.getElementById('btn-cancel-schedule')?.addEventListener('click', () => {
         container.classList.add('hidden')
@@ -186,7 +160,6 @@ export async function initCoachSchedules(): Promise<void> {
         const fd = new FormData(e.target as HTMLFormElement)
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'
         const { error } = await supabase.from('schedules').insert({
-          season_id: fd.get('seasonId') as string,
           title: fd.get('title') as string,
           week_number: parseInt(fd.get('weekNumber') as string) || 1,
           day_of_week: parseInt(fd.get('dayOfWeek') as string),
