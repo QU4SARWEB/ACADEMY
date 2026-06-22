@@ -104,6 +104,16 @@ export function mountCoachStudents(): void {
           </div>
         </div>
 
+        <div class="mb-4">
+          <div class="relative">
+            <input type="text" id="student-search" placeholder="Buscar por nombre, Riot ID, Discord o email..." 
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] pl-9 pr-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
+            <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">${Icon('search', 14)}</div>
+          </div>
+        </div>
+
+        <div id="no-results" class="hidden py-8 text-center text-sm text-zinc-500">No se encontraron estudiantes.</div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -121,7 +131,7 @@ export function mountCoachStudents(): void {
                 <th class="pb-3 font-medium"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="students-tbody">
               ${(students ?? []).length === 0
                 ? '<tr><td colspan="12" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
                 : (students ?? []).map((s: any) => {
@@ -129,7 +139,7 @@ export function mountCoachStudents(): void {
                     const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
                     const initial = (displayName || '?').charAt(0).toUpperCase()
                     return `
-                      <tr class="border-b border-zinc-800/50">
+                      <tr class="border-b border-zinc-800/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}">
                         <td class="py-3 pr-2"><input type="checkbox" class="student-cb h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
                         <td class="py-3 pr-4">
                           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
@@ -166,6 +176,21 @@ export function mountCoachStudents(): void {
 
       document.getElementById('page-content')!.innerHTML = html
       initBulkActions(students ?? [])
+
+      // Search filter
+      const searchInput = document.getElementById('student-search') as HTMLInputElement
+      const noResults = document.getElementById('no-results')!
+      searchInput?.addEventListener('input', () => {
+        const q = searchInput.value.toLowerCase().trim()
+        let visible = 0
+        document.querySelectorAll('#students-tbody tr').forEach(row => {
+          const text = (row as HTMLElement).dataset.search || ''
+          const match = !q || text.includes(q)
+          row.classList.toggle('hidden', !match)
+          if (match) visible++
+        })
+        noResults.classList.toggle('hidden', visible > 0 || !q)
+      })
     } catch (err) {
       console.error('Error loading students:', err)
       document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar estudiantes</p>'
