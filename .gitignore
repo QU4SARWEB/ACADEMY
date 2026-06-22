@@ -40,4 +40,6 @@ yarn-error.log*
 
 # backup
 /src-backup
-.gitmsg  
+.gitmsg
+supa_audit.mjs
+backup_*.sql  

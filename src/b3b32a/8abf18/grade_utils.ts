@@ -67,20 +67,35 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
 
   if (!rankOk) return // rank not met, can't promote
 
-  // Auto-promote: find active season and create new enrollment
-  const { data: season } = await supabase.from('courses').select('id').eq('is_active', true).maybeSingle()
-  if (!season) return
-
+  // Auto-promote: mark old as graduated, create new enrollment and payment
   await supabase.from('enrollments').update({ status: 'graduated', promoted: true }).eq('id', enrollmentId)
   await supabase.from('promotions').insert({
     enrollment_id: enrollmentId, profile_id: profileId,
     from_course_id: courseId, to_course_id: nextCourse.id,
     grade_at_time: grade, rank_at_time: profile.rank,
   })
-  await supabase.from('enrollments').upsert({
+  const { data: newEnroll } = await supabase.from('enrollments').upsert({
     profile_id: profileId, course_id: nextCourse.id,
     type: 'student', status: 'active', current_module: 1,
-  }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
+  }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
+
+  // Create payment for promoted course (respecting scholarship and price)
+  if (newEnroll) {
+    const { data: promCourse } = await supabase.from('courses').select('price').eq('id', nextCourse.id).maybeSingle()
+    const coursePrice = promCourse?.price ?? 1.54
+    const { data: promProfile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
+    const hasScholarship = promProfile?.scholarship === true
+
+    let payStatus: string
+    if (coursePrice === 0) payStatus = 'paid'
+    else if (hasScholarship) payStatus = 'scholarship'
+    else payStatus = 'pending'
+
+    await supabase.from('payments').upsert({
+      profile_id: profileId, enrollment_id: newEnroll.id,
+      type: 'student', amount: coursePrice, status: payStatus,
+    }, { onConflict: 'enrollment_id', ignoreDuplicates: false })
+  }
 
   const dn = profileId.slice(0, 8)
   console.log(`Auto-promoted ${dn}: ${course.name} → ${nextCourse.name} (grade: ${grade}, rank: ${profile.rank})`)

@@ -30,12 +30,6 @@ export async function initCoachExams(): Promise<void> {
       return
     }
 
-    const { data: modules } = await supabase
-      .from('exams') 
-      .select('id, name')
-      .eq('course_id', id)
-      .order('display_order')
-
     const { data: exams } = await supabase
       .from('exams')
       .select('*')
@@ -119,16 +113,8 @@ export async function initCoachExams(): Promise<void> {
               </div>
             </div>
             <div class="mb-4 flex items-center gap-6">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input name="is_published" type="checkbox"
-                  class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
-                <span class="text-sm text-zinc-400">Publicado</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input name="shuffle" type="checkbox"
-                  class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
-                <span class="text-sm text-zinc-400">Aleatorio</span>
-              </label>
+              ${renderToggle({ name: 'is_published', label: 'Publicado', checked: true })}
+              ${renderToggle({ name: 'shuffle', label: 'Aleatorio', checked: true })}
               ${renderToggle({ name: 'is_active', label: 'Activo', checked: true })}
             </div>
 
@@ -217,8 +203,8 @@ export async function initCoachExams(): Promise<void> {
                     </div>
                     <p class="mt-1 text-xs text-zinc-500">
                       ${exam.course_modules?.name ? escapeHtml(exam.course_modules.name) + ' · ' : ''}
-                      Nota mín: ${exam.passing_score}%${exam.time_limit ? ` · Tiempo: ${exam.time_limit}min` : ''}${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
-                      ${exam.due_date ? ` · Vence: ${formatDate(exam.due_date)}` : ''}
+Nota mín: ${exam.passing_score}% · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
+              ${exam.due_date ? ` · Vence: ${formatDate(exam.due_date)}` : ''}
                     </p>
                   </div>
                       <div class="flex gap-2">
@@ -293,21 +279,9 @@ export async function initCoachExams(): Promise<void> {
                       </div>
                     </div>
                     <div class="mb-3 flex items-center gap-6">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input name="is_published" type="checkbox" ${exam.is_published ? 'checked' : ''}
-                          class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
-                        <span class="text-xs text-zinc-400">Publicado</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input name="shuffle" type="checkbox" ${exam.shuffle ? 'checked' : ''}
-                          class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
-                        <span class="text-xs text-zinc-400">Aleatorio</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input name="is_active" type="checkbox" ${exam.is_active !== false ? 'checked' : ''}
-                          class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
-                        <span class="text-xs text-zinc-400">Activo</span>
-                      </label>
+                      ${renderToggle({ name: 'is_published', label: 'Publicado', checked: exam.is_published !== false })}
+                      ${renderToggle({ name: 'shuffle', label: 'Aleatorio', checked: exam.shuffle !== false })}
+                      ${renderToggle({ name: 'is_active', label: 'Activo', checked: exam.is_active !== false })}
                     </div>
                     <p class="edit-exam-error mb-3 text-sm text-red-400 hidden"></p>
                     <div class="flex gap-2">
@@ -540,6 +514,7 @@ export async function initCoachExams(): Promise<void> {
     document.getElementById('create-exam-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const fd = new FormData(e.target as HTMLFormElement)
+      ;(window as any).__blockReload = true
       const payload: Record<string, any> = {
         course_id: id,
         title: fd.get('title'),
@@ -549,11 +524,11 @@ export async function initCoachExams(): Promise<void> {
         max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
         weight: parseFloat(fd.get('weight') as string) || 0,
         due_date: fd.get('due_date') || null,
-        is_published: fd.get('is_published') === 'on',
-        shuffle: fd.get('shuffle') === 'on',
+        is_published: !!fd.get('is_published'),
+        shuffle: !!fd.get('shuffle'),
         eval_type: (fd.get('eval_type') as string) || 'exam',
         month: fd.get('month') ? parseInt(fd.get('month') as string) : null,
-        is_active: fd.get('is_active') === 'on',
+        is_active: !!fd.get('is_active'),
       }
 
       const { data: newExam, error } = await supabase.from('exams').insert(payload).select().maybeSingle()
@@ -597,6 +572,7 @@ export async function initCoachExams(): Promise<void> {
         await supabase.from('exams').delete().eq('id', newExam.id)
         console.warn('Deleted exam with zero questions:', newExam.id)
       }
+      ;(window as any).__blockReload = false
       initCoachExams()
     })
 
@@ -628,11 +604,11 @@ export async function initCoachExams(): Promise<void> {
           max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
           weight: parseFloat(fd.get('weight') as string) || 0,
           due_date: fd.get('due_date') || null,
-        is_published: fd.get('is_published') === 'on',
-        shuffle: fd.get('shuffle') === 'on',
+        is_published: !!fd.get('is_published'),
+        shuffle: !!fd.get('shuffle'),
         eval_type: (fd.get('eval_type') as string) || 'exam',
         month: fd.get('month') ? parseInt(fd.get('month') as string) : null,
-        is_active: fd.get('is_active') === 'on',
+        is_active: !!fd.get('is_active'),
       }
 
         const { error } = await supabase.from('exams').update(payload).eq('id', examId)
@@ -677,10 +653,11 @@ export async function initCoachExams(): Promise<void> {
       if (!textarea?.value?.trim()) return
       const parsed = parseFullExam(textarea.value)
       if (!parsed.title) { toast('error', 'No se pudo detectar el título del examen'); return }
+      ;(window as any).__blockReload = true
       const payload: Record<string, any> = {
         course_id: id, title: parsed.title, description: parsed.description,
         passing_score: parsed.passingScore || 60, time_limit: parsed.timeLimit || null,
-        max_attempts: 1, weight: 0, is_published: false, shuffle: false,
+        max_attempts: 1, weight: 0, is_published: true, shuffle: true,
         eval_type: 'exam', is_active: true,
       }
       const { data: newExam, error: examErr } = await supabase.from('exams').insert(payload).select().maybeSingle()
@@ -722,6 +699,7 @@ export async function initCoachExams(): Promise<void> {
         await supabase.from('exams').delete().eq('id', newExam.id)
         console.warn('Deleted exam with zero questions:', newExam.id)
       }
+      ;(window as any).__blockReload = false
       initCoachExams()
     })
 

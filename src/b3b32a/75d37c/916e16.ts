@@ -297,7 +297,7 @@ export async function initStudentExamTake(): Promise<void> {
     let currentIndex = 0
     let answers: Record<string, string> = { ...savedAnswers }
     let timerInterval: number | null = null
-    let timeLeft: number | null = exam.time_limit ? (exam.time_limit * 60) : null
+    let timeLeft: number = (exam.time_limit || 300) * 60
     let submitting = false
 
     // --- Render initial page ---
@@ -314,12 +314,9 @@ export async function initStudentExamTake(): Promise<void> {
               <h1 class="font-heading text-xl font-bold text-white">${escapeHtml(exam.title)}</h1>
               <p class="text-sm text-zinc-500">${questions.length > 0 ? 'Pregunta <span id="q-progress">' + (currentIndex + 1) + '</span> de ' + questions.length : 'Sin preguntas'}</p>
             </div>
-            ${timeLeft !== null
-              ? `<div id="timer-display" class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-800 text-zinc-300">
-                  ${Icon('clock', 16)} <span id="timer-text">${formatTime(timeLeft)}</span>
-                </div>`
-              : ''
-            }
+            <div id="timer-display" class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-800 text-zinc-300">
+              ${Icon('clock', 16)} <span id="timer-text">${formatTime(timeLeft)}</span>
+            </div>
           </div>
 
           <div id="question-dots" class="mb-4 flex gap-1">
@@ -363,9 +360,7 @@ export async function initStudentExamTake(): Promise<void> {
 
     // --- Timer ---
     function startTimer(): void {
-      if (timeLeft === null) return
       timerInterval = window.setInterval(() => {
-        if (timeLeft === null) return
         timeLeft--
 
         const timerText = document.getElementById('timer-text')
@@ -383,7 +378,7 @@ export async function initStudentExamTake(): Promise<void> {
       }, 1000)
     }
 
-    if (timeLeft !== null && timeLeft > 0) startTimer()
+    startTimer()
 
     // --- Persist to localStorage ---
     function saveToLS(): void {
@@ -579,19 +574,8 @@ export async function initStudentExamTake(): Promise<void> {
         }
       })
 
-      // Delete old answers first, then insert new ones
-      const { error: delError } = await supabase.from('student_answers').delete().eq('attempt_id', attempt!.id)
-      if (delError) {
-        toast('error', 'Error al limpiar respuestas anteriores: ' + delError.message)
-        submitting = false
-        if (submitBtn) {
-          submitBtn.innerHTML = `${Icon('checkCircle', 16)} Finalizar examen`
-          ;(submitBtn as HTMLButtonElement).disabled = false
-        }
-        return
-      }
-
-      const { error: insError } = await supabase.from('student_answers').insert(answerRows)
+      // Upsert answers — no DELETE para evitar perder datos si falla la red
+      const { error: insError } = await supabase.from('student_answers').upsert(answerRows, { onConflict: 'attempt_id,question_id', ignoreDuplicates: false })
       if (insError) {
         toast('error', 'Error al guardar respuestas: ' + insError.message)
         submitting = false

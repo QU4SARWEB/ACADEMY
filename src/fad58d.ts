@@ -28,7 +28,7 @@ import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
 import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/64c62c'
-import { renderCoachPromotions, initCoachPromotions } from '@/b3b32a/8abf18/ea6aeb'
+
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
 import { renderCoachExams, initCoachExams, renderCoachExamAttempt, initCoachExamAttempt, initCoachExamAttemptStandalone } from '@/b3b32a/8abf18/a9f8d1'
@@ -65,12 +65,10 @@ import { renderPlayerScrims, initPlayerScrims } from '@/b3b32a/a2bbab/634637'
 import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
 
 import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
-import { renderNotifications, initNotifications } from '@/b3b32a/9e81e7/f37bd2'
-import { renderChat, initChat } from '@/b3b32a/9e81e7/a7b8c9'
+
 import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
 import { renderTickets, initTickets } from '@/b3b32a/9e81e7/d2e1a4'
 import { renderNewTicket, initNewTicket } from '@/b3b32a/9e81e7/f4b5c6'
-import { renderLogs, initLogs } from '@/b3b32a/9e81e7/2165e4'
 import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
 
 router.setBeforeNavigate(async (path) => authGuard(path))
@@ -125,6 +123,8 @@ const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/questions/new', '/settings'
 // Also skip routes where path has /exams/ followed by another segment (exam taking)
 function shouldAutoRefresh(path: string): boolean {
   if (NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))) return false
+  // Skip exam creation: /courses/:id/exams
+  if (path.match(/\/courses\/[^/]+\/exams$/)) return false
   // Skip exam taking: /exams/:examId (but NOT /exams alone)
   const examsMatch = path.match(/\/exams\//)
   if (examsMatch) {
@@ -136,6 +136,7 @@ function shouldAutoRefresh(path: string): boolean {
 
 // Debounced reload to avoid rapid re-fetches
 function reloadSoon(path: string): void {
+  if ((window as any).__blockReload) return
   const key = `_rt_${path}`
   if ((window as any)[key]) return
   ;(window as any)[key] = true
@@ -177,7 +178,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         }
       }
 
-      // Auto-expire pending payments older than 7 days
+      // Auto-expire pending payments older than 2 days
       if (profile && profile.role !== 'coach') {
         const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
         const { data: pendingPays } = await supabase
@@ -265,6 +266,7 @@ dash('/coaches/exams/practical', () => renderPracticalExams(), initPracticalExam
 dash('/coaches/exams/practical/new', () => renderPracticalNew(), initPracticalNew)
 dash('/coaches/exams/practical/:id', () => renderPracticalScore(), initPracticalScore)
 dash('/students/exams/practical/:id', () => renderPracticalView(), initPracticalView)
+
 dash('/coaches/grades', () => renderCoachGradesList(), initCoachGradesList)
 dash('/coaches/students/:id/grades', () => renderCoachStudentGrades(), initCoachStudentGrades)
 dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
@@ -273,7 +275,7 @@ dash('/coaches/tasks/:id', () => renderCoachTaskDetail(), initCoachTaskDetail)
 dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
 dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
-dash('/coaches/promotions', () => renderCoachPromotions(), initCoachPromotions)
+
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 
 // Student routes
@@ -300,13 +302,10 @@ dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
 
 // Shared routes
 dash('/payments', () => renderPayments(), initPayments)
-dash('/notifications', () => renderNotifications(), initNotifications)
-dash('/chat', () => renderChat(), initChat)
 dash('/settings', () => renderSettings(), initSettings)
 dash('/support', () => renderTickets(), initTickets)
 dash('/support/new', () => renderNewTicket(), initNewTicket)
 dash('/support/:id', () => renderTickets(), initTickets)
-dash('/logs', () => renderLogs(), initLogs)
 dash('/members', () => renderMembers(), initMembers)
 
 // 404
@@ -321,41 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) {
-      // Real-time notification toast
-      const notifChannel = supabase.channel('notif-toast')
-      notifChannel.on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `profile_id=eq.${session.user.id}` },
-        (payload: any) => {
-          const n = payload.new
-          if (n) {
-            // Only show toast for non-chat notifications (chat is real-time, no need)
-            if (n.type !== 'message' && (window as any).__toast) {
-              const typeMap: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
-                task: 'info', evaluation: 'info', schedule: 'info',
-                payment: 'success', scrim: 'warning', system: 'info',
-                grade: 'success', promotion: 'success',
-              }
-              ;(window as any).__toast(typeMap[n.type] || 'info', n.title || 'Nueva notificación')
-            }
-            // Update sidebar badge (all types including messages)
-            const notifLinks = document.querySelectorAll('a[href="#/notifications"]')
-            notifLinks.forEach((a) => {
-              const span = a.querySelector('span')
-              if (span) {
-                const match = span.textContent?.match(/\((\d+)\)/)
-                const current = match ? parseInt(match[1]) : 0
-                span.textContent = 'Notificaciones (' + (current + 1) + ')'
-              }
-            })
-            ;(window as any).__unreadNotifs = ((window as any).__unreadNotifs || 0) + 1
-          }
-        }
-      ).subscribe()
 
-      // Store toast reference for real-time notifications
-      if (!(window as any).__toast) {
-        import('@/4725dc/4f2900').then((m) => { (window as any).__toast = m.toast }).catch(() => {})
-      }
     }
 
     if (session && (!location.hash || location.hash === '#' || location.hash === '#/')) {

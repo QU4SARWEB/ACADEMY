@@ -114,20 +114,6 @@ export type PaymentStatus = 'pending' | 'paid' | 'scholarship' | 'expired'
 
 export type ScheduleType = 'academic' | 'competitive'
 
-export type NotificationType = 'task' | 'evaluation' | 'schedule' | 'payment' | 'scrim' | 'system' | 'message' | 'grade' | 'promotion'
-
-export interface Notification {
-  id: string
-  profile_id: string
-  type: NotificationType
-  title: string
-  body: string | null
-  link: string | null
-  read: boolean
-  created_at: string
-  updated_at: string
-}
-
 export interface Payment {
   id: string
   profile_id: string

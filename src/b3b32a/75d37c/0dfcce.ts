@@ -115,7 +115,7 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: course } = await supabase
           .from('courses')
-          .select('min_rank, name')
+          .select('min_rank, name, price')
           .eq('id', courseId)
           .maybeSingle()
 
@@ -156,7 +156,7 @@ export async function initStudentCourses(): Promise<void> {
               enrollment_id: enrollment.id,
               type: 'student',
               status: profile?.scholarship ? 'scholarship' : 'pending',
-              amount: 1.54,
+              amount: course?.price ?? 1.54,
             })
           }
         }

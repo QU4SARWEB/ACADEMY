@@ -57,27 +57,21 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const isPlayer = effectiveRole === 'player'
   const accent = (profile as any)?.role_color || '#8B5CF6'
 
-  let unreadNotifs = 0
-  const cachedUnread = (window as any).__unreadNotifs
-  if (cachedUnread !== undefined) unreadNotifs = cachedUnread
-
   type NavItem = { href?: string; icon?: string; label?: string; show?: boolean }
-  function item(href: string, icon: string, label: string, show = true): NavItem { return { href, icon, label: label + (label === 'Notificaciones' && unreadNotifs > 0 ? ` (${unreadNotifs})` : ''), show } }
+  function item(href: string, icon: string, label: string, show = true): NavItem { return { href, icon, label, show } }
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
     [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Mis Notas', isStudent), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
-    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer), item(`/${prefix}/scrims`, 'sword', 'Scrims', isPlayer || isCoach), item('/chat', 'mail', 'Mensajes')],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer), item('/notifications', 'bell', 'Notificaciones')],
+    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer), item(`/${prefix}/scrims`, 'sword', 'Scrims', isPlayer || isCoach)],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer)],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/exams', 'bookOpen', 'Exámenes'), item('/coaches/exams/practical', 'target', 'Prácticos'), item('/coaches/attendance', 'calendar', 'Asistencias'), item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/schedules', 'calendar', 'Horarios')],
-    [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Scrims'), item('/coaches/promotions', 'trophy', 'Promociones'), item('/members', 'users', 'Miembros')],
-    [item('/chat', 'mail', 'Mensajes'), item('/support', 'info', 'Soporte'), item('/notifications', 'bell', 'Notificaciones')],
-    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
-    [item('/logs', 'scrollText', 'Auditoría')],
+    [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Scrims'), item('/members', 'users', 'Miembros')],
+    [item('/support', 'info', 'Soporte'), item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const isExpired = !!(window as any).__isExpired
@@ -264,11 +258,16 @@ export function initSidebar(): void {
       const days = Math.floor(diff / 86400000)
       const hours = Math.floor((diff % 86400000) / 3600000)
       const mins = Math.floor((diff % 3600000) / 60000)
-      timeEl.textContent = `${days}d ${hours}h ${mins}m`
+      const secs = Math.floor((diff % 60000) / 1000)
+      let text = ''
+      if (days > 0) text += `${days}d `
+      text += `${hours}h ${mins}m`
+      if (days === 0) text += ` ${secs}s`
+      timeEl.textContent = text
     }
 
     tick()
     if ((window as any).__intvSidebar) clearInterval((window as any).__intvSidebar)
-    ;(window as any).__intvSidebar = setInterval(tick, 60000)
+    ;(window as any).__intvSidebar = setInterval(tick, 1000)
   })
 }

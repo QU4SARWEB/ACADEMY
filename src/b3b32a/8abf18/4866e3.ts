@@ -221,15 +221,19 @@ export async function initCoachDashboard(): Promise<void> {
             const remaining = expiresAt - now
             const daysLeft = Math.floor(remaining / 86400000)
             const hoursLeft = Math.floor((remaining % 86400000) / 3600000)
+            const minsLeft = Math.floor((remaining % 3600000) / 60000)
             const isUrgent = remaining < 86400000
             const isSoon = remaining < 172800000
+            let timeText = ''
+            if (daysLeft > 0) timeText += daysLeft + 'd '
+            timeText += hoursLeft + 'h ' + minsLeft + 'm'
             return `
             <div class="flex items-center justify-between rounded-lg border ${isUrgent ? 'border-red-500/20 bg-red-500/5' : isSoon ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-zinc-700/30 bg-zinc-800/20'} px-3 py-2 text-sm">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="${isUrgent ? 'text-red-300' : isSoon ? 'text-yellow-300' : 'text-zinc-300'} truncate">${escapeHtml(name)}</span>
                 ${courseName ? `<span class="text-zinc-500 text-xs shrink-0">${escapeHtml(courseName)}</span>` : ''}
               </div>
-              <span class="shrink-0 text-xs font-mono ${isUrgent ? 'text-red-400' : isSoon ? 'text-yellow-400' : 'text-zinc-400'}">${daysLeft > 0 ? daysLeft + 'd ' : ''}${hoursLeft}h restantes</span>
+              <span class="shrink-0 text-xs font-mono ${isUrgent ? 'text-red-400' : isSoon ? 'text-yellow-400' : 'text-zinc-400'}">${timeText}</span>
             </div>`
           }).join('')}
         </div>
@@ -268,6 +272,25 @@ export async function initCoachDashboard(): Promise<void> {
         </div>
 
         <div class="glass rounded-xl p-5">
+          <h2 class="mb-4 font-heading text-base font-bold text-white">Analíticas rápidas</h2>
+          <div id="dash-analytics" class="grid grid-cols-4 gap-3 mb-4">
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-lg font-bold text-white" id="dash-anl-exams">—</p>
+              <p class="text-xs text-zinc-500">Exámenes</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-lg font-bold text-white" id="dash-anl-attempts">—</p>
+              <p class="text-xs text-zinc-500">Intentos</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-lg font-bold text-white" id="dash-anl-passrate">—</p>
+              <p class="text-xs text-zinc-500">Aprobación</p>
+            </div>
+            <div class="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <p class="text-lg font-bold text-white" id="dash-anl-avg">—</p>
+              <p class="text-xs text-zinc-500">Promedio</p>
+            </div>
+          </div>
           <h2 class="mb-4 font-heading text-base font-bold text-white">Acceso rápido</h2>
           <div class="grid grid-cols-2 gap-3">
             <a href="#/coaches/students" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
@@ -276,23 +299,37 @@ export async function initCoachDashboard(): Promise<void> {
             <a href="#/coaches/courses" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
               ${Icon('bookOpen', 16)} Cursos
             </a>
+            <a href="#/coaches/exams" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('bookOpen', 16)} Exámenes
+            </a>
             <a href="#/coaches/tasks" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
               ${Icon('clipboardList', 16)} Tareas
             </a>
+            <a href="#/coaches/exams/review" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
+              ${Icon('checkCircle', 16)} Revisor
+            </a>
             <a href="#/support" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
               ${Icon('alertTriangle', 16)} Tickets
-            </a>
-            <a href="#/chat" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
-              ${Icon('mail', 16)} Chat
-            </a>
-            <a href="#/logs" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
-              ${Icon('scrollText', 16)} Auditoría
             </a>
           </div>
         </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Load analytics for dashboard
+    const { data: examAttempts } = await supabase.from('exam_attempts').select('score, status').neq('status', 'in_progress')
+    const aTotal = examAttempts?.length || 0
+    const aPassed = (examAttempts || []).filter((a: any) => (a.score || 0) >= 60).length
+    const aAvg = aTotal > 0 ? (examAttempts || []).reduce((s: number, a: any) => s + (a.score || 0), 0) / aTotal : 0
+    const anlExams = document.getElementById('dash-anl-exams')
+    if (anlExams) anlExams.textContent = String(examsCount || 0)
+    const anlAttempts = document.getElementById('dash-anl-attempts')
+    if (anlAttempts) anlAttempts.textContent = String(aTotal)
+    const anlPass = document.getElementById('dash-anl-passrate')
+    if (anlPass) anlPass.textContent = aTotal > 0 ? Math.round((aPassed / aTotal) * 100) + '%' : '0%'
+    const anlAvg = document.getElementById('dash-anl-avg')
+    if (anlAvg) anlAvg.textContent = Math.round(aAvg) + '%'
   } catch (err) {
     console.error('Error loading coach dashboard:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el dashboard</p>'

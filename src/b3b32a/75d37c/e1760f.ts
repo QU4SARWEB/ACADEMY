@@ -98,7 +98,7 @@ export async function initStudentExamList(): Promise<void> {
                         <h2 class="text-base font-semibold text-white">${escapeHtml(exam.title)}</h2>
                         ${exam.description ? `<p class="mt-1 text-sm text-zinc-400">${escBr(exam.description)}</p>` : ''}
                         <div class="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-                          ${exam.time_limit ? `<span>Tiempo: ${exam.time_limit} min</span>` : ''}
+                          <span>Tiempo: ${exam.time_limit || 300} min</span>
                           <span>Nota mínima: ${exam.passing_score}%</span>
                           ${exam.max_attempts ? `<span>Intentos: ${exam.max_attempts}</span>` : ''}
                           ${exam.due_date ? `<span>Vence: ${formatDate(exam.due_date)}</span>` : ''}

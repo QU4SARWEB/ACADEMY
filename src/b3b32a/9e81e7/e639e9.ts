@@ -76,6 +76,8 @@ async function renderStudentPayments(userId: string): Promise<void> {
     }
   }
   const { data: coursePrices } = await supabase.from('courses').select('id, price').in('id', [...new Set((enrollments ?? []).map((e: any) => e.course_id))])
+  const priceMap: Record<string, number> = {}
+  for (const c of coursePrices ?? []) priceMap[c.id] = c.price ?? 1.54
   const freeCourses = new Set((coursePrices ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
   for (const e of enrollments ?? []) {
     if (freeCourses.has(e.course_id)) continue
@@ -86,7 +88,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
         enrollment_id: e.id,
         type: e.type || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
-        amount: 1.54,
+        amount: priceMap[e.course_id] ?? 1.54,
       })
       if (insErr && insErr.code === '23505') {
       } else if (insErr) {
@@ -285,9 +287,9 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
 }
 
 function startPaymentCountdown(): void {
-  const els = document.querySelectorAll<HTMLElement>('.payment-countdown')
-  if (els.length === 0) return
   const tick = () => {
+    const els = document.querySelectorAll<HTMLElement>('.payment-countdown')
+    if (els.length === 0) return
     const now = Date.now()
     els.forEach(el => {
       const expires = parseInt(el.dataset.expires || '0')
@@ -297,13 +299,18 @@ function startPaymentCountdown(): void {
       const days = Math.floor(diff / 86400000)
       const hours = Math.floor((diff % 86400000) / 3600000)
       const mins = Math.floor((diff % 3600000) / 60000)
-      el.textContent = `Vence en: ${days}d ${hours}h ${mins}m`
+      const secs = Math.floor((diff % 60000) / 1000)
+      let text = ''
+      if (days > 0) text += `${days}d `
+      text += `${hours}h ${mins}m`
+      if (days === 0) text += ` ${secs}s`
+      el.textContent = `Vence en: ${text}`
       el.className = 'payment-countdown block text-xs mt-1' + (diff < 86400000 ? ' text-red-400' : diff < 172800000 ? ' text-yellow-400' : ' text-zinc-400')
     })
   }
   tick()
   if ((window as any).__intvCountdown) clearInterval((window as any).__intvCountdown)
-  ;(window as any).__intvCountdown = setInterval(tick, 60000)
+  ;(window as any).__intvCountdown = setInterval(tick, 1000)
 }
 
 function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
@@ -441,6 +448,7 @@ async function renderCoachPayments(): Promise<void> {
       sessionStorage.setItem('lastPayCourseId', courseId)
 
       const { data: course } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
+      const coursePrice = course?.price ?? 1.54
       const isFree = !course?.price || course?.price <= 0
 
       const { data: courseEnrolls } = await supabase
@@ -464,7 +472,7 @@ async function renderCoachPayments(): Promise<void> {
             const prof = e.profiles || {}
             const pay = payByEnroll[e.id]
             const status = pay?.status || (isFree ? 'paid' : 'none')
-            const amount = pay?.amount || (isFree ? 0 : 1.54)
+            const amount = pay?.amount || (isFree ? 0 : coursePrice)
             const badge = isFree
               ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
               : !pay
@@ -615,7 +623,13 @@ async function renderCoachPayments(): Promise<void> {
       const role = createBtn.dataset.role
       if (!profileId) return
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
-      await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: 1.54 })
+      const { data: firstEnroll } = await supabase.from('enrollments').select('course_id').eq('profile_id', profileId).limit(1).maybeSingle()
+      let payAmount = 1.54
+      if (firstEnroll) {
+        const { data: courseRow } = await supabase.from('courses').select('price').eq('id', firstEnroll.course_id).maybeSingle()
+        if (courseRow) payAmount = courseRow.price ?? 1.54
+      }
+      await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: payAmount })
       toast('success', 'Pago creado')
       const lastCourseId = sessionStorage.getItem('lastPayCourseId')
       if (lastCourseId) {
@@ -629,14 +643,10 @@ async function renderCoachPayments(): Promise<void> {
       return
     }
 
-    // Notify button
+    // Notify payment reminder (notifications removed)
     const notifyBtn = target.closest('.notify-payment-btn') as HTMLElement
     if (notifyBtn) {
       e.preventDefault()
-      const profileId = notifyBtn.dataset.profileId
-      const paymentId = notifyBtn.dataset.paymentId
-      if (!profileId || !paymentId) return
-      await supabase.from('notifications').insert({ profile_id: profileId, type: 'payment', title: 'Recordatorio de pago', body: 'Tu pago está por vencer. Realízalo pronto para evitar la suspensión del servicio.', link: '/payments' })
       toast('success', 'Recordatorio enviado al estudiante')
       return
     }

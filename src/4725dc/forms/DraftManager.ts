@@ -4,9 +4,6 @@
 const PREFIX = 'draft_'
 
 export function initAutoSave(): void {
-  // Skip chat page — it has its own per-conversation draft system
-  if (location.hash.startsWith('#/chat')) return
-
   const key = PREFIX + location.hash
 
   // Restore saved values

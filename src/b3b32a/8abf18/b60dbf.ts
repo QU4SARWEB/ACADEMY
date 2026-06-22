@@ -467,14 +467,25 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     if (err2) { toast('error', 'Error al registrar promoción: ' + err2.message); return }
 
     if (newCourseId) {
-      const { error: err3 } = await supabase.from('enrollments').upsert({
+      const { data: promEnroll, error: err3 } = await supabase.from('enrollments').upsert({
         profile_id: studentId,
         course_id: newCourseId,
         type: 'student',
         status: 'active',
         current_module: 1,
-      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
+      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
       if (err3) { toast('error', 'Error al inscribir en nuevo curso: ' + err3.message); return }
+
+      if (promEnroll) {
+        const { data: promCourse } = await supabase.from('courses').select('price').eq('id', newCourseId).maybeSingle()
+        const promPrice = promCourse?.price ?? 1.54
+        const { data: promProf } = await supabase.from('profiles').select('scholarship').eq('id', studentId).maybeSingle()
+        await supabase.from('payments').insert({
+          profile_id: studentId, enrollment_id: promEnroll.id,
+          type: 'student', amount: promPrice,
+          status: promPrice === 0 ? 'paid' : (promProf?.scholarship ? 'scholarship' : 'pending'),
+        })
+      }
     }
 
     toast('success', 'Estudiante promocionado correctamente')
@@ -507,12 +518,12 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    const { error } = await supabase.from('enrollments').insert({
+    const { data: newEnroll, error } = await supabase.from('enrollments').insert({
       profile_id: profileId,
       course_id: courseId,
       type,
       status: 'active',
-    })
+    }).select('id').maybeSingle()
 
     if (error) {
       document.getElementById('enroll-error')!.textContent = error.message
@@ -520,28 +531,22 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    // Check if student already passed this course (no new payment needed if passed)
-    const { data: prevPassed } = await supabase
-      .from('enrollments')
-      .select('final_grade, promoted')
-      .eq('profile_id', profileId)
-      .eq('course_id', courseId)
-    const alreadyPassed = (prevPassed ?? []).some((e: any) => e.final_grade !== null && e.final_grade >= 70 && e.promoted)
-
-    if (!alreadyPassed) {
+    if (newEnroll) {
+      const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
+      const coursePrice = enrollCourse?.price ?? 1.54
       const { data: studentProfile } = await supabase
         .from('profiles')
         .select('scholarship')
         .eq('id', profileId)
         .maybeSingle()
 
-      const { error: payErr } = await supabase.from('payments').insert({
+      await supabase.from('payments').insert({
         profile_id: profileId,
+        enrollment_id: newEnroll.id,
         type,
-        status: studentProfile?.scholarship ? 'scholarship' : 'pending',
-        amount: 1.54,
+        status: coursePrice === 0 ? 'paid' : (studentProfile?.scholarship ? 'scholarship' : 'pending'),
+        amount: coursePrice,
       })
-      if (payErr) console.error('Error creating payment record:', payErr)
     }
 
     toast('success', 'Estudiante inscrito correctamente')

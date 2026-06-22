@@ -145,7 +145,9 @@ export async function initPracticalScore(): Promise<void> {
           await supabase.from('practical_exams').update({ has_overtime: newOT }).eq('id', examId)
           if (newOT) {
             const { data: rubs } = await supabase.from('practical_rubrics').select('id').eq('practical_exam_id', examId)
-            const { data: members } = await supabase.from('practical_team_members').select('id').eq('practical_team_id', examId)
+            const { data: teams } = await supabase.from('practical_teams').select('id').eq('practical_exam_id', examId)
+            const teamIds = (teams ?? []).map((t: any) => t.id)
+            const { data: members } = teamIds.length > 0 ? await supabase.from('practical_team_members').select('id').in('practical_team_id', teamIds) : { data: [] }
             for (const m of members ?? []) { for (const r of rubs ?? []) { await supabase.from('practical_scores').insert({ practical_team_member_id: m.id, practical_rubric_id: r.id, phase: 'overtime', score: null }) } }
           }
           exam.has_overtime = newOT; renderScore(exam)
@@ -155,7 +157,9 @@ export async function initPracticalScore(): Promise<void> {
           if (!await confirmDialog('¿Cerrar el examen? Los alumnos podrán ver sus notas.')) return
           await supabase.from('practical_exams').update({ status: 'closed' }).eq('id', examId)
           // Recalc grades for all members
-          const { data: allMembers } = await supabase.from('practical_team_members').select('enrollment_id').eq('practical_team_id', examId)
+          const { data: closeTeams } = await supabase.from('practical_teams').select('id').eq('practical_exam_id', examId)
+          const closeTeamIds = (closeTeams ?? []).map((t: any) => t.id)
+          const { data: allMembers } = closeTeamIds.length > 0 ? await supabase.from('practical_team_members').select('enrollment_id').in('practical_team_id', closeTeamIds) : { data: [] }
           const enrollIds = [...new Set((allMembers ?? []).map((m: any) => m.enrollment_id).filter(Boolean))]
           if (enrollIds.length > 0) {
             const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')

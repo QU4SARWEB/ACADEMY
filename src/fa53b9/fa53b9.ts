@@ -131,7 +131,7 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   }
 
   const prefix = ROLE_PREFIX[currentProfile.role]
-  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/notifications') && !hash.startsWith('/logs') && !hash.startsWith('/chat') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
+  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
     return false
   }
