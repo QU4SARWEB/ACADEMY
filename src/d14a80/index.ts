@@ -110,7 +110,7 @@ export type TaskStatus = 'pending' | 'submitted' | 'reviewed' | 'graded' | 'late
 
 export type AttendanceStatus = 'present' | 'absent' | 'excused' | 'late'
 
-export type PaymentStatus = 'pending' | 'paid' | 'scholarship' | 'expired'
+export type PaymentStatus = 'free' | 'pending' | 'paid' | 'scholarship' | 'expired'
 
 export type ScheduleType = 'academic' | 'competitive'
 

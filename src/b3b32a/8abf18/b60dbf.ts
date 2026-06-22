@@ -450,7 +450,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     }).select('id').maybeSingle()
     if (error || !enr) { console.error('Error enrolling in CLASE GENERAL:', error); return }
     await supabase.from('payments').insert({
-      profile_id: profileId, enrollment_id: enr.id, type, status: 'paid', amount: 0,
+      profile_id: profileId, enrollment_id: enr.id, type, status: 'free', amount: 0,
     }).then(({ error: pe }) => { if (pe) console.error('Error creating payment for CLASE GENERAL:', pe) })
   }
 
@@ -494,14 +494,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         const { data: promCourse } = await supabase.from('courses').select('price').eq('id', newCourseId).maybeSingle()
         const promPrice = promCourse?.price ?? 1.54
         const { data: promProf } = await supabase.from('profiles').select('scholarship').eq('id', studentId).maybeSingle()
-        const promPayStatus = promPrice === 0 ? 'paid' : (promProf?.scholarship ? 'scholarship' : 'pending')
+        const promPayStatus = promPrice === 0 ? 'free' : (promProf?.scholarship ? 'scholarship' : 'pending')
         const { error: payErr } = await supabase.from('payments').insert({
           profile_id: studentId, enrollment_id: promEnroll.id,
           type: 'student', amount: promPrice,
           status: promPayStatus,
         })
         if (payErr) console.error('Error creating payment on promote:', payErr)
-        else if ((promPayStatus === 'paid' || promPayStatus === 'scholarship') && promPrice > 0) autoEnrollClaseGeneral(studentId, 'student')
+        else if (promPayStatus === 'scholarship' && promPrice > 0) autoEnrollClaseGeneral(studentId, 'student')
       }
     }
 
@@ -557,7 +557,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           .eq('id', profileId)
           .maybeSingle()
 
-        const payStatus = coursePrice === 0 ? 'paid' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
+        const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
         const { error: payErr } = await supabase.from('payments').insert({
           profile_id: profileId,
           enrollment_id: newEnroll.id,
@@ -570,7 +570,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           toast('error', 'Pago no creado: ' + payErr.message)
         } else {
           toast('success', 'Pago creado (' + payStatus + ')')
-          if ((payStatus === 'paid' || payStatus === 'scholarship') && coursePrice > 0) autoEnrollClaseGeneral(profileId, type)
+          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollClaseGeneral(profileId, type)
         }
       }
 

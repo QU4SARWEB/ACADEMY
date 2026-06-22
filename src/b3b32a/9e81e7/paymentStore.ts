@@ -1,6 +1,6 @@
 import { supabase } from '@/304244'
 
-export type PaymentStatus = 'paid' | 'pending' | 'scholarship' | 'expired' | 'none'
+export type PaymentStatus = 'free' | 'paid' | 'pending' | 'scholarship' | 'expired' | 'none'
 
 export interface PaymentInfo {
   status: PaymentStatus
@@ -29,7 +29,7 @@ export async function getPaymentStatus(profileId: string, courseId?: string): Pr
   }
 
   if (isFree) {
-    return { status: 'paid', amount: 0, paidAt: null, enrollmentId: null, isFree: true }
+    return { status: 'free', amount: 0, paidAt: null, enrollmentId: null, isFree: true }
   }
 
   // Get latest payment
@@ -82,6 +82,7 @@ export async function getCoursePaymentStatus(enrollmentId: string): Promise<Paym
 
 export function getStatusLabel(status: PaymentStatus): string {
   const labels: Record<PaymentStatus, string> = {
+    free: 'Gratis',
     paid: 'Pagado',
     pending: 'Pendiente',
     scholarship: 'Beca',
@@ -93,6 +94,7 @@ export function getStatusLabel(status: PaymentStatus): string {
 
 export function getStatusColor(status: PaymentStatus): string {
   const colors: Record<PaymentStatus, string> = {
+    free: 'text-green-400 bg-green-500/10 border-green-500/30',
     paid: 'text-green-400 bg-green-500/10 border-green-500/30',
     pending: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
     scholarship: 'text-blue-400 bg-blue-500/10 border-blue-500/30',

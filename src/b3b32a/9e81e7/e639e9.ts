@@ -106,8 +106,8 @@ async function renderStudentPayments(userId: string): Promise<void> {
     if (refreshed) payments = refreshed
   }
 
-  const statusColors: Record<string, string> = { pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
-  const statusLabels: Record<string, string> = { pending: 'Debes', paid: 'Pagaste', scholarship: 'Cubierto por beca', expired: 'Vencido' }
+  const statusColors: Record<string, string> = { free: 'text-green-400', pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
+  const statusLabels: Record<string, string> = { free: 'Gratis', pending: 'Debes', paid: 'Pagaste', scholarship: 'Cubierto por beca', expired: 'Vencido' }
 
   const html = `
     <div class="mb-6">
@@ -144,7 +144,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
-              : p.status === 'paid' && (!p.amount || p.amount <= 0)
+              : p.status === 'free'
                 ? `<span class="shrink-0 text-sm font-medium text-green-400">Gratuito</span>`
                 : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 1.54}</span>`
             }
@@ -373,7 +373,7 @@ async function renderCoachPayments(): Promise<void> {
     else if (p.status === 'scholarship') scholarshipCount[cid] = (scholarshipCount[cid] || 0) + 1
     else if (p.status === 'pending') pendingCount[cid] = (pendingCount[cid] || 0) + 1
     else if (p.status === 'expired') expiredCount[cid] = (expiredCount[cid] || 0) + 1
-    if (p.status === 'paid' && (!p.amount || p.amount <= 0)) freeCount[cid] = (freeCount[cid] || 0) + 1
+    if (p.status === 'free') freeCount[cid] = (freeCount[cid] || 0) + 1
   }
 
   let pendingChanges: { paymentId: string; profileId?: string; newStatus: string; oldStatus: string }[] = []
@@ -471,7 +471,7 @@ async function renderCoachPayments(): Promise<void> {
         : (courseEnrolls ?? []).map((e: any) => {
             const prof = e.profiles || {}
             const pay = payByEnroll[e.id]
-            const status = pay?.status || (isFree ? 'paid' : 'none')
+            const status = pay?.status || (isFree ? 'free' : 'none')
             const amount = pay?.amount || (isFree ? 0 : coursePrice)
             const badge = isFree
               ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
