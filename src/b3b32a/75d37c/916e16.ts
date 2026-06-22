@@ -174,9 +174,7 @@ export async function initStudentExamTake(): Promise<void> {
 
     const { data: examQuestions, error: eqErr } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_num')
     if (eqErr) console.error('exam_questions error:', eqErr)
-    console.log('examQuestions count:', examQuestions?.length, 'for exam:', examId)
     const questionIds = [...new Set((examQuestions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
-    console.log('questionIds:', questionIds)
 
     let questions: any[] = []
     let allOptions: any[] = []

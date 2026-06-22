@@ -592,17 +592,21 @@ export async function initCoachExams(): Promise<void> {
           course_id: id, type: q.type, stem: q.stem, points: q.points,
         }).select().maybeSingle()
         if (qErr || !question) { console.error('Error creating question:', qErr); qErrors++; continue }
+        let optErr = false
         if (q.type === 'multiple_choice' || q.type === 'true_false') {
           for (let oi = 0; oi < q.options.length; oi++) {
-            await supabase.from('question_options').insert({
+            const { error: oErr } = await supabase.from('question_options').insert({
               question_id: question.id, text: q.options[oi].text,
               is_correct: q.options[oi].correct, order_num: oi,
             })
+            if (oErr) { console.error('Error creating option:', oErr); optErr = true }
           }
         }
-        await supabase.from('exam_questions').insert({
+        const { error: eqErr } = await supabase.from('exam_questions').insert({
           exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points,
         })
+        if (eqErr) { console.error('Error linking question:', eqErr); qErrors++; continue }
+        if (optErr) qErrors++
       }
 
       const createdCount = (window as any)._eq.length - qErrors
@@ -706,17 +710,21 @@ export async function initCoachExams(): Promise<void> {
           course_id: id, type: q.type, stem: q.stem, points: q.points || 5,
         }).select().maybeSingle()
         if (qErr || !question) { console.error('Error creating question:', qErr, 'stem:', q.stem); qErrors++; continue }
+        let optErr = false
         if (q.type === 'multiple_choice' || q.type === 'true_false') {
           for (let oi = 0; oi < q.options.length; oi++) {
-            await supabase.from('question_options').insert({
+            const { error: oErr } = await supabase.from('question_options').insert({
               question_id: question.id, text: q.options[oi].text,
               is_correct: q.options[oi].correct, order_num: oi,
             })
+            if (oErr) { console.error('Error creating option:', oErr); optErr = true }
           }
         }
-        await supabase.from('exam_questions').insert({
+        const { error: eqErr } = await supabase.from('exam_questions').insert({
           exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points || 5,
         })
+        if (eqErr) { console.error('Error linking question:', eqErr); qErrors++; continue }
+        if (optErr) qErrors++
         qSaved++
       }
       area.classList.add('hidden')
@@ -1131,12 +1139,13 @@ export async function initCoachExams(): Promise<void> {
 
       const nextOrder2 = maxOrder2.length > 0 ? maxOrder2[0].order_num + 1 : 0
 
-      await supabase.from('exam_questions').insert({
+      const { error: eqErr2 } = await supabase.from('exam_questions').insert({
         exam_id: examId,
         question_id: newQ.id,
         order_num: nextOrder2,
         points,
       })
+      if (eqErr2) { toast('error', 'Error al vincular pregunta: ' + eqErr2.message); return }
 
       toast('success', 'Pregunta creada y agregada al examen')
       document.getElementById('quick-question-form')!.querySelector<HTMLTextAreaElement>('textarea[name="text"]')!.value = ''

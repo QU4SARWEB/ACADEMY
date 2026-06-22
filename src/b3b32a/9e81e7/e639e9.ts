@@ -501,7 +501,10 @@ async function renderCoachPayments(): Promise<void> {
   })
 
   // Global modal event handler (delegated, survives DOM changes)
-  document.addEventListener('click', async (e) => {
+  if ((window as any).__payClickHandler) {
+    document.removeEventListener('click', (window as any).__payClickHandler)
+  }
+  const payClickHandler = async (e: Event) => {
     const target = e.target as HTMLElement
 
     // Pay status select
@@ -515,6 +518,14 @@ async function renderCoachPayments(): Promise<void> {
       if (!paymentId) return
       await supabase.from('payments').update({ status: newStatus, paid_at: newStatus === 'paid' ? new Date().toISOString() : null }).eq('id', paymentId)
       sel.dataset.oldStatus = newStatus
+      // Update badge visual
+      const badgeSpan = sel.closest('.flex')?.querySelector<HTMLElement>('[class*="rounded-full"][class*="bg-"]')
+      if (badgeSpan) {
+        const lbls: Record<string, string> = { pending: 'Pendiente', paid: 'Pagado', scholarship: 'Beca', expired: 'Vencido' }
+        const cls: Record<string, string> = { pending: 'bg-yellow-500/20 text-yellow-400', paid: 'bg-green-500/20 text-green-400', scholarship: 'bg-blue-500/20 text-blue-400', expired: 'bg-red-500/20 text-red-400' }
+        badgeSpan.textContent = lbls[newStatus] || newStatus
+        badgeSpan.className = 'inline-block rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs font-medium ' + (cls[newStatus] || 'text-zinc-500')
+      }
       if (newStatus === 'scholarship' && profileId) {
         await supabase.from('profiles').update({ scholarship: true }).eq('id', profileId)
       } else if (oldStatus === 'scholarship' && profileId) {
@@ -534,7 +545,6 @@ async function renderCoachPayments(): Promise<void> {
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
       await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: 1.54 })
       toast('success', 'Pago creado')
-      // Refresh modal (store courseId before renderCoachPayments clears it)
       const lastCourseId = sessionStorage.getItem('lastPayCourseId')
       if (lastCourseId) {
         renderCoachPayments().then(() => {
@@ -558,5 +568,7 @@ async function renderCoachPayments(): Promise<void> {
       toast('success', 'Recordatorio enviado al estudiante')
       return
     }
-  })
+  }
+  document.addEventListener('click', payClickHandler)
+  ;(window as any).__payClickHandler = payClickHandler
 }

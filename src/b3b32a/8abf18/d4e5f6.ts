@@ -153,12 +153,16 @@ export async function initCoachExamsOverview(): Promise<void> {
             const q = pendingQuestions[qi]
             const { data: question, error: pqErr } = await supabase.from('questions').insert({ course_id, type: q.type, stem: q.stem, points: q.points || 5 }).select().maybeSingle()
             if (pqErr || !question) { console.error('Error saving question:', pqErr, 'stem:', q.stem); pqErrors++; continue }
+            let optErr = false
             if (q.type === 'multiple_choice' || q.type === 'true_false') {
               for (let oi = 0; oi < (q.options || []).length; oi++) {
-                await supabase.from('question_options').insert({ question_id: question.id, text: q.options[oi].text, is_correct: q.options[oi].correct, order_num: oi })
+                const { error: oErr } = await supabase.from('question_options').insert({ question_id: question.id, text: q.options[oi].text, is_correct: q.options[oi].correct, order_num: oi })
+                if (oErr) { console.error('Error creating option:', oErr); optErr = true }
               }
             }
-            await supabase.from('exam_questions').insert({ exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points || 5 })
+            const { error: eqErr } = await supabase.from('exam_questions').insert({ exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points || 5 })
+            if (eqErr) { console.error('Error linking question:', eqErr); pqErrors++; continue }
+            if (optErr) pqErrors++
             pqSaved++
           }
           pendingQuestions = []
@@ -280,7 +284,7 @@ export async function initCoachExamsOverview(): Promise<void> {
       }
       document.getElementById('close-qs-modal')?.addEventListener('click', () => qsModal.classList.add('hidden'))
       qsModal.addEventListener('click', (e) => { if (e.target === qsModal) qsModal.classList.add('hidden') })
-      document.getElementById('qs-add-btn')?.addEventListener('click', async () => { const eid = qsExamId.value; const qid = qsAddSelect.value; if (!eid || !qid) return; const { data: max } = await supabase.from('exam_questions').select('order_num').eq('exam_id', eid).order('order_num', { ascending: false }).limit(1); const next = ((max ?? []) as any[]).length > 0 ? (max as any[])[0].order_num + 1 : 0; await supabase.from('exam_questions').insert({ exam_id: eid, question_id: qid, order_num: next, points: 1 }); toast('success', 'Pregunta agregada'); await loadQuestions(eid) })
+      document.getElementById('qs-add-btn')?.addEventListener('click', async () => { const eid = qsExamId.value; const qid = qsAddSelect.value; if (!eid || !qid) return; const { data: max } = await supabase.from('exam_questions').select('order_num').eq('exam_id', eid).order('order_num', { ascending: false }).limit(1); const next = ((max ?? []) as any[]).length > 0 ? (max as any[])[0].order_num + 1 : 0; const { error: eqErr } = await supabase.from('exam_questions').insert({ exam_id: eid, question_id: qid, order_num: next, points: 1 }); if (eqErr) { toast('error', eqErr.message); return }; toast('success', 'Pregunta agregada'); await loadQuestions(eid) })
       qsList.addEventListener('click', async (e) => { const btn = (e.target as HTMLElement).closest('.remove-eq-btn') as HTMLElement; if (!btn) return; const eqId = btn.getAttribute('data-eq-id'); if (!eqId || !(await confirmDialog('¿Quitar esta pregunta?'))) return; await supabase.from('exam_questions').delete().eq('id', eqId); toast('success', 'Pregunta quitada'); await loadQuestions(qsExamId.value) })
       document.getElementById('qs-form')?.addEventListener('submit', async (e) => {
         e.preventDefault(); const fd = new FormData(e.target as HTMLFormElement); const examId = qsExamId.value; const type = fd.get('type') as string; const text = (fd.get('text') as string)?.trim(); const points = parseFloat(fd.get('points') as string) || 5
@@ -289,7 +293,7 @@ export async function initCoachExamsOverview(): Promise<void> {
         if (qErr || !newQ) { errEl.textContent = qErr?.message || 'Error'; errEl.classList.remove('hidden'); return }
         if (type === 'multiple_choice' || type === 'true_false') { const rows = document.querySelectorAll('#qs-opts-list .flex'); for (let oi = 0; oi < rows.length; oi++) { const row = rows[oi] as HTMLElement; const optText = (row.querySelector<HTMLInputElement>('input[name="opt_text"]'))?.value?.trim(); const optRadio = row.querySelector<HTMLInputElement>('input[name="opt_correct"]'); if (optText) await supabase.from('question_options').insert({ question_id: newQ.id, text: optText, is_correct: optRadio?.checked || false, order_num: oi }) } }
         const { data: max2 } = await supabase.from('exam_questions').select('order_num').eq('exam_id', examId).order('order_num', { ascending: false }).limit(1); const next2 = ((max2 ?? []) as any[]).length > 0 ? (max2 as any[])[0].order_num + 1 : 0
-        await supabase.from('exam_questions').insert({ exam_id: examId, question_id: newQ.id, order_num: next2, points }); toast('success', 'Pregunta creada'); (document.querySelector<HTMLTextAreaElement>('#qs-form textarea[name="text"]'))!.value = ''; errEl.classList.add('hidden'); await loadQuestions(examId)
+        const { error: eqErr3 } = await supabase.from('exam_questions').insert({ exam_id: examId, question_id: newQ.id, order_num: next2, points }); if (eqErr3) { toast('error', eqErr3.message); return }; toast('success', 'Pregunta creada'); (document.querySelector<HTMLTextAreaElement>('#qs-form textarea[name="text"]'))!.value = ''; errEl.classList.add('hidden'); await loadQuestions(examId)
       })
       document.getElementById('qs-add-opt')?.addEventListener('click', () => { const list = document.getElementById('qs-opts-list')!; const count = list.querySelectorAll('.flex').length; list.insertAdjacentHTML('beforeend', '<div class="flex gap-2 items-center"><span class="text-xs font-medium text-zinc-500 w-5 shrink-0">' + String.fromCharCode(65 + count) + '.</span><input type="text" name="opt_text" placeholder="Opción ' + String.fromCharCode(65 + count) + '" class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]"><label class="flex items-center gap-1 text-xs text-zinc-400 shrink-0"><input type="radio" name="opt_correct" value="' + count + '" class="h-3.5 w-3.5 border-zinc-600 bg-zinc-900 text-[#8B5CF6] outline-none"> Correcta</label><button type="button" class="opt-remove text-zinc-600 hover:text-red-400 transition">&times;</button></div>') })
       document.getElementById('qs-opts-list')?.addEventListener('click', (e) => { const btn = (e.target as HTMLElement).closest('.opt-remove') as HTMLElement; if (!btn) return; const list = document.getElementById('qs-opts-list')!; const row = btn.closest('.flex') as HTMLElement; if (list.querySelectorAll('.flex').length > 2) row.remove() })
