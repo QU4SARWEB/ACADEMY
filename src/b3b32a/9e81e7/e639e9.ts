@@ -425,6 +425,7 @@ async function renderCoachPayments(): Promise<void> {
       const courseId = (btn as HTMLElement).dataset.courseId
       const courseName = (btn as HTMLElement).dataset.courseName || ''
       if (!courseId) return
+      sessionStorage.setItem('lastPayCourseId', courseId)
 
       const { data: course } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
       const isFree = !course?.price || course?.price <= 0
@@ -499,49 +500,63 @@ async function renderCoachPayments(): Promise<void> {
     })
   })
 
-  // Modal event handlers
-  document.getElementById('course-payments-list')?.addEventListener('click', async (e) => {
-    const sel = (e.target as HTMLElement).closest('.pay-status-select') as HTMLSelectElement
+  // Global modal event handler (delegated, survives DOM changes)
+  document.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement
+
+    // Pay status select
+    const sel = target.closest('.pay-status-select') as HTMLSelectElement
     if (sel) {
-      const select = sel
-      const newStatus = select.value
-      const oldStatus = select.dataset.oldStatus || ''
-      const paymentId = select.dataset.paymentId
-      const profileId = select.dataset.profileId
+      e.preventDefault()
+      const newStatus = sel.value
+      const oldStatus = sel.dataset.oldStatus || ''
+      const paymentId = sel.dataset.paymentId
+      const profileId = sel.dataset.profileId
       if (!paymentId) return
       await supabase.from('payments').update({ status: newStatus, paid_at: newStatus === 'paid' ? new Date().toISOString() : null }).eq('id', paymentId)
-      select.dataset.oldStatus = newStatus
+      sel.dataset.oldStatus = newStatus
       if (newStatus === 'scholarship' && profileId) {
         await supabase.from('profiles').update({ scholarship: true }).eq('id', profileId)
       } else if (oldStatus === 'scholarship' && profileId) {
         const { data: otherScholarships } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('status', 'scholarship').neq('id', paymentId)
         if (!otherScholarships || otherScholarships.length === 0) await supabase.from('profiles').update({ scholarship: false }).eq('id', profileId)
       }
+      return
     }
-  })
 
-  document.getElementById('course-payments-list')?.addEventListener('click', async (e) => {
-    const createBtn = (e.target as HTMLElement).closest('.create-payment-btn') as HTMLElement
-    if (!createBtn) return
-    const profileId = createBtn.dataset.profileId
-    const role = createBtn.dataset.role
-    if (!profileId) return
-    const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
-    await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: 1.54 })
-    toast('success', 'Pago creado')
-    // Re-open modal for current course
-    const coursePayBtn = document.querySelector('.course-pay-btn:focus, .course-pay-btn:hover') as HTMLElement
-    if (coursePayBtn) { coursePayBtn.click() }
-    else { renderCoachPayments() }
-  })
+    // Create payment button
+    const createBtn = target.closest('.create-payment-btn') as HTMLElement
+    if (createBtn) {
+      e.preventDefault()
+      const profileId = createBtn.dataset.profileId
+      const role = createBtn.dataset.role
+      if (!profileId) return
+      const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
+      await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: 1.54 })
+      toast('success', 'Pago creado')
+      // Refresh modal (store courseId before renderCoachPayments clears it)
+      const lastCourseId = sessionStorage.getItem('lastPayCourseId')
+      if (lastCourseId) {
+        renderCoachPayments().then(() => {
+          const btn = document.querySelector(`.course-pay-btn[data-course-id="${lastCourseId}"]`) as HTMLElement
+          if (btn) setTimeout(() => btn.click(), 100)
+        })
+      } else {
+        renderCoachPayments()
+      }
+      return
+    }
 
-  document.getElementById('course-payments-list')?.addEventListener('click', async (e) => {
-    const notifyBtn = (e.target as HTMLElement).closest('.notify-payment-btn') as HTMLElement
-    if (!notifyBtn) return
-    const profileId = notifyBtn.dataset.profileId
-    const paymentId = notifyBtn.dataset.paymentId
-    if (!profileId || !paymentId) return
-    await supabase.from('notifications').insert({ profile_id: profileId, type: 'payment', title: 'Recordatorio de pago', body: 'Tu pago está por vencer. Realízalo pronto para evitar la suspensión del servicio.', link: '/payments' })
-    toast('success', 'Recordatorio enviado al estudiante')
+    // Notify button
+    const notifyBtn = target.closest('.notify-payment-btn') as HTMLElement
+    if (notifyBtn) {
+      e.preventDefault()
+      const profileId = notifyBtn.dataset.profileId
+      const paymentId = notifyBtn.dataset.paymentId
+      if (!profileId || !paymentId) return
+      await supabase.from('notifications').insert({ profile_id: profileId, type: 'payment', title: 'Recordatorio de pago', body: 'Tu pago está por vencer. Realízalo pronto para evitar la suspensión del servicio.', link: '/payments' })
+      toast('success', 'Recordatorio enviado al estudiante')
+      return
+    }
   })
 }
