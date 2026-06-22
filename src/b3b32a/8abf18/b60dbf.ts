@@ -480,11 +480,12 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         const { data: promCourse } = await supabase.from('courses').select('price').eq('id', newCourseId).maybeSingle()
         const promPrice = promCourse?.price ?? 1.54
         const { data: promProf } = await supabase.from('profiles').select('scholarship').eq('id', studentId).maybeSingle()
-        await supabase.from('payments').insert({
+        const { error: payErr } = await supabase.from('payments').insert({
           profile_id: studentId, enrollment_id: promEnroll.id,
           type: 'student', amount: promPrice,
           status: promPrice === 0 ? 'paid' : (promProf?.scholarship ? 'scholarship' : 'pending'),
         })
+        if (payErr) console.error('Error creating payment on promote:', payErr)
       }
     }
 
@@ -540,13 +541,14 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         .eq('id', profileId)
         .maybeSingle()
 
-      await supabase.from('payments').insert({
+      const { error: payErr } = await supabase.from('payments').insert({
         profile_id: profileId,
         enrollment_id: newEnroll.id,
         type,
         status: coursePrice === 0 ? 'paid' : (studentProfile?.scholarship ? 'scholarship' : 'pending'),
         amount: coursePrice,
       })
+      if (payErr) console.error('Error creating payment:', payErr)
     }
 
     toast('success', 'Estudiante inscrito correctamente')
