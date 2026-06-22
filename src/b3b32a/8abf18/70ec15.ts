@@ -32,11 +32,10 @@ export async function initCoachSchedules(): Promise<void> {
       .eq('is_active', true)
       .maybeSingle()
 
-    const groupedBySeason: Record<string, any[]> = {}
+    const groupedBySeason: Record<string, any[]> = { 'Horarios': [] }
     for (const s of schedules ?? []) {
-      const key = s.seasons?.name || 'Sin curso'
-      if (!groupedBySeason[key]) groupedBySeason[key] = []
-      groupedBySeason[key].push(s)
+      if (!groupedBySeason['Horarios']) groupedBySeason['Horarios'] = []
+      groupedBySeason['Horarios'].push(s)
     }
 
     const html = `

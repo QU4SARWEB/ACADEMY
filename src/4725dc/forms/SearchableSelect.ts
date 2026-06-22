@@ -80,7 +80,9 @@ export function initSearchableSelect(container: HTMLElement): void {
       display.dispatchEvent(new Event('change', { bubbles: true }))
     }
 
-    display.addEventListener('click', () => toggleDropdown())
+    display.addEventListener('click', () => {
+      if (dropdown.classList.contains('hidden')) toggleDropdown(true)
+    })
     display.addEventListener('focus', () => toggleDropdown(true))
 
     wrapper.addEventListener('focusout', ((e: FocusEvent) => {
