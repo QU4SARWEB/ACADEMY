@@ -156,7 +156,7 @@ export function mountCoachStudentDetail(): void {
                           ${enr.final_grade ? `<p class="text-xs text-zinc-500">Nota: ${enr.final_grade}</p>` : ''}
                           <div class="mt-1">
                             ${paymentStatus
-                              ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${escapeHtml(paymentStatus)}</span>`
+                              ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${paymentStatus === 'paid' ? 'Pagado' : escapeHtml(paymentStatus)}</span>`
                               : '<span class="text-xs text-zinc-600">Sin pago</span>'
                             }
                           </div>
