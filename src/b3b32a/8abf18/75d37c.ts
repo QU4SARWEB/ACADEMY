@@ -22,18 +22,34 @@ export function mountCoachStudents(): void {
 
       const [{ data: payments }, { data: enrollments }] = await Promise.all([
         studentIds.length > 0
-          ? supabase.from('payments').select('profile_id, status, created_at').in('profile_id', studentIds).order('created_at', { ascending: false })
+          ? supabase.from('payments').select('profile_id, status, created_at, enrollment_id').in('profile_id', studentIds).order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
         studentIds.length > 0
-          ? supabase.from('enrollments').select('profile_id, status, courses!inner(name)').in('profile_id', studentIds)
+          ? supabase.from('enrollments').select('id, profile_id, status, courses!inner(name)').in('profile_id', studentIds)
           : Promise.resolve({ data: [] }),
       ])
 
-      const paymentMap = new Map<string, string>()
-      // Last payment by profile_id wins (ordered by created_at desc, then take first per profile)
-      const sortedPays = (payments ?? []).sort((a: any, b: any) => (b.created_at ? new Date(b.created_at).getTime() : 0) - (a.created_at ? new Date(a.created_at).getTime() : 0))
-      for (const p of sortedPays) {
-        if (!paymentMap.has(p.profile_id)) paymentMap.set(p.profile_id, p.status)
+      // Build per-enrollment payment status and per-student counts
+      const paymentByEnrollId: Record<string, string> = {}
+      const paidCountPerProfile: Record<string, number> = {}
+      const enrollCountPerProfile: Record<string, number> = {}
+      for (const p of payments ?? []) {
+        const eid = p.enrollment_id
+        if (eid && !paymentByEnrollId[eid]) {
+          const isPaid = p.status === 'paid' || p.status === 'scholarship'
+          paymentByEnrollId[eid] = isPaid ? 'paid' : p.status
+        }
+      }
+      for (const e of enrollments ?? []) {
+        if (!enrollCountPerProfile[e.profile_id]) enrollCountPerProfile[e.profile_id] = 0
+        enrollCountPerProfile[e.profile_id]++
+        if (paymentByEnrollId[e.id] === 'paid') {
+          if (!paidCountPerProfile[e.profile_id]) paidCountPerProfile[e.profile_id] = 0
+          paidCountPerProfile[e.profile_id]++
+        }
+      }
+      for (const pid of Object.keys(enrollCountPerProfile)) {
+        if (!paidCountPerProfile[pid]) paidCountPerProfile[pid] = 0
       }
 
       const enrollmentMap = new Map<string, { count: number; anyActive: boolean; courses: string[] }>()
@@ -89,7 +105,7 @@ export function mountCoachStudents(): void {
                 <th class="pb-3 pr-4 font-medium">Email</th>
                 <th class="pb-3 pr-4 font-medium">Rango</th>
                 <th class="pb-3 pr-4 font-medium">Beca</th>
-                <th class="pb-3 pr-4 font-medium">Pago</th>
+                <th class="pb-3 pr-4 font-medium">Pagos</th>
                 <th class="pb-3 pr-4 font-medium">Activo</th>
                 <th class="pb-3 pr-4 font-medium">Cursos</th>
                 <th class="pb-3 pr-4 font-medium">Registro</th>
@@ -101,7 +117,6 @@ export function mountCoachStudents(): void {
                 ? '<tr><td colspan="12" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
                 : (students ?? []).map((s: any) => {
                     const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false, courses: [] }
-                    const paymentStatus = paymentMap.get(s.id)
                     const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
                     const initial = (displayName || '?').charAt(0).toUpperCase()
                     return `
@@ -116,7 +131,14 @@ export function mountCoachStudents(): void {
                         <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.email || '-')}</td>
                         <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.rank || 'Unranked')}</td>
                         <td class="py-3 pr-4"><span class="text-xs ${s.scholarship ? 'text-yellow-400' : 'text-zinc-600'}">${s.scholarship ? 'Sí' : 'No'}</span></td>
-                        <td class="py-3 pr-4">${paymentStatus ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${escapeHtml(paymentStatus)}</span>` : '<span class="text-xs text-zinc-600">—</span>'}</td>
+                        <td class="py-3 pr-4">${(() => {
+                          const paid = paidCountPerProfile[s.id] || 0
+                          const total = enrollCountPerProfile[s.id] || 0
+                          if (total === 0) return '<span class="text-xs text-zinc-600">—</span>'
+                          const pct = Math.round((paid / total) * 100)
+                          const color = pct >= 100 ? 'text-green-400 bg-green-500/10' : pct > 0 ? 'text-yellow-400 bg-yellow-500/10' : 'text-zinc-500 bg-zinc-800/30'
+                          return `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${color}">${paid}/${total}</span>`
+                        })()}</td>
                         <td class="py-3 pr-4"><span class="inline-block h-2.5 w-2.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-500'}"></span></td>
                         <td class="py-3 pr-4 text-zinc-400 text-xs max-w-[120px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
                         <td class="py-3 text-zinc-500 text-xs">${formatDate(s.created_at)}</td>
