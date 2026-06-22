@@ -39,8 +39,8 @@ export async function initStudentCourseDetail(): Promise<void> {
     if (enrollment) {
       const { data: payment } = await supabase
         .from('payments')
-        .select('status')
-        .eq('profile_id', session.user.id)
+        .select('status, amount')
+        .eq('enrollment_id', enrollment.id)
         .order('created_at', { ascending: false })
         .maybeSingle()
       if (payment) paymentStatus = payment.status
