@@ -58,9 +58,17 @@ export async function initCoachDashboard(): Promise<void> {
     const now = Date.now()
     const { data: pendingPayments } = await supabase
       .from('payments')
-      .select('id, created_at, amount, profiles!inner(full_name, display_name, email, id), seasons(name), enrollments!inner(courses!inner(name))')
+      .select('id, created_at, amount, enrollment_id, profiles!inner(full_name, display_name, email, id)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
+
+    // Fetch course names for pending payments
+    const pendEnrollIds = [...new Set((pendingPayments ?? []).map((p: any) => p.enrollment_id).filter(Boolean))]
+    const { data: pendEnrollData } = pendEnrollIds.length > 0
+      ? await supabase.from('enrollments').select('id, courses(name)').in('id', pendEnrollIds)
+      : { data: [] }
+    const courseByPendEnroll: Record<string, string> = {}
+    for (const e of pendEnrollData ?? []) courseByPendEnroll[e.id] = (e as any).courses?.name || ''
 
     const expiringPayments = (pendingPayments ?? []).filter((p: any) =>
       p.created_at && (now - new Date(p.created_at).getTime()) > EXPIRE_MS - SOON_MS
@@ -207,7 +215,7 @@ export async function initCoachDashboard(): Promise<void> {
           ${pendingPayments.map((p: any) => {
             const prof = p.profiles || {}
             const name = prof.display_name || prof.full_name || prof.email || 'Desconocido'
-            const courseName = p.enrollments?.courses?.name || ''
+            const courseName = courseByPendEnroll[p.enrollment_id] || ''
             const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0
             const expiresAt = createdAt + EXPIRE_MS
             const remaining = expiresAt - now
