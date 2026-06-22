@@ -579,10 +579,10 @@ export async function initStudentExamTake(): Promise<void> {
         }
       })
 
-      // Insert new answers first, then delete old ones
-      const { error: insError } = await supabase.from('student_answers').insert(answerRows)
-      if (insError) {
-        toast('error', 'Error al guardar respuestas: ' + insError.message)
+      // Delete old answers first, then insert new ones
+      const { error: delError } = await supabase.from('student_answers').delete().eq('attempt_id', attempt!.id)
+      if (delError) {
+        toast('error', 'Error al limpiar respuestas anteriores: ' + delError.message)
         submitting = false
         if (submitBtn) {
           submitBtn.innerHTML = `${Icon('checkCircle', 16)} Finalizar examen`
@@ -591,9 +591,9 @@ export async function initStudentExamTake(): Promise<void> {
         return
       }
 
-      const { error: delError } = await supabase.from('student_answers').delete().eq('attempt_id', attempt!.id)
-      if (delError) {
-        toast('error', 'Error al limpiar respuestas anteriores: ' + delError.message)
+      const { error: insError } = await supabase.from('student_answers').insert(answerRows)
+      if (insError) {
+        toast('error', 'Error al guardar respuestas: ' + insError.message)
         submitting = false
         if (submitBtn) {
           submitBtn.innerHTML = `${Icon('checkCircle', 16)} Finalizar examen`
