@@ -15,21 +15,24 @@ export function mountCoachStudents(): void {
     try {
       const [{ data: students }, { data: courses }] = await Promise.all([
         supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, created_at').eq('role', 'student').order('full_name'),
-        supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order'),
+        supabase.from('courses').select('id, name, display_order, price').eq('is_active', true).order('display_order'),
       ])
 
       const studentIds = (students ?? []).map((s: any) => s.id)
+
+      // Build set of free course IDs
+      const freeCourseIds = new Set((courses ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
 
       const [{ data: payments }, { data: enrollments }] = await Promise.all([
         studentIds.length > 0
           ? supabase.from('payments').select('profile_id, status, created_at, enrollment_id').in('profile_id', studentIds).order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
         studentIds.length > 0
-          ? supabase.from('enrollments').select('id, profile_id, status, courses!inner(name)').in('profile_id', studentIds)
+          ? supabase.from('enrollments').select('id, profile_id, status, course_id, courses!inner(name)').in('profile_id', studentIds)
           : Promise.resolve({ data: [] }),
       ])
 
-      // Build per-enrollment payment status and per-student counts
+      // Build per-enrollment payment status and per-student counts (excluding free courses)
       const paymentByEnrollId: Record<string, string> = {}
       const paidCountPerProfile: Record<string, number> = {}
       const enrollCountPerProfile: Record<string, number> = {}
@@ -41,6 +44,7 @@ export function mountCoachStudents(): void {
         }
       }
       for (const e of enrollments ?? []) {
+        if (freeCourseIds.has(e.course_id)) continue // skip free courses from payment count
         if (!enrollCountPerProfile[e.profile_id]) enrollCountPerProfile[e.profile_id] = 0
         enrollCountPerProfile[e.profile_id]++
         if (paymentByEnrollId[e.id] === 'paid') {
