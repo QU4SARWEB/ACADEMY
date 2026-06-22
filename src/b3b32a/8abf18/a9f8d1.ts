@@ -699,12 +699,13 @@ export async function initCoachExams(): Promise<void> {
       }
       const { data: newExam, error: examErr } = await supabase.from('exams').insert(payload).select().maybeSingle()
       if (examErr || !newExam) { toast('error', examErr?.message || 'Error al crear examen'); return }
+      let qErrors = 0, qSaved = 0
       for (let qi = 0; qi < parsed.questions.length; qi++) {
         const q = parsed.questions[qi]
         const { data: question, error: qErr } = await supabase.from('questions').insert({
           course_id: id, type: q.type, stem: q.stem, points: q.points || 5,
         }).select().maybeSingle()
-        if (qErr || !question) { console.error('Error creating question:', qErr); continue }
+        if (qErr || !question) { console.error('Error creating question:', qErr, 'stem:', q.stem); qErrors++; continue }
         if (q.type === 'multiple_choice' || q.type === 'true_false') {
           for (let oi = 0; oi < q.options.length; oi++) {
             await supabase.from('question_options').insert({
@@ -716,10 +717,16 @@ export async function initCoachExams(): Promise<void> {
         await supabase.from('exam_questions').insert({
           exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points || 5,
         })
+        qSaved++
       }
       area.classList.add('hidden')
       textarea.value = ''
-      toast('success', `Examen creado con ${parsed.questions.length} preguntas`)
+      const total = parsed.questions.length
+      const msg = qSaved > 0
+        ? `Examen creado con ${qSaved} preguntas${qErrors > 0 ? ` (${qErrors} fallaron)` : ''}`
+        : 'Error: ninguna pregunta pudo crearse'
+      toast(qErrors > 0 && qSaved === 0 ? 'error' : 'success', msg)
+      if (qErrors > 0) console.warn('Paste exam: questions saved:', qSaved, 'errors:', qErrors)
       initCoachExams()
     })
 

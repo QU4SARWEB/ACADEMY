@@ -148,21 +148,25 @@ export async function initCoachExamsOverview(): Promise<void> {
           if (sel) { const ids = Array.from(sel.selectedOptions).map(o => o.value); if (ids.length > 0) await supabase.from('exam_assignments').insert(ids.map(pid => ({ exam_id: newExam.id, profile_id: pid }))) }
         }
         // Save pending manual questions
+        let pqErrors = 0, pqSaved = 0
         if (pendingQuestions.length > 0) {
           for (let qi = 0; qi < pendingQuestions.length; qi++) {
             const q = pendingQuestions[qi]
-            const { data: question } = await supabase.from('questions').insert({ course_id, type: q.type, stem: q.stem, points: q.points || 5 }).select().maybeSingle()
-            if (!question) continue
+            const { data: question, error: pqErr } = await supabase.from('questions').insert({ course_id, type: q.type, stem: q.stem, points: q.points || 5 }).select().maybeSingle()
+            if (pqErr || !question) { console.error('Error saving question:', pqErr, 'stem:', q.stem); pqErrors++; continue }
             if (q.type === 'multiple_choice' || q.type === 'true_false') {
               for (let oi = 0; oi < (q.options || []).length; oi++) {
                 await supabase.from('question_options').insert({ question_id: question.id, text: q.options[oi].text, is_correct: q.options[oi].correct, order_num: oi })
               }
             }
             await supabase.from('exam_questions').insert({ exam_id: newExam.id, question_id: question.id, order_num: qi, points: q.points || 5 })
+            pqSaved++
           }
           pendingQuestions = []
         }
-        toast('success', 'Examen creado'); document.getElementById('new-exam-form')?.classList.add('hidden'); renderExamList(courseId)
+        toast(pqErrors > 0 && pqSaved === 0 ? 'error' : 'success',
+          pqSaved > 0 ? `Examen creado con ${pqSaved} preguntas${pqErrors > 0 ? ` (${pqErrors} fallaron)` : ''}` : 'Examen creado sin preguntas')
+        document.getElementById('new-exam-form')?.classList.add('hidden'); renderExamList(courseId)
         } catch (err) { console.error(err); toast('error', 'Error al crear examen')
         } finally { loadOverlay.remove() }
       })
