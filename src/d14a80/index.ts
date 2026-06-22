@@ -275,3 +275,20 @@ export interface Grade {
   source_id: string | null
   created_at: string
 }
+
+export interface CourseClassMaterial {
+  type: 'pdf' | 'video' | 'image' | 'link' | 'file'
+  name: string
+  url: string
+}
+
+export interface CourseClass {
+  id: string
+  course_id: string
+  week_number: number
+  title: string
+  objectives: string | null
+  materials: CourseClassMaterial[]
+  created_at: string
+  updated_at: string
+}

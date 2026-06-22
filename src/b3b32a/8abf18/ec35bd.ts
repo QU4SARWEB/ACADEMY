@@ -57,6 +57,13 @@ export function mountCoachCourseDetail(): void {
 
         ${(course as any).description ? `<div class="glass mb-6 rounded-xl p-4 text-sm text-zinc-300">${escBr((course as any).description)}</div>` : ''}
 
+        <div class="mb-6 flex flex-wrap gap-3">
+          <a href="#/coaches/courses/${escapeHtml(id)}/exams" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition">${Icon('bookOpen', 14)} Exámenes</a>
+          <a href="#/coaches/courses/${escapeHtml(id)}/classes" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition">${Icon('bookOpen', 14)} Clases</a>
+          <a href="#/coaches/courses/${escapeHtml(id)}/attendance" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition">${Icon('calendar', 14)} Asistencia</a>
+          <a href="#/coaches/courses/${escapeHtml(id)}/grades" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition">${Icon('scrollText', 14)} Notas</a>
+        </div>
+
         <div>
           <h2 class="mb-4 font-heading text-lg font-bold text-white">Estudiantes inscritos (${(enrollments ?? []).length})</h2>
           <div class="space-y-2">

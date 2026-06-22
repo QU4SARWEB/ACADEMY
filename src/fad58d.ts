@@ -24,6 +24,7 @@ import { renderCoachProfile, initCoachProfile } from '@/b3b32a/8abf18/7d9748'
 import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
 import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/2cb1ad'
 import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
+import { renderCourseClasses, initCourseClasses } from '@/b3b32a/8abf18/course_classes'
 import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
@@ -253,6 +254,7 @@ dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDe
 dash('/coaches/courses/:id/edit', () => renderCoachEditCourse(), initCoachEditCourse)
 dash('/coaches/courses/:id/exams', () => renderCoachExams(), initCoachExams)
 dash('/coaches/courses/:id/exams/:examId/attempt/:attemptId', () => renderCoachExamAttempt(), initCoachExamAttempt)
+dash('/coaches/courses/:id/classes', () => renderCourseClasses(), initCourseClasses)
 dash('/coaches/courses/:id/attendance', () => renderCoachAttendance(), initCoachAttendance)
 dash('/coaches/courses/:id/grades', () => renderCoachGrades(), initCoachGrades)
 
@@ -284,6 +286,7 @@ dash('/students/profile', () => renderStudentProfile(), initStudentProfile)
 dash('/students/courses', () => renderStudentCourses(), initStudentCourses)
 dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
 dash('/students/courses/:id/exams', () => renderStudentExamList(), initStudentExamList)
+dash('/students/courses/:id/classes', () => renderCourseClasses(), initCourseClasses)
 dash('/students/courses/:id/exams/:examId', () => renderStudentExamTake(), initStudentExamTake)
 dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/tasks/:id', () => renderStudentTaskDetail(), initStudentTaskDetail)
