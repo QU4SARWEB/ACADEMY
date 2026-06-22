@@ -69,9 +69,7 @@ export async function initCoachAttendanceOverview(): Promise<void> {
           if (newStatus === '') { await supabase.from('attendance').delete().eq('id', record.id); delete attendanceMap[enrollmentId][date]; if (Object.keys(attendanceMap[enrollmentId]).length === 0) delete attendanceMap[enrollmentId] }
           else { await supabase.from('attendance').update({ status: newStatus }).eq('id', record.id); record.status = newStatus }
         } else if (newStatus !== '') {
-          const { data: enrData } = await supabase.from('enrollments').select('season_id').eq('id', enrollmentId).maybeSingle()
-          if (!enrData?.season_id) return
-          const { data: newRecord } = await supabase.from('attendance').insert({ enrollment_id: enrollmentId, season_id: enrData.season_id, date, status: newStatus }).select().single()
+          const { data: newRecord } = await supabase.from('attendance').insert({ enrollment_id: enrollmentId, date, status: newStatus }).select().single()
           if (newRecord) { if (!attendanceMap[enrollmentId]) attendanceMap[enrollmentId] = {}; attendanceMap[enrollmentId][date] = newRecord; if (!dateSet.has(date)) { dateSet.add(date); allDates.push(date); allDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) } }
         }
       }

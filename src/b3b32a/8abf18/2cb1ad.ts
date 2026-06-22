@@ -36,7 +36,7 @@ export async function initCoachTasks(): Promise<void> {
               <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex-1 min-w-0">
                 <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
                 <p class="mt-0.5 text-sm text-zinc-500">
-                  ${'Sin curso'} / ${escapeHtml(t.course_modules?.name || 'Sin módulo')}
+                  ${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
                 </p>
               </a>
               <div class="flex items-center gap-3 shrink-0">

@@ -58,8 +58,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
         </a>
         <h1 class="mb-2 font-heading text-2xl font-bold text-white">${escapeHtml((task as any).title)}</h1>
         <p class="mb-6 text-sm text-zinc-500">
-          ${escapeHtml((task as any).course_modules?.courses?.name || '')} / ${escapeHtml((task as any).course_modules?.name || '')}
-          · Límite: ${formatDate((task as any).due_date)} ${(task as any).max_score ? `· Máx: ${(task as any).max_score} pts` : ''}
+          ${escapeHtml((task as any).title)} · Límite: ${formatDate((task as any).due_date)} ${(task as any).max_score ? `· Máx: ${(task as any).max_score} pts` : ''}
         </p>
 
         ${(task as any).description ? `

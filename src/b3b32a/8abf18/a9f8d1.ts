@@ -202,8 +202,7 @@ export async function initCoachExams(): Promise<void> {
                       }
                     </div>
                     <p class="mt-1 text-xs text-zinc-500">
-                      ${exam.course_modules?.name ? escapeHtml(exam.course_modules.name) + ' · ' : ''}
-Nota mín: ${exam.passing_score}% · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
+                      Nota mín: ${exam.passing_score}% · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
               ${exam.due_date ? ` · Vence: ${formatDate(exam.due_date)}` : ''}
                     </p>
                   </div>

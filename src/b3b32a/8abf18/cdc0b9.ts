@@ -12,11 +12,7 @@ export function renderCoachNewTask(): string {
 
 export async function initCoachNewTask(): Promise<void> {
   try {
-    const { data: modules } = await supabase
-      .from('exams') 
-      .select('id, name, course_id, courses(name)')
-      .order('course_id')
-    const { data: seasons } = await supabase.from('courses').select('id, name, is_active')
+    const { data: courses } = await supabase.from('courses').select('id, name, is_active').order('name')
 
     const html = `
       <div class="max-w-2xl">
@@ -37,26 +33,16 @@ export async function initCoachNewTask(): Promise<void> {
               class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]"></textarea>
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-zinc-400">Módulo</label>
-            <select name="moduleId" required
+            <label class="mb-1 block text-xs font-medium text-zinc-400">Curso</label>
+            <select name="courseId" required
               class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
               <option value="">Seleccionar...</option>
-              ${(modules ?? []).map((m: any) =>
-                `<option value="${escapeHtml(m.id)}">${escapeHtml(m.courses?.name || '')} / ${escapeHtml(m.name)}</option>`
+              ${(courses ?? []).map((c: any) =>
+                `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.is_active ? ' (Activo)' : ''}</option>`
               ).join('')}
             </select>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label class="mb-1 block text-xs font-medium text-zinc-400">Temporada</label>
-              <select name="seasonId" required
-                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
-                <option value="">Seleccionar...</option>
-                ${(seasons ?? []).map((s: any) =>
-                  `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
-                ).join('')}
-              </select>
-            </div>
             <div>
               <label class="mb-1 block text-xs font-medium text-zinc-400">Fecha límite</label>
               <input type="datetime-local" name="dueDate" required
@@ -73,11 +59,6 @@ export async function initCoachNewTask(): Promise<void> {
             <input type="file" name="attachment" accept=".pdf,.mp4,.png,.jpg,.jpeg,.zip"
               class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition file:mr-3 file:rounded file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1 file:text-xs file:text-white hover:file:bg-[#7C3AED]" />
           </div>
-          <label class="flex items-center gap-2 text-sm text-zinc-300">
-            <input type="checkbox" name="isActive" checked
-              class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
-            Activa
-          </label>
           <p id="form-error" class="hidden text-xs text-red-400"></p>
           <div class="flex gap-3">
             <button type="submit"
@@ -100,20 +81,11 @@ export async function initCoachNewTask(): Promise<void> {
       const file = (document.querySelector<HTMLInputElement>('input[name="attachment"]'))?.files?.[0]
       let attachmentUrl: string | null = null
       if (file) {
-        const { url: fileUrl, error: fileErr } = await uploadFileFromInput('uploads', fd.get('seasonId') as string || 'tasks', 'attachments', file)
+        const { url: fileUrl, error: fileErr } = await uploadFileFromInput('uploads', 'tasks', 'attachments', file)
         if (fileErr) { document.getElementById('form-error')!.textContent = fileErr; document.getElementById('form-error')!.classList.remove('hidden'); return }
         attachmentUrl = fileUrl ?? null
       }
-      let seasonId = fd.get('seasonId') as string
-      if (!seasonId) {
-        const { data: mod } = await supabase.from('exams') .select('course_id').eq('id', fd.get('moduleId')).maybeSingle()
-        if (mod) {
-          const { data: activeS } = await supabase.from('courses').select('id').eq('is_active', true).maybeSingle()
-          if (activeS) seasonId = activeS.id
-        }
-      }
       const { error } = await supabase.from('tasks').insert({
-        module_id: fd.get('moduleId') as string,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,
