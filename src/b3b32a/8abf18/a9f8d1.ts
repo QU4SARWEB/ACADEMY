@@ -564,7 +564,6 @@ export async function initCoachExams(): Promise<void> {
         course_id: id,
         title: fd.get('title'),
         description: fd.get('description'),
-        module_id: fd.get('module_id') || null,
         passing_score: parseFloat(fd.get('passing_score') as string) || 60,
         time_limit: parseInt(fd.get('time_limit') as string) || null,
         max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
@@ -640,7 +639,6 @@ export async function initCoachExams(): Promise<void> {
         const payload: Record<string, any> = {
           title: fd.get('title'),
           description: fd.get('description'),
-          module_id: fd.get('module_id') || null,
           passing_score: parseFloat(fd.get('passing_score') as string) || 60,
           time_limit: parseInt(fd.get('time_limit') as string) || null,
           max_attempts: parseInt(fd.get('max_attempts') as string) || 1,

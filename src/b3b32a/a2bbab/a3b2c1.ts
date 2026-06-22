@@ -19,7 +19,7 @@ export async function initPlayerCourseDetail(): Promise<void> {
 
     const { data: course } = await supabase
       .from('courses')
-      .select('*, seasons(name)')
+      .select('*')
       .eq('id', id)
       .maybeSingle()
     if (!course) {
@@ -36,9 +36,9 @@ export async function initPlayerCourseDetail(): Promise<void> {
 
     const moduleIds = modList.map((m: any) => m.id)
     const { data: mats } = await supabase
-      .from('materials')
+      .from('exams') /* materials removed */
       .select('*')
-      .in('module_id', moduleIds.length > 0 ? moduleIds : ['00000000-0000-0000-0000-000000000000'])
+      
       .order('display_order')
 
     const byModule: Record<string, any[]> = {}

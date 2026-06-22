@@ -14,7 +14,7 @@ export async function initCoachScrims(): Promise<void> {
   try {
     const { data: scrims } = await supabase
       .from('scrims')
-      .select('*, teams(name), seasons(name)')
+      .select('*, teams(name)')
       .order('date', { ascending: false })
 
     const { data: teams } = await supabase
@@ -22,7 +22,7 @@ export async function initCoachScrims(): Promise<void> {
       .select('id, name')
 
     const { data: seasons } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id, name')
       .order('start_date', { ascending: false })
 
@@ -171,7 +171,6 @@ export async function initCoachScrims(): Promise<void> {
 
         const payload: Record<string, any> = {
           team_id: fd.get('teamId'),
-          season_id: fd.get('seasonId'),
           opponent: fd.get('opponent'),
           date: fd.get('scheduledAt'),
           result: (fd.get('result') as string) || null,

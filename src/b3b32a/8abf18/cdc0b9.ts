@@ -16,7 +16,7 @@ export async function initCoachNewTask(): Promise<void> {
       .from('exams') 
       .select('id, name, course_id, courses(name)')
       .order('course_id')
-    const { data: seasons } = await supabase.from('seasons').select('id, name, is_active')
+    const { data: seasons } = await supabase.from('courses').select('id, name, is_active')
 
     const html = `
       <div class="max-w-2xl">
@@ -108,13 +108,12 @@ export async function initCoachNewTask(): Promise<void> {
       if (!seasonId) {
         const { data: mod } = await supabase.from('exams') .select('course_id').eq('id', fd.get('moduleId')).maybeSingle()
         if (mod) {
-          const { data: activeS } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+          const { data: activeS } = await supabase.from('courses').select('id').eq('is_active', true).maybeSingle()
           if (activeS) seasonId = activeS.id
         }
       }
       const { error } = await supabase.from('tasks').insert({
         module_id: fd.get('moduleId') as string,
-        season_id: seasonId || null,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,

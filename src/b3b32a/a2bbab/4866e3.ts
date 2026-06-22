@@ -66,7 +66,7 @@ export async function initPlayerDashboard(): Promise<void> {
     const totalSubs = submissions?.length ?? 0
 
     const { data: activeSeason } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id')
       .eq('is_active', true)
       .maybeSingle()

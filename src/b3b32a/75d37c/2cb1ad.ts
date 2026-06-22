@@ -53,7 +53,7 @@ export async function initStudentTasks(): Promise<void> {
                       <span class="text-xs ${statusColors[status] || 'text-zinc-500'}">${escapeHtml(status)}</span>
                     </div>
                     <p class="mt-0.5 text-sm text-zinc-500">
-                      ${escapeHtml(t.course_modules?.courses?.name || '')} / ${escapeHtml(t.course_modules?.name || '')} · Límite: ${formatDate(t.due_date)}
+                      ${''} / ${''} · Límite: ${formatDate(t.due_date)}
                     </p>
                   </div>
                 </a>`

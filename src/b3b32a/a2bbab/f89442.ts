@@ -40,7 +40,7 @@ export async function initPlayerTeam(): Promise<void> {
     const memberIds = (members ?? []).map((m: any) => m.profile_id)
 
     const { data: activeSeason } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id')
       .eq('is_active', true)
       .maybeSingle()
@@ -50,7 +50,6 @@ export async function initPlayerTeam(): Promise<void> {
       const { data: payments } = await supabase
         .from('payments')
         .select('profile_id, status')
-        .eq('season_id', activeSeason.id)
         .in('profile_id', memberIds)
       for (const p of payments ?? []) {
         paymentMap.set(p.profile_id, p.status)

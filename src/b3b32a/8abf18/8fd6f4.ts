@@ -13,7 +13,7 @@ export async function initCoachTeams(): Promise<void> {
   try {
     const { data: teams } = await supabase
       .from('teams')
-      .select('*, seasons(name)')
+      .select('*')
       .order('name')
 
     const teamIds = (teams ?? []).map((t: any) => t.id)
@@ -39,7 +39,7 @@ export async function initCoachTeams(): Promise<void> {
       .order('full_name')
 
     const { data: allSeasons } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id, name, is_active')
 
     const container = document.getElementById('page-content')!
@@ -234,11 +234,10 @@ export async function initCoachTeams(): Promise<void> {
         }
 
         const { data: teamSeason } = await supabase.from('teams').select('id').eq('id', teamId).maybeSingle()
-        const { data: activeSeason } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+        const { data: activeSeason } = await supabase.from('courses').select('id').eq('is_active', true).maybeSingle()
         const { error } = await supabase.from('team_members').insert({
           team_id: teamId,
           profile_id: profileId,
-          season_id: activeSeason?.id || teamSeason?.id,
           role: role || null,
         })
 

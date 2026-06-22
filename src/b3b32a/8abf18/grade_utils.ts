@@ -68,7 +68,7 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
   if (!rankOk) return // rank not met, can't promote
 
   // Auto-promote: find active season and create new enrollment
-  const { data: season } = await supabase.from('seasons').select('id').eq('is_active', true).maybeSingle()
+  const { data: season } = await supabase.from('courses').select('id').eq('is_active', true).maybeSingle()
   if (!season) return
 
   await supabase.from('enrollments').update({ status: 'graduated', promoted: true }).eq('id', enrollmentId)
@@ -78,9 +78,9 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
     grade_at_time: grade, rank_at_time: profile.rank,
   })
   await supabase.from('enrollments').upsert({
-    profile_id: profileId, course_id: nextCourse.id, season_id: season.id,
+    profile_id: profileId, course_id: nextCourse.id,
     type: 'student', status: 'active', current_module: 1,
-  }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+  }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
 
   const dn = profileId.slice(0, 8)
   console.log(`Auto-promoted ${dn}: ${course.name} → ${nextCourse.name} (grade: ${grade}, rank: ${profile.rank})`)

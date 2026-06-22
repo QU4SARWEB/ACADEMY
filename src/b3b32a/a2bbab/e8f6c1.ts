@@ -40,7 +40,7 @@ export async function initPlayerTasks(): Promise<void> {
     const { data: tasks } = await supabase
       .from('tasks')
       .select('*')
-      .in('module_id', moduleIds)
+      
       .order('due_date', { ascending: false })
 
     const enrollmentIds = (enrollments ?? []).map((e: any) => e.id)
@@ -81,7 +81,7 @@ export async function initPlayerTasks(): Promise<void> {
                         ${statusBadge}
                       </div>
                       <p class="mt-0.5 text-sm text-zinc-500">
-                        ${escapeHtml(t.course_modules?.courses?.name || '')} / ${escapeHtml(t.course_modules?.name || '')}
+                        ${''} / ${''}
                       </p>
                     </div>
                     <div class="shrink-0 ml-4 text-right text-xs text-zinc-500">

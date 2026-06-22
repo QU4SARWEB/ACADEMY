@@ -23,11 +23,11 @@ export async function initCoachSchedules(): Promise<void> {
       .order('start_time')
 
     const { data: allSeasons } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id, name, is_active')
 
     const { data: activeSeason } = await supabase
-      .from('seasons')
+      .from('courses')
       .select('id')
       .eq('is_active', true)
       .maybeSingle()

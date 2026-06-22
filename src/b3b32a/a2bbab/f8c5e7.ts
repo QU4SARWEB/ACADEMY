@@ -31,7 +31,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
       return
     }
 
-    const courseId = (task as any).course_modules?.course_id
+    const courseId = ''
     const { data: enrollment } = await supabase
       .from('enrollments')
       .select('id')

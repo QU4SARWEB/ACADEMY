@@ -31,16 +31,12 @@ export async function initStudentCourses(): Promise<void> {
       .eq('status', 'active')
       .order('enrolled_at', { ascending: false })
 
-    const seasonIds = [...new Set((enrollments ?? []).map((e: any) => e.season_id).filter(Boolean))]
     const pm = new Map<string, string>()
-    if (seasonIds.length > 0) {
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('season_id, status')
-        .eq('profile_id', session.user.id)
-        .in('season_id', seasonIds)
-      for (const p of payments ?? []) pm.set(p.season_id, p.status)
-    }
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('status')
+      .eq('profile_id', session.user.id)
+    for (const p of payments ?? []) pm.set('paid', p.status)
 
     const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
     const { data: coursesData } = enrolledCourseIds.length > 0
@@ -62,9 +58,7 @@ export async function initStudentCourses(): Promise<void> {
             </div>
           </div>
           <div class="flex items-center gap-3">
-            ${pm.has(e.season_id)
-              ? `<span class="text-xs ${pm.get(e.season_id) === 'paid' ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(pm.get(e.season_id)!)}</span>`
-              : ''}
+            ${''}
             ${Icon('arrowRight', 16)}
           </div>
         </a>
@@ -130,22 +124,14 @@ export async function initStudentCourses(): Promise<void> {
           return
         }
 
-        const { data: season } = await supabase
-          .from('seasons')
-          .select('id')
-          .eq('is_active', true)
-          .maybeSingle()
-
-        if (!season?.id) { toast('error', 'No hay temporada activa'); return }
         const { data: enrollment, error: enrError } = await supabase
           .from('enrollments')
           .upsert({
             profile_id: session.user.id,
             course_id: courseId,
-            season_id: season.id,
             type: 'student',
             status: 'active',
-          }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+          }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
           .select()
           .maybeSingle()
 
@@ -155,7 +141,7 @@ export async function initStudentCourses(): Promise<void> {
           return
         }
 
-        if (season?.id && enrollment?.id) {
+        if (enrollment?.id) {
           // Check if course was already passed (if so, no new payment needed)
           const { data: prevEnrolls } = await supabase
             .from('enrollments')
@@ -168,7 +154,6 @@ export async function initStudentCourses(): Promise<void> {
             await supabase.from('payments').insert({
               profile_id: session.user.id,
               enrollment_id: enrollment.id,
-              season_id: season.id,
               type: 'student',
               status: profile?.scholarship ? 'scholarship' : 'pending',
               amount: 1.54,
