@@ -179,14 +179,29 @@ export async function initStudentExamTake(): Promise<void> {
 
     // Load question_options separately (deep nesting sometimes fails)
     const questionIds = [...new Set((exam.exam_questions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
-    const { data: allOptions } = questionIds.length > 0
-      ? await supabase.from('question_options').select('*').in('question_id', questionIds).order('order_num')
-      : { data: [] }
+    let allOptions: any[] = []
+    if (questionIds.length > 0) {
+      const { data: opts, error: optsErr } = await supabase.from('question_options').select('*').in('question_id', questionIds).order('order_num')
+      if (optsErr) console.error('Error loading question_options:', optsErr)
+      allOptions = opts ?? []
+    }
     const optionsByQ: Record<string, any[]> = {}
-    for (const opt of allOptions ?? []) {
+    for (const opt of allOptions) {
       if (!optionsByQ[opt.question_id]) optionsByQ[opt.question_id] = []
       optionsByQ[opt.question_id].push(opt)
     }
+
+    // Fallback: if questions(*) nesting failed, fetch questions separately
+    const missingQIds = (exam.exam_questions ?? []).filter((eq: any) => !eq.questions).map((eq: any) => eq.question_id)
+    if (missingQIds.length > 0) {
+      const { data: qFallback } = await supabase.from('questions').select('*').in('id', missingQIds)
+      const qMap: Record<string, any> = {}
+      for (const q of qFallback ?? []) qMap[q.id] = q
+      for (const eq of exam.exam_questions ?? []) {
+        if (!eq.questions && qMap[eq.question_id]) eq.questions = qMap[eq.question_id]
+      }
+    }
+
     // Attach options to questions
     for (const eq of exam.exam_questions ?? []) {
       if (eq.questions) eq.questions.question_options = optionsByQ[eq.question_id] || []

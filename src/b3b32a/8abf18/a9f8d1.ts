@@ -585,12 +585,13 @@ export async function initCoachExams(): Promise<void> {
         return
       }
 
+      let qErrors = 0
       for (let qi = 0; qi < (window as any)._eq.length; qi++) {
         const q = (window as any)._eq[qi]
         const { data: question, error: qErr } = await supabase.from('questions').insert({
           course_id: id, type: q.type, stem: q.stem, points: q.points,
         }).select().maybeSingle()
-        if (qErr || !question) { console.error('Error creating question:', qErr); continue }
+        if (qErr || !question) { console.error('Error creating question:', qErr); qErrors++; continue }
         if (q.type === 'multiple_choice' || q.type === 'true_false') {
           for (let oi = 0; oi < q.options.length; oi++) {
             await supabase.from('question_options').insert({
@@ -604,7 +605,11 @@ export async function initCoachExams(): Promise<void> {
         })
       }
 
-      toast('success', `Examen creado con ${(window as any)._eq.length} preguntas`)
+      const createdCount = (window as any)._eq.length - qErrors
+      const msg = createdCount > 0
+        ? `Examen creado con ${createdCount} preguntas${qErrors > 0 ? ` (${qErrors} fallaron)` : ''}`
+        : 'Error: ninguna pregunta pudo crearse'
+      toast(qErrors > 0 && createdCount === 0 ? 'error' : 'success', msg)
       initCoachExams()
     })
 
