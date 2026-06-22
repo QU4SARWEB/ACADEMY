@@ -43,3 +43,5 @@ yarn-error.log*
 .gitmsg
 supa_audit.mjs
 backup_*.sql  
+
+docs/supabaseapikeys.md
