@@ -130,6 +130,7 @@ export async function initCourseClasses(): Promise<void> {
       return mats
     }
 
+    if (isCoach) {
     document.getElementById('materials-list')!.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement
       const btn = target.closest('.mat-remove') as HTMLElement
@@ -229,6 +230,7 @@ export async function initCourseClasses(): Promise<void> {
         initCourseClasses()
       })
     })
+    }
   } catch (err) {
     console.error('Error loading classes:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar clases</p>'
