@@ -125,7 +125,7 @@ async function renderChatLayout(): Promise<void> {
     </div>
 
     <div id="new-chat-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-      <div class="glass max-w-md w-full mx-4 rounded-xl p-6">
+      <div class="glass max-w-md w-full mx-4 my-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
         <h3 class="mb-4 font-heading text-lg font-bold text-white">Nueva conversación</h3>
         <div class="mb-4">
           <label class="mb-1 block text-sm text-zinc-400">Buscar usuario</label>

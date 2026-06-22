@@ -172,8 +172,11 @@ export async function initStudentExamTake(): Promise<void> {
       return
     }
 
-    const { data: examQuestions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_num')
+    const { data: examQuestions, error: eqErr } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_num')
+    if (eqErr) console.error('exam_questions error:', eqErr)
+    console.log('examQuestions count:', examQuestions?.length, 'for exam:', examId)
     const questionIds = [...new Set((examQuestions ?? []).map((eq: any) => eq.question_id).filter(Boolean))]
+    console.log('questionIds:', questionIds)
 
     let questions: any[] = []
     let allOptions: any[] = []
@@ -311,7 +314,7 @@ export async function initStudentExamTake(): Promise<void> {
           <div class="mb-6 flex items-center justify-between">
             <div>
               <h1 class="font-heading text-xl font-bold text-white">${escapeHtml(exam.title)}</h1>
-              <p class="text-sm text-zinc-500">Pregunta <span id="q-progress">${currentIndex + 1}</span> de ${questions.length}</p>
+              <p class="text-sm text-zinc-500">${questions.length > 0 ? 'Pregunta <span id="q-progress">' + (currentIndex + 1) + '</span> de ' + questions.length : 'Sin preguntas'}</p>
             </div>
             ${timeLeft !== null
               ? `<div id="timer-display" class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-zinc-800 text-zinc-300">

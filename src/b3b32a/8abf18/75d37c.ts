@@ -61,7 +61,7 @@ export function mountCoachStudents(): void {
         </div>
 
         <div id="enroll-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-          <div class="glass max-w-md w-full mx-4 rounded-xl p-6">
+          <div class="glass max-w-md w-full mx-4 my-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
             <h3 class="mb-4 font-heading text-lg font-bold text-white">Inscribir seleccionados</h3>
             <select id="bulk-course-select" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
               <option value="">Seleccionar curso...</option>

@@ -43,7 +43,7 @@ export async function initCoachGradesList(): Promise<void> {
       <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Notas de estudiantes</h1><p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p></div>
 
       <div id="add-grade-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-        <div class="glass max-w-md w-full mx-4 rounded-xl p-6">
+        <div class="glass max-w-md w-full mx-4 my-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-heading text-lg font-bold text-white">Agregar nota</h3>
             <button id="close-grade-modal" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
