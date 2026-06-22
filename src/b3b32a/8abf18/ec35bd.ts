@@ -49,7 +49,7 @@ export function mountCoachCourseDetail(): void {
             </div>
             <div class="flex gap-2">
               <a href="#/coaches/courses/${escapeHtml(id)}/edit"
-                class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 14)} Editar</a>
+                class="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 14)} Editar</a>
               <button id="delete-course-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
             </div>
           </div>

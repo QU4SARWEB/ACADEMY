@@ -212,7 +212,7 @@ async function initTicketDetail(ticketId: string): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></textarea>
               <p id="response-error" class="hidden text-xs text-red-400"></p>
               <button type="submit"
-                class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
+                class="flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
                 ${Icon('arrowUpRight', 14)} Enviar
               </button>
             </form>

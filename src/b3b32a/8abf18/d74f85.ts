@@ -102,7 +102,7 @@ export async function initCoachNewCourse(): Promise<void> {
           <p id="form-error" class="hidden text-xs text-red-400"></p>
           <div class="flex gap-3">
             <button type="submit"
-              class="btn-glow rounded-lg bg-[#8B5CF6] px-6 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
+              class="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-6 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
               ${Icon('plus', 14)} Crear curso
             </button>
             <a href="#/coaches/courses"

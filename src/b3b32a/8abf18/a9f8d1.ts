@@ -402,7 +402,7 @@ export async function initCoachExams(): Promise<void> {
                       <button type="button" class="q-opt-remove shrink-0 text-zinc-600 hover:text-red-400 transition">&times;</button>
                     </div>
                   </div>
-                <button type="button" id="quick-add-opt" class="mt-2 text-xs text-zinc-500 hover:text-white transition">${Icon('plus', 10)} Agregar opción</button>
+                <button type="button" id="quick-add-opt" class="mt-2 flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition">${Icon('plus', 10)} Agregar opción</button>
               </div>
               <p id="quick-question-error" class="hidden text-xs text-red-400"></p>
               <button type="submit"
