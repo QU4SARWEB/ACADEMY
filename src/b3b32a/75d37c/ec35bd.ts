@@ -91,10 +91,6 @@ export async function initStudentCourseDetail(): Promise<void> {
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
             ${Icon('scrollText', 14)} Exámenes (${examList?.length ?? 0})
           </a>
-          <a href="#/students/courses/${escapeHtml(id)}/classes"
-             class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
-            ${Icon('bookOpen', 14)} Clases
-          </a>
           <a href="#/payments"
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30">
             ${Icon('dollarSign', 14)} Pagos
@@ -115,9 +111,42 @@ export async function initStudentCourseDetail(): Promise<void> {
             `).join('')}
           </div>
         </div>` : ''}
+
+        <div class="mt-6">
+          <h2 class="mb-4 font-heading text-lg font-bold text-white">Clases</h2>
+          <div id="classes-list-student" class="space-y-3">
+            <p class="text-sm text-zinc-500">Cargando clases...</p>
+          </div>
+        </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // ── Load classes ──
+    const { data: classes } = await supabase.from('course_classes').select('*').eq('course_id', id).order('week_number', { ascending: true }).order('created_at', { ascending: true })
+    const list = document.getElementById('classes-list-student')
+    if (list) {
+      if (!classes || classes.length === 0) {
+        list.innerHTML = '<p class="text-sm text-zinc-500">No hay clases en este curso.</p>'
+      } else {
+        const iconMap: Record<string, string> = { pdf: 'fileText', video: 'video', image: 'image', link: 'link', file: 'paperclip' }
+        list.innerHTML = classes.map(c => {
+          const mats = typeof c.materials === 'string' ? (() => { try { return JSON.parse(c.materials) } catch { return [] } })() : (c.materials || [])
+          return `<div class="glass rounded-xl p-4">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-sm font-bold text-[#8B5CF6]">${c.week_number}</span>
+                  <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.title)}</h3>
+                </div>
+                ${c.objectives ? `<div class="mb-3 text-sm text-zinc-400">${escapeHtml(c.objectives)}</div>` : ''}
+                ${mats.length > 0 ? `<div class="flex flex-wrap gap-2">${mats.map((m: any) => `<a href="${escapeHtml(m.url)}" target="_blank" class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white transition">${Icon(iconMap[m.type] || 'paperclip', 12)} ${escapeHtml(m.name || m.url)}</a>`).join('')}</div>` : ''}
+              </div>
+            </div>
+          </div>`
+        }).join('')
+      }
+    }
   } catch (err) {
     console.error('Error loading course detail:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el curso</p>'
