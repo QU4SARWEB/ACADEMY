@@ -469,9 +469,10 @@ async function initChatEvents(userId: string): Promise<void> {
     document.getElementById('emoji-picker')?.classList.toggle('hidden')
   })
 
-  document.addEventListener('click', () => {
-    document.getElementById('emoji-picker')?.classList.add('hidden')
-  })
+  if ((window as any).__emojiHandler) document.removeEventListener('click', (window as any).__emojiHandler)
+  const emojiHandler = () => { document.getElementById('emoji-picker')?.classList.add('hidden') }
+  document.addEventListener('click', emojiHandler)
+  ;(window as any).__emojiHandler = emojiHandler
 
   document.querySelectorAll('.emoji-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
