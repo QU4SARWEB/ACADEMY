@@ -501,7 +501,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           status: promPayStatus,
         })
         if (payErr) console.error('Error creating payment on promote:', payErr)
-        else if (promPayStatus === 'paid' || promPayStatus === 'scholarship') autoEnrollClaseGeneral(studentId, 'student')
+        else if ((promPayStatus === 'paid' || promPayStatus === 'scholarship') && promPrice > 0) autoEnrollClaseGeneral(studentId, 'student')
       }
     }
 
@@ -570,7 +570,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           toast('error', 'Pago no creado: ' + payErr.message)
         } else {
           toast('success', 'Pago creado (' + payStatus + ')')
-          if (payStatus === 'paid' || payStatus === 'scholarship') autoEnrollClaseGeneral(profileId, type)
+          if ((payStatus === 'paid' || payStatus === 'scholarship') && coursePrice > 0) autoEnrollClaseGeneral(profileId, type)
         }
       }
 
