@@ -1,0 +1,1 @@
+ALTER TABLE tasks ALTER COLUMN module_id DROP NOT NULL;
