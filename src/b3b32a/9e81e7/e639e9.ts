@@ -369,14 +369,23 @@ async function renderCoachPayments(): Promise<void> {
     if (p.status === 'paid' && (!p.amount || p.amount <= 0)) freeCount[cid] = (freeCount[cid] || 0) + 1
   }
 
+  let pendingChanges: { paymentId: string; profileId?: string; newStatus: string; oldStatus: string }[] = []
+
   const modalsHtml = `
   <div id="course-payments-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="Pagos por curso">
-    <div class="glass max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
+    <div class="glass max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto rounded-xl p-6 flex flex-col">
       <div class="flex items-center justify-between mb-4">
         <h2 id="course-payments-title" class="font-heading text-lg font-bold text-white">Pagos del curso</h2>
         <button id="close-course-payments" class="text-zinc-500 hover:text-white" aria-label="Cerrar">${Icon('x', 18)}</button>
       </div>
-      <div id="course-payments-list" class="space-y-2"></div>
+      <div id="course-payments-list" class="space-y-2 flex-1 overflow-y-auto"></div>
+      <div id="pay-save-bar" class="mt-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
+        <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
+        <div class="flex gap-2">
+          <button id="pay-discard-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Descartar</button>
+          <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
+        </div>
+      </div>
     </div>
   </div>`
 
@@ -483,7 +492,7 @@ async function renderCoachPayments(): Promise<void> {
                 ${!isFree && pay && pay.status !== 'paid' ? `
                 <div class="flex items-center gap-1">
                   <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
-                    data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}">
+                    data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
                     <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
                     <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
                     <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
@@ -499,9 +508,65 @@ async function renderCoachPayments(): Promise<void> {
             </div>`
           }).join('')
 
+      pendingChanges = []
+      updateSaveBar()
       coursePaymentsModal.classList.remove('hidden')
       coursePaymentsModal.focus()
     })
+  })
+
+  // Save/Discard bar for pending payment changes
+  function updateSaveBar(): void {
+    const bar = document.getElementById('pay-save-bar')
+    const countEl = document.getElementById('pay-changes-count')
+    if (!bar || !countEl) return
+    const count = pendingChanges.length
+    if (count > 0) {
+      bar.classList.remove('hidden')
+      countEl.textContent = `${count} cambio${count !== 1 ? 's' : ''} pendiente${count !== 1 ? 's' : ''}`
+    } else {
+      bar.classList.add('hidden')
+    }
+  }
+
+  document.getElementById('pay-save-btn')?.addEventListener('click', async () => {
+    const saveBtn = document.getElementById('pay-save-btn') as HTMLButtonElement
+    const changes = [...pendingChanges]
+    if (changes.length === 0) return
+    saveBtn.disabled = true
+    saveBtn.textContent = 'Guardando...'
+    let ok = 0, fail = 0
+    for (const c of changes) {
+      const { error } = await supabase.from('payments').update({
+        status: c.newStatus,
+        paid_at: c.newStatus === 'paid' ? new Date().toISOString() : null,
+      }).eq('id', c.paymentId)
+      if (error) { fail++ } else {
+        ok++
+        // Sync scholarship
+        if (c.newStatus === 'scholarship' && c.profileId) {
+          await supabase.from('profiles').update({ scholarship: true }).eq('id', c.profileId)
+        } else if (c.oldStatus === 'scholarship' && c.profileId) {
+          const { data: otherScholarships } = await supabase.from('payments').select('id').eq('profile_id', c.profileId).eq('status', 'scholarship').neq('id', c.paymentId)
+          if (!otherScholarships || otherScholarships.length === 0) await supabase.from('profiles').update({ scholarship: false }).eq('id', c.profileId)
+        }
+      }
+    }
+    pendingChanges = []
+    updateSaveBar()
+    saveBtn.disabled = false
+    saveBtn.innerHTML = `${Icon('save', 12)} Guardar cambios`
+    if (fail > 0) toast('warning', `${ok} guardados, ${fail} errores`)
+    else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
+  })
+
+  document.getElementById('pay-discard-btn')?.addEventListener('click', () => {
+    pendingChanges = []
+    const lastCourseId = sessionStorage.getItem('lastPayCourseId')
+    if (lastCourseId) {
+      const btn = document.querySelector(`.course-pay-btn[data-course-id="${lastCourseId}"]`) as HTMLElement
+      if (btn) btn.click()
+    }
   })
 
   // Global modal event handler (delegated, survives DOM changes)
@@ -511,31 +576,34 @@ async function renderCoachPayments(): Promise<void> {
   const payClickHandler = async (e: Event) => {
     const target = e.target as HTMLElement
 
-    // Pay status select
+    // Pay status select - track changes only (no auto-save)
     const sel = target.closest('.pay-status-select') as HTMLSelectElement
     if (sel) {
-      e.preventDefault()
       const newStatus = sel.value
-      const oldStatus = sel.dataset.oldStatus || ''
       const paymentId = sel.dataset.paymentId
       const profileId = sel.dataset.profileId
+      const oldStatus = sel.dataset.oldStatus || ''
       if (!paymentId) return
-      await supabase.from('payments').update({ status: newStatus, paid_at: newStatus === 'paid' ? new Date().toISOString() : null }).eq('id', paymentId)
-      sel.dataset.oldStatus = newStatus
-      // Update badge visual
+      sel.dataset.newStatus = newStatus
+      // Show preview badge
       const badgeSpan = sel.closest('.flex')?.querySelector<HTMLElement>('[class*="rounded-full"][class*="bg-"]')
       if (badgeSpan) {
         const lbls: Record<string, string> = { pending: 'Pendiente', paid: 'Pagado', scholarship: 'Beca', expired: 'Vencido' }
         const cls: Record<string, string> = { pending: 'bg-yellow-500/20 text-yellow-400', paid: 'bg-green-500/20 text-green-400', scholarship: 'bg-blue-500/20 text-blue-400', expired: 'bg-red-500/20 text-red-400' }
         badgeSpan.textContent = lbls[newStatus] || newStatus
-        badgeSpan.className = 'inline-block rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs font-medium ' + (cls[newStatus] || 'text-zinc-500')
+        badgeSpan.className = 'inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ' + (cls[newStatus] || 'text-zinc-500')
       }
-      if (newStatus === 'scholarship' && profileId) {
-        await supabase.from('profiles').update({ scholarship: true }).eq('id', profileId)
-      } else if (oldStatus === 'scholarship' && profileId) {
-        const { data: otherScholarships } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('status', 'scholarship').neq('id', paymentId)
-        if (!otherScholarships || otherScholarships.length === 0) await supabase.from('profiles').update({ scholarship: false }).eq('id', profileId)
+      // Track changes
+      const idx = pendingChanges.findIndex((c: any) => c.paymentId === paymentId)
+      if (newStatus !== oldStatus) {
+        const change = { paymentId, profileId, newStatus, oldStatus }
+        if (idx >= 0) pendingChanges[idx] = change
+        else pendingChanges.push(change)
+      } else {
+        if (idx >= 0) pendingChanges.splice(idx, 1)
       }
+      // Update save bar
+      updateSaveBar()
       return
     }
 
