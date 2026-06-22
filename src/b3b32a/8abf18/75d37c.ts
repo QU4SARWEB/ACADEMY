@@ -22,7 +22,7 @@ export function mountCoachStudents(): void {
 
       const [{ data: payments }, { data: enrollments }] = await Promise.all([
         studentIds.length > 0
-          ? supabase.from('payments').select('profile_id, status').in('profile_id', studentIds)
+          ? supabase.from('payments').select('profile_id, status, created_at').in('profile_id', studentIds).order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
         studentIds.length > 0
           ? supabase.from('enrollments').select('profile_id, status, courses!inner(name)').in('profile_id', studentIds)
@@ -30,7 +30,11 @@ export function mountCoachStudents(): void {
       ])
 
       const paymentMap = new Map<string, string>()
-      for (const p of payments ?? []) paymentMap.set(p.profile_id, p.status)
+      // Last payment by profile_id wins (ordered by created_at desc, then take first per profile)
+      const sortedPays = (payments ?? []).sort((a: any, b: any) => (b.created_at ? new Date(b.created_at).getTime() : 0) - (a.created_at ? new Date(a.created_at).getTime() : 0))
+      for (const p of sortedPays) {
+        if (!paymentMap.has(p.profile_id)) paymentMap.set(p.profile_id, p.status)
+      }
 
       const enrollmentMap = new Map<string, { count: number; anyActive: boolean; courses: string[] }>()
       for (const e of enrollments ?? []) {

@@ -466,7 +466,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         type: 'student',
         status: 'active',
         current_module: 1,
-      }, { onConflict: 'profile_id,course_id,season_id', ignoreDuplicates: true })
+      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
       if (err3) { toast('error', 'Error al inscribir en nuevo curso: ' + err3.message); return }
     }
 

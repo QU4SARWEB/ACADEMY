@@ -69,16 +69,6 @@ export async function initCoachExams(): Promise<void> {
             </div>
             <div class="mb-4 grid grid-cols-2 gap-4">
               <div>
-                <label class="mb-1 block text-sm text-zinc-400">Módulo</label>
-                <select name="module_id"
-                  class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  <option value="">— Sin módulo —</option>
-                  ${(modules ?? []).map((m: any) => `
-                    <option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>
-                  `).join('')}
-                </select>
-              </div>
-              <div>
                 <label class="mb-1 block text-sm text-zinc-400">Nota mínima %</label>
                 <input name="passing_score" type="number" min="0" max="100" value="60"
                   class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
@@ -253,16 +243,6 @@ export async function initCoachExams(): Promise<void> {
                         class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escBr(exam.description || '')}</textarea>
                     </div>
                     <div class="mb-3 grid grid-cols-2 gap-3">
-                      <div>
-                        <label class="mb-1 block text-xs text-zinc-400">Módulo</label>
-                        <select name="module_id"
-                          class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                          <option value="">— Sin módulo —</option>
-                          ${(modules ?? []).map((m: any) => `
-                            <option value="${escapeHtml(m.id)}" ${m.id === exam.module_id ? 'selected' : ''}>${escapeHtml(m.name)}</option>
-                          `).join('')}
-                        </select>
-                      </div>
                       <div>
                         <label class="mb-1 block text-xs text-zinc-400">Nota mínima %</label>
                         <input name="passing_score" type="number" min="0" max="100" value="${exam.passing_score}"

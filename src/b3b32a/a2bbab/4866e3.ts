@@ -65,22 +65,14 @@ export async function initPlayerDashboard(): Promise<void> {
     const gradedSubs = submissions?.filter((s: any) => s.status === 'graded').length ?? 0
     const totalSubs = submissions?.length ?? 0
 
-    const { data: activeSeason } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle()
-
     let paymentStatus: string | null = null
-    if (activeSeason) {
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('status')
-        .eq('profile_id', session.user.id)
-        .eq('season_id', activeSeason.id)
-        .maybeSingle()
-      if (payment) paymentStatus = payment.status
-    }
+    const { data: payment } = await supabase
+      .from('payments')
+      .select('status')
+      .eq('profile_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .maybeSingle()
+    if (payment) paymentStatus = payment.status
 
     const { data: profile } = await supabase.from('profiles').select('full_name, display_name').eq('id', session.user.id).maybeSingle()
     const userName = profile?.display_name || profile?.full_name || 'Jugador'

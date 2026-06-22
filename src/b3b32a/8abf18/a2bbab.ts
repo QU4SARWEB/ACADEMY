@@ -70,7 +70,7 @@ export async function initCoachPlayers(): Promise<void> {
                   const initial = (displayName || '?')[0]
                   const pPayments = paymentsByPlayer[p.id] || []
                   const payStatus = pPayments.length > 0
-                    ? pPayments.some((pp: any) => pp.status === 'paid') ? 'pagado' : 'pendiente'
+                    ? pPayments.some((pp: any) => pp.status === 'paid' || pp.status === 'scholarship') ? 'pagado' : 'pendiente'
                     : 'sin registro'
                   const payColor = payStatus === 'pagado' ? 'text-green-400' : payStatus === 'pendiente' ? 'text-yellow-400' : 'text-zinc-500'
                   return `
