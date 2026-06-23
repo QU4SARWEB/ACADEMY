@@ -45,24 +45,23 @@ export async function initStudentCourses(): Promise<void> {
 
     const enrollHtml = (enrollments ?? []).length === 0
       ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso actualmente.</p>'
-      : (enrollments ?? []).map((e: any) => `
-        <a href="#/students/courses/${escapeHtml(e.course_id)}"
-           class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-          <div class="flex items-center gap-4">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
-              ${Icon('bookOpen', 20)}
+      : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ${(enrollments ?? []).map((e: any) => `
+          <a href="#/students/courses/${escapeHtml(e.course_id)}"
+             class="glass rounded-xl p-5 transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 block">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
+                ${Icon('bookOpen', 20)}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-medium text-white truncate">${escapeHtml(e.courses?.name || '')}</h3>
+                <p class="text-xs text-zinc-500">${e.courses?.duration_months || 0} meses</p>
+              </div>
+              ${Icon('arrowRight', 16)}
             </div>
-            <div>
-              <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || '')}</h3>
-              <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')} · ${e.courses?.duration_months || 0} meses</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            ${''}
-            ${Icon('arrowRight', 16)}
-          </div>
-        </a>
-      `).join('')
+          </a>
+        `).join('')}
+      </div>`
 
     const availableHtml = (coursesData ?? []).length === 0
       ? ''
