@@ -44,10 +44,21 @@ export async function initCoachGrades(): Promise<void> {
       ? await supabase.from('exam_attempts').select('*').in('exam_id', examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000'])
       : { data: [] }
 
+    // Fetch task submissions for this course
+    const enrollIds = (enrollments ?? []).map((e: any) => e.id)
+    const { data: allTaskSubs } = enrollIds.length > 0
+      ? await supabase.from('task_submissions').select('*').in('enrollment_id', enrollIds).not('score', 'is', null)
+      : { data: [] }
+
     const resultsByEnrollment: Record<string, any[]> = {}
     for (const r of allAttempts ?? []) {
       if (!resultsByEnrollment[r.enrollment_id]) resultsByEnrollment[r.enrollment_id] = []
       resultsByEnrollment[r.enrollment_id].push(r)
+    }
+    const taskSubsByEnrollment: Record<string, any[]> = {}
+    for (const r of allTaskSubs ?? []) {
+      if (!taskSubsByEnrollment[r.enrollment_id]) taskSubsByEnrollment[r.enrollment_id] = []
+      taskSubsByEnrollment[r.enrollment_id].push(r)
     }
 
     const html = `
@@ -71,6 +82,7 @@ export async function initCoachGrades(): Promise<void> {
                     <div class="text-[10px] text-zinc-600">/${ev.max_score} (${ev.weight}%)</div>
                   </th>
                 `).join('')}
+                <th class="whitespace-nowrap px-3 py-2 font-medium text-center">Tareas</th>
                 <th class="whitespace-nowrap px-3 py-2 font-medium text-center">Nota final</th>
                 <th class="whitespace-nowrap px-3 py-2 font-medium text-center">Promovido</th>
               </tr>
@@ -87,6 +99,12 @@ export async function initCoachGrades(): Promise<void> {
                       const score = result?.score
                       return `<td class="px-3 py-3 text-center ${score !== null && score !== undefined ? (score >= ev.max_score / 2 ? 'text-green-400' : 'text-red-400') : 'text-zinc-600'}">${score !== null && score !== undefined ? score : '—'}</td>`
                     }).join('')}
+                    <td class="px-3 py-3 text-center">${(() => {
+                      const subs = taskSubsByEnrollment[enr.id] || []
+                      if (subs.length === 0) return '<span class="text-zinc-600">—</span>'
+                      const avg = Math.round(subs.reduce((s: number, t: any) => s + t.score, 0) / subs.length)
+                      return `<span class="${avg >= 70 ? 'text-green-400' : avg >= 40 ? 'text-yellow-400' : 'text-red-400'}">${avg}</span> <span class="text-zinc-600 text-[10px]">(${subs.length})</span>`
+                    })()}</td>
                     <td class="px-3 py-3 text-center font-semibold text-white">
                       ${enr.final_grade !== null ? enr.final_grade : '—'}
                     </td>
