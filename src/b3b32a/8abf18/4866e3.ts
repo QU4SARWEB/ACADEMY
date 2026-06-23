@@ -219,6 +219,7 @@ export async function initCoachDashboard(): Promise<void> {
             const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0
             const expiresAt = createdAt + EXPIRE_MS
             const remaining = expiresAt - now
+            if (remaining <= 0) return ''
             const daysLeft = Math.floor(remaining / 86400000)
             const hoursLeft = Math.floor((remaining % 86400000) / 3600000)
             const minsLeft = Math.floor((remaining % 3600000) / 60000)
@@ -235,7 +236,7 @@ export async function initCoachDashboard(): Promise<void> {
               </div>
               <span class="shrink-0 text-xs font-mono ${isUrgent ? 'text-red-400' : isSoon ? 'text-yellow-400' : 'text-zinc-400'}">${timeText}</span>
             </div>`
-          }).join('')}
+          }).filter(Boolean).join('')}
         </div>
       </div>` : ''}
 
