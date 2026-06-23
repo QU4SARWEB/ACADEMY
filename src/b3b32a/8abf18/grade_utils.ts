@@ -1,36 +1,63 @@
 import { supabase } from '@/304244'
 import { toast } from '@/4725dc/4f2900'
 
+function scoreToLetter(score: number): string {
+  const s = Math.round(score)
+  if (s >= 18) return 'AD'
+  if (s >= 14) return 'A'
+  if (s >= 11) return 'B'
+  if (s >= 5) return 'C'
+  return 'D'
+}
+
 export async function recalcFinalGrade(enrollmentId: string): Promise<void> {
   if (!enrollmentId) return
   const { data: enrollment } = await supabase.from('enrollments').select('id, profile_id, course_id').eq('id', enrollmentId).maybeSingle()
   if (!enrollment) return
-  const profileId = enrollment.profile_id
-  const scores: number[] = []
 
-  // 1. Exam attempts via this enrollment
-  const { data: exams } = await supabase.from('exam_attempts').select('score').eq('enrollment_id', enrollmentId).not('score', 'is', null)
-  for (const e of exams ?? []) { if (e.score !== null) scores.push(e.score) }
-
-  // 2. Task submissions via this enrollment
-  const { data: tasks } = await supabase.from('task_submissions').select('score').eq('enrollment_id', enrollmentId).not('score', 'is', null)
-  for (const t of tasks ?? []) { if (t.score !== null) scores.push(t.score) }
-
-  // 3. Manual grades via profile_id
-  const { data: grades } = await supabase.from('grades').select('score').eq('profile_id', profileId)
-  for (const g of grades ?? []) { if (g.score !== null) scores.push(g.score) }
-
-  // 4. Practical scores via practical_team_members
-  const { data: members } = await supabase.from('practical_team_members').select('id').eq('enrollment_id', enrollmentId)
-  const memberIds = (members ?? []).map(m => m.id)
-  if (memberIds.length > 0) {
-    const { data: pScores } = await supabase.from('practical_scores').select('score').in('practical_team_member_id', memberIds).not('score', 'is', null)
-    for (const ps of pScores ?? []) { if (ps.score !== null) scores.push(ps.score) }
+  // 1. Monthly grades (60%) — average score 0-20
+  const { data: months } = await supabase.from('monthly_grades').select('score').eq('enrollment_id', enrollmentId)
+  let monthlyAvg = 0
+  if (months && months.length > 0) {
+    monthlyAvg = months.reduce((s: number, m: any) => s + Number(m.score), 0) / months.length
   }
 
-  if (scores.length === 0) return
-  const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-  await supabase.from('enrollments').update({ final_grade: avg }).eq('id', enrollmentId)
+  // 2. Exam attempts (20%) — score is 0-100, convert to 0-20
+  const { data: exams } = await supabase.from('exam_attempts').select('score').eq('enrollment_id', enrollmentId).not('score', 'is', null)
+  let examAvg = 0
+  if (exams && exams.length > 0) {
+    examAvg = exams.reduce((s: number, e: any) => s + Number(e.score), 0) / exams.length / 5
+  }
+
+  // 3. Task submissions (20%) — score relative to max_score
+  const { data: tasks } = await supabase.from('task_submissions').select('score, tasks!inner(max_score)').eq('enrollment_id', enrollmentId).not('score', 'is', null)
+  let taskAvg = 0
+  if (tasks && tasks.length > 0) {
+    const vals: number[] = []
+    for (const t of tasks) {
+      const maxScore = (t as any).tasks?.max_score
+      if (maxScore && maxScore > 0) vals.push((Number(t.score) / Number(maxScore)) * 20)
+    }
+    if (vals.length > 0) taskAvg = vals.reduce((a, b) => a + b, 0) / vals.length
+  }
+
+  const hasMonthly = months && months.length > 0
+  let finalScore20: number
+  if (hasMonthly) {
+    finalScore20 = (monthlyAvg * 0.6) + (examAvg * 0.2) + (taskAvg * 0.2)
+  } else {
+    // No monthly grades yet — use only exams + tasks, normalized
+    let totalWeight = 0
+    let totalScore = 0
+    if (exams && exams.length > 0) { totalScore += examAvg * 0.5; totalWeight += 0.5 }
+    if (tasks && tasks.length > 0) { totalScore += taskAvg * 0.5; totalWeight += 0.5 }
+    finalScore20 = totalWeight > 0 ? totalScore / totalWeight : 0
+  }
+
+  const finalGrade = Math.round(finalScore20 * 5)
+  const letter = scoreToLetter(finalScore20)
+
+  await supabase.from('enrollments').update({ final_grade: finalGrade }).eq('id', enrollmentId)
 }
 
 export async function recalcAllEnrollmentsForProfile(profileId: string): Promise<void> {
@@ -47,27 +74,18 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
   const grade = enrollment.final_grade
   if (grade === null || grade < 70) return
 
-  // Get current course's min_rank and next course
   const { data: course } = await supabase.from('courses').select('name, display_order').eq('id', courseId).maybeSingle()
   if (!course) return
   const { data: nextCourse } = await supabase
-    .from('courses')
-    .select('id, name, min_rank')
-    .eq('is_active', true)
-    .gt('display_order', course.display_order)
-    .order('display_order')
-    .limit(1)
-    .maybeSingle()
+    .from('courses').select('id, name, min_rank').eq('is_active', true)
+    .gt('display_order', course.display_order).order('display_order').limit(1).maybeSingle()
   if (!nextCourse) return
 
-  // Check rank requirement
   const { data: profile } = await supabase.from('profiles').select('rank').eq('id', profileId).maybeSingle()
   if (!profile?.rank) return
   const rankOk = !nextCourse.min_rank || profile.rank === nextCourse.min_rank
+  if (!rankOk) return
 
-  if (!rankOk) return // rank not met, can't promote
-
-  // Auto-promote: mark old as graduated, create new enrollment and payment
   await supabase.from('enrollments').update({ status: 'graduated', promoted: true }).eq('id', enrollmentId)
   await supabase.from('promotions').insert({
     enrollment_id: enrollmentId, profile_id: profileId,
@@ -79,18 +97,15 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
     type: 'student', status: 'active', current_module: 1,
   }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
 
-  // Create payment for promoted course (respecting scholarship and price)
   if (newEnroll) {
     const { data: promCourse } = await supabase.from('courses').select('price').eq('id', nextCourse.id).maybeSingle()
     const coursePrice = promCourse?.price ?? 1.54
     const { data: promProfile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
     const hasScholarship = promProfile?.scholarship === true
-
     let payStatus: string
-    if (coursePrice === 0) payStatus = 'paid'
+    if (coursePrice === 0) payStatus = 'free'
     else if (hasScholarship) payStatus = 'scholarship'
     else payStatus = 'pending'
-
     await supabase.from('payments').upsert({
       profile_id: profileId, enrollment_id: newEnroll.id,
       type: 'student', amount: coursePrice, status: payStatus,
