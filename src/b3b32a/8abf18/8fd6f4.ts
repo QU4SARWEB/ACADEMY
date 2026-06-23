@@ -67,13 +67,13 @@ export async function initCoachTeams(): Promise<void> {
             </div>
             <div>
               <label class="mb-1 block text-xs text-zinc-400">Curso</label>
-              <select name="seasonId"
-                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                <option value="">Sin curso</option>
-                ${(allSeasons ?? []).map((s: any) =>
-                  `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}${s.is_active ? ' (Activa)' : ''}</option>`
+              <input type="hidden" name="seasonId" id="team-course-id" value="" />
+              <div class="flex flex-wrap gap-2">
+                ${(allSeasons ?? []).map((c: any) =>
+                  `<button type="button" class="team-course-btn rounded-xl border px-3 py-1.5 text-xs transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 text-zinc-300 hover:text-white bg-zinc-900/50"
+                    data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`
                 ).join('')}
-              </select>
+              </div>
             </div>
           </div>
           <p id="team-form-error" class="hidden text-xs text-red-400"></p>
