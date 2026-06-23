@@ -12,9 +12,12 @@ export function renderCoachTasks(): string {
 
 export async function initCoachTasks(): Promise<void> {
   try {
+    const { data: courses } = await supabase.from('courses').select('id, name').order('name')
+    const allCourses = courses ?? []
+
     const { data } = await supabase
       .from('tasks')
-      .select('*')
+      .select('*, courses!course_id?name')
       .order('due_date', { ascending: false })
 
     const html = `
@@ -28,30 +31,31 @@ export async function initCoachTasks(): Promise<void> {
           ${Icon('plus', 16)} Nueva tarea
         </a>
       </div>
-      <div class="space-y-3">
+
+      <div class="mb-4">
+        <select id="task-course-filter"
+          class="w-full sm:w-64 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+          <option value="">Todos los cursos</option>
+          ${allCourses.map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div id="task-list" class="space-y-3">
         ${(data ?? []).length === 0
           ? '<p class="text-sm text-zinc-500">No hay tareas creadas.</p>'
-          : (data ?? []).map((t: any) => `
-            <div class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-              <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex-1 min-w-0">
-                <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
-                <p class="mt-0.5 text-sm text-zinc-500">
-                  ${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
-                </p>
-              </a>
-              <div class="flex items-center gap-3 shrink-0">
-                <div class="text-right text-xs text-zinc-500">
-                  <p>${t.due_date ? formatDate(t.due_date) : 'Sin fecha'}</p>
-                  ${t.max_score ? `<p>Máx: ${t.max_score} pts</p>` : ''}
-                </div>
-                <button class="delete-task-btn rounded-lg border border-red-700 px-2 py-1 text-xs text-red-400 transition hover:bg-red-900/30" data-id="${escapeHtml(t.id)}">${Icon('trash', 12)}</button>
-              </div>
-            </div>
-          `).join('')
+          : (data ?? []).map((t: any) => renderTaskItem(t)).join('')
         }
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.getElementById('task-course-filter')?.addEventListener('change', (e) => {
+      const courseId = (e.target as HTMLSelectElement).value
+      const filtered = !courseId ? (data ?? []) : (data ?? []).filter((t: any) => t.course_id === courseId)
+      document.getElementById('task-list')!.innerHTML = filtered.length === 0
+        ? '<p class="text-sm text-zinc-500">No hay tareas para este curso.</p>'
+        : filtered.map((t: any) => renderTaskItem(t)).join('')
+    })
 
     if ((window as any).__channels?.tasks) {
       supabase.removeChannel((window as any).__channels.tasks)
@@ -85,4 +89,23 @@ export async function initCoachTasks(): Promise<void> {
     console.error('Error loading tasks:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar tareas</p>'
   }
+}
+
+function renderTaskItem(t: any): string {
+  return `
+    <div class="glass glass-hover flex items-center justify-between rounded-xl p-4">
+      <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex-1 min-w-0">
+        <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
+        <p class="mt-0.5 text-sm text-zinc-500">
+          ${t.courses?.name ? escapeHtml(t.courses.name) + ' · ' : ''}${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
+        </p>
+      </a>
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="text-right text-xs text-zinc-500">
+          <p>${t.due_date ? formatDate(t.due_date) : 'Sin fecha'}</p>
+          ${t.max_score ? `<p>Máx: ${t.max_score} pts</p>` : ''}
+        </div>
+        <button class="delete-task-btn rounded-lg border border-red-700 px-2 py-1 text-xs text-red-400 transition hover:bg-red-900/30" data-id="${escapeHtml(t.id)}">${Icon('trash', 12)}</button>
+      </div>
+    </div>`
 }
