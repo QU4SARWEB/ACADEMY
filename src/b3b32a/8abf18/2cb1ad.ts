@@ -43,9 +43,9 @@ export async function initCoachTasks(): Promise<void> {
         </div>
       </div>
 
-      <div id="task-list" class="space-y-3">
+      <div id="task-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         ${(data ?? []).length === 0
-          ? '<p class="text-sm text-zinc-500">No hay tareas creadas.</p>'
+          ? '<p class="text-sm text-zinc-500 col-span-full">No hay tareas creadas.</p>'
           : (data ?? []).map((t: any) => renderTaskItem(t, courseMap)).join('')
         }
       </div>`
@@ -65,7 +65,7 @@ export async function initCoachTasks(): Promise<void> {
       const courseId = btn.dataset.courseId || ''
       const filtered = !courseId ? (data ?? []) : (data ?? []).filter((t: any) => t.course_id === courseId)
       document.getElementById('task-list')!.innerHTML = filtered.length === 0
-        ? '<p class="text-sm text-zinc-500">No hay tareas para este curso.</p>'
+        ? '<p class="text-sm text-zinc-500 col-span-full">No hay tareas para este curso.</p>'
         : filtered.map((t: any) => renderTaskItem(t, courseMap)).join('')
     })
 
@@ -105,19 +105,26 @@ export async function initCoachTasks(): Promise<void> {
 
 function renderTaskItem(t: any, courseMap?: Map<string, string>): string {
   return `
-    <div class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-      <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex-1 min-w-0">
-        <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
-        <p class="mt-0.5 text-sm text-zinc-500">
-          ${courseMap?.get(t.course_id) ? escapeHtml(courseMap.get(t.course_id)!) + ' · ' : ''}${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
-        </p>
-      </a>
-      <div class="flex items-center gap-3 shrink-0">
-        <div class="text-right text-xs text-zinc-500">
-          <p>${t.due_date ? formatDate(t.due_date) : 'Sin fecha'}</p>
-          ${t.max_score ? `<p>Máx: ${t.max_score} pts</p>` : ''}
+    <div class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5">
+      <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex flex-col h-full group">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
+            ${Icon('clipboardList', 24)}
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="font-medium text-white truncate">${escapeHtml(t.title)}</h3>
+            <p class="text-xs text-zinc-500">${courseMap?.get(t.course_id) ? escapeHtml(courseMap.get(t.course_id)!) : 'Sin curso'}</p>
+          </div>
         </div>
-        <button class="delete-task-btn rounded-lg border border-red-700 px-2 py-1 text-xs text-red-400 transition hover:bg-red-900/30" data-id="${escapeHtml(t.id)}">${Icon('trash', 12)}</button>
-      </div>
+        <p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${t.description ? escapeHtml(t.description.substring(0, 80)) : 'Sin descripción'}</p>
+        <div class="space-y-1 mb-3">
+          ${t.due_date ? `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('calendar', 12)} Límite: ${formatDate(t.due_date)}</div>` : ''}
+          ${t.max_score ? `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('target', 12)} Máx: ${t.max_score} pts</div>` : ''}
+        </div>
+        <div class="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800">
+          <span class="text-xs text-zinc-500 group-hover:text-white transition">Ver entregas →</span>
+          <button class="delete-task-btn rounded-lg border border-red-700 px-2 py-1 text-xs text-red-400 transition hover:bg-red-900/30" data-id="${escapeHtml(t.id)}" onclick="event.stopPropagation();event.preventDefault()">${Icon('trash', 10)}</button>
+        </div>
+      </a>
     </div>`
 }

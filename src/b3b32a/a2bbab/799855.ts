@@ -66,13 +66,13 @@ export async function initPlayerSchedule(): Promise<void> {
                   <p class="text-xs text-zinc-500">${isToday ? 'Hoy' : ''} ${dayScheds.length} entrenamiento${dayScheds.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
-              <div class="space-y-2">
+              <div class="grid gap-3 sm:grid-cols-2">
                 ${dayScheds.map((s: any) => {
                   const startLocal = formatTimeWithTZ(s.start_time?.slice(0, 5), s.timezone)
                   const endLocal = formatTimeWithTZ(s.end_time?.slice(0, 5), s.timezone)
                   const showTZ = s.timezone && s.timezone !== getLocalTZ()
                   return `
-                  <button class="sched-item w-full text-left flex items-center gap-4 rounded-lg bg-zinc-900/50 px-4 py-3 text-sm transition hover:bg-zinc-800/50 cursor-pointer"
+                  <button class="sched-item w-full text-left glass rounded-xl p-4 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 cursor-pointer"
                     data-title="${escapeHtml(s.title)}"
                     data-start="${startLocal}"
                     data-end="${endLocal}"
@@ -81,21 +81,23 @@ export async function initPlayerSchedule(): Promise<void> {
                     data-week="${s.week_number || ''}"
                     data-desc="${escBr(s.description || '')}"
                     data-tz="${showTZ ? 'local' : ''}">
-                    <div class="flex flex-col items-center min-w-[52px]">
-                      <span class="text-xs font-bold text-white">${startLocal}</span>
-                      <span class="text-[10px] text-zinc-600">${endLocal}</span>
-                      ${showTZ ? `<span class="text-[9px] text-zinc-700 mt-0.5">local</span>` : ''}
-                    </div>
-                    <div class="h-8 w-[2px] rounded-full ${isToday ? 'bg-green-400' : 'bg-zinc-700'}"></div>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-medium text-white truncate">${escapeHtml(s.title)}</p>
-                      <div class="flex flex-wrap gap-1.5 mt-0.5">
-                        ${s.type ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${escapeHtml(s.type)}</span>` : ''}
-                        ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${Icon('mapPin', 10)} ${escapeHtml(s.location)}</span>` : ''}
-                        ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="flex flex-col items-center min-w-[56px]">
+                        <span class="text-sm font-bold text-white">${startLocal}</span>
+                        <span class="text-[10px] text-zinc-500">${endLocal}</span>
+                        ${showTZ ? `<span class="text-[9px] text-zinc-600">local</span>` : ''}
+                      </div>
+                      <div class="h-10 w-[2px] rounded-full ${isToday ? 'bg-green-400' : 'bg-zinc-700'}"></div>
+                      <div class="min-w-0 flex-1">
+                        <p class="font-medium text-white truncate">${escapeHtml(s.title)}</p>
+                        <div class="flex flex-wrap gap-1.5 mt-1">
+                          ${s.type ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${escapeHtml(s.type)}</span>` : ''}
+                          ${s.location ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">${Icon('mapPin', 10)} ${escapeHtml(s.location)}</span>` : ''}
+                          ${s.week_number ? `<span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">Sem ${s.week_number}</span>` : ''}
+                        </div>
                       </div>
                     </div>
-                    ${s.description ? `<span class="hidden sm:block text-xs text-zinc-600 max-w-[120px] truncate">${escBr(s.description)}</span>` : ''}
+                    ${s.description ? `<p class="text-xs text-zinc-500 line-clamp-2">${escBr(s.description)}</p>` : ''}
                   </button>`
                 }).join('')}
               </div>

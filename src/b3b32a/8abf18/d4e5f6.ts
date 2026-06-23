@@ -1,6 +1,6 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml } from '@/2b3583/e0ebc3'
+import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
@@ -27,7 +27,7 @@ const modalsHtml = `
 
 export async function initCoachExamsOverview(): Promise<void> {
   try {
-    const { data: allCourses } = await supabase.from('courses').select('id, name, display_order').eq('is_active', true).order('display_order')
+    const { data: allCourses } = await supabase.from('courses').select('*').eq('is_active', true).order('display_order')
     const courses = allCourses ?? []
     let currentCourseId = ''
     let currentCourseName = ''
@@ -35,15 +35,20 @@ export async function initCoachExamsOverview(): Promise<void> {
     async function renderGrid() {
       currentCourseId = ''
       const courseIds = courses.map(c => c.id)
-      const { data: exams } = await supabase.from('exams').select('course_id').in('course_id', courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000'])
-      const { data: enrolls } = await supabase.from('enrollments').select('course_id').in('course_id', courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000'])
-      const examCount: Record<string, number> = {}; const studentCount: Record<string, number> = {}
+      const idFilter = courseIds.length ? courseIds : ['00000000-0000-0000-0000-000000000000']
+      const [{ data: exams }, { data: enrolls }, { data: tasks }] = await Promise.all([
+        supabase.from('exams').select('course_id').in('course_id', idFilter),
+        supabase.from('enrollments').select('course_id').in('course_id', idFilter),
+        supabase.from('tasks').select('course_id').in('course_id', idFilter),
+      ])
+      const examCount: Record<string, number> = {}; const studentCount: Record<string, number> = {}; const taskCount: Record<string, number> = {}
       for (const e of exams ?? []) { if (!examCount[e.course_id]) examCount[e.course_id] = 0; examCount[e.course_id]++ }
       for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }
+      for (const t of tasks ?? []) { if (!taskCount[t.course_id]) taskCount[t.course_id] = 0; taskCount[t.course_id]++ }
       document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Exámenes</h1><p class="mt-1 text-sm text-zinc-500">${(exams ?? []).length} exámenes en ${courses.length} cursos</p></div>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        ${courses.map(c => '<button class="course-exam-btn glass rounded-xl p-5 text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5" data-course-id="' + c.id + '" data-course-name="' + escapeHtml(c.name) + '"><div class="flex items-center justify-between"><div><h3 class="font-medium text-white">' + escapeHtml(c.name) + '</h3><p class="mt-1 text-sm text-zinc-500">' + (examCount[c.id] || 0) + ' exámenes · ' + (studentCount[c.id] || 0) + ' estudiantes</p></div>' + Icon('chevronRight', 20) + '</div></button>').join('')}
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        ${courses.map(c => '<button class="course-exam-btn glass rounded-xl p-5 flex flex-col text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group" data-course-id="' + c.id + '" data-course-name="' + escapeHtml(c.name) + '"><div class="flex items-center gap-3 mb-4"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">' + Icon('scrollText', 24) + '</div><div class="min-w-0 flex-1"><h3 class="font-medium text-white truncate">' + escapeHtml(c.name) + '</h3><p class="text-xs text-zinc-500">' + (c.duration_months || 0) + ' meses</p></div></div>' + (c.description ? '<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">' + escBr(c.description.substring(0, 80)) + '</p>' : '<div class="flex-1"></div>') + '<div class="space-y-1 mb-3"><div class="flex items-center gap-2 text-xs text-zinc-400">' + Icon('scrollText', 12) + ' ' + (examCount[c.id] || 0) + ' exámenes</div><div class="flex items-center gap-2 text-xs text-zinc-400">' + Icon('clipboardList', 12) + ' ' + (taskCount[c.id] || 0) + ' tareas</div><div class="flex items-center gap-2 text-xs text-zinc-400">' + Icon('users', 12) + ' ' + (studentCount[c.id] || 0) + ' estudiantes</div></div><div class="mt-auto pt-3 border-t border-zinc-800 text-xs text-zinc-500">' + (c.price && c.price > 0 ? '$' + c.price + '/mes' : 'Gratis') + '</div></button>').join('')}
       </div>` + modalsHtml
       document.querySelectorAll('.course-exam-btn').forEach(btn => {
         btn.addEventListener('click', () => {
