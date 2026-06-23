@@ -23,19 +23,19 @@ export async function initPlayerCourses(): Promise<void> {
         <h1 class="font-heading text-2xl font-bold text-white">Mis Cursos</h1>
         <p class="mt-1 text-sm text-zinc-500">Tus cursos activos</p>
       </div>
-      <div class="space-y-3">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         ${(enrollments ?? []).length === 0
-          ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>'
+          ? '<p class="text-sm text-zinc-500 col-span-full">No estás inscrito en ningún curso.</p>'
           : (enrollments ?? []).map((e: any) => `
-            <div class="glass rounded-xl p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
-                  <p class="mt-0.5 text-sm text-zinc-500">
-                    ${escapeHtml(e.seasons?.name || '')} ${e.courses?.min_rank ? '· Rango mín: ' + escapeHtml(e.courses.min_rank) : ''}
-                  </p>
+            <div class="glass rounded-xl p-5 transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
+                  ${Icon('bookOpen', 20)}
                 </div>
-                <span class="text-xs text-green-400">${e.status}</span>
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-medium text-white truncate">${escapeHtml(e.courses?.name || 'Curso')}</h3>
+                  <p class="text-xs text-zinc-500">${e.courses?.duration_months || 0} meses${e.courses?.min_rank ? ' · ' + escapeHtml(e.courses.min_rank) : ''}</p>
+                </div>
               </div>
             </div>
           `).join('')
