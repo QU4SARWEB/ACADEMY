@@ -560,7 +560,7 @@ export async function initStudentExamTake(): Promise<void> {
             selected_option: ans || null,
             text_answer: null,
             is_correct: ans ? isCorrect : null,
-            score: ans ? (isCorrect ? 20 : 0) : null,
+            score: ans ? (isCorrect ? (eq.points || 5) : 0) : null,
           }
         }
 
@@ -588,8 +588,21 @@ export async function initStudentExamTake(): Promise<void> {
 
       // Calculate score
       const autoGraded = answerRows.filter((a: any) => a.is_correct != null)
-      const correctCount = autoGraded.filter((a: any) => a.is_correct).length
-      const score = autoGraded.length > 0 ? (correctCount / autoGraded.length) * 20 : null
+      const totalPts = autoGraded.reduce((s: number, a: any) => s + (a.score !== null ? (a.is_correct ? a.score : 0) : 0), 0)
+      const maxPts = autoGraded.reduce((s: number, a: any) => {
+        // Find the question's max points by checking all answerRows for the same question
+        return s + (a.score !== null ? Math.abs(a.score) : 0)
+      }, 0)
+      // Recalculate properly
+      let earnedPts = 0, possiblePts = 0
+      for (const a of answerRows) {
+        if (a.is_correct != null) {
+          const pts = a.score !== null ? Math.abs(a.score) : 5
+          possiblePts += pts
+          if (a.is_correct) earnedPts += pts
+        }
+      }
+      const score = possiblePts > 0 ? (earnedPts / possiblePts) * 20 : null
 
       const { error: updError } = await supabase
         .from('exam_attempts')
