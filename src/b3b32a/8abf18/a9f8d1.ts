@@ -187,31 +187,34 @@ export async function initCoachExams(): Promise<void> {
         <div class="w-[800px] shrink-0">
         <div class="glass rounded-xl p-6">
         <h2 class="mb-4 font-heading text-lg font-bold text-white">Exámenes (${(exams ?? []).length})</h2>
-        <div class="space-y-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           ${(exams ?? []).length === 0
-            ? '<p class="text-sm text-zinc-500">No hay exámenes aún.</p>'
+            ? '<p class="text-sm text-zinc-500 col-span-full">No hay exámenes aún.</p>'
             : (exams ?? []).map((exam: any) => `
-              <div class="exam-item glass rounded-xl p-4" data-exam-id="${escapeHtml(exam.id)}">
-                <div class="flex items-start justify-between">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-medium text-white">${escapeHtml(exam.title)}</h3>
-                      ${exam.is_published
-                        ? '<span class="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">Publicado</span>'
-                        : '<span class="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs text-yellow-400">Borrador</span>'
-                      }
-                    </div>
-                    <p class="mt-1 text-xs text-zinc-500">
-                      Nota mín: ${exam.passing_score}/20 · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
-              ${exam.due_date ? ` · Vence: ${formatDate(exam.due_date)}` : ''}
-                    </p>
+              <div class="exam-item glass rounded-xl p-5 flex flex-col" data-exam-id="${escapeHtml(exam.id)}">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
+                    ${Icon('scrollText', 24)}
                   </div>
-                      <div class="flex gap-2">
-                        <button class="exam-questions-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('bookOpen', 12)} Preguntas</button>
-                        <button class="exam-answers-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('users', 12)} Respuestas</button>
-                        <button class="edit-exam-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 12)} Editar</button>
-                        <button class="delete-exam-btn rounded-lg border border-red-700 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-900/30">${Icon('trash', 12)}</button>
-                      </div>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-medium text-white truncate">${escapeHtml(exam.title)}</h3>
+                    <p class="text-xs">${exam.is_published
+                      ? '<span class="text-green-400">Publicado</span>'
+                      : '<span class="text-yellow-400">Borrador</span>'
+                    }</p>
+                  </div>
+                </div>
+                <p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${exam.description ? escapeHtml(exam.description.substring(0, 80)) : 'Sin descripción'}</p>
+                <div class="space-y-1 mb-3">
+                  <div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('target', 12)} Mín: ${exam.passing_score}/20</div>
+                  <div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('clock', 12)} ${exam.time_limit || 300} min${exam.max_attempts ? ` · ${exam.max_attempts} intentos` : ''}</div>
+                  ${exam.due_date ? `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('calendar', 12)} Vence: ${formatDate(exam.due_date)}</div>` : ''}
+                </div>
+                <div class="flex flex-wrap gap-2 mt-auto pt-3 border-t border-zinc-800">
+                  <button class="exam-questions-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('bookOpen', 12)} Preguntas</button>
+                  <button class="exam-answers-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('users', 12)} Respuestas</button>
+                  <button class="edit-exam-btn rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 12)} Editar</button>
+                  <button class="delete-exam-btn rounded-lg border border-red-700 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-900/30">${Icon('trash', 12)}</button>
                 </div>
 
                 <div class="edit-exam-form mt-4 hidden border-t border-zinc-700 pt-4">
@@ -229,7 +232,7 @@ export async function initCoachExams(): Promise<void> {
                     </div>
                     <div class="mb-3 grid grid-cols-2 gap-3">
                       <div>
-                        <label class="mb-1 block text-xs text-zinc-400">Nota mínima %</label>
+                        <label class="mb-1 block text-xs text-zinc-400">Nota mínima</label>
                         <input name="passing_score" type="number" min="0" max="20" value="${exam.passing_score}"
                           class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                       </div>

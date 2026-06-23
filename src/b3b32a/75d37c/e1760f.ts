@@ -86,50 +86,48 @@ export async function initStudentExamList(): Promise<void> {
           <h1 class="font-heading text-2xl font-bold text-white">Exámenes — ${escapeHtml(course?.name || '')}</h1>
         </div>
 
-        <div class="space-y-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           ${examList.length === 0
-            ? '<p class="text-sm text-zinc-500">No hay exámenes disponibles.</p>'
+            ? '<p class="text-sm text-zinc-500 col-span-full">No hay exámenes disponibles.</p>'
             : examList.map((exam: any) => {
                 const attempt = attemptsByExam[exam.id]
+                const subCount = (window as any).__examSubmittedCount?.[exam.id] || 0
+                const canRetry = subCount < (exam.max_attempts ?? 1)
+                const isInProgress = attempt?.status === 'in_progress'
+                const showAction = !!enrollment && (canRetry || isInProgress)
+                const actionLabel = isInProgress ? 'Continuar' : attempt ? 'Reintentar' : 'Iniciar'
+                const passed = attempt && (attempt.score ?? 0) >= (exam.passing_score ?? 12)
                 return `
-                  <div class="glass rounded-xl p-4">
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="min-w-0 flex-1">
-                        <h2 class="text-base font-semibold text-white">${escapeHtml(exam.title)}</h2>
-                        ${exam.description ? `<p class="mt-1 text-sm text-zinc-400">${escBr(exam.description)}</p>` : ''}
-                        <div class="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-                          <span>Tiempo: ${exam.time_limit || 300} min</span>
-                          <span>Nota mínima: ${exam.passing_score}/20</span>
-                          ${exam.max_attempts ? `<span>Intentos: ${exam.max_attempts}</span>` : ''}
-                          ${exam.due_date ? `<span>Vence: ${formatDate(exam.due_date)}</span>` : ''}
-                        </div>
-                        ${attempt
-                          ? `<p class="mt-2 text-sm ${(attempt.score ?? 0) >= (exam.passing_score ?? 12) ? 'text-green-400' : 'text-yellow-400'}">
-                              Puntaje: ${attempt.score ?? '—'}/20
-                            </p>`
-                          : ''
-                        }
+                  <div class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5">
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
+                        ${Icon('scrollText', 24)}
                       </div>
-                      ${(() => {
-                        const subCount = (window as any).__examSubmittedCount?.[exam.id] || 0
-                        const canRetry = subCount < (exam.max_attempts ?? 1)
-                        const isInProgress = attempt?.status === 'in_progress'
-                        if (!enrollment) return ''
-                        if (canRetry || isInProgress) {
-                          const label = isInProgress ? 'Continuar' : attempt ? 'Reintentar' : 'Iniciar'
-                          return `<a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(exam.id)}"
-                               class="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-                              ${Icon('play', 16)} ${label}
-                            </a>`
-                        }
-                        return ''
-                      })()}
+                      <div class="min-w-0 flex-1">
+                        <h3 class="font-medium text-white truncate">${escapeHtml(exam.title)}</h3>
+                        <p class="text-xs text-zinc-500">${exam.max_attempts ? `${exam.max_attempts} intento(s)` : 'Sin límite'}</p>
+                      </div>
+                    </div>
+                    ${exam.description ? `<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${escBr(exam.description.substring(0, 80))}</p>` : '<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">Sin descripción</p>'}
+                    <div class="space-y-1 mb-3">
+                      <div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('clock', 12)} ${exam.time_limit || 300} min</div>
+                      <div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('target', 12)} Mín: ${exam.passing_score}/20</div>
+                      ${exam.due_date ? `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('calendar', 12)} Vence: ${formatDate(exam.due_date)}</div>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800">
+                      ${attempt
+                        ? `<span class="text-xs font-medium ${passed ? 'text-green-400' : 'text-yellow-400'}">${attempt.score ?? '—'}/20</span>`
+                        : '<span class="text-xs text-zinc-500">Sin intento</span>'
+                      }
+                      ${showAction
+                        ? `<a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(exam.id)}" class="btn-glow flex items-center gap-1 rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">${Icon('play', 12)} ${actionLabel}</a>`
+                        : ''
+                      }
                     </div>
                   </div>`
               }).join('')
           }
-        </div>
-      </div>`
+        </div>`
 
     document.getElementById('page-content')!.innerHTML = html
   } catch (err) {

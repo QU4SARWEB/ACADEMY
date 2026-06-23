@@ -36,30 +36,40 @@ export async function initStudentTasks(): Promise<void> {
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">Tareas</h1>
-        <p class="mt-1 text-sm text-zinc-500">Tus tareas asignadas</p>
+        <p class="mt-1 text-sm text-zinc-500">${(tasks ?? []).length} tareas asignadas</p>
       </div>
-      <div class="space-y-3">
-        ${(tasks ?? []).length === 0
-          ? '<p class="text-sm text-zinc-500">No hay tareas asignadas.</p>'
-          : (tasks ?? []).map((t: any) => {
-              const sub = smap[t.id]
-              const status = sub?.status || (new Date() > new Date(t.due_date) ? 'late' : 'pending')
-              return `
-                <a href="#/students/tasks/${escapeHtml(t.id)}"
-                   class="glass glass-hover flex items-center justify-between rounded-xl p-4">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-3">
-                      <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
-                      <span class="text-xs ${statusColors[status] || 'text-zinc-500'}">${escapeHtml(status)}</span>
-                    </div>
-                    <p class="mt-0.5 text-sm text-zinc-500">
-                      Límite: ${formatDate(t.due_date)}
-                    </p>
+      ${(tasks ?? []).length === 0
+        ? '<p class="text-sm text-zinc-500">No hay tareas asignadas.</p>'
+        : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          ${(tasks ?? []).map((t: any) => {
+            const sub = smap[t.id]
+            const status = sub?.status || (new Date() > new Date(t.due_date) ? 'late' : 'pending')
+            const statusLabel: Record<string, string> = { pending: 'Pendiente', submitted: 'Entregada', graded: 'Calificada', late: 'Atrasada', reviewed: 'Revisión' }
+            return `
+              <a href="#/students/tasks/${escapeHtml(t.id)}"
+                 class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
+                    ${Icon('clipboardList', 24)}
                   </div>
-                </a>`
-            }).join('')
-        }
-      </div>`
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-medium text-white truncate">${escapeHtml(t.title)}</h3>
+                    <p class="text-xs text-zinc-500">${t.max_score ? `Máx: ${t.max_score} pts` : 'Sin puntaje'}</p>
+                  </div>
+                </div>
+                <p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${t.description ? escapeHtml(t.description.substring(0, 80)) : 'Sin descripción'}</p>
+                <div class="space-y-1 mb-3">
+                  <div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('calendar', 12)} Límite: ${formatDate(t.due_date)}</div>
+                  ${sub?.score !== null && sub?.score !== undefined ? `<div class="flex items-center gap-2 text-xs text-green-400">${Icon('checkCircle', 12)} Nota: ${sub.score}</div>` : ''}
+                </div>
+                <div class="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800">
+                  <span class="text-xs font-medium ${statusColors[status] || 'text-zinc-500'}">${statusLabel[status] || status}</span>
+                  <span class="text-xs text-zinc-500 group-hover:text-white transition">Ver →</span>
+                </div>
+              </a>`
+          }).join('')}
+        </div>`
+      }`
 
     document.getElementById('page-content')!.innerHTML = html
   } catch (err) {

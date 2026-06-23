@@ -105,17 +105,15 @@ export async function initStudentGrades(): Promise<void> {
       ${Object.keys(gradesByCourse).length > 0 ? Object.entries(gradesByCourse).map(([cName, grades]) => `
         <div class="glass rounded-xl p-5 mb-4">
           <h2 class="font-heading text-base font-bold text-white mb-3">${escapeHtml(cName)}</h2>
-          <div class="space-y-2">
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             ${grades.sort((a: any, b: any) => b.month.localeCompare(a.month)).map((g: any) => {
               const [y, mo] = g.month.split('-')
               const label = MONTHS[parseInt(mo) - 1] || g.month
               const score = Number(g.score)
-              return `<div class="flex items-center justify-between rounded-lg bg-zinc-900/50 px-4 py-3">
-                <span class="text-sm text-zinc-300">${escapeHtml(label)} ${y}</span>
-                <div class="flex items-center gap-3">
-                  <span class="text-sm font-bold text-white">${score.toFixed(1)}</span>
-                  <span class="text-xs font-medium px-2 py-0.5 rounded-full ${score >= 18 ? 'bg-green-500/20 text-green-400' : score >= 14 ? 'bg-blue-500/20 text-blue-400' : score >= 11 ? 'bg-yellow-500/20 text-yellow-400' : score >= 5 ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}">${g.letter}</span>
-                </div>
+              return `<div class="glass rounded-xl p-4 text-center">
+                <p class="text-xs text-zinc-500 mb-1">${escapeHtml(label)} ${y}</p>
+                <p class="text-2xl font-bold text-white">${score.toFixed(1)}</p>
+                <div class="mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-medium ${score >= 18 ? 'bg-green-500/20 text-green-400' : score >= 14 ? 'bg-blue-500/20 text-blue-400' : score >= 11 ? 'bg-yellow-500/20 text-yellow-400' : score >= 5 ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}">${g.letter}</div>
               </div>`
             }).join('')}
           </div>
@@ -124,22 +122,24 @@ export async function initStudentGrades(): Promise<void> {
 
       <div class="glass rounded-xl p-5">
         <h2 class="font-heading text-base font-bold text-white mb-3">Historial completo</h2>
-        <div class="space-y-2">
-          ${[...(exams ?? []).map((e: any) => ({ type: 'exam', title: e.exams?.title || '', score: e.score, date: e.started_at })),
-              ...(tasks ?? []).map((t: any) => ({ type: 'task', title: t.tasks?.title || '', score: t.score, date: t.submitted_at }))
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          ${[...(exams ?? []).map((e: any) => ({ type: 'exam', title: e.exams?.title || '', score: Number(e.score), date: e.started_at })),
+              ...(tasks ?? []).map((t: any) => ({ type: 'task', title: t.tasks?.title || '', score: t.score, date: t.submitted_at, maxScore: t.tasks?.max_score }))
             ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20).map((item: any) => {
-            const score20 = item.type === 'exam' ? Number(item.score) : (() => {
-              const max = (item as any).tasks?.max_score || 20
+            const score20 = item.type === 'exam' ? item.score : (() => {
+              const max = item.maxScore || 20
               return (Number(item.score) / max) * 20
             })()
-            return `<div class="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-2.5">
-              <div>
-                <span class="text-xs text-zinc-500">${item.type === 'exam' ? 'Examen' : 'Tarea'}</span>
-                <span class="text-sm text-zinc-300 ml-2">${escapeHtml(item.title)}</span>
+            return `<div class="glass rounded-xl p-4 flex flex-col items-center text-center">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg ${item.type === 'exam' ? 'bg-purple-500/20' : 'bg-blue-500/20'} shrink-0 mb-2">
+                ${Icon(item.type === 'exam' ? 'scrollText' : 'clipboardList', 16)}
               </div>
-              <span class="text-xs text-zinc-500">${score20.toFixed(1)}/20</span>
+              <p class="text-xs text-zinc-500">${item.type === 'exam' ? 'Examen' : 'Tarea'}</p>
+              <p class="text-sm text-zinc-300 truncate w-full mt-1">${escapeHtml(item.title)}</p>
+              <p class="text-lg font-bold text-white mt-1">${score20.toFixed(1)}</p>
+              <p class="text-[10px] text-zinc-600 mt-auto pt-2 border-t border-zinc-800 w-full">${formatDate(item.date)}</p>
             </div>`
-          }).join('') || '<p class="text-sm text-zinc-500">Sin actividades registradas.</p>'}
+          }).join('') || '<p class="text-sm text-zinc-500 col-span-full">Sin actividades registradas.</p>'}
         </div>
       </div>`
 

@@ -94,24 +94,24 @@ export async function initStudentCourses(): Promise<void> {
       : await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).order('name')
     const coursesData = available.data ?? []
 
-    function card(course: any, extra: string, link: string): string {
-        const desc = course.description || course.courses?.description || ''
-        return `<a href="${link}" class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group block">
+    function courseCard(course: any, extra: string, footer: string): string {
+      const desc = course.description || course.courses?.description || ''
+      const cName = course.name || course.courses?.name || ''
+      const dur = course.duration_months || course.courses?.duration_months || 0
+      return `<div class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group">
         <div class="flex items-center gap-3 mb-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
             ${Icon('bookOpen', 24)}
           </div>
           <div class="min-w-0 flex-1">
-            <h3 class="font-medium text-white truncate">${escapeHtml(course.name || course.courses?.name || '')}</h3>
-            <p class="text-xs text-zinc-500">${course.duration_months || course.courses?.duration_months || 0} meses</p>
+            <h3 class="font-medium text-white truncate">${escapeHtml(cName)}</h3>
+            <p class="text-xs text-zinc-500">${dur} meses</p>
           </div>
         </div>
         ${desc ? `<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${escBr(desc)}</p>` : '<div class="flex-1"></div>'}
         ${extra}
-        <div class="mt-3 flex items-center justify-between pt-3 border-t border-zinc-800">
-          <span class="text-xs text-zinc-500 group-hover:text-white transition">Ver curso →</span>
-        </div>
-      </a>`
+        ${footer}
+      </div>`
     }
 
     const enrollHtml = (enrollments ?? []).length === 0
@@ -122,11 +122,12 @@ export async function initStudentCourses(): Promise<void> {
           const total = taskCountByCourse[c.id] || 0
           const done = completedByCourse[c.id] || 0
           const g = gradeByCourse[c.id]
-          let extra = '<div class="space-y-1 mb-3 flex-1">'
+          let extra = '<div class="space-y-1 mb-3">'
           if (total > 0) extra += `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('clipboardList', 12)} ${total} tareas · ${done} realizadas</div>`
           if (g) extra += `<div class="flex items-center gap-2 text-xs ${g.score >= 14 ? 'text-green-400' : g.score >= 11 ? 'text-yellow-400' : 'text-zinc-400'}">${Icon('trendingUp', 12)} ${g.score.toFixed(1)}/20 (${escapeHtml(g.letter)})</div>`
           extra += '</div>'
-          return card(e, extra, `#/students/courses/${escapeHtml(e.course_id)}`)
+          const footer = `<a href="#/students/courses/${escapeHtml(e.course_id)}" class="mt-auto pt-3 border-t border-zinc-800 flex items-center justify-between"><span class="text-xs text-zinc-500 group-hover:text-white transition">Ver curso →</span></a>`
+          return courseCard(e, extra, footer)
         }).join('')}
       </div>`
 
@@ -141,11 +142,7 @@ export async function initStudentCourses(): Promise<void> {
                 ${Icon('plus', 14)} Inscribirme
               </button>
             </form>`
-            return card(course, '', '#')
-              .replace('href="#"', 'href="#" onclick="event.preventDefault()"')
-              .replace('Ver curso →', '')
-              .replace('<div class="mt-3 flex items-center justify-between pt-3 border-t border-zinc-800">', '')
-              .replace('</a>', `${btn}</a>`)
+            return courseCard(course, '', btn)
           }).join('')}
         </div>
       </div>`
