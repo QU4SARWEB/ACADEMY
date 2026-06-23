@@ -41,6 +41,8 @@ export async function initCoachTaskDetail(): Promise<void> {
       .eq('id', id)
       .maybeSingle()
 
+    const { data: allCourses } = await supabase.from('courses').select('id, name').order('name')
+
     if (!task) {
       document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Tarea no encontrada.</p>'
       return
@@ -111,9 +113,12 @@ export async function initCoachTaskDetail(): Promise<void> {
                     class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
                 </div>
                 <div>
-                  <label class="mb-1 block text-sm text-zinc-400">Fecha límite</label>
-                  <input name="dueDate" type="datetime-local" required value="${task.due_date ? task.due_date.slice(0, 16) : ''}"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                  <label class="mb-1 block text-sm text-zinc-400">Curso</label>
+                  <select name="courseId" required
+                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                    <option value="">Seleccionar...</option>
+                    ${(allCourses ?? []).map((c: any) => `<option value="${escapeHtml(c.id)}" ${c.id === task.course_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+                  </select>
                 </div>
               </div>
               <div>
@@ -263,6 +268,7 @@ export async function initCoachTaskDetail(): Promise<void> {
         }
       }
       const { error } = await supabase.from('tasks').update({
+        course_id: fd.get('courseId') as string,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,
