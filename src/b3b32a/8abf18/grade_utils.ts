@@ -54,7 +54,7 @@ export async function recalcFinalGrade(enrollmentId: string): Promise<void> {
     finalScore20 = totalWeight > 0 ? totalScore / totalWeight : 0
   }
 
-  const finalGrade = Math.round(finalScore20 * 5)
+  const finalGrade = Math.round(finalScore20)
   const letter = scoreToLetter(finalScore20)
 
   await supabase.from('enrollments').update({ final_grade: finalGrade }).eq('id', enrollmentId)
@@ -72,7 +72,7 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
   const { data: enrollment } = await supabase.from('enrollments').select('final_grade, status').eq('id', enrollmentId).maybeSingle()
   if (!enrollment || enrollment.status !== 'active') return
   const grade = enrollment.final_grade
-  if (grade === null || grade < 70) return
+  if (grade === null || grade < 14) return
 
   const { data: course } = await supabase.from('courses').select('name, display_order').eq('id', courseId).maybeSingle()
   if (!course) return

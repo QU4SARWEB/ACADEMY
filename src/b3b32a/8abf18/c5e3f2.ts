@@ -100,6 +100,7 @@ export async function initCoachGrades(): Promise<void> {
         score20 = tw > 0 ? ts / tw : 0
       }
       return { score20: Math.round(score20 * 10) / 10, letter: scoreToLetter(score20), finalGrade: Math.round(score20 * 5) }
+
     }
 
     function renderTable(): string {

@@ -92,12 +92,12 @@ export function mountCoachStudentDetail(): void {
           const grade = enrFull.final_grade
           const studentRank = (enrFull as any).profiles?.rank ?? 'Unranked'
           const minRank = (enrFull as any).courses?.min_rank ?? 'Unranked'
-          const gradeOk = grade != null && grade >= 80
+          const gradeOk = grade != null && grade >= 16
           const rankOk = (RANK_ORDER[studentRank] ?? 0) >= (RANK_ORDER[minRank] ?? 0)
           eligibility = {
             gradeOk, rankOk, eligible: gradeOk && rankOk,
             grade, minRank, studentRank,
-            reason: !gradeOk ? `Nota insuficiente: ${grade ?? '—'}/100 (mínimo 80)` : !rankOk ? `Rango insuficiente: ${studentRank} (mínimo ${minRank})` : null,
+            reason: !gradeOk ? `Nota insuficiente: ${grade ?? '—'}/20 (mínimo 16)` : !rankOk ? `Rango insuficiente: ${studentRank} (mínimo ${minRank})` : null,
           }
           if (lastEnr.courses?.display_order) {
             nextCourse = (courses ?? []).find((c: any) => c.display_order === lastEnr.courses!.display_order + 1) ?? null
@@ -161,7 +161,7 @@ export function mountCoachStudentDetail(): void {
                           <p class="text-sm capitalize ${statusColor}">
                             ${escapeHtml(enr.status)}${enr.promoted ? ' · Promocionado' : ''}
                           </p>
-                          ${enr.final_grade ? `<p class="text-xs text-zinc-500">Nota: ${enr.final_grade}</p>` : ''}
+                          ${enr.final_grade ? `<p class="text-xs text-zinc-500">Nota: ${enr.final_grade}/20</p>` : ''}
                           <div class="mt-1">
                             ${paymentStatus
                               ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${paymentStatus === 'paid' ? 'Pagado' : escapeHtml(paymentStatus)}</span>`
@@ -209,11 +209,11 @@ export function mountCoachStudentDetail(): void {
                       <div class="mb-4 space-y-2">
                         <h3 class="text-sm font-medium text-zinc-300">Requisitos</h3>
                         <div class="flex items-center justify-between text-sm">
-                          <span class="text-zinc-400">Nota mínima (80)</span>
+                          <span class="text-zinc-400">Nota mínima (16)</span>
                           ${eligibility.gradeOk !== undefined
                             ? `<span class="flex items-center gap-1 ${eligibility.gradeOk ? 'text-green-400' : 'text-red-400'}">
                                 ${eligibility.gradeOk ? Icon('checkCircle', 14) : Icon('xCircle', 14)}
-                                ${eligibility.grade ?? '—'}/100
+                                ${eligibility.grade ?? '—'}/20
                               </span>`
                             : '<span class="text-zinc-600">—</span>'
                           }

@@ -46,8 +46,8 @@ export async function initCoachDashboard(): Promise<void> {
 
     const grades = (gradeData ?? []).map((e: any) => e.final_grade).filter((g: any) => g !== null)
     const avgGrade = grades.length > 0 ? (grades.reduce((a: number, b: number) => a + b, 0) / grades.length).toFixed(1) : '—'
-    const passed = (gradeData ?? []).filter((e: any) => e.final_grade >= 70).length
-    const failed = (gradeData ?? []).filter((e: any) => e.final_grade < 70).length
+    const passed = (gradeData ?? []).filter((e: any) => e.final_grade >= 14).length
+    const failed = (gradeData ?? []).filter((e: any) => e.final_grade < 14).length
     const total = passed + failed
     const passRate = total > 0 ? Math.round((passed / total) * 100) : 0
     const failRate = total > 0 ? Math.round((failed / total) * 100) : 0
@@ -83,7 +83,7 @@ export async function initCoachDashboard(): Promise<void> {
       .not('final_grade', 'is', null)
 
     const riskEnrollments = (allEnrollData ?? [])
-      .filter((e: any) => e.final_grade < 70)
+      .filter((e: any) => e.final_grade < 14)
       .sort((a: any, b: any) => a.final_grade - b.final_grade)
       .slice(0, 6)
 
@@ -136,7 +136,7 @@ export async function initCoachDashboard(): Promise<void> {
                 <span class="text-red-300">${escapeHtml(name)}</span>
                 <span class="text-zinc-500 text-xs ml-2">${escapeHtml(e.courses?.name || '')}</span>
               </div>
-              <span class="text-red-400 font-mono text-xs">${e.final_grade ?? '—'}</span>
+              <span class="text-red-400 font-mono text-xs">${e.final_grade ?? '—'}/20</span>
             </div>`
         }).join('')
       : '<p class="text-sm text-zinc-500 text-center py-4">Ningún estudiante en riesgo</p>'
@@ -320,7 +320,7 @@ export async function initCoachDashboard(): Promise<void> {
     // Load analytics for dashboard
     const { data: examAttempts } = await supabase.from('exam_attempts').select('score, status').neq('status', 'in_progress')
     const aTotal = examAttempts?.length || 0
-    const aPassed = (examAttempts || []).filter((a: any) => (a.score || 0) >= 60).length
+    const aPassed = (examAttempts || []).filter((a: any) => (a.score || 0) >= 12).length
     const aAvg = aTotal > 0 ? (examAttempts || []).reduce((s: number, a: any) => s + (a.score || 0), 0) / aTotal : 0
     const anlExams = document.getElementById('dash-anl-exams')
     if (anlExams) anlExams.textContent = String(examsCount || 0)
@@ -329,7 +329,7 @@ export async function initCoachDashboard(): Promise<void> {
     const anlPass = document.getElementById('dash-anl-passrate')
     if (anlPass) anlPass.textContent = aTotal > 0 ? Math.round((aPassed / aTotal) * 100) + '%' : '0%'
     const anlAvg = document.getElementById('dash-anl-avg')
-    if (anlAvg) anlAvg.textContent = Math.round(aAvg) + '%'
+    if (anlAvg) anlAvg.textContent = aAvg > 0 ? Math.round(aAvg) + '/20' : '—'
   } catch (err) {
     console.error('Error loading coach dashboard:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar el dashboard</p>'

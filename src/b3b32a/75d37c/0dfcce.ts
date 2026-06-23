@@ -149,7 +149,7 @@ export async function initStudentCourses(): Promise<void> {
             .eq('profile_id', session.user.id)
             .eq('course_id', courseId)
             .neq('id', enrollment.id)
-          const alreadyPassed = (prevEnrolls ?? []).some((e: any) => e.final_grade !== null && e.final_grade >= 70 && e.promoted)
+          const alreadyPassed = (prevEnrolls ?? []).some((e: any) => e.final_grade !== null && e.final_grade >= 14 && e.promoted)
           if (!alreadyPassed) {
             await supabase.from('payments').insert({
               profile_id: session.user.id,

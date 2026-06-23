@@ -72,7 +72,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
     if (p.enrollment_id) enrollWithPayment.add(p.enrollment_id)
     const enr = allEnrolls?.find((x: any) => x.id === p.enrollment_id)
     if (enr) {
-      const alreadyPassed = (enrollments ?? []).some((e2: any) => e2.course_id === (enr as any).course_id && e2.final_grade !== null && e2.final_grade >= 70 && e2.promoted)
+      const alreadyPassed = (enrollments ?? []).some((e2: any) => e2.course_id === (enr as any).course_id && e2.final_grade !== null && e2.final_grade >= 14 && e2.promoted)
       if (alreadyPassed) paidPassedCourses.add((enr as any).course_id)
     }
   }
