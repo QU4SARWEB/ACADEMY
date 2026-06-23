@@ -47,7 +47,7 @@ export async function initCoachGrades(): Promise<void> {
     // Fetch task submissions for this course
     const enrollIds = (enrollments ?? []).map((e: any) => e.id)
     const { data: allTaskSubs } = enrollIds.length > 0
-      ? await supabase.from('task_submissions').select('*').in('enrollment_id', enrollIds).not('score', 'is', null)
+      ? await supabase.from('task_submissions').select('score,enrollment_id,status').in('enrollment_id', enrollIds).not('score', 'is', null)
       : { data: [] }
 
     const resultsByEnrollment: Record<string, any[]> = {}

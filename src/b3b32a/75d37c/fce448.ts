@@ -28,8 +28,8 @@ export async function initStudentGrades(): Promise<void> {
     if (enrollIds.length > 0) {
       const { data: exams } = await supabase.from('exam_attempts').select('score, exams!inner(title), started_at').in('enrollment_id', enrollIds).not('score', 'is', null).order('started_at', { ascending: false })
       examGrades = (exams ?? []).map((e: any) => ({ title: 'Examen: ' + (e.exams?.title || ''), category: 'exam', score: e.score, created_at: e.started_at }))
-      const { data: tasks } = await supabase.from('task_submissions').select('score, tasks!inner(title), submitted_at').in('enrollment_id', enrollIds).not('score', 'is', null).order('submitted_at', { ascending: false })
-      taskGrades = (tasks ?? []).map((t: any) => ({ title: 'Tarea: ' + (t.tasks?.title || ''), category: 'task', score: t.score, created_at: t.submitted_at }))
+      const { data: tasks } = await supabase.from('task_submissions').select('score, submitted_at').in('enrollment_id', enrollIds).not('score', 'is', null)
+      taskGrades = (tasks ?? []).map((t: any) => ({ title: 'Tarea', category: 'task', score: t.score, created_at: t.submitted_at }))
     }
 
     const allGrades = [...(grades ?? []), ...examGrades, ...taskGrades].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
