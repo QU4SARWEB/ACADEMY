@@ -129,7 +129,7 @@ export async function initStudentGrades(): Promise<void> {
               ...(tasks ?? []).map((t: any) => ({ type: 'task', title: t.tasks?.title || '', score: t.score, date: t.submitted_at }))
             ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20).map((item: any) => {
             const score20 = item.type === 'exam' ? Number(item.score) : (() => {
-              const max = (item as any).maxScore || 20
+              const max = (item as any).tasks?.max_score || 20
               return (Number(item.score) / max) * 20
             })()
             return `<div class="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-2.5">
