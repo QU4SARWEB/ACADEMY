@@ -57,10 +57,10 @@ export async function initPracticalView(): Promise<void> {
           const vals = scores.map(s => s?.score).filter((v: any) => v !== null && v !== undefined)
           const avg = vals.length > 0 ? Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length) : null
           if (avg !== null) { total += avg; count++ }
-          return '<tr class="border-b border-zinc-800/50"><td class="py-2 pr-4 text-white">' + escapeHtml(r.name) + '</td>' + scores.map(s => '<td class="py-2 px-3 text-center text-zinc-300">' + (s?.score !== null && s?.score !== undefined ? s.score : '—') + '</td>').join('') + '<td class="py-2 pl-3 text-center"><span class="font-bold ' + (avg !== null ? (avg >= 70 ? 'text-green-400' : avg >= 40 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-600') + '">' + (avg !== null ? avg + '%' : '—') + '</span></td></tr>'
+          return '<tr class="border-b border-zinc-800/50"><td class="py-2 pr-4 text-white">' + escapeHtml(r.name) + '</td>' + scores.map(s => '<td class="py-2 px-3 text-center text-zinc-300">' + (s?.score !== null && s?.score !== undefined ? s.score : '—') + '</td>').join('') + '<td class="py-2 pl-3 text-center"><span class="font-bold ' + (avg !== null ? (avg >= 14 ? 'text-green-400' : avg >= 8 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-600') + '">' + (avg !== null ? avg : '—') + '</span></td></tr>'
         }).join('')}
         </tbody></table>
-        <div class="mt-4 pt-4 border-t border-zinc-700 text-center"><p class="text-sm text-zinc-400">Nota final: <span class="text-2xl font-bold text-white">${count > 0 ? Math.round(total / count) + '%' : '—'}</span></p></div>
+        <div class="mt-4 pt-4 border-t border-zinc-700 text-center"><p class="text-sm text-zinc-400">Nota final: <span class="text-2xl font-bold text-white">${count > 0 ? Math.round(total / count) : '—'}</span></p></div>
       </div>`
   } catch (err) { console.error(err); document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error</p>' }
 }

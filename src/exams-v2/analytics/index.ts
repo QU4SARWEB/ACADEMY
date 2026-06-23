@@ -58,13 +58,13 @@ async function loadSummary(): Promise<void> {
   const { data: attempts } = await supabase.from('exam_attempts').select('score, status').neq('status', 'in_progress')
 
   const total = attempts?.length || 0
-  const passed = (attempts || []).filter(a => (a.score || 0) >= 60).length
+  const passed = (attempts || []).filter(a => (a.score || 0) >= 12).length
   const avgScore = total > 0 ? (attempts || []).reduce((s, a) => s + (a.score || 0), 0) / total : 0
 
   document.getElementById('anl-exams')!.textContent = String(exams || 0)
   document.getElementById('anl-attempts')!.textContent = String(total)
   document.getElementById('anl-passrate')!.textContent = total > 0 ? `${Math.round((passed / total) * 100)}%` : '0%'
-  document.getElementById('anl-avgscore')!.textContent = `${Math.round(avgScore)}%`
+  document.getElementById('anl-avgscore')!.textContent = avgScore > 0 ? `${Math.round(avgScore)}/20` : '—'
 }
 
 async function loadFailedQuestions(): Promise<void> {
@@ -154,14 +154,14 @@ async function loadRanking(): Promise<void> {
   container.innerHTML = ranked.length === 0
     ? '<p class="text-sm text-zinc-500">Sin datos aún</p>'
     : ranked.map((s, i) => {
-        const barWidth = Math.min(100, Math.round(s.avg))
+        const barWidth = Math.min(100, Math.round((s.avg / 20) * 100))
         return `<div class="flex items-center gap-3 text-sm">
           <span class="w-5 text-right text-xs font-bold text-zinc-500">#${i + 1}</span>
           <span class="w-32 truncate text-white">${escapeHtml(s.name)}</span>
           <div class="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden">
             <div class="h-full rounded-full bg-[#8B5CF6] transition-all" style="width:${barWidth}%"></div>
           </div>
-          <span class="w-12 text-right text-xs font-medium text-zinc-400">${Math.round(s.avg)}%</span>
+          <span class="w-12 text-right text-xs font-medium text-zinc-400">${Math.round(s.avg)}/20</span>
           <span class="text-xs text-zinc-600">${s.total} exams</span>
         </div>`
       }).join('')
@@ -197,13 +197,13 @@ async function loadEvolution(): Promise<void> {
     .sort((a, b) => b.count - a.count)
     .map(ex => {
       const avg = ex.scores.reduce((s, v) => s + v, 0) / ex.scores.length
-      const barWidth = Math.min(100, Math.round(avg))
+      const barWidth = Math.min(100, Math.round((avg / 20) * 100))
       return `<div class="flex items-center gap-3 text-sm">
         <span class="w-40 truncate text-zinc-300">${escapeHtml(ex.title)}</span>
         <div class="flex-1 h-3 rounded-full bg-zinc-800 overflow-hidden">
-          <div class="h-full rounded-full ${avg >= 60 ? 'bg-green-500' : avg >= 40 ? 'bg-yellow-500' : 'bg-red-500'} transition-all" style="width:${barWidth}%"></div>
+          <div class="h-full rounded-full ${avg >= 12 ? 'bg-green-500' : avg >= 8 ? 'bg-yellow-500' : 'bg-red-500'} transition-all" style="width:${barWidth}%"></div>
         </div>
-        <span class="w-16 text-right text-xs font-medium text-zinc-400">${Math.round(avg)}%</span>
+        <span class="w-16 text-right text-xs font-medium text-zinc-400">${Math.round(avg)}/20</span>
         <span class="text-xs text-zinc-600">${ex.count} attempts</span>
       </div>`
     }).join('')

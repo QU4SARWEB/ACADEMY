@@ -114,7 +114,7 @@ export async function initPracticalScore(): Promise<void> {
                 }
               }
               const avg = count > 0 ? Math.round(total / count) : null
-              cells += '<td class="px-3 py-2 text-center border-t border-zinc-800"><span class="text-xs font-bold ' + (avg !== null ? (avg >= 70 ? 'text-green-400' : avg >= 40 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-600') + '">' + (avg !== null ? avg + '%' : '—') + '</span></td>'
+              cells += '<td class="px-3 py-2 text-center border-t border-zinc-800"><span class="text-xs font-bold ' + (avg !== null ? (avg >= 14 ? 'text-green-400' : avg >= 8 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-600') + '">' + (avg !== null ? avg : '—') + '</span></td>'
               return '<tr class="border-b border-zinc-800/50">' + cells + '</tr>'
             }).join('')
           }).join('')}</tbody>
