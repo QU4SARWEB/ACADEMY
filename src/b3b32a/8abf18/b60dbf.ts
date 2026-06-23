@@ -105,7 +105,7 @@ export function mountCoachStudentDetail(): void {
         }
       }
 
-      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
       const html = `
         ${Breadcrumb([
@@ -152,12 +152,17 @@ export function mountCoachStudentDetail(): void {
                   const statusColor = enr.status === 'active' ? 'text-green-400' : enr.status === 'recovery' ? 'text-yellow-400' : 'text-zinc-400'
                   return `
                     <div class="rounded-lg border border-zinc-800 bg-[#111] p-4" data-enrollment-id="${escapeHtml(enr.id)}">
-                      <div class="flex items-center justify-between">
-                        <div>
+                      <div class="flex items-start justify-between">
+                        <div class="min-w-0 flex-1">
                           <p class="font-medium text-white">${escapeHtml(enr.courses?.name || '')}</p>
-                          <p class="text-xs text-zinc-500">${escapeHtml(enr.courses?.name || enr.type || '')}</p>
+                          <p class="text-xs text-zinc-500">${escapeHtml(enr.type || '')}</p>
+                          <div class="mt-2 flex flex-wrap gap-2">
+                            <a href="#/coaches/tasks" class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-700 transition">${Icon('clipboardList', 10)} Tareas</a>
+                            <a href="#/coaches/courses/${escapeHtml(enr.course_id)}/classes" class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-700 transition">${Icon('bookOpen', 10)} Clases</a>
+                            <a href="#/coaches/courses/${escapeHtml(enr.course_id)}/grades" class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-700 transition">${Icon('scrollText', 10)} Notas</a>
+                          </div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right shrink-0 ml-3">
                           <p class="text-sm capitalize ${statusColor}">
                             ${escapeHtml(enr.status)}${enr.promoted ? ' · Promocionado' : ''}
                           </p>
@@ -169,7 +174,7 @@ export function mountCoachStudentDetail(): void {
                             }
                           </div>
                         </div>
-                        <button class="btn-unenroll text-xs ${enr.status === 'active' || enr.status === 'recovery' ? 'text-red-400 hover:text-red-300' : 'text-zinc-600 hover:text-red-400'}" data-enrollment-id="${escapeHtml(enr.id)}" data-status="${escapeHtml(enr.status)}">
+                        <button class="btn-unenroll text-xs shrink-0 ml-2 ${enr.status === 'active' || enr.status === 'recovery' ? 'text-red-400 hover:text-red-300' : 'text-zinc-600 hover:text-red-400'}" data-enrollment-id="${escapeHtml(enr.id)}" data-status="${escapeHtml(enr.status)}">
                           ${Icon('trash', 14)}
                         </button>
                       </div>

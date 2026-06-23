@@ -4,8 +4,8 @@ import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { formatTimeWithTZ, getLocalTZ } from '@/2b3583/2938a7'
 
-const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const SHORT_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+const SHORT_DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 export function renderStudentSchedule(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -23,7 +23,8 @@ export async function initStudentSchedule(): Promise<void> {
       .order('start_time')
 
     const seasonScheds = (schedules ?? [])
-    const today = new Date().getDay()
+    const jsDay = new Date().getDay()
+    const today = jsDay === 0 ? 6 : jsDay - 1
 
     const html = `
       <div class="mb-6">
