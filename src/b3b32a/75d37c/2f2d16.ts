@@ -68,14 +68,18 @@ export async function initStudentTaskDetail(): Promise<void> {
             <p class="text-sm text-zinc-300">${escBr((task as any).description)}</p>
           </div>` : ''}
 
-        ${(task as any).material_url ? `
-          <div class="glass mb-6 rounded-xl p-4">
+        ${(() => {
+          const attach = (task as any).attachments || ((task as any).material_url ? [{ name: (task as any).material_url.split('/').pop(), url: (task as any).material_url }] : [])
+          if (!attach.length) return ''
+          return `<div class="glass mb-6 rounded-xl p-4">
             <h3 class="mb-3 font-medium text-white">Material adjunto</h3>
-            <a href="${escapeHtml((task as any).material_url)}" target="_blank" rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">
-              ${Icon('download', 14)} ${escapeHtml(((task as any).material_url).split('/').pop() || 'archivo')}
-            </a>
-          </div>` : ''}
+            ${attach.map((a: any) => `
+              <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">
+                ${Icon('download', 14)} ${escapeHtml(a.name || 'archivo')}
+              </a>`).join('')}
+          </div>`
+        })()}
 
         ${submission
           ? `<div class="glass rounded-xl p-4">

@@ -80,13 +80,17 @@ export async function initCoachTaskDetail(): Promise<void> {
                 Límite: ${task.due_date ? formatDate(task.due_date) : '—'} · Máx: ${task.max_score ?? '—'} pts
               </p>
               ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escBr(task.description)}</p>` : ''}
-              ${task.material_url ? `
-                <div class="mt-3">
-                  <a href="${escapeHtml(task.material_url)}" target="_blank" rel="noopener noreferrer"
-                    class="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">
-                    ${Icon('download', 12)} ${escapeHtml(task.material_url.split('/').pop() || 'archivo')}
-                  </a>
-                </div>` : ''}
+              ${(() => {
+                const attach = task.attachments || (task.material_url ? [{ name: task.material_url.split('/').pop(), url: task.material_url }] : [])
+                if (!attach.length) return ''
+                return attach.map((a: any) => `
+                  <div class="mt-3">
+                    <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener noreferrer"
+                      class="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">
+                      ${Icon('download', 12)} ${escapeHtml(a.name || 'archivo')}
+                    </a>
+                  </div>`).join('')
+              })()}
             </div>
             <button id="delete-task-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
           </div>

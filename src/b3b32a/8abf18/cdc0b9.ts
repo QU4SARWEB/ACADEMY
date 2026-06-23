@@ -91,6 +91,7 @@ export async function initCoachNewTask(): Promise<void> {
         due_date: fd.get('dueDate') as string,
         max_score: parseFloat(fd.get('maxScore') as string) || 100,
         material_url: attachmentUrl,
+        attachments: attachmentUrl ? [{ name: file ? file.name : 'archivo', url: attachmentUrl }] : [],
       })
       if (error) {
         document.getElementById('form-error')!.textContent = error.message
