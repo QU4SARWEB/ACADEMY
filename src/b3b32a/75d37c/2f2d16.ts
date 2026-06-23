@@ -43,6 +43,16 @@ export async function initStudentTaskDetail(): Promise<void> {
         .maybeSingle()
       enrollment = enr
     }
+    if (!enrollment) {
+      const { data: enr } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle()
+      enrollment = enr
+    }
 
     let submission: any = null
     if (enrollment) {
