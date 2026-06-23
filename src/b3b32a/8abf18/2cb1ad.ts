@@ -14,10 +14,11 @@ export async function initCoachTasks(): Promise<void> {
   try {
     const { data: courses } = await supabase.from('courses').select('id, name').order('name')
     const allCourses = courses ?? []
+    const courseMap = new Map(allCourses.map((c: any) => [c.id, c.name]))
 
     const { data } = await supabase
       .from('tasks')
-      .select('*, courses!course_id?name')
+      .select('*')
       .order('due_date', { ascending: false })
 
     const html = `
@@ -43,7 +44,7 @@ export async function initCoachTasks(): Promise<void> {
       <div id="task-list" class="space-y-3">
         ${(data ?? []).length === 0
           ? '<p class="text-sm text-zinc-500">No hay tareas creadas.</p>'
-          : (data ?? []).map((t: any) => renderTaskItem(t)).join('')
+          : (data ?? []).map((t: any) => renderTaskItem(t, courseMap)).join('')
         }
       </div>`
 
@@ -54,7 +55,7 @@ export async function initCoachTasks(): Promise<void> {
       const filtered = !courseId ? (data ?? []) : (data ?? []).filter((t: any) => t.course_id === courseId)
       document.getElementById('task-list')!.innerHTML = filtered.length === 0
         ? '<p class="text-sm text-zinc-500">No hay tareas para este curso.</p>'
-        : filtered.map((t: any) => renderTaskItem(t)).join('')
+        : filtered.map((t: any) => renderTaskItem(t, courseMap)).join('')
     })
 
     if ((window as any).__channels?.tasks) {
@@ -91,13 +92,13 @@ export async function initCoachTasks(): Promise<void> {
   }
 }
 
-function renderTaskItem(t: any): string {
+function renderTaskItem(t: any, courseMap?: Map<string, string>): string {
   return `
     <div class="glass glass-hover flex items-center justify-between rounded-xl p-4">
       <a href="#/coaches/tasks/${escapeHtml(t.id)}" class="flex-1 min-w-0">
         <h3 class="font-medium text-white">${escapeHtml(t.title)}</h3>
         <p class="mt-0.5 text-sm text-zinc-500">
-          ${t.courses?.name ? escapeHtml(t.courses.name) + ' · ' : ''}${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
+          ${courseMap?.get(t.course_id) ? escapeHtml(courseMap.get(t.course_id)!) + ' · ' : ''}${t.due_date ? `Límite: ${formatDate(t.due_date)}` : ''}${t.max_score ? ` · Máx: ${t.max_score} pts` : ''}
         </p>
       </a>
       <div class="flex items-center gap-3 shrink-0">

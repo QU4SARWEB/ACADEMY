@@ -46,7 +46,7 @@ export async function initStudentGrades(): Promise<void> {
     // Calculate overall averages
     const monthlyScores = (monthlyGrades ?? []).map((g: any) => Number(g.score))
     const monthlyAvg = monthlyScores.length > 0 ? monthlyScores.reduce((a, b) => a + b, 0) / monthlyScores.length : 0
-    const examScores = (exams ?? []).map((e: any) => Number(e.score) / 5)
+    const examScores = (exams ?? []).map((e: any) => Number(e.score))
     const examAvg = examScores.length > 0 ? examScores.reduce((a, b) => a + b, 0) / examScores.length : 0
     const taskScores = (tasks ?? []).map((t: any) => {
       const max = t.tasks?.max_score
@@ -128,8 +128,8 @@ export async function initStudentGrades(): Promise<void> {
           ${[...(exams ?? []).map((e: any) => ({ type: 'exam', title: e.exams?.title || '', score: e.score, date: e.started_at })),
               ...(tasks ?? []).map((t: any) => ({ type: 'task', title: t.tasks?.title || '', score: t.score, date: t.submitted_at }))
             ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20).map((item: any) => {
-            const score20 = item.type === 'exam' ? Number(item.score) / 5 : (() => {
-              const max = (item as any).maxScore || 100
+            const score20 = item.type === 'exam' ? Number(item.score) : (() => {
+              const max = (item as any).maxScore || 20
               return (Number(item.score) / max) * 20
             })()
             return `<div class="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-2.5">

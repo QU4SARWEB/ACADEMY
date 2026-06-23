@@ -57,7 +57,7 @@ export async function initCoachGradesList(): Promise<void> {
                   ${Object.entries(CAT_LABELS).map(([k, v]) => '<option value="' + k + '">' + v + '</option>').join('')}
                 </select>
               </div>
-              <div><label class="mb-1 block text-xs text-zinc-400">Nota (0-100)</label><input name="score" type="number" min="0" max="100" step="0.5" required class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+              <div><label class="mb-1 block text-xs text-zinc-400">Nota (0-20)</label><input name="score" type="number" min="0" max="20" step="0.5" required class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
             </div>
             <div><label class="mb-1 block text-xs text-zinc-400">Comentario</label><textarea name="comment" rows="2" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></textarea></div>
             <p id="quick-grade-error" class="hidden text-xs text-red-400"></p>
@@ -77,7 +77,7 @@ export async function initCoachGradesList(): Promise<void> {
         const allS = [...manualScores, ...eScores, ...tScores]
         const avg = allS.length > 0 ? Math.round(allS.reduce((a: number, b: number) => a + b, 0) / allS.length) : null
         const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || s.full_name || ''
-        return '<tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30"><td class="py-3 pr-4"><a href="#/coaches/students/' + s.id + '/grades" class="flex items-center gap-2 text-white hover:text-[#8B5CF6] transition">' + (s.avatar_url ? '<img src="' + escapeHtml(s.avatar_url) + '" class="h-7 w-7 rounded-full object-cover" />' : '<div class="flex h-7 w-7 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">' + escapeHtml(displayName.charAt(0)) + '</div>') + '<span>' + escapeHtml(displayName) + '</span></a></td><td class="py-3 pr-4 text-zinc-400">' + escapeHtml(s.rank || '-') + '</td><td class="py-3 pr-4 text-zinc-400">' + manualScores.length + '</td><td class="py-3 pr-4 text-zinc-400">' + eScores.length + '</td><td class="py-3 pr-4 text-zinc-400">' + tScores.length + '</td><td class="py-3 pr-4">' + (avg !== null ? '<span class="rounded px-2 py-0.5 text-xs font-medium ' + (avg >= 70 ? 'bg-green-500/20 text-green-400' : avg >= 40 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400') + '">' + avg + '%</span>' : '<span class="text-xs text-zinc-600">—</span>') + '</td><td class="py-3"><button type="button" class="add-grade-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition" data-id="' + s.id + '">' + Icon('plus', 12) + ' Nota</button></td></tr>'
+        return '<tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30"><td class="py-3 pr-4"><a href="#/coaches/students/' + s.id + '/grades" class="flex items-center gap-2 text-white hover:text-[#8B5CF6] transition">' + (s.avatar_url ? '<img src="' + escapeHtml(s.avatar_url) + '" class="h-7 w-7 rounded-full object-cover" />' : '<div class="flex h-7 w-7 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">' + escapeHtml(displayName.charAt(0)) + '</div>') + '<span>' + escapeHtml(displayName) + '</span></a></td><td class="py-3 pr-4 text-zinc-400">' + escapeHtml(s.rank || '-') + '</td><td class="py-3 pr-4 text-zinc-400">' + manualScores.length + '</td><td class="py-3 pr-4 text-zinc-400">' + eScores.length + '</td><td class="py-3 pr-4 text-zinc-400">' + tScores.length + '</td><td class="py-3 pr-4">' + (avg !== null ? '<span class="rounded px-2 py-0.5 text-xs font-medium ' + (avg >= 14 ? 'bg-green-500/20 text-green-400' : avg >= 8 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400') + '">' + avg + '/20</span>' : '<span class="text-xs text-zinc-600">—</span>') + '</td><td class="py-3"><button type="button" class="add-grade-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition" data-id="' + s.id + '">' + Icon('plus', 12) + ' Nota</button></td></tr>'
       }).join('')}
       </tbody></table></div>`}
     `
@@ -106,7 +106,7 @@ export async function initCoachGradesList(): Promise<void> {
       const errEl = document.getElementById('quick-grade-error')!
       if (!profileId) { errEl.textContent = 'Error: estudiante no identificado'; errEl.classList.remove('hidden'); return }
       if (!title) { errEl.textContent = 'Escribe un título'; errEl.classList.remove('hidden'); return }
-      if (isNaN(score) || score < 0 || score > 100) { errEl.textContent = 'La nota debe ser entre 0 y 100'; errEl.classList.remove('hidden'); return }
+      if (isNaN(score) || score < 0 || score > 20) { errEl.textContent = 'La nota debe ser entre 0 y 20'; errEl.classList.remove('hidden'); return }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) { errEl.textContent = 'No autenticado'; errEl.classList.remove('hidden'); return }
       const { error } = await supabase.from('grades').insert({ profile_id: profileId, coach_id: session.user.id, title, category, score, comment, source: 'manual' })

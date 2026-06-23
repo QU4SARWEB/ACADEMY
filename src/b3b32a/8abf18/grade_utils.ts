@@ -22,11 +22,11 @@ export async function recalcFinalGrade(enrollmentId: string): Promise<void> {
     monthlyAvg = months.reduce((s: number, m: any) => s + Number(m.score), 0) / months.length
   }
 
-  // 2. Exam attempts (20%) — score is 0-100, convert to 0-20
+  // 2. Exam attempts (20%) — score is 0-20
   const { data: exams } = await supabase.from('exam_attempts').select('score').eq('enrollment_id', enrollmentId).not('score', 'is', null)
   let examAvg = 0
   if (exams && exams.length > 0) {
-    examAvg = exams.reduce((s: number, e: any) => s + Number(e.score), 0) / exams.length / 5
+    examAvg = exams.reduce((s: number, e: any) => s + Number(e.score), 0) / exams.length
   }
 
   // 3. Task submissions (20%) — score relative to max_score

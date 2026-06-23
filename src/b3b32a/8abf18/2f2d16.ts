@@ -129,7 +129,7 @@ export async function initCoachTaskDetail(): Promise<void> {
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label class="mb-1 block text-sm text-zinc-400">Puntaje máximo</label>
-                  <input name="maxScore" type="number" min="0" value="${task.max_score ?? 100}"
+                  <input name="maxScore" type="number" min="0" value="${task.max_score ?? 20}"
                     class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
                 </div>
                 <div>
@@ -273,7 +273,7 @@ export async function initCoachTaskDetail(): Promise<void> {
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: newDueDate,
-        max_score: parseFloat(fd.get('maxScore') as string) || 100,
+        max_score: parseFloat(fd.get('maxScore') as string) || 20,
         material_url: materialUrl,
         attachments,
       }).eq('id', id)

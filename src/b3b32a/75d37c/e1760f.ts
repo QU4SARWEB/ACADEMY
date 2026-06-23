@@ -99,13 +99,13 @@ export async function initStudentExamList(): Promise<void> {
                         ${exam.description ? `<p class="mt-1 text-sm text-zinc-400">${escBr(exam.description)}</p>` : ''}
                         <div class="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
                           <span>Tiempo: ${exam.time_limit || 300} min</span>
-                          <span>Nota mínima: ${exam.passing_score}%</span>
+                          <span>Nota mínima: ${exam.passing_score}/20</span>
                           ${exam.max_attempts ? `<span>Intentos: ${exam.max_attempts}</span>` : ''}
                           ${exam.due_date ? `<span>Vence: ${formatDate(exam.due_date)}</span>` : ''}
                         </div>
                         ${attempt
-                          ? `<p class="mt-2 text-sm ${(attempt.score ?? 0) >= (exam.passing_score ?? 0) ? 'text-green-400' : 'text-yellow-400'}">
-                              Puntaje: ${attempt.score ?? '—'}%
+                          ? `<p class="mt-2 text-sm ${(attempt.score ?? 0) >= (exam.passing_score ?? 12) ? 'text-green-400' : 'text-yellow-400'}">
+                              Puntaje: ${attempt.score ?? '—'}/20
                             </p>`
                           : ''
                         }

@@ -64,7 +64,7 @@ export async function initCoachExams(): Promise<void> {
             <div class="mb-4 grid grid-cols-2 gap-4">
               <div>
                 <label class="mb-1 block text-sm text-zinc-400">Nota mínima %</label>
-                <input name="passing_score" type="number" min="0" max="100" value="60"
+                <input name="passing_score" type="number" min="0" max="20" value="12"
                   class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
               </div>
             </div>
@@ -202,7 +202,7 @@ export async function initCoachExams(): Promise<void> {
                       }
                     </div>
                     <p class="mt-1 text-xs text-zinc-500">
-                      Nota mín: ${exam.passing_score}% · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
+                      Nota mín: ${exam.passing_score}/20 · Tiempo: ${exam.time_limit || 300}min${exam.max_attempts ? ` · Intentos: ${exam.max_attempts}` : ''}
               ${exam.due_date ? ` · Vence: ${formatDate(exam.due_date)}` : ''}
                     </p>
                   </div>
@@ -230,7 +230,7 @@ export async function initCoachExams(): Promise<void> {
                     <div class="mb-3 grid grid-cols-2 gap-3">
                       <div>
                         <label class="mb-1 block text-xs text-zinc-400">Nota mínima %</label>
-                        <input name="passing_score" type="number" min="0" max="100" value="${exam.passing_score}"
+                        <input name="passing_score" type="number" min="0" max="20" value="${exam.passing_score}"
                           class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                       </div>
                     </div>
@@ -518,7 +518,7 @@ export async function initCoachExams(): Promise<void> {
         course_id: id,
         title: fd.get('title'),
         description: fd.get('description'),
-        passing_score: parseFloat(fd.get('passing_score') as string) || 60,
+        passing_score: parseFloat(fd.get('passing_score') as string) || 12,
         time_limit: parseInt(fd.get('time_limit') as string) || null,
         max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
         weight: parseFloat(fd.get('weight') as string) || 0,
@@ -598,7 +598,7 @@ export async function initCoachExams(): Promise<void> {
         const payload: Record<string, any> = {
           title: fd.get('title'),
           description: fd.get('description'),
-          passing_score: parseFloat(fd.get('passing_score') as string) || 60,
+          passing_score: parseFloat(fd.get('passing_score') as string) || 12,
           time_limit: parseInt(fd.get('time_limit') as string) || null,
           max_attempts: parseInt(fd.get('max_attempts') as string) || 1,
           weight: parseFloat(fd.get('weight') as string) || 0,
@@ -655,7 +655,7 @@ export async function initCoachExams(): Promise<void> {
       ;(window as any).__blockReload = true
       const payload: Record<string, any> = {
         course_id: id, title: parsed.title, description: parsed.description,
-        passing_score: parsed.passingScore || 60, time_limit: parsed.timeLimit || null,
+        passing_score: parsed.passingScore || 12, time_limit: parsed.timeLimit || null,
         max_attempts: 1, weight: 0, is_published: true, shuffle: true,
         eval_type: 'exam', is_active: true,
       }
@@ -916,7 +916,7 @@ export async function initCoachExams(): Promise<void> {
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-xs text-zinc-400">Intento ${att.attempt_num}</span>
-                <span class="text-xs ${att.score !== null ? 'text-green-400' : 'text-yellow-400'}">${att.score !== null ? att.score + '%' : 'Pendiente'}</span>
+                <span class="text-xs ${att.score !== null ? 'text-green-400' : 'text-yellow-400'}">${att.score !== null ? att.score + '/20' : 'Pendiente'}</span>
                 <span class="rounded px-2 py-0.5 text-[10px] ${att.status === 'graded' ? 'bg-green-500/20 text-green-400' : att.status === 'submitted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-500/20 text-zinc-400'}">${att.status}</span>
               </div>
             </div>
@@ -955,7 +955,7 @@ export async function initCoachExams(): Promise<void> {
                         `}
                         ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                           <div class="mt-2 flex items-center gap-2" data-sa-id="${sa.id}">
-                            <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-100" min="0" max="100" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                            <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
                             <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
                             <button type="button" class="grade-save-btn text-[10px] text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                           </div>
@@ -1003,7 +1003,7 @@ export async function initCoachExams(): Promise<void> {
       const scoreInput = container?.querySelector<HTMLInputElement>('.grade-score')
       if (!saId) return
       const score = parseFloat(scoreInput?.value || '0')
-      if (isNaN(score) || score < 0 || score > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+      if (isNaN(score) || score < 0 || score > 20) { toast('error', 'La nota debe ser entre 0 y 20'); return }
       const isCorrect = score > 0
       const { error } = await supabase.from('student_answers').update({ is_correct: isCorrect, score }).eq('id', saId)
       if (error) { toast('error', error.message); return }
@@ -1227,12 +1227,12 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
         ${prof.avatar_url ? `<img src="${escapeHtml(prof.avatar_url)}" class="h-10 w-10 rounded-full object-cover" />` : ''}
         <div>
           <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml([prof.riot_id || prof.full_name, prof.social_discord].filter(Boolean).join(' | ') || 'Unknown')}</h1>
-          <p class="text-sm text-zinc-500">Intento ${attempt.attempt_num} · ${attempt.score !== null ? attempt.score + '%' : 'Pendiente'} · <span class="rounded px-2 py-0.5 text-[10px] ${attempt.status === 'graded' ? 'bg-green-500/20 text-green-400' : attempt.status === 'submitted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-500/20 text-zinc-400'}">${attempt.status}</span></p>
+          <p class="text-sm text-zinc-500">Intento ${attempt.attempt_num} · ${attempt.score !== null ? attempt.score + '/20' : 'Pendiente'} · <span class="rounded px-2 py-0.5 text-[10px] ${attempt.status === 'graded' ? 'bg-green-500/20 text-green-400' : attempt.status === 'submitted' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-500/20 text-zinc-400'}">${attempt.status}</span></p>
         </div>
       </div>
       <div class="mb-4 flex items-center gap-3">
         <label class="text-sm text-zinc-400">Nota general:</label>
-        <input type="number" id="overall-score-input" class="w-24 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" min="0" max="100" step="0.01" value="${attempt.score !== null ? attempt.score : ''}" placeholder="—" />
+        <input type="number" id="overall-score-input" class="w-24 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" min="0" max="20" step="0.01" value="${attempt.score !== null ? attempt.score : ''}" placeholder="—" />
         <span class="text-sm text-zinc-500">%</span>
         <button type="button" id="save-overall-score" class="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">Guardar nota</button>
       </div>
@@ -1270,7 +1270,7 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
                 `}
                 ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                   <div class="mt-3 flex items-center gap-2" data-sa-id="${sa.id}">
-                    <input type="number" class="grade-score w-24 rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-100" min="0" max="100" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
+                    <input type="number" class="grade-score w-24 rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
                     <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
                     <button type="button" class="grade-save-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                   </div>
@@ -1295,7 +1295,7 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
     const scoreInput = container?.querySelector<HTMLInputElement>('.grade-score')
     if (!saId) return
     const score = parseFloat(scoreInput?.value || '0')
-    if (isNaN(score) || score < 0 || score > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+    if (isNaN(score) || score < 0 || score > 20) { toast('error', 'La nota debe ser entre 0 y 20'); return }
     const isCorrect = score > 0
     const { error } = await supabase.from('student_answers').update({ is_correct: isCorrect, score }).eq('id', saId)
       if (error) { toast('error', error.message); return }
@@ -1319,7 +1319,7 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
     overallBtn.addEventListener('click', async () => {
       const inp = document.getElementById('overall-score-input') as HTMLInputElement
       const val = parseFloat(inp?.value)
-      if (isNaN(val) || val < 0 || val > 100) { toast('error', 'La nota debe ser entre 0 y 100'); return }
+      if (isNaN(val) || val < 0 || val > 20) { toast('error', 'La nota debe ser entre 0 y 20'); return }
       const { error } = await supabase.from('exam_attempts').update({ score: val }).eq('id', attemptId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Nota general actualizada')

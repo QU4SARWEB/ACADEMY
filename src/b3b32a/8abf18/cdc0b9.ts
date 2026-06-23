@@ -50,7 +50,7 @@ export async function initCoachNewTask(): Promise<void> {
             </div>
             <div>
               <label class="mb-1 block text-xs font-medium text-zinc-400">Puntaje máximo</label>
-              <input type="number" name="maxScore" value="100" min="0"
+              <input type="number" name="maxScore" value="20" min="0"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
             </div>
           </div>
@@ -90,7 +90,7 @@ export async function initCoachNewTask(): Promise<void> {
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,
-        max_score: parseFloat(fd.get('maxScore') as string) || 100,
+        max_score: parseFloat(fd.get('maxScore') as string) || 20,
         material_url: attachmentUrl,
         attachments: attachmentUrl ? [{ name: file ? file.name : 'archivo', url: attachmentUrl }] : [],
       })

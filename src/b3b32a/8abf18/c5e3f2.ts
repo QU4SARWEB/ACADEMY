@@ -65,7 +65,7 @@ export async function initCoachGrades(): Promise<void> {
     }
     for (const eid of Object.keys(examAvgByEnroll)) {
       const count = (allExams ?? []).filter((e: any) => e.enrollment_id === eid).length
-      examAvgByEnroll[eid] = (examAvgByEnroll[eid] / count) / 5
+      examAvgByEnroll[eid] = (examAvgByEnroll[eid] / count)
     }
 
     const taskAvgByEnroll: Record<string, number> = {}

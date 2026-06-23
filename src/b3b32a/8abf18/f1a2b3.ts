@@ -48,7 +48,7 @@ export async function initCoachStudentGrades(): Promise<void> {
     // Calculate averages
     const monthlyScores = (monthlyGrades ?? []).map((g: any) => Number(g.score))
     const monthlyAvg = monthlyScores.length > 0 ? monthlyScores.reduce((a, b) => a + b, 0) / monthlyScores.length : 0
-    const examScores = (exams ?? []).map((e: any) => Number(e.score) / 5)
+    const examScores = (exams ?? []).map((e: any) => Number(e.score))
     const examAvg = examScores.length > 0 ? examScores.reduce((a, b) => a + b, 0) / examScores.length : 0
     const taskScores = (tasks ?? []).map((t: any) => {
       const max = t.tasks?.max_score
@@ -120,9 +120,9 @@ export async function initCoachStudentGrades(): Promise<void> {
           <h2 class="font-heading text-base font-bold text-white mb-3">Actividades (${(exams ?? []).length + (tasks ?? []).length})</h2>
           ${(exams ?? []).length + (tasks ?? []).length === 0 ? '<p class="text-sm text-zinc-500">Sin actividades.</p>' :
             '<div class="space-y-2 max-h-[400px] overflow-y-auto pr-1">' +
-            [...(exams ?? []).map((e: any) => ({ type: 'exam', title: (e as any).exams?.title || '', score: Number(e.score) / 5, date: e.started_at })),
+            [             ...(exams ?? []).map((e: any) => ({ type: 'exam', title: (e as any).exams?.title || '', score: Number(e.score), date: e.started_at })),
              ...(tasks ?? []).map((t: any) => {
-               const max = (t as any).tasks?.max_score || 100
+               const max = (t as any).tasks?.max_score || 20
                return { type: 'task', title: t.tasks?.title || '', score: (Number(t.score) / max) * 20, date: t.submitted_at }
              })
             ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item: any) => `

@@ -77,8 +77,8 @@ function renderResultsView(attempt: any, questions: any[], courseId: string, pas
     return a && (a.is_correct != null)
   })
   const correct = graded.filter((eq: any) => answersByQ[eq.question_id]?.is_correct).length
-  const score = attempt.score ?? (total > 0 ? (correct / total) * 100 : 0)
-  const passed = score >= (passingScore ?? 60)
+  const score = attempt.score ?? (total > 0 ? (correct / total) * 20 : 0)
+  const passed = score >= ((attempt as any).exam?.passing_score ?? 12)
 
   const questionsHtml = questions.map((eq: any, i: number) => {
     const q = eq.questions
@@ -143,8 +143,8 @@ function renderResultsView(attempt: any, questions: any[], courseId: string, pas
           ${passed ? Icon('checkCircle', 40) : Icon('xCircle', 40)}
         </div>
         <h2 class="text-xl font-bold text-white">${passed ? 'Aprobado' : 'No aprobado'}</h2>
-        <p class="mt-2 text-3xl font-bold ${passed ? 'text-green-400' : 'text-red-400'}">${(typeof score === 'number' ? score : 0).toFixed(1)}%</p>
-        <p class="mt-1 text-sm text-zinc-500">${correct} de ${total} correctas (mínimo ${passingScore}%)</p>
+        <p class="mt-2 text-3xl font-bold ${passed ? 'text-green-400' : 'text-red-400'}">${(typeof score === 'number' ? score : 0).toFixed(1)}/20</p>
+        <p class="mt-1 text-sm text-zinc-500">${correct} de ${total} correctas (mínimo ${passingScore}/20)</p>
       </div>
 
       <div class="space-y-4">
@@ -233,7 +233,7 @@ export async function initStudentExamTake(): Promise<void> {
     if (submittedCount >= maxAttempts) {
       const lastAttempt = (allAttempts ?? [])[0]
       if (lastAttempt) {
-        renderResultsView(lastAttempt, questions, courseId, exam.passing_score ?? 60)
+        renderResultsView(lastAttempt, questions, courseId, exam.passing_score ?? 12)
       } else {
         document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500 py-10 text-center">Has alcanzado el máximo de intentos.</p>'
       }
@@ -560,7 +560,7 @@ export async function initStudentExamTake(): Promise<void> {
             selected_option: ans || null,
             text_answer: null,
             is_correct: ans ? isCorrect : null,
-            score: ans ? (isCorrect ? 100 : 0) : null,
+            score: ans ? (isCorrect ? 20 : 0) : null,
           }
         }
 
@@ -589,7 +589,7 @@ export async function initStudentExamTake(): Promise<void> {
       // Calculate score
       const autoGraded = answerRows.filter((a: any) => a.is_correct != null)
       const correctCount = autoGraded.filter((a: any) => a.is_correct).length
-      const score = autoGraded.length > 0 ? (correctCount / autoGraded.length) * 100 : null
+      const score = autoGraded.length > 0 ? (correctCount / autoGraded.length) * 20 : null
 
       const { error: updError } = await supabase
         .from('exam_attempts')
@@ -614,7 +614,7 @@ export async function initStudentExamTake(): Promise<void> {
       // Show results
       attempt.student_answers = answerRows
       attempt.score = score
-      renderResultsView(attempt, questions, courseId, exam.passing_score ?? 60)
+      renderResultsView(attempt, questions, courseId, exam.passing_score ?? 12)
     }
   } catch (err) {
     console.error('Error loading exam:', err)
