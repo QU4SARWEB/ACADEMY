@@ -107,7 +107,7 @@ export async function initStudentCourses(): Promise<void> {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('rank, scholarship, is_active')
+          .select('rank, scholarship, is_active, role')
           .eq('id', session.user.id)
           .maybeSingle()
 
@@ -119,7 +119,7 @@ export async function initStudentCourses(): Promise<void> {
           .eq('id', courseId)
           .maybeSingle()
 
-        if (course?.min_rank && profile?.rank !== course.min_rank) {
+        if (course?.min_rank && profile?.role !== 'coach' && profile?.rank !== course.min_rank) {
           toast('error', `Este curso requiere rango ${course.min_rank}`)
           return
         }
