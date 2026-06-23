@@ -56,7 +56,7 @@ export async function initCoachNewTask(): Promise<void> {
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-zinc-400">Archivo adjunto (opcional)</label>
-            <input type="file" name="attachment" accept=".pdf,.mp4,.png,.jpg,.jpeg,.zip"
+            <input type="file" name="attachment" accept=".pdf,.mp4,.png,.jpg,.jpeg,.zip,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
               class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition file:mr-3 file:rounded file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1 file:text-xs file:text-white hover:file:bg-[#7C3AED]" />
           </div>
           <p id="form-error" class="hidden text-xs text-red-400"></p>
