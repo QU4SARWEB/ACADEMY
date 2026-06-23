@@ -267,11 +267,12 @@ export async function initCoachTaskDetail(): Promise<void> {
           attachments = [{ name: fileInput.files[0].name, url }]
         }
       }
+      const newDueDate = (fd.get('dueDate') as string) || task.due_date
       const { error } = await supabase.from('tasks').update({
         course_id: fd.get('courseId') as string,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
-        due_date: fd.get('dueDate') as string,
+        due_date: newDueDate,
         max_score: parseFloat(fd.get('maxScore') as string) || 100,
         material_url: materialUrl,
         attachments,
