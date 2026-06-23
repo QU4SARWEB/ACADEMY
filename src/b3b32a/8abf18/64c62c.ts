@@ -196,38 +196,43 @@ export async function initCoachAttendance(): Promise<void> {
     monthInput?.addEventListener('change', refreshTable)
     dateInput?.addEventListener('change', refreshTable)
 
-    async function saveAttendance(enrollmentId: string, date: string, newStatus: string) {
-      const record = attendanceMap[enrollmentId]?.[date]
-      if (record) {
-        if (newStatus === '') {
-          const { error } = await supabase.from('attendance').delete().eq('id', record.id)
-          if (error) throw error
-          delete attendanceMap[enrollmentId][date]
-          if (Object.keys(attendanceMap[enrollmentId]).length === 0) {
-            delete attendanceMap[enrollmentId]
-          }
-        } else {
-          const { error } = await supabase.from('attendance').update({ status: newStatus }).eq('id', record.id)
-          if (error) throw error
-          record.status = newStatus
-        }
-      } else if (newStatus !== '') {
-        const { data: newRecord, error } = await supabase.from('attendance').insert({
-          enrollment_id: enrollmentId,
-          date,
-          status: newStatus,
-        }).select().single()
-
-        if (error) throw error
-        if (!attendanceMap[enrollmentId]) attendanceMap[enrollmentId] = {}
-        attendanceMap[enrollmentId][date] = newRecord
-        if (!dateSet.has(date)) {
-          dateSet.add(date)
-          allDates.push(date)
-          allDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-        }
+    tableContainer.addEventListener('click', (e) => {
+      const target = (e.target as HTMLElement).closest('.btn-attendance, .btn-attendance-quick') as HTMLElement
+      if (!target) return
+      const enrollmentId = target.dataset.enrollment!
+      let date: string
+      let newStatus: string
+      if (target.classList.contains('btn-attendance-quick')) {
+        date = dateInput?.value
+        if (!date) return
+        newStatus = target.dataset.status!
+      } else {
+        date = target.dataset.date!
+        const currentStatus = target.dataset.status || ''
+        const idx = CYCLE_ORDER.indexOf(currentStatus)
+        newStatus = CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length]
       }
-    }
+      if (!date) return
+      const key = getCellKey(enrollmentId, date)
+      const oldRecord = attendanceMap[enrollmentId]?.[date] || null
+      const existingPending = pendingChanges.get(key)
+      const dbStatus = oldRecord?.status || ''
+      if (existingPending) {
+        existingPending.newStatus = getStatusAfterCycle(existingPending.newStatus)
+        if (existingPending.newStatus === dbStatus) { pendingChanges.delete(key) }
+      } else if (newStatus !== dbStatus || !dbStatus) {
+        pendingChanges.set(key, { enrollmentId, date, newStatus, oldRecord })
+      }
+      const cell = target.closest('td')!
+      if (pendingChanges.has(key)) {
+        const ps = pendingChanges.get(key)!.newStatus
+        cell.innerHTML = `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${STATUS_COLORS[ps]} ring-1 ring-yellow-400/50">${STATUS_ICONS[ps]} ${STATUS_LABELS[ps]}</span>`
+      } else {
+        const ds = oldRecord?.status || ''
+        cell.innerHTML = ds ? `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${STATUS_COLORS[ds]}">${STATUS_ICONS[ds]} ${STATUS_LABELS[ds]}</span>` : '<span class="text-zinc-600">—</span>'
+      }
+      updateSaveBar()
+    })
 
     document.getElementById('btn-save-attendance')?.addEventListener('click', async () => {
       if (pendingChanges.size === 0) return
