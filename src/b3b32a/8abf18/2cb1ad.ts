@@ -34,11 +34,13 @@ export async function initCoachTasks(): Promise<void> {
       </div>
 
       <div class="mb-4">
-        <select id="task-course-filter"
-          class="w-full sm:w-64 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-          <option value="">Todos los cursos</option>
-          ${allCourses.map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
-        </select>
+        <div class="flex flex-wrap gap-2" id="task-course-filter">
+          <button type="button" class="task-filter-btn rounded-xl border px-3 py-1.5 text-xs transition border-[#8B5CF6] bg-[#8B5CF6]/20 text-white" data-course-id="">Todos</button>
+          ${allCourses.map((c: any) => `
+            <button type="button" class="task-filter-btn rounded-xl border px-3 py-1.5 text-xs transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 text-zinc-300 hover:text-white bg-zinc-900/50"
+              data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
+          `).join('')}
+        </div>
       </div>
 
       <div id="task-list" class="space-y-3">
@@ -50,8 +52,17 @@ export async function initCoachTasks(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
-    document.getElementById('task-course-filter')?.addEventListener('change', (e) => {
-      const courseId = (e.target as HTMLSelectElement).value
+    // Task filter buttons
+    document.getElementById('task-course-filter')?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.task-filter-btn') as HTMLElement
+      if (!btn) return
+      document.querySelectorAll('.task-filter-btn').forEach(b => {
+        b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        b.classList.add('border-zinc-700', 'text-zinc-300')
+      })
+      btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+      btn.classList.remove('border-zinc-700', 'text-zinc-300')
+      const courseId = btn.dataset.courseId || ''
       const filtered = !courseId ? (data ?? []) : (data ?? []).filter((t: any) => t.course_id === courseId)
       document.getElementById('task-list')!.innerHTML = filtered.length === 0
         ? '<p class="text-sm text-zinc-500">No hay tareas para este curso.</p>'
