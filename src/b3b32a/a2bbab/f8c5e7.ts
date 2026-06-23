@@ -72,7 +72,7 @@ export async function initPlayerTaskDetail(): Promise<void> {
           </div>` : ''}
 
         ${(() => {
-          const attach = (task as any).attachments || ((task as any).material_url ? [{ name: (task as any).material_url.split('/').pop(), url: (task as any).material_url }] : [])
+          const attach = (task as any).attachments?.length ? (task as any).attachments : ((task as any).material_url ? [{ name: (task as any).material_url.split('/').pop(), url: (task as any).material_url }] : [])
           if (!attach.length) return ''
           return `<div class="glass mb-6 rounded-xl p-4">
             <h3 class="mb-3 font-medium text-white">Material adjunto</h3>

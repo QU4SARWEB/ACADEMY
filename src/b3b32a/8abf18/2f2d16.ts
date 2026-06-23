@@ -84,7 +84,7 @@ export async function initCoachTaskDetail(): Promise<void> {
               </p>
               ${task.description ? `<p class="mt-2 text-sm text-zinc-300">${escBr(task.description)}</p>` : ''}
               ${(() => {
-                const attach = task.attachments || (task.material_url ? [{ name: task.material_url.split('/').pop(), url: task.material_url }] : [])
+                const attach = task.attachments?.length ? task.attachments : (task.material_url ? [{ name: task.material_url.split('/').pop(), url: task.material_url }] : [])
                 if (!attach.length) return ''
                 return attach.map((a: any) => `
                   <div class="mt-3">
