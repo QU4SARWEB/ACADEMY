@@ -74,9 +74,6 @@ export function mountCoachStudentDetail(): void {
       }
 
       const enrolledCourseIds = enrollments.map((e: any) => e.course_id)
-      const { data: available } = enrolledCourseIds.length > 0
-        ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).neq('slug', 'clase-general').order('name')
-        : await supabase.from('courses').select('id, name').eq('is_active', true).neq('slug', 'clase-general').order('name')
 
       const lastEnr = enrollments.find((e: any) => e.status === 'active' || e.status === 'recovery')
       let eligibility: any = null
@@ -316,36 +313,8 @@ export function mountCoachStudentDetail(): void {
                   <p id="ach-error" class="hidden text-xs text-red-400"></p>
                 </div>
               </div>
-
-              <div class="mt-4 rounded-lg border border-zinc-800 bg-[#111] p-4">
-                <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
-                  ${Icon('bookOpen', 14)} Inscribir en curso
-                </h3>
-                <form id="form-enroll" class="mt-3 space-y-3">
-                  <input type="hidden" name="profileId" value="${escapeHtml(id)}" />
-                  <div>
-                    <select name="courseId" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                      <option value="">Seleccionar curso...</option>
-                      ${(available ?? []).map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
-                    </select>
-                  </div>
-                  <div class="flex gap-2">
-                    <input type="hidden" name="seasonId" value="" />
-                    <select name="type" class="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                      <option value="student">Alumno</option>
-                      <option value="player">Jugador</option>
-                    </select>
-                  </div>
-                  <p id="enroll-error" class="hidden text-xs text-red-400"></p>
-                  ${(available ?? []).length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : ''}
-                  <button type="submit" class="btn-glow rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-                    ${Icon('plus', 14)} Inscribir
-                  </button>
-                </form>
-              </div>
             </div>
-          </div>
-        </div>`
+          </div>`
 
       document.getElementById('page-content')!.innerHTML = html
       attachEventListeners(id, (profile as any).is_active, (profile as any).scholarship)
@@ -500,73 +469,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     toast('success', 'Estudiante promocionado correctamente')
     mountCoachStudentDetail()
   })
-
-  document.getElementById('form-enroll')?.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    const fd = new FormData(e.target as HTMLFormElement)
-    const profileId = fd.get('profileId') as string
-    const courseId = fd.get('courseId') as string
-    const type = (fd.get('type') as string) || 'student'
-
-    if (!courseId) {
-      document.getElementById('enroll-error')!.textContent = 'Selecciona un curso'
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-    const { data: existing } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', profileId)
-      .eq('course_id', courseId)
-      .maybeSingle()
-
-    if (existing) {
-      document.getElementById('enroll-error')!.textContent = 'Ya está inscrito en este curso'
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-    const { data: newEnroll, error } = await supabase.from('enrollments').insert({
-      profile_id: profileId,
-      course_id: courseId,
-      type,
-      status: 'active',
-    }).select('id').maybeSingle()
-
-    if (error) {
-      document.getElementById('enroll-error')!.textContent = error.message
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-      if (newEnroll) {
-        const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-        const coursePrice = enrollCourse?.price ?? 1.54
-        const { data: studentProfile } = await supabase
-          .from('profiles')
-          .select('scholarship')
-          .eq('id', profileId)
-          .maybeSingle()
-
-        const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
-        const { error: payErr } = await supabase.from('payments').insert({
-          profile_id: profileId,
-          enrollment_id: newEnroll.id,
-          type,
-          status: payStatus,
-          amount: coursePrice,
-        })
-        if (payErr) {
-          console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
-          toast('error', 'Pago no creado: ' + payErr.message)
-        } else {
-          toast('success', 'Pago creado (' + payStatus + ')')
-          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollGeneralCourses(profileId, type)
-        }
-      }
-
-    toast('success', 'Estudiante inscrito correctamente')
-    mountCoachStudentDetail()
-  })
 }
+
+// Form handlers end here

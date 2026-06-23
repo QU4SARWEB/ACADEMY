@@ -203,7 +203,7 @@ export function initSidebar(): void {
   // Exit preview
   document.getElementById('exit-preview')?.addEventListener('click', () => {
     sessionStorage.removeItem('previewRole')
-    router.navigate('/coaches/dashboard')
+    location.reload()
   })
 
   // Fetch unread notification count
