@@ -16,11 +16,12 @@ export async function initStudentSchedule(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: schedules } = await supabase
-      .from('schedules')
-      .select('*')
-      .order('day_of_week')
-      .order('start_time')
+    const { data: enrollments } = await supabase.from('enrollments').select('course_id').eq('profile_id', session.user.id).eq('status', 'active')
+    const enrolledCourseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
+
+    const { data: schedules } = enrolledCourseIds.length > 0
+      ? await supabase.from('schedules').select('*').in('course_id', enrolledCourseIds).order('day_of_week').order('start_time')
+      : { data: [] }
 
     const seasonScheds = (schedules ?? [])
     const today = new Date().getDay()

@@ -19,10 +19,10 @@ export async function initStudentTasks(): Promise<void> {
     if (!session?.user?.id) return
 
     const { data: enrollments } = await supabase.from('enrollments').select('id, course_id').eq('profile_id', session.user.id).eq('status', 'active')
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('*')
-      .order('due_date', { ascending: false })
+    const courseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
+    const { data: tasks } = courseIds.length > 0
+      ? await supabase.from('tasks').select('*').in('course_id', courseIds).order('due_date', { ascending: false })
+      : { data: [] }
 
     const enrollmentIds = (enrollments ?? []).map((e: any) => e.id)
     const { data: submissions } = await supabase

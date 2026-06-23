@@ -86,6 +86,7 @@ export async function initCoachNewTask(): Promise<void> {
         attachmentUrl = fileUrl ?? null
       }
       const { error } = await supabase.from('tasks').insert({
+        course_id: fd.get('courseId') as string,
         title: fd.get('title') as string,
         description: (fd.get('description') as string) || null,
         due_date: fd.get('dueDate') as string,

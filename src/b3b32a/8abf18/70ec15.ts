@@ -21,6 +21,8 @@ export async function initCoachSchedules(): Promise<void> {
       .order('day_of_week')
       .order('start_time')
 
+    const { data: allCourses } = await supabase.from('courses').select('id, name, is_active').order('name')
+
     const groupedBySeason: Record<string, any[]> = { 'Horarios': [] }
     for (const s of schedules ?? []) {
       if (!groupedBySeason['Horarios']) groupedBySeason['Horarios'] = []
@@ -83,6 +85,9 @@ export async function initCoachSchedules(): Promise<void> {
     document.getElementById('page-content')!.innerHTML = html
 
     function renderScheduleForm(): string {
+      const courseOpts = (allCourses ?? []).map((c: any) =>
+        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.is_active ? ' (Activo)' : ''}</option>`
+      ).join('')
       return `
         <div class="glass rounded-xl p-4">
           <h3 class="mb-3 font-medium text-white">Nuevo horario</h3>
@@ -92,6 +97,14 @@ export async function initCoachSchedules(): Promise<void> {
                 <label class="mb-1 block text-xs text-zinc-400">Título</label>
                 <input type="text" name="title" required
                   class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-zinc-400">Curso</label>
+                <select name="courseId" required
+                  class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                  <option value="">Seleccionar...</option>
+                  ${courseOpts}
+                </select>
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Semana</label>
@@ -160,6 +173,7 @@ export async function initCoachSchedules(): Promise<void> {
         const fd = new FormData(e.target as HTMLFormElement)
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'
         const { error } = await supabase.from('schedules').insert({
+          course_id: fd.get('courseId') as string,
           title: fd.get('title') as string,
           week_number: parseInt(fd.get('weekNumber') as string) || 1,
           day_of_week: parseInt(fd.get('dayOfWeek') as string),
