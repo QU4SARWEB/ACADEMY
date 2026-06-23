@@ -57,6 +57,21 @@ export async function initCoachAttendance(): Promise<void> {
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const today = now.toISOString().split('T')[0]
 
+    const pendingChanges = new Map<string, { enrollmentId: string; date: string; newStatus: string; oldRecord: any }>()
+    function getCellKey(enrollmentId: string, date: string): string { return `${enrollmentId}|${date}` }
+    function getStatusAfterCycle(currentStatus: string): string {
+      const idx = CYCLE_ORDER.indexOf(currentStatus)
+      return CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length]
+    }
+    function updateSaveBar(): void {
+      const saveBar = document.getElementById('bulk-save-bar')
+      const pendingCount = document.getElementById('pending-count')
+      if (!saveBar || !pendingCount) return
+      const count = pendingChanges.size
+      pendingCount.textContent = String(count)
+      saveBar.classList.toggle('hidden', count === 0)
+    }
+
     function renderTable(selectedMonth: string, selectedDate: string): string {
       const filteredDates = allDates.filter(d => d.startsWith(selectedMonth))
       const colspan = Math.max(2, filteredDates.length + 2)
@@ -103,13 +118,17 @@ export async function initCoachAttendance(): Promise<void> {
                     ${filteredDates.map(d => {
                       const record = attendanceMap[enr.id]?.[d]
                       const status = record?.status
+                      const key = getCellKey(enr.id, d)
+                      const pending = pendingChanges?.get(key)
+                      const displayStatus = pending ? pending.newStatus : status || ''
+                      const isPending = !!pending
                       return `
                         <td class="px-3 py-3 text-center">
-                          ${status ? `
-                            <button class="btn-attendance inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${STATUS_COLORS[status]}"
-                                    data-enrollment="${enr.id}" data-date="${d}" data-status="${status}">
-                              ${STATUS_ICONS[status]}
-                              ${STATUS_LABELS[status]}
+                          ${displayStatus ? `
+                            <button class="btn-attendance inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${STATUS_COLORS[displayStatus]} ${isPending ? 'ring-1 ring-yellow-400/50' : ''}"
+                                    data-enrollment="${enr.id}" data-date="${d}" data-status="${displayStatus}">
+                              ${STATUS_ICONS[displayStatus]}
+                              ${STATUS_LABELS[displayStatus]}
                             </button>
                           ` : `
                             <button class="btn-attendance text-zinc-600 hover:text-zinc-400 text-xs"
@@ -145,6 +164,15 @@ export async function initCoachAttendance(): Promise<void> {
         <h1 class="font-heading text-2xl font-bold text-white">Asistencia · ${escapeHtml(course.name)}</h1>
         <p class="mt-1 text-sm text-zinc-500">Gestiona la asistencia de los estudiantes</p>
       </div>
+
+      <div id="bulk-save-bar" class="hidden mb-4 flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5">
+        <span class="text-sm text-yellow-300"><span id="pending-count">0</span> cambios pendientes</span>
+        <div class="ml-auto flex gap-2">
+          <button id="btn-save-attendance" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar</button>
+          <button id="btn-discard-attendance" class="rounded-lg border border-zinc-600 px-4 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800">Descartar</button>
+        </div>
+      </div>
+
       <div class="mb-4 flex items-center gap-3 flex-wrap">
         <label class="text-xs text-zinc-500">Filtrar por mes:</label>
         <input type="month" id="attendance-month" value="${escapeHtml(currentMonth)}"
@@ -201,33 +229,52 @@ export async function initCoachAttendance(): Promise<void> {
       }
     }
 
-    tableContainer.addEventListener('click', async (e) => {
-      const target = (e.target as HTMLElement).closest('.btn-attendance, .btn-attendance-quick') as HTMLElement
-      if (!target) return
-
-      const enrollmentId = target.dataset.enrollment!
-      let date: string
-      let newStatus: string
-
-      if (target.classList.contains('btn-attendance-quick')) {
-        date = dateInput?.value
-        if (!date) return
-        newStatus = target.dataset.status!
-      } else {
-        date = target.dataset.date!
-        const currentStatus = target.dataset.status || ''
-        const idx = CYCLE_ORDER.indexOf(currentStatus)
-        newStatus = CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length]
+    document.getElementById('btn-save-attendance')?.addEventListener('click', async () => {
+      if (pendingChanges.size === 0) return
+      const btn = document.getElementById('btn-save-attendance') as HTMLButtonElement
+      btn.disabled = true
+      btn.textContent = 'Guardando...'
+      let ok = 0, fail = 0
+      for (const [, change] of pendingChanges) {
+        try {
+          const { enrollmentId, date, newStatus, oldRecord } = change
+          if (oldRecord) {
+            if (newStatus === '') {
+              await supabase.from('attendance').delete().eq('id', oldRecord.id)
+              delete attendanceMap[enrollmentId][date]
+              if (Object.keys(attendanceMap[enrollmentId]).length === 0) delete attendanceMap[enrollmentId]
+            } else {
+              await supabase.from('attendance').update({ status: newStatus }).eq('id', oldRecord.id)
+              if (attendanceMap[enrollmentId]) attendanceMap[enrollmentId][date].status = newStatus
+            }
+          } else if (newStatus !== '') {
+            const { data: newRec } = await supabase.from('attendance').insert({
+              enrollment_id: enrollmentId, date, status: newStatus,
+            }).select().single()
+            if (!attendanceMap[enrollmentId]) attendanceMap[enrollmentId] = {}
+            attendanceMap[enrollmentId][date] = newRec
+            if (!dateSet.has(date)) {
+              dateSet.add(date)
+              allDates.push(date)
+              allDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+            }
+          }
+          ok++
+        } catch { fail++ }
       }
+      pendingChanges.clear()
+      updateSaveBar()
+      btn.disabled = false
+      btn.innerHTML = `${Icon('save', 12)} Guardar`
+      refreshTable()
+      if (fail > 0) toast('warning', `${ok} guardados, ${fail} errores`)
+      else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
+    })
 
-      if (!date) return
-
-      try {
-        await saveAttendance(enrollmentId, date, newStatus)
-        refreshTable()
-      } catch (err: any) {
-        toast('error', err?.message || 'Error al guardar asistencia')
-      }
+    document.getElementById('btn-discard-attendance')?.addEventListener('click', () => {
+      pendingChanges.clear()
+      updateSaveBar()
+      refreshTable()
     })
   } catch (err) {
     console.error('Error loading attendance:', err)
