@@ -85,9 +85,6 @@ export async function initCoachSchedules(): Promise<void> {
     document.getElementById('page-content')!.innerHTML = html
 
     function renderScheduleForm(): string {
-      const courseOpts = (allCourses ?? []).map((c: any) =>
-        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.is_active ? ' (Activo)' : ''}</option>`
-      ).join('')
       return `
         <div class="glass rounded-xl p-4">
           <h3 class="mb-3 font-medium text-white">Nuevo horario</h3>
@@ -100,11 +97,13 @@ export async function initCoachSchedules(): Promise<void> {
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Curso</label>
-                <select name="courseId" required
-                  class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                  <option value="">Seleccionar...</option>
-                  ${courseOpts}
-                </select>
+                <input type="hidden" name="courseId" id="sched-course-id" value="" />
+                <div class="flex flex-wrap gap-2">
+                  ${(allCourses ?? []).map((c: any) =>
+                    `<button type="button" class="sched-course-btn rounded-xl border px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
+                      data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`
+                  ).join('')}
+                </div>
               </div>
               <div>
                 <label class="mb-1 block text-xs text-zinc-400">Semana</label>
@@ -166,6 +165,18 @@ export async function initCoachSchedules(): Promise<void> {
 
       document.getElementById('btn-cancel-schedule')?.addEventListener('click', () => {
         container.classList.add('hidden')
+      })
+
+      container.querySelectorAll('.sched-course-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.sched-course-btn').forEach(b => {
+            b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+            b.classList.add('border-zinc-700', 'text-zinc-300')
+          })
+          btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          btn.classList.remove('border-zinc-700', 'text-zinc-300')
+          ;(container.querySelector('#sched-course-id') as HTMLInputElement)!.value = (btn as HTMLElement).dataset.courseId || ''
+        })
       })
 
       document.getElementById('schedule-create-form')?.addEventListener('submit', async (e) => {

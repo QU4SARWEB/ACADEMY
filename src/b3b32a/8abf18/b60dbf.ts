@@ -324,10 +324,13 @@ export function mountCoachStudentDetail(): void {
                 <form id="form-enroll" class="mt-3 space-y-3">
                   <input type="hidden" name="profileId" value="${escapeHtml(id)}" />
                   <div>
-                    <select name="courseId" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                      <option value="">Seleccionar curso...</option>
-                      ${(available ?? []).map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
-                    </select>
+                    <input type="hidden" name="courseId" id="enroll-course-id" value="" />
+                    <div class="flex flex-wrap gap-2" id="enroll-course-grid">
+                      ${(available ?? []).length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : (available ?? []).map((c: any) => `
+                        <button type="button" class="enroll-course-btn rounded-xl border px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
+                          data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
+                      `).join('')}
+                    </div>
                   </div>
                   <div class="flex gap-2">
                     <input type="hidden" name="seasonId" value="" />
@@ -337,7 +340,6 @@ export function mountCoachStudentDetail(): void {
                     </select>
                   </div>
                   <p id="enroll-error" class="hidden text-xs text-red-400"></p>
-                  ${(available ?? []).length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : ''}
                   <button type="submit" class="btn-glow rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
                     ${Icon('plus', 14)} Inscribir
                   </button>
@@ -499,6 +501,19 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
 
     toast('success', 'Estudiante promocionado correctamente')
     mountCoachStudentDetail()
+  })
+
+  // Course selector buttons
+  document.querySelectorAll('.enroll-course-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.enroll-course-btn').forEach(b => {
+        b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        b.classList.add('border-zinc-700', 'text-zinc-300')
+      })
+      btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+      btn.classList.remove('border-zinc-700', 'text-zinc-300')
+      document.getElementById('enroll-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
+    })
   })
 
   document.getElementById('form-enroll')?.addEventListener('submit', async (e) => {

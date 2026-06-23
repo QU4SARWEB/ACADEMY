@@ -34,13 +34,13 @@ export async function initCoachNewTask(): Promise<void> {
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-zinc-400">Curso</label>
-            <select name="courseId" required
-              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
-              <option value="">Seleccionar...</option>
+            <input type="hidden" name="courseId" id="task-course-id" value="" />
+            <div class="flex flex-wrap gap-2">
               ${(courses ?? []).map((c: any) =>
-                `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.is_active ? ' (Activo)' : ''}</option>`
+                `<button type="button" class="task-course-btn rounded-xl border px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
+                  data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`
               ).join('')}
-            </select>
+            </div>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
@@ -74,6 +74,18 @@ export async function initCoachNewTask(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.querySelectorAll('.task-course-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.task-course-btn').forEach(b => {
+          b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          b.classList.add('border-zinc-700', 'text-zinc-300')
+        })
+        btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        btn.classList.remove('border-zinc-700', 'text-zinc-300')
+        document.getElementById('task-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
+      })
+    })
 
     document.getElementById('task-form')!.addEventListener('submit', async (e) => {
       e.preventDefault()

@@ -114,11 +114,13 @@ export async function initCoachTaskDetail(): Promise<void> {
                 </div>
                 <div>
                   <label class="mb-1 block text-sm text-zinc-400">Curso</label>
-                  <select name="courseId" required
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                    <option value="">Seleccionar...</option>
-                    ${(allCourses ?? []).map((c: any) => `<option value="${escapeHtml(c.id)}" ${c.id === task.course_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
-                  </select>
+                  <input type="hidden" name="courseId" id="edit-task-course-id" value="${task.course_id || ''}" />
+                  <div class="flex flex-wrap gap-2">
+                    ${(allCourses ?? []).map((c: any) => `
+                      <button type="button" class="edit-task-course-btn rounded-xl border px-4 py-2 text-sm transition hover:border-[#8B5CF6] ${c.id === task.course_id ? 'bg-[#8B5CF6]/20 border-[#8B5CF6] text-white' : 'border-zinc-700 text-zinc-300 hover:text-white bg-zinc-900/50'}"
+                        data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
+                    `).join('')}
+                  </div>
                 </div>
               </div>
               <div>
@@ -252,6 +254,17 @@ export async function initCoachTaskDetail(): Promise<void> {
     })
     document.getElementById('cancel-edit-task')?.addEventListener('click', () => {
       document.getElementById('edit-task-form-area')!.classList.add('hidden')
+    })
+    document.querySelectorAll('.edit-task-course-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.edit-task-course-btn').forEach(b => {
+          b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          b.classList.add('border-zinc-700', 'text-zinc-300')
+        })
+        btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        btn.classList.remove('border-zinc-700', 'text-zinc-300')
+        document.getElementById('edit-task-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
+      })
     })
     document.getElementById('edit-task-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()

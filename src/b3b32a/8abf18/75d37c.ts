@@ -92,10 +92,13 @@ export function mountCoachStudents(): void {
         <div id="enroll-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
           <div class="glass max-w-md w-full mx-4 my-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
             <h3 class="mb-4 font-heading text-lg font-bold text-white">Inscribir seleccionados</h3>
-            <select id="bulk-course-select" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-              <option value="">Seleccionar curso...</option>
-              ${(courses ?? []).map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
-            </select>
+            <input type="hidden" id="bulk-course-id" value="" />
+            <div class="flex flex-wrap gap-2 mb-4" id="bulk-course-grid">
+              ${(courses ?? []).map((c: any) => `
+                <button type="button" class="bulk-course-btn rounded-xl border px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
+                  data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
+              `).join('')}
+            </div>
             <p id="bulk-enroll-error" class="mt-2 hidden text-xs text-red-400"></p>
             <div class="flex gap-3 mt-4">
               <button id="bulk-enroll-confirm" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">Inscribir</button>
@@ -251,9 +254,21 @@ function initBulkActions(students: any[]): void {
   document.getElementById('bulk-enroll-cancel')?.addEventListener('click', () => {
     document.getElementById('enroll-modal')!.classList.add('hidden')
   })
+  document.getElementById('enroll-modal')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    const btn = target.closest('.bulk-course-btn') as HTMLElement
+    if (!btn) return
+    document.querySelectorAll('.bulk-course-btn').forEach(b => {
+      b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+      b.classList.add('border-zinc-700', 'text-zinc-300')
+    })
+    btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+    btn.classList.remove('border-zinc-700', 'text-zinc-300')
+    document.getElementById('bulk-course-id')!.setAttribute('value', btn.dataset.courseId || '')
+  })
   document.getElementById('bulk-enroll-confirm')?.addEventListener('click', async () => {
     const ids = getSelectedIds()
-    const courseId = (document.getElementById('bulk-course-select') as HTMLSelectElement).value
+    const courseId = (document.getElementById('bulk-course-id') as HTMLInputElement).value
     if (!courseId || !ids.length) return
     let ok = 0, fail = 0
     for (const pid of ids) {
