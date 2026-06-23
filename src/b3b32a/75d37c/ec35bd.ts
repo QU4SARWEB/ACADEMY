@@ -58,6 +58,10 @@ export async function initStudentCourseDetail(): Promise<void> {
       ? `<div class="mb-6 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-400">
           Este curso está cubierto por una beca.
         </div>`
+      : course.slug === 'clase-complementaria'
+      ? `<div class="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          <strong>IMPORTANTE:</strong> Está estrictamente prohibido compartir el material, documentos, videos o cualquier información de este curso con alumnos que no hayan cancelado su inscripción. Si llegamos a detectar o se reporta que has compartido contenido, se aplicarán sanciones severas que pueden incluir la expulsión definitiva de la academia. <strong>Protege tu inversión y la de tus compañeros.</strong>
+        </div>`
       : course.price && course.price > 0 ? ''
         : `<div class="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-400">
             Curso gratuito. ¡Disfruta del curso!

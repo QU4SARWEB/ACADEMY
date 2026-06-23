@@ -100,7 +100,7 @@ export async function initCoachTaskDetail(): Promise<void> {
               ${subs.map((sub: any) => {
                 const profile = sub.enrollments?.profiles
                 return `
-                  <div class="glass rounded-lg p-4">
+                    <div class="glass rounded-lg p-4">
                     <div class="mb-2 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
@@ -113,6 +113,18 @@ export async function initCoachTaskDetail(): Promise<void> {
                       </div>
                       <span class="text-xs ${statusColors[sub.status] ?? 'text-zinc-500'}">${statusLabels[sub.status] ?? sub.status}</span>
                     </div>
+
+                    ${sub.submission_text ? `<div class="mb-3 rounded-lg bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300">${escBr(sub.submission_text)}</div>` : ''}
+
+                    ${sub.files && (sub.files as string[]).length > 0 ? `
+                      <div class="mb-3 flex flex-wrap gap-2">
+                        ${(sub.files as string[]).map((f: string) => `
+                          <a href="${escapeHtml(f)}" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800">
+                            ${Icon('download', 12)} ${escapeHtml(f.split('/').pop() || 'archivo')}
+                          </a>
+                        `).join('')}
+                      </div>` : ''}
 
                     ${(sub.status === 'submitted' || sub.status === 'reviewed' || sub.status === 'late')
                       ? `
