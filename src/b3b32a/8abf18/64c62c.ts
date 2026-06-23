@@ -165,7 +165,7 @@ export async function initCoachAttendance(): Promise<void> {
         <p class="mt-1 text-sm text-zinc-500">Gestiona la asistencia de los estudiantes</p>
       </div>
 
-      <div id="bulk-save-bar" class="hidden mb-4 flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5">
+      <div id="bulk-save-bar" class="mb-4 flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5">
         <span class="text-sm text-yellow-300"><span id="pending-count">0</span> cambios pendientes</span>
         <div class="ml-auto flex gap-2">
           <button id="btn-save-attendance" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar</button>
