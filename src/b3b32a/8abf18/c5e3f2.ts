@@ -70,7 +70,7 @@ export async function initCoachGrades(): Promise<void> {
         <p class="mt-1 text-sm text-zinc-500">${(allExams ?? []).length} evaluaciones · ${(enrollments ?? []).length} estudiantes</p>
       </div>
 
-      ${(allExams ?? []).length > 0 && (enrollments ?? []).length > 0 ? `
+      ${(enrollments ?? []).length > 0 ? `
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -158,12 +158,7 @@ export async function initCoachGrades(): Promise<void> {
         </div>
       ` : `
         <div class="glass rounded-xl p-8 text-center">
-          <p class="text-zinc-500">
-            ${(allExams ?? []).length === 0
-              ? 'No hay evaluaciones en este curso. Crea evaluaciones en los módulos para ver notas.'
-              : 'No hay estudiantes inscritos en este curso.'
-            }
-          </p>
+          <p class="text-zinc-500">No hay estudiantes inscritos en este curso.</p>
         </div>
       `}`
 
