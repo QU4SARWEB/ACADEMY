@@ -6,6 +6,7 @@ import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 
 const statusColors: Record<string, string> = {
@@ -92,7 +93,53 @@ export async function initCoachTaskDetail(): Promise<void> {
                   </div>`).join('')
               })()}
             </div>
-            <button id="delete-task-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
+            <div class="flex gap-2 shrink-0">
+              <button id="edit-task-btn" class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 14)}</button>
+              <button id="delete-task-detail-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-task-form-area" class="hidden mb-6">
+          <div class="glass rounded-xl p-6">
+            <h2 class="mb-4 font-heading text-lg font-bold text-white">Editar tarea</h2>
+            <form id="edit-task-form" class="space-y-4">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm text-zinc-400">Título</label>
+                  <input name="title" required maxlength="200" value="${escapeHtml(task.title)}"
+                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm text-zinc-400">Fecha límite</label>
+                  <input name="dueDate" type="datetime-local" required value="${task.due_date ? task.due_date.slice(0, 16) : ''}"
+                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                </div>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-zinc-400">Descripción</label>
+                <textarea name="description" rows="3"
+                  class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escapeHtml(task.description || '')}</textarea>
+              </div>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm text-zinc-400">Puntaje máximo</label>
+                  <input name="maxScore" type="number" min="0" value="${task.max_score ?? 100}"
+                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm text-zinc-400">Archivo adjunto</label>
+                  <input type="file" name="attachment"
+                    class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none file:mr-3 file:rounded file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1 file:text-xs file:text-white" />
+                  ${task.material_url ? `<p class="mt-1 text-xs text-zinc-500">Actual: <a href="${escapeHtml(task.material_url)}" target="_blank" class="text-[#8B5CF6] hover:underline">${escapeHtml(task.material_url.split('/').pop() || 'archivo')}</a></p>` : ''}
+                </div>
+              </div>
+              <p id="edit-task-error" class="hidden text-sm text-red-400"></p>
+              <div class="flex gap-3">
+                <button type="submit" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 14)} Guardar</button>
+                <button type="button" id="cancel-edit-task" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">Cancelar</button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -191,6 +238,42 @@ export async function initCoachTaskDetail(): Promise<void> {
       if (error) { toast('error', error.message); return }
       toast('success', 'Tarea eliminada')
       router.navigate('/coaches/tasks')
+    })
+
+    // ── Edit task ──
+    document.getElementById('edit-task-btn')?.addEventListener('click', () => {
+      document.getElementById('edit-task-form-area')!.classList.remove('hidden')
+      document.getElementById('edit-task-form-area')!.scrollIntoView({ behavior: 'smooth' })
+    })
+    document.getElementById('cancel-edit-task')?.addEventListener('click', () => {
+      document.getElementById('edit-task-form-area')!.classList.add('hidden')
+    })
+    document.getElementById('edit-task-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const fd = new FormData(e.target as HTMLFormElement)
+      const fileInput = document.querySelector<HTMLInputElement>('#edit-task-form input[name="attachment"]')
+      let materialUrl = task.material_url
+      let attachments = task.attachments || []
+      if (fileInput?.files?.[0]) {
+        const { url, error: upErr } = await uploadFileFromInput('uploads', 'tasks', 'attachments', fileInput.files[0])
+        if (upErr) { document.getElementById('edit-task-error')!.textContent = upErr; document.getElementById('edit-task-error')!.classList.remove('hidden'); return }
+        if (url) {
+          materialUrl = url
+          attachments = [{ name: fileInput.files[0].name, url }]
+        }
+      }
+      const { error } = await supabase.from('tasks').update({
+        title: fd.get('title') as string,
+        description: (fd.get('description') as string) || null,
+        due_date: fd.get('dueDate') as string,
+        max_score: parseFloat(fd.get('maxScore') as string) || 100,
+        material_url: materialUrl,
+        attachments,
+      }).eq('id', id)
+      if (error) { document.getElementById('edit-task-error')!.textContent = error.message; document.getElementById('edit-task-error')!.classList.remove('hidden'); return }
+      toast('success', 'Tarea actualizada')
+      document.getElementById('edit-task-form-area')!.classList.add('hidden')
+      router.navigate(`/coaches/tasks/${id}`)
     })
 
     document.querySelectorAll('.grade-form').forEach((form) => {
