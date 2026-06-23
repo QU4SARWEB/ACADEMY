@@ -448,6 +448,18 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     })
   })
 
+  document.querySelectorAll('.promote-course-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.promote-course-btn').forEach(b => {
+        b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        b.classList.add('border-zinc-700', 'text-zinc-300')
+      })
+      btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+      btn.classList.remove('border-zinc-700', 'text-zinc-300')
+      document.getElementById('promote-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
+    })
+  })
+
   document.getElementById('form-promote')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     const fd = new FormData(e.target as HTMLFormElement)

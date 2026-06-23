@@ -165,6 +165,18 @@ export async function initCoachScrims(): Promise<void> {
         formContainer.classList.add('hidden')
       })
 
+      formContainer.querySelectorAll('.scrim-course-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formContainer.querySelectorAll('.scrim-course-btn').forEach(b => {
+            b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+            b.classList.add('border-zinc-700', 'text-zinc-300')
+          })
+          btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          btn.classList.remove('border-zinc-700', 'text-zinc-300')
+          ;(formContainer.querySelector('#scrim-course-id') as HTMLInputElement)!.value = (btn as HTMLElement).dataset.courseId || ''
+        })
+      })
+
       document.getElementById('scrim-form')?.addEventListener('submit', async (e) => {
         e.preventDefault()
         const fd = new FormData(e.target as HTMLFormElement)

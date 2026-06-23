@@ -68,7 +68,7 @@ export async function initCoachExamsOverview(): Promise<void> {
       <div id="new-exam-form" class="glass rounded-xl p-6">
         <h2 class="mb-4 font-heading text-lg font-bold text-white">Crear nuevo examen</h2>
         <form id="create-exam-form" class="space-y-3">
-          <div><label class="mb-1 block text-sm text-zinc-400">Curso</label><select name="course_id" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${courses.map((c: any) => '<option value="' + c.id + '" ' + (c.id === courseId ? 'selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('')}</select></div>
+          <div><label class="mb-1 block text-sm text-zinc-400">Curso</label><input type="hidden" name="course_id" id="exam-course-id" value="" /><div class="flex flex-wrap gap-2">${(courses ?? []).map((c: any) => '<button type="button" class="exam-course-btn rounded-xl border px-3 py-1.5 text-xs transition hover:border-[#8B5CF6] hover:text-white ' + (c.id === courseId ? 'bg-[#8B5CF6]/20 border-[#8B5CF6] text-white' : 'border-zinc-700 text-zinc-300 hover:text-white bg-zinc-900/50') + '" data-course-id="' + escapeHtml(c.id) + '">' + escapeHtml(c.name) + '</button>').join('')}</div></div>
           <div><label class="mb-1 block text-sm text-zinc-400">Título</label><input name="title" required class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></div>
           <div><label class="mb-1 block text-sm text-zinc-400">Descripción</label><textarea name="description" rows="2" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></textarea></div>
           <div class="grid grid-cols-2 gap-3"><div><label class="mb-1 block text-sm text-zinc-400">Nota mínima /20</label><input name="passing_score" type="number" min="0" max="20" value="12" class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></div></div>
@@ -121,6 +121,18 @@ export async function initCoachExamsOverview(): Promise<void> {
         document.getElementById('assign-students')?.classList.add('hidden')
         document.querySelector<HTMLInputElement>('input[name="assign_type"][value="course"]')!.checked = true
         loadStudentsForCourse(courseId)
+      })
+
+      document.querySelectorAll('.exam-course-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.exam-course-btn').forEach(b => {
+            b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+            b.classList.add('border-zinc-700', 'text-zinc-300')
+          })
+          btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          btn.classList.remove('border-zinc-700', 'text-zinc-300')
+          document.getElementById('exam-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
+        })
       })
 
       document.getElementById('create-exam-form')?.addEventListener('submit', async (e) => {
