@@ -31,14 +31,18 @@ export async function initStudentTaskDetail(): Promise<void> {
       return
     }
 
-    const courseId = ''
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', session.user.id)
-      .eq('course_id', courseId)
-      .eq('status', 'active')
-      .maybeSingle()
+    const courseId = (task as any).course_id
+    let enrollment: any = null
+    if (courseId) {
+      const { data: enr } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('course_id', courseId)
+        .eq('status', 'active')
+        .maybeSingle()
+      enrollment = enr
+    }
 
     let submission: any = null
     if (enrollment) {
