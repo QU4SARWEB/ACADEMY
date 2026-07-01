@@ -97,7 +97,6 @@ export async function initCoachExams(): Promise<void> {
                   class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                   <option value="exam">Examen</option>
                   <option value="quiz">Quiz</option>
-                  <option value="practical">Práctica</option>
                 </select>
               </div>
               <div>
@@ -266,7 +265,6 @@ export async function initCoachExams(): Promise<void> {
                           class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                           <option value="exam" ${exam.eval_type === 'exam' ? 'selected' : ''}>Examen</option>
                           <option value="quiz" ${exam.eval_type === 'quiz' ? 'selected' : ''}>Quiz</option>
-                          <option value="practical" ${exam.eval_type === 'practical' ? 'selected' : ''}>Práctica</option>
                         </select>
                       </div>
                       <div>
@@ -928,6 +926,9 @@ export async function initCoachExams(): Promise<void> {
                 const q = qMap[sa.question_id] || {}
                 const opts = q.question_options || []
                 const isMC = q.type === 'multiple_choice' || q.type === 'true_false'
+                const displayScore = sa.score !== null ? (sa.score > 20 ? Math.round(sa.score / 5) : sa.score) : null
+                const hintClass = displayScore === null ? 'text-zinc-600' : displayScore === 0 ? 'text-red-400' : displayScore < 8 ? 'text-yellow-400' : 'text-green-400'
+                const hintText = displayScore === null ? '—' : displayScore === 0 ? 'Incorrecto' : displayScore < 8 ? 'Mediocre' : 'Correcto'
                 return `
                   <div class="rounded border border-zinc-800 bg-zinc-900/30 p-2">
                     <div class="flex items-start gap-2 text-xs">
@@ -958,8 +959,8 @@ export async function initCoachExams(): Promise<void> {
                         `}
                         ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                           <div class="mt-2 flex items-center gap-2" data-sa-id="${sa.id}">
-                            <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
-                            <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
+                            <input type="number" class="grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${displayScore !== null ? displayScore : ''}" />
+                            <span class="score-hint text-xs ${hintClass}">${hintText}</span>
                             <button type="button" class="grade-save-btn text-[10px] text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                           </div>
                         ` : ''}
@@ -1245,6 +1246,9 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
         const q = qMap[sa.question_id] || {}
         const opts = q.question_options || []
         const isMC = q.type === 'multiple_choice' || q.type === 'true_false'
+        const displayScore = sa.score !== null ? (sa.score > 20 ? Math.round(sa.score / 5) : sa.score) : null
+        const hintClass = displayScore === null ? 'text-zinc-600' : displayScore === 0 ? 'text-red-400' : displayScore < 8 ? 'text-yellow-400' : 'text-green-400'
+        const hintText = displayScore === null ? '—' : displayScore === 0 ? 'Incorrecto' : displayScore < 8 ? 'Mediocre' : 'Correcto'
         return `
           <div class="glass rounded-xl p-4">
             <div class="flex items-start gap-3">
@@ -1273,8 +1277,8 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
                 `}
                 ${(q.type === 'open_ended' || q.type === 'short_answer') ? `
                   <div class="mt-3 flex items-center gap-2" data-sa-id="${sa.id}">
-                    <input type="number" class="grade-score w-24 rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${sa.score !== null ? sa.score : ''}" />
-                    <span class="score-hint text-xs ${sa.score !== null ? (sa.score === 0 ? 'text-red-400' : sa.score < 40 ? 'text-yellow-400' : 'text-green-400') : 'text-zinc-600'}">${sa.score !== null ? (sa.score === 0 ? 'Incorrecto' : sa.score < 40 ? 'Mediocre' : 'Correcto') : '—'}</span>
+                    <input type="number" class="grade-score w-24 rounded border border-zinc-700 bg-[#0A0A0A] px-3 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" min="0" max="20" step="0.5" value="${displayScore !== null ? displayScore : ''}" />
+                    <span class="score-hint text-xs ${hintClass}">${hintText}</span>
                     <button type="button" class="grade-save-btn text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition">${sa.score !== null ? 'Actualizar' : 'Guardar'}</button>
                   </div>
                 ` : ''}
@@ -1341,18 +1345,40 @@ async function loadAttempt(examId: string, attemptId: string, courseId: string):
 async function recalcExamScore(saId: string): Promise<void> {
   const { data: sa } = await supabase.from('student_answers').select('attempt_id').eq('id', saId).maybeSingle()
   if (!sa) return
+  const { data: attempt } = await supabase.from('exam_attempts').select('exam_id, enrollment_id').eq('id', sa.attempt_id).maybeSingle()
+  if (!attempt) return
+  const { data: questions } = await supabase
+    .from('exam_questions')
+    .select('question_id')
+    .eq('exam_id', attempt.exam_id)
+  if (!questions || questions.length === 0) return
+  const examQIds = new Set(questions.map((q: any) => q.question_id))
+  const { data: allQ } = await supabase.from('questions').select('id, type')
+  const qTypeMap: Record<string, string> = {}
+  for (const q of allQ ?? []) qTypeMap[q.id] = q.type
   const { data: answers } = await supabase
     .from('student_answers')
-    .select('score')
+    .select('question_id, score, is_correct')
     .eq('attempt_id', sa.attempt_id)
-    .not('score', 'is', null)
   if (!answers || answers.length === 0) return
-  const total = answers.reduce((s: number, a: any) => s + (a.score || 0), 0)
-  const avg = Math.round(total / answers.length)
-  await supabase.from('exam_attempts').update({ score: avg }).eq('id', sa.attempt_id)
-  // Also recalc enrollment final grade
-  const { data: attempt } = await supabase.from('exam_attempts').select('enrollment_id').eq('id', sa.attempt_id).maybeSingle()
-  if (attempt?.enrollment_id) {
+  let mcCorrect = 0, mcTotal = 0, oeSum = 0, oeCount = 0
+  for (const a of answers) {
+    const t = qTypeMap[a.question_id]
+    if (t === 'multiple_choice' || t === 'true_false') {
+      mcTotal++
+      if (a.is_correct) mcCorrect++
+    } else if ((t === 'open_ended' || t === 'short_answer') && a.score !== null) {
+      const normalizedScore = a.score > 20 ? a.score / 5 : a.score
+      oeSum += normalizedScore
+      oeCount++
+    }
+  }
+  const mcScore = mcTotal > 0 ? (mcCorrect / mcTotal) * 20 : 0
+  const oeAvg = oeCount > 0 ? oeSum / oeCount : 0
+  const totalQ = mcTotal + oeCount
+  const finalScore = totalQ > 0 ? Math.round(((mcScore * mcTotal) + (oeAvg * oeCount)) / totalQ) : 0
+  await supabase.from('exam_attempts').update({ score: finalScore }).eq('id', sa.attempt_id)
+  if (attempt.enrollment_id) {
     const { recalcFinalGrade, checkAutoPromotion } = await import('@/b3b32a/8abf18/grade_utils')
     await recalcFinalGrade(attempt.enrollment_id)
     const { data: enr } = await supabase.from('enrollments').select('course_id, profile_id').eq('id', attempt.enrollment_id).maybeSingle()

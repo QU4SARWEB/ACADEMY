@@ -587,22 +587,11 @@ export async function initStudentExamTake(): Promise<void> {
       }
 
       // Calculate score
-      const autoGraded = answerRows.filter((a: any) => a.is_correct != null)
-      const totalPts = autoGraded.reduce((s: number, a: any) => s + (a.score !== null ? (a.is_correct ? a.score : 0) : 0), 0)
-      const maxPts = autoGraded.reduce((s: number, a: any) => {
-        // Find the question's max points by checking all answerRows for the same question
-        return s + (a.score !== null ? Math.abs(a.score) : 0)
-      }, 0)
-      // Recalculate properly
-      let earnedPts = 0, possiblePts = 0
+      let mcCorrect = 0, mcTotal = 0
       for (const a of answerRows) {
-        if (a.is_correct != null) {
-          const pts = a.score !== null ? Math.abs(a.score) : 5
-          possiblePts += pts
-          if (a.is_correct) earnedPts += pts
-        }
+        if (a.is_correct != null) { mcTotal++; if (a.is_correct) mcCorrect++ }
       }
-      const score = possiblePts > 0 ? (earnedPts / possiblePts) * 20 : null
+      const score = mcTotal > 0 ? (mcCorrect / mcTotal) * 20 : null
 
       const { error: updError } = await supabase
         .from('exam_attempts')

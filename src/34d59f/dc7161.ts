@@ -69,7 +69,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
-    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/exams', 'bookOpen', 'Exámenes'), item('/coaches/exams/practical', 'target', 'Prácticos'), item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/schedules', 'calendar', 'Horarios')],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/exams', 'bookOpen', 'Exámenes'), item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/schedules', 'calendar', 'Horarios')],
     [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Scrims'), item('/members', 'users', 'Miembros')],
     [item('/support', 'info', 'Soporte'), item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
@@ -86,7 +86,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     if (gi > 0) itemsHtml += '<div class="border-t border-zinc-800/60"></div>'
     for (const it of groups[gi]) {
       const href = it.href!
-      const isActive = currentHash === href || (currentHash.startsWith(href + '/') && !currentHash.startsWith(href + '/practical'))
+      const isActive = currentHash === href || currentHash.startsWith(href + '/')
       const active = isActive ? 'bg-zinc-800 text-white border-l-2' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
       itemsHtml += `
         <a href="#${escapeHtml(it.href!)}"

@@ -123,7 +123,6 @@ async function renderStudentPayments(userId: string): Promise<void> {
           <div class="glass rounded-xl p-4 flex items-center justify-between">
             <div>
               <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
-              <p class="text-xs text-zinc-500">${escapeHtml(e.courses?.name || '')}</p>
             </div>
             <span class="text-xs ${statusColors[e.type === 'student' ? 'paid' : 'pending']}">${e.type === 'student' ? 'Activo' : 'Pendiente'}</span>
           </div>
@@ -133,7 +132,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
     <div class="space-y-3">
       <h2 class="font-heading text-lg font-bold text-white">Historial de pagos</h2>
       ${(() => {
-        const visiblePayments = (payments ?? []).filter((p: any) => !p.enrollment_id || activeEnrollIds.has(p.enrollment_id))
+        const visiblePayments = (payments ?? []).filter((p: any) => p.enrollment_id && activeEnrollIds.has(p.enrollment_id))
         return visiblePayments.length === 0
           ? '<p class="text-sm text-zinc-500">No hay pagos registrados.</p>'
           : visiblePayments.map((p: any) => `
@@ -516,7 +515,7 @@ async function renderCoachPayments(): Promise<void> {
                     : ''}
                 </div>` : ''}
                 ${!isFree && !pay ? `
-                <button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-role="${escapeHtml(prof.role || 'student')}">${Icon('plus', 12)} Crear pago</button>` : ''}
+                <button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-enrollment-id="${escapeHtml(e.id)}" data-role="${escapeHtml(prof.role || 'student')}">${Icon('plus', 12)} Crear pago</button>` : ''}
               </div>
             </div>`
           }).join('')
@@ -550,10 +549,12 @@ async function renderCoachPayments(): Promise<void> {
     saveBtn.textContent = 'Guardando...'
     let ok = 0, fail = 0
     for (const c of changes) {
-      const { error } = await supabase.from('payments').update({
+      const payUpdate: Record<string, any> = {
         status: c.newStatus,
         paid_at: c.newStatus === 'paid' ? new Date().toISOString() : null,
-      }).eq('id', c.paymentId)
+      }
+      if (c.newStatus === 'pending') payUpdate.created_at = new Date().toISOString()
+      const { error } = await supabase.from('payments').update(payUpdate).eq('id', c.paymentId)
       if (error) { fail++ } else {
         ok++
         // Sync scholarship
@@ -629,6 +630,7 @@ async function renderCoachPayments(): Promise<void> {
     if (createBtn) {
       e.preventDefault()
       const profileId = createBtn.dataset.profileId
+      const enrollmentId = createBtn.dataset.enrollmentId
       const role = createBtn.dataset.role
       if (!profileId) return
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
@@ -638,7 +640,9 @@ async function renderCoachPayments(): Promise<void> {
         const { data: courseRow } = await supabase.from('courses').select('price').eq('id', firstEnroll.course_id).maybeSingle()
         if (courseRow) payAmount = courseRow.price ?? 1.54
       }
-      await supabase.from('payments').insert({ profile_id: profileId, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: payAmount })
+      const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
+      if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }
+      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: payAmount })
       toast('success', 'Pago creado')
       const lastCourseId = sessionStorage.getItem('lastPayCourseId')
       if (lastCourseId) {

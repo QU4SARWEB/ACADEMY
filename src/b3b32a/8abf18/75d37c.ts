@@ -270,13 +270,28 @@ function initBulkActions(students: any[]): void {
     const ids = getSelectedIds()
     const courseId = (document.getElementById('bulk-course-id') as HTMLInputElement).value
     if (!courseId || !ids.length) return
+
+    // Fetch course price
+    const { data: course } = await supabase.from('courses').select('price, name').eq('id', courseId).maybeSingle()
+    const amount = course?.price != null ? parseFloat(course.price) : 1.54
+
     let ok = 0, fail = 0
     for (const pid of ids) {
-      const { error } = await supabase.from('enrollments').upsert({
+      const { data: enr, error } = await supabase.from('enrollments').upsert({
         profile_id: pid, course_id: courseId, type: 'student', status: 'active',
-      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true })
-      if (error) fail++
-      else ok++
+      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
+      if (error) { fail++; continue }
+
+      // Create payment if new enrollment was created (not already enrolled)
+      if (enr?.id) {
+        const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', pid).maybeSingle()
+        const payStatus = amount === 0 ? 'free' : profile?.scholarship ? 'scholarship' : 'pending'
+        const { error: pe } = await supabase.from('payments').insert({
+          profile_id: pid, enrollment_id: enr.id, type: 'student', status: payStatus, amount,
+        })
+        if (pe) { console.error('Error creating payment:', pe); fail++; continue }
+      }
+      ok++
     }
     document.getElementById('enroll-modal')!.classList.add('hidden')
     toast('success', `${ok} inscritos, ${fail} errores`)

@@ -554,44 +554,53 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    const { data: newEnroll, error } = await supabase.from('enrollments').insert({
+    const { error: enrError } = await supabase.from('enrollments').insert({
       profile_id: profileId,
       course_id: courseId,
       type,
       status: 'active',
-    }).select('id').maybeSingle()
+    })
 
-    if (error) {
-      document.getElementById('enroll-error')!.textContent = error.message
+    if (enrError) {
+      document.getElementById('enroll-error')!.textContent = enrError.message
       document.getElementById('enroll-error')!.classList.remove('hidden')
       return
     }
 
-      if (newEnroll) {
-        const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-        const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
-        const { data: studentProfile } = await supabase
-          .from('profiles')
-          .select('scholarship')
-          .eq('id', profileId)
-          .maybeSingle()
+    const { data: newEnroll } = await supabase
+      .from('enrollments')
+      .select('id')
+      .eq('profile_id', profileId)
+      .eq('course_id', courseId)
+      .maybeSingle()
 
-        const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
-        const { error: payErr } = await supabase.from('payments').insert({
-          profile_id: profileId,
-          enrollment_id: newEnroll.id,
-          type,
-          status: payStatus,
-          amount: coursePrice,
-        })
-        if (payErr) {
-          console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
-          toast('error', 'Pago no creado: ' + payErr.message)
-        } else {
-          toast('success', 'Pago creado (' + payStatus + ')')
-          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollGeneralCourses(profileId, type)
-        }
+    if (newEnroll) {
+      const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
+      const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
+      const { data: studentProfile } = await supabase
+        .from('profiles')
+        .select('scholarship')
+        .eq('id', profileId)
+        .maybeSingle()
+
+      const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
+      const { error: payErr } = await supabase.from('payments').insert({
+        profile_id: profileId,
+        enrollment_id: newEnroll.id,
+        type,
+        status: payStatus,
+        amount: coursePrice,
+      })
+      if (payErr) {
+        console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
+        toast('error', 'Pago no creado: ' + payErr.message)
+        mountCoachStudentDetail()
+        return
+      } else {
+        toast('success', 'Pago creado (' + payStatus + ')')
+        if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollGeneralCourses(profileId, type)
       }
+    }
 
     toast('success', 'Estudiante inscrito correctamente')
     mountCoachStudentDetail()
