@@ -38,7 +38,7 @@ export async function initCoachTeams(): Promise<void> {
     const { data: allProfiles } = await supabase
       .from('profiles')
       .select('id, full_name, role')
-      .in('role', ['player', 'student'])
+      .in('role', ['player', 'student', 'coach'])
       .order('full_name')
 
     const { data: allSeasons } = await supabase
@@ -102,13 +102,14 @@ export async function initCoachTeams(): Promise<void> {
 
             <div class="mt-3 flex items-center gap-2">
               <select class="add-member-select flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-white outline-none focus:border-[#8B5CF6]" data-team-id="${escapeHtml(t.id)}">
-                <option value="">Seleccionar jugador...</option>
+                <option value="">Seleccionar perfil...</option>
                 ${(allProfiles ?? [])
                   .filter((p: any) => {
                     if (t.type === 'academico') return p.role === 'student'
-                    if (t.type === 'competitivo') return p.role === 'player'
+                    if (t.type === 'competitivo') return p.role === 'player' || p.role === 'coach'
                     return true
                   })
+                  .filter((p: any) => !teamMembers.some((m: any) => m.profile_id === p.id))
                   .map((p: any) =>
                   `<option value="${escapeHtml(p.id)}">${escapeHtml(p.full_name || 'Desconocido')}</option>`
                 ).join('')}
@@ -530,7 +531,7 @@ export async function initCoachTeams(): Promise<void> {
         const existingIds = new Set((membersByTeam[teamId!] || []).map((m: any) => m.profile_id))
         const eligible = (allProfiles ?? []).filter((p: any) => {
           if (t?.type === 'academico' && p.role !== 'student') return false
-          if (t?.type === 'competitivo' && p.role !== 'player') return false
+          if (t?.type === 'competitivo' && p.role !== 'player' && p.role !== 'coach') return false
           return !existingIds.has(p.id)
         })
         if (eligible.length === 0) { toast('warning', 'No hay perfiles disponibles para agregar'); return }
