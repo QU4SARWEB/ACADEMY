@@ -49,6 +49,10 @@ export function mountCoachCourseDetail(): void {
               </p>
             </div>
             <div class="flex gap-2">
+              <a href="#/coaches/courses/${escapeHtml(id)}/exams"
+                class="flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-2 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">${Icon('scrollText', 14)} Exámenes</a>
+              <a href="#/coaches/courses/${escapeHtml(id)}/grades"
+                class="flex items-center gap-2 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-400 transition hover:bg-green-500/30">${Icon('scrollText', 14)} Notas</a>
               <a href="#/coaches/courses/${escapeHtml(id)}/edit"
                 class="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 14)} Editar</a>
               <button id="delete-course-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>

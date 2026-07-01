@@ -8,7 +8,7 @@ import { store } from '@/9ed39e/8cd892'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzone'
 import type { Profile } from '@/d14a80'
-import { autoEnrollGeneralCourses } from '@/2b3583/course_utils'
+import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
@@ -166,34 +166,37 @@ async function renderStudentPayments(userId: string): Promise<void> {
         </div>
         `).join('')
       })()}
-    </div>
+    </div>`
+  document.getElementById('page-content')!.innerHTML = html
 
-    <div id="receipt-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="Subir comprobante">
-      <div class="glass max-w-md rounded-xl p-6">
-        <h3 class="mb-4 font-heading text-lg font-bold text-white">Subir comprobante de pago</h3>
-        <form id="receipt-form">
-          <input type="hidden" name="paymentId">
-          <div class="mb-4">
-            ${renderFileDropzone({
-              name: 'receipt',
-              label: 'Comprobante de pago',
-              accept: 'image/*,application/pdf',
-              maxSizeMB: 10,
-            })}
-          </div>
-          <p id="receipt-error" class="mb-3 hidden text-sm text-red-400"></p>
-          <div class="flex gap-3">
-            <button type="submit"
-              class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">Subir</button>
-            <button type="button" id="close-receipt-modal"
-              class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Cancelar</button>
-          </div>
-        </form>
+  const receiptModalHtml = `
+    <div id="receipt-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60" role="dialog" aria-modal="true" aria-label="Subir comprobante">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="glass max-w-md rounded-xl p-6">
+          <h3 class="mb-4 font-heading text-lg font-bold text-white">Subir comprobante de pago</h3>
+          <form id="receipt-form">
+            <input type="hidden" name="paymentId">
+            <div class="mb-4">
+              ${renderFileDropzone({
+                name: 'receipt',
+                label: 'Comprobante de pago',
+                accept: 'image/*,application/pdf',
+                maxSizeMB: 10,
+              })}
+            </div>
+            <p id="receipt-error" class="mb-3 hidden text-sm text-red-400"></p>
+            <div class="flex gap-3">
+              <button type="submit"
+                class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">Subir</button>
+              <button type="button" id="close-receipt-modal"
+                class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Cancelar</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>`
-
-  document.getElementById('page-content')!.innerHTML = html
-  initFileDropzone(document.getElementById('page-content')!)
+  document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', receiptModalHtml)
+  initFileDropzone(document.getElementById('modal-root')!)
 
   document.querySelectorAll('.upload-receipt-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -275,7 +278,7 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
     if (data?.verified) {
       await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe' }).eq('id', paymentId)
       const { data: payData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
-      if (payData) autoEnrollGeneralCourses(payData.profile_id, 'student')
+      if (payData) { autoEnrollGeneralCourses(payData.profile_id, 'student'); autoEnrollComplementaria(payData.profile_id, 'student') }
       toast('success', 'Pago confirmado vía Stripe')
       const cleanHash = location.hash.split('?')[0]
       window.history.replaceState({}, '', cleanHash || '#/payments')
@@ -336,7 +339,7 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
             const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal' }).eq('id', paymentId)
             if (upErr) { console.error('Error updating payment:', upErr); toast('error', 'Pago realizado pero error al actualizar. Contacta al coach.'); return }
             const { data: ppData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
-            if (ppData) autoEnrollGeneralCourses(ppData.profile_id, 'student')
+            if (ppData) { autoEnrollGeneralCourses(ppData.profile_id, 'student'); autoEnrollComplementaria(ppData.profile_id, 'student') }
             toast('success', 'Pago confirmado vía PayPal')
             container.innerHTML = '<span class="text-xs text-green-400">✓ Pagado</span>'
             ;(window as any).__isExpired = false
@@ -383,18 +386,20 @@ async function renderCoachPayments(): Promise<void> {
   let pendingChanges: { paymentId: string; profileId?: string; newStatus: string; oldStatus: string }[] = []
 
   const modalsHtml = `
-  <div id="course-payments-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="Pagos por curso">
-    <div class="glass max-w-4xl w-full mx-4 max-h-[85vh] overflow-y-auto rounded-xl p-6 flex flex-col">
-      <div class="flex items-center justify-between mb-4">
-        <h2 id="course-payments-title" class="font-heading text-lg font-bold text-white">Pagos del curso</h2>
-        <button id="close-course-payments" class="text-zinc-500 hover:text-white" aria-label="Cerrar">${Icon('x', 18)}</button>
-      </div>
-      <div id="course-payments-list" class="space-y-2 flex-1 overflow-y-auto"></div>
-      <div id="pay-save-bar" class="mt-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
-        <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
-        <div class="flex gap-2">
-          <button id="pay-discard-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Descartar</button>
-          <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
+  <div id="course-payments-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60" role="dialog" aria-modal="true" aria-label="Pagos por curso">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="glass max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-xl p-6 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <h2 id="course-payments-title" class="font-heading text-lg font-bold text-white">Pagos del curso</h2>
+          <button id="close-course-payments" class="text-zinc-500 hover:text-white" aria-label="Cerrar">${Icon('x', 18)}</button>
+        </div>
+        <div id="course-payments-list" class="space-y-2 flex-1 overflow-y-auto"></div>
+        <div id="pay-save-bar" class="mt-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
+          <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
+          <div class="flex gap-2">
+            <button id="pay-discard-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Descartar</button>
+            <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
+          </div>
         </div>
       </div>
     </div>
@@ -435,7 +440,9 @@ async function renderCoachPayments(): Promise<void> {
         }).join('')
       }
     </div>
-    ${modalsHtml}`
+    `
+
+  document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', modalsHtml)
 
   // Course payment details
   const coursePaymentsModal = document.getElementById('course-payments-modal')!
@@ -567,6 +574,7 @@ async function renderCoachPayments(): Promise<void> {
         // Auto-enroll in general courses when payment becomes paid
         if (c.newStatus === 'paid' && c.profileId) {
           autoEnrollGeneralCourses(c.profileId, 'student')
+          autoEnrollComplementaria(c.profileId, 'student')
         }
       }
     }

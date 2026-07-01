@@ -298,8 +298,12 @@ export async function initCoachExams(): Promise<void> {
         </div>
       </div>
 
-      <div id="questions-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-        <div class="glass max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto rounded-xl p-6">
+      </div>`
+
+    const questionsModalHtml = `
+      <div id="questions-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60">
+        <div class="flex min-h-full items-center justify-center p-4">
+        <div class="glass max-w-2xl w-full rounded-xl p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-heading text-lg font-bold text-white" id="questions-modal-title">Preguntas del examen</h2>
             <button id="close-questions-modal" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
@@ -364,10 +368,13 @@ export async function initCoachExams(): Promise<void> {
             </form>
           </div>
         </div>
-      </div>
+        </div>
+      </div>`
 
-      <div id="answers-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-        <div class="glass max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
+    const answersModalHtml = `
+      <div id="answers-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60">
+        <div class="flex min-h-full items-center justify-center p-4">
+        <div class="glass max-w-3xl w-full rounded-xl p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-heading text-lg font-bold text-white" id="answers-modal-title">Respuestas del examen</h2>
             <button id="close-answers-modal" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
@@ -375,9 +382,12 @@ export async function initCoachExams(): Promise<void> {
           <input type="hidden" id="answers-exam-id">
           <div id="answers-list" class="space-y-4"></div>
         </div>
+        </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+    document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', questionsModalHtml)
+    document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', answersModalHtml)
 
     // ── Manual question builder ──
     const rq = () => {

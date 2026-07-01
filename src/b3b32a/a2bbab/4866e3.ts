@@ -15,7 +15,7 @@ export async function initPlayerDashboard(): Promise<void> {
 
     const { data: teamMembers } = await supabase
       .from('team_members')
-      .select('*, teams(name, slug)')
+      .select('*, teams(name, slug, logo_url, color)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
       .limit(1)
@@ -23,6 +23,8 @@ export async function initPlayerDashboard(): Promise<void> {
     const team = teamMembers?.[0]
     const teamId = team?.team_id
     const teamName = team?.teams?.name ?? 'Sin equipo'
+    const teamLogo = team?.teams?.logo_url
+    const teamColor = team?.teams?.color
 
     // Scrim stats
     let totalScrims = 0, wins = 0, losses = 0, draws = 0
@@ -79,23 +81,29 @@ export async function initPlayerDashboard(): Promise<void> {
 
     const paymentBadge = paymentStatus
       ? `<span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-          paymentStatus === 'paid' ? 'text-green-400 border-green-500/30' :
+          paymentStatus === 'paid' || paymentStatus === 'free' ? 'text-green-400 border-green-500/30' :
           paymentStatus === 'scholarship' ? 'text-blue-400 border-blue-500/30' :
           paymentStatus === 'expired' ? 'text-red-400 border-red-500/30' :
           'text-yellow-400 border-yellow-500/30'
-        }">${paymentStatus === 'paid' ? 'Pagado' : paymentStatus === 'scholarship' ? 'Beca' : paymentStatus}</span>`
+        }">${paymentStatus === 'paid' ? 'Pagado' : paymentStatus === 'free' ? 'Gratis' : paymentStatus === 'scholarship' ? 'Beca' : paymentStatus}</span>`
       : '<span class="text-xs text-zinc-600">Sin registro</span>'
 
     const html = `
-      <div class="mb-6">
-        <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">Panel competitivo — ${escapeHtml(teamName)}</p>
+      <div class="mb-6 flex items-center gap-3">
+        ${teamLogo
+          ? `<img src="${escapeHtml(teamLogo)}" alt="" class="h-12 w-12 rounded-xl object-cover" />`
+          : `<div class="flex h-12 w-12 items-center justify-center rounded-xl" style="background:${teamColor || '#8B5CF6'}20;color:${teamColor || '#8B5CF6'}">${Icon('users', 22)}</div>`
+        }
+        <div>
+          <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
+          <p class="mt-1 text-sm text-zinc-500">Panel competitivo — <span style="color:${teamColor || '#fff'}">${escapeHtml(teamName)}</span></p>
+        </div>
       </div>
 
       <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-4">
         <div class="glass rounded-xl p-4 text-center">
           <p class="text-2xl font-bold text-white">${totalScrims}</p>
-          <p class="text-xs text-zinc-500">Scrims totales</p>
+          <p class="text-xs text-zinc-500">Enfrentamientos totales</p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
           <p class="text-2xl font-bold text-green-400">${winRate}%</p>
@@ -140,7 +148,7 @@ export async function initPlayerDashboard(): Promise<void> {
             ? '<p class="text-sm text-zinc-500">No hay scrims programados.</p>'
             : upcomingScrims.map((s: any) => `
               <div class="flex items-center justify-between rounded-lg bg-zinc-800/50 px-3 py-2.5 mb-2 text-sm">
-                <span class="text-white">vs ${escapeHtml(s.opponent || '?')}</span>
+                <span class="text-white">${s.opponent_logo_url ? `<img src="${escapeHtml(s.opponent_logo_url)}" alt="" class="inline h-4 w-4 rounded object-cover align-middle" /> ` : ''}vs ${escapeHtml(s.opponent || '?')}</span>
                 <span class="text-xs text-zinc-500">${s.date ? formatDate(s.date) : '—'}</span>
               </div>
             `).join('')
@@ -154,7 +162,7 @@ export async function initPlayerDashboard(): Promise<void> {
               ${Icon('users', 16)} Mi equipo
             </a>
             <a href="#/players/scrims" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
-              ${Icon('sword', 16)} Scrims
+              ${Icon('sword', 16)} Enfrentamientos
             </a>
             <a href="#/players/tasks" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800">
               ${Icon('clipboardList', 16)} Tareas

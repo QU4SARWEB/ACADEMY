@@ -3,6 +3,7 @@ import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
+import { autoEnrollComplementaria } from '@/2b3583/course_utils'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -89,10 +90,12 @@ export async function initStudentCourses(): Promise<void> {
       .select('status')
       .eq('profile_id', session.user.id)
 
+    const hasPaidAny = (payments ?? []).some((p: any) => p.status === 'paid' || p.status === 'scholarship')
+
     const available = enrolledCourseIds.length > 0
       ? await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.map((id: any) => `"${id}"`).join(',')})`).order('name')
       : await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).order('name')
-    const coursesData = available.data ?? []
+    let coursesData = (available.data ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
 
     function courseCard(course: any, extra: string, footer: string): string {
       const desc = course.description || course.courses?.description || ''
@@ -176,7 +179,11 @@ export async function initStudentCourses(): Promise<void> {
         if (enrollment?.id) {
           const { data: prevEnrolls } = await supabase.from('enrollments').select('final_grade, promoted').eq('profile_id', session.user.id).eq('course_id', courseId).neq('id', enrollment.id)
           const alreadyPassed = (prevEnrolls ?? []).some((x: any) => x.final_grade !== null && x.final_grade >= 14 && x.promoted)
-          if (!alreadyPassed) await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: prof?.scholarship ? 'scholarship' : 'pending', amount: course?.price ?? 1.54 })
+          if (!alreadyPassed) {
+            const payStatus = course?.price === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')
+            await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: payStatus, amount: course?.price ?? 1.54 })
+            if (payStatus === 'scholarship' && (course?.price ?? 1.54) > 0) autoEnrollComplementaria(session.user.id, 'student')
+          }
         }
         toast('success', `¡Inscrito en ${course?.name ?? 'el curso'}!`)
         if (btn) btn.disabled = false

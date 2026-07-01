@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
+import { autoEnrollComplementaria } from '@/2b3583/course_utils'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -89,24 +90,6 @@ export function mountCoachStudents(): void {
           </div>
         </div>
 
-        <div id="enroll-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60">
-          <div class="glass max-w-md w-full mx-4 my-4 max-h-[85vh] overflow-y-auto rounded-xl p-6">
-            <h3 class="mb-4 font-heading text-lg font-bold text-white">Inscribir seleccionados</h3>
-            <input type="hidden" id="bulk-course-id" value="" />
-            <div class="flex flex-wrap gap-2 mb-4" id="bulk-course-grid">
-              ${(courses ?? []).map((c: any) => `
-                <button type="button" class="bulk-course-btn rounded-xl border px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
-                  data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
-              `).join('')}
-            </div>
-            <p id="bulk-enroll-error" class="mt-2 hidden text-xs text-red-400"></p>
-            <div class="flex gap-3 mt-4">
-              <button id="bulk-enroll-confirm" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">Inscribir</button>
-              <button id="bulk-enroll-cancel" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">Cancelar</button>
-            </div>
-          </div>
-        </div>
-
         <div class="mb-4">
           <div class="relative">
             <input type="text" id="student-search" placeholder="Buscar por nombre, Riot ID, Discord o email..." 
@@ -178,6 +161,29 @@ export function mountCoachStudents(): void {
         </div>`
 
       document.getElementById('page-content')!.innerHTML = html
+
+      const enrollModalHtml = `
+        <div id="enroll-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60">
+          <div class="flex min-h-full items-center justify-center p-4">
+          <div class="glass max-w-md w-full rounded-xl p-6">
+            <h3 class="mb-4 font-heading text-lg font-bold text-white">Inscribir seleccionados</h3>
+            <input type="hidden" id="bulk-course-id" value="" />
+            <div class="flex flex-wrap gap-2 mb-4" id="bulk-course-grid">
+              ${(courses ?? []).map((c: any) => `
+                <button type="button" class="bulk-course-btn rounded-xl border px-3 py-1.5 text-xs text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
+                  data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
+              `).join('')}
+            </div>
+            <p id="bulk-enroll-error" class="mt-2 hidden text-xs text-red-400"></p>
+            <div class="flex gap-3 mt-4">
+              <button id="bulk-enroll-confirm" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED]">Inscribir</button>
+              <button id="bulk-enroll-cancel" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">Cancelar</button>
+            </div>
+          </div>
+          </div>
+        </div>`
+      document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', enrollModalHtml)
+
       initBulkActions(students ?? [])
 
       // Search filter
@@ -231,6 +237,7 @@ function initBulkActions(students: any[]): void {
     for (const id of ids) {
       await supabase.from('profiles').update({ scholarship: true }).eq('id', id)
       await supabase.from('payments').update({ status: 'scholarship' }).eq('profile_id', id).eq('status', 'pending')
+      autoEnrollComplementaria(id, 'student')
     }
     toast('success', `Beca asignada a ${ids.length} estudiantes`)
     window.location.reload()

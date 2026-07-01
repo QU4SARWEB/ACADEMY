@@ -7,7 +7,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
-import { autoEnrollGeneralCourses } from '@/2b3583/course_utils'
+import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
 
 const ACH_PRESETS = [
   { badge: 'attendance', title: 'Asistencia perfecta', desc: '100% de asistencia en el mes', icon: 'checkCircle' },
@@ -77,6 +77,9 @@ export function mountCoachStudentDetail(): void {
       const { data: available } = enrolledCourseIds.length > 0
         ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).neq('slug', 'clase-general').order('name')
         : await supabase.from('courses').select('id, name').eq('is_active', true).neq('slug', 'clase-general').order('name')
+      // Filter out complementaria unless the student has at least one paid/scholarship payment (non-free)
+      const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
+      const filteredAvailable = (available ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
 
       const lastEnr = enrollments.find((e: any) => e.status === 'active' || e.status === 'recovery')
       let eligibility: any = null
@@ -169,7 +172,7 @@ export function mountCoachStudentDetail(): void {
                           ${enr.final_grade ? `<p class="text-xs text-zinc-500">Nota: ${enr.final_grade}/20</p>` : ''}
                           <div class="mt-1">
                             ${paymentStatus
-                              ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${paymentStatus === 'paid' ? 'Pagado' : escapeHtml(paymentStatus)}</span>`
+                              ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' || paymentStatus === 'free' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${paymentStatus === 'paid' ? 'Pagado' : paymentStatus === 'free' ? 'Gratis' : escapeHtml(paymentStatus)}</span>`
                               : '<span class="text-xs text-zinc-600">Sin pago</span>'
                             }
                           </div>
@@ -326,7 +329,7 @@ export function mountCoachStudentDetail(): void {
                   <div>
                     <input type="hidden" name="courseId" id="enroll-course-id" value="" />
                     <div class="flex flex-wrap gap-2" id="enroll-course-grid">
-                      ${(available ?? []).length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : (available ?? []).map((c: any) => `
+                      ${filteredAvailable.length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : filteredAvailable.map((c: any) => `
                         <button type="button" class="enroll-course-btn rounded-xl border px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
                           data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
                       `).join('')}
@@ -507,7 +510,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
           status: promPayStatus,
         })
         if (payErr) console.error('Error creating payment on promote:', payErr)
-        else if (promPayStatus === 'scholarship' && promPrice > 0) autoEnrollGeneralCourses(studentId, 'student')
+        else if (promPayStatus === 'scholarship' && promPrice > 0) { autoEnrollGeneralCourses(studentId, 'student'); autoEnrollComplementaria(studentId, 'student') }
       }
     }
 
@@ -598,7 +601,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         return
       } else {
         toast('success', 'Pago creado (' + payStatus + ')')
-        if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollGeneralCourses(profileId, type)
+        if (payStatus === 'scholarship' && coursePrice > 0) { autoEnrollGeneralCourses(profileId, type); autoEnrollComplementaria(profileId, type) }
       }
     }
 

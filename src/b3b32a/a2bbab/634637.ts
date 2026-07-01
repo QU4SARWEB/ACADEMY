@@ -22,7 +22,7 @@ export async function initPlayerScrims(): Promise<void> {
 
     if (!teamMember) {
       document.getElementById('page-content')!.innerHTML = `
-        <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Scrims</h1></div>
+        <div class="mb-6"><h1 class="font-heading text-2xl font-bold text-white">Enfrentamientos</h1></div>
         <div class="glass rounded-xl p-8 text-center">
           <p class="text-sm text-zinc-500">No estás en un equipo activo.</p>
         </div>`
@@ -31,13 +31,13 @@ export async function initPlayerScrims(): Promise<void> {
 
     const { data: scrims } = await supabase
       .from('scrims')
-      .select('*')
+      .select('*, teams(name, logo_url, color)')
       .eq('team_id', teamMember.team_id)
       .order('date', { ascending: false })
 
     const html = `
       <div class="mb-6 flex items-center justify-between">
-        <h1 class="font-heading text-2xl font-bold text-white">Scrims</h1>
+        <h1 class="font-heading text-2xl font-bold text-white">Enfrentamientos</h1>
         <a href="#/players/dashboard" class="text-xs text-zinc-500 hover:text-white transition flex items-center gap-1">${Icon('arrowLeft', 14)} Volver</a>
       </div>
       <div class="space-y-3">
@@ -47,9 +47,18 @@ export async function initPlayerScrims(): Promise<void> {
             <div class="glass rounded-xl p-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <span class="text-green-400">${Icon('sword', 18)}</span>
+                  ${s.teams?.logo_url
+                    ? `<img src="${escapeHtml(s.teams.logo_url)}" alt="" class="h-7 w-7 rounded object-cover" />`
+                    : `<div class="flex h-7 w-7 items-center justify-center rounded" style="background:${s.teams?.color || '#8B5CF6'}20;color:${s.teams?.color || '#8B5CF6'}">${Icon('users', 14)}</div>`
+                  }
                   <div>
-                    <h3 class="font-medium text-white">vs ${escapeHtml(s.opponent || '?')}</h3>
+                    <h3 class="font-medium text-white">vs
+                      ${s.opponent_logo_url
+                        ? `<img src="${escapeHtml(s.opponent_logo_url)}" alt="" class="inline h-5 w-5 rounded object-cover align-middle" />`
+                        : ''
+                      }
+                      ${escapeHtml(s.opponent || '?')}
+                    </h3>
                     <p class="text-xs text-zinc-500">${s.date ? formatDate(s.date) : '—'}</p>
                   </div>
                 </div>

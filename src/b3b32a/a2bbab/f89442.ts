@@ -2,6 +2,7 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { toast } from '@/4725dc/4f2900'
 
 export function renderPlayerTeam(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -12,16 +13,14 @@ export async function initPlayerTeam(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: teamMembers } = await supabase
+    const { data: myMembership } = await supabase
       .from('team_members')
-      .select('*, teams(name, slug, created_at)')
+      .select('*, teams(name, slug, logo_url, color, created_at)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
+      .maybeSingle()
 
-    const teamData = teamMembers?.[0]?.teams
-    const teamId = teamMembers?.[0]?.team_id
-
-    if (!teamData) {
+    if (!myMembership) {
       document.getElementById('page-content')!.innerHTML = `
         <div class="glass rounded-xl p-8 text-center">
           <span class="text-zinc-600">${Icon('users', 32)}</span>
@@ -29,6 +28,10 @@ export async function initPlayerTeam(): Promise<void> {
         </div>`
       return
     }
+
+    const teamData = myMembership.teams
+    const teamId = myMembership.team_id
+    const myRole = myMembership.role || ''
 
     const { data: members } = await supabase
       .from('team_members')
@@ -39,44 +42,64 @@ export async function initPlayerTeam(): Promise<void> {
 
     const memberIds = (members ?? []).map((m: any) => m.profile_id)
 
-    const { data: activeSeason } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle()
-
     const paymentMap = new Map<string, string>()
-    if (activeSeason && memberIds.length > 0) {
+    if (memberIds.length > 0) {
       const { data: payments } = await supabase
         .from('payments')
         .select('profile_id, status')
         .in('profile_id', memberIds)
       for (const p of payments ?? []) {
-        paymentMap.set(p.profile_id, p.status)
+        const cur = paymentMap.get(p.profile_id)
+        const rank: Record<string, number> = { paid: 4, scholarship: 3, pending: 2, free: 1, expired: 0 }
+        if (!cur || (rank[p.status] || 0) > (rank[cur] || 0)) {
+          paymentMap.set(p.profile_id, p.status)
+        }
       }
     }
 
-    const roleLabel = (role: string) => {
+    const teamRoleLabel = (role: string) => {
       if (role === 'captain') return 'Capitán'
       if (role === 'coach') return 'Coach'
       return 'Jugador'
     }
 
     const paymentBadge = (status: string) => {
+      const labels: Record<string, string> = { paid: 'Pagado', free: 'Gratis', pending: 'Pendiente', scholarship: 'Beca', expired: 'Vencido' }
       const colors: Record<string, string> = {
         paid: 'text-green-400 border-green-500/30',
+        free: 'text-green-400 border-green-500/30',
         pending: 'text-yellow-400 border-yellow-500/30',
         scholarship: 'text-blue-400 border-blue-500/30',
         expired: 'text-red-400 border-red-500/30',
       }
-      return `<span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${colors[status] || 'text-zinc-500'}">${escapeHtml(status)}</span>`
+      return `<span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${colors[status] || 'text-zinc-500'}">${labels[status] || escapeHtml(status)}</span>`
     }
 
+    const VALORANT_ROLES = ['Duelista', 'Iniciador', 'Controlador', 'Centinela', 'Flex']
+
     const html = `
-      <div class="mb-6">
-        <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(teamData.name)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">${(members ?? []).length} miembros</p>
+      <div class="mb-6 flex items-center gap-3">
+        ${teamData?.logo_url
+          ? `<img src="${escapeHtml(teamData.logo_url)}" alt="" class="h-12 w-12 rounded-xl object-cover" />`
+          : `<div class="flex h-12 w-12 items-center justify-center rounded-xl" style="background:${teamData?.color || '#8B5CF6'}20;color:${teamData?.color || '#8B5CF6'}">${Icon('users', 22)}</div>`
+        }
+        <div>
+          <h1 class="font-heading text-2xl font-bold text-white" style="color:${teamData?.color || '#fff'}">${escapeHtml(teamData?.name || '')}</h1>
+          <p class="mt-1 text-sm text-zinc-500">${(members ?? []).length} miembros</p>
+        </div>
       </div>
+
+      <div class="glass rounded-xl p-4 mb-6">
+        <h2 class="font-heading text-base font-bold text-white mb-3">Tu rol</h2>
+        <div class="flex items-center gap-3">
+          <select id="self-role-select" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+            <option value="">Seleccionar rol...</option>
+            ${VALORANT_ROLES.map(r => `<option value="${r}" ${r === myRole ? 'selected' : ''}>${r}</option>`).join('')}
+          </select>
+          <button id="btn-save-role" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('check', 14)} Guardar</button>
+        </div>
+      </div>
+
       <div class="space-y-3">
         <h2 class="font-heading text-lg font-bold text-white">Miembros</h2>
         ${(members ?? []).map((m: any) => {
@@ -94,9 +117,10 @@ export async function initPlayerTeam(): Promise<void> {
                 <p class="text-sm font-medium text-white">
                   ${escapeHtml(name)}
                   ${isMe ? '<span class="ml-2 text-xs text-[#8B5CF6]">(Tú)</span>' : ''}
+                  ${m.role ? `<span class="ml-1 rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] text-zinc-300">${escapeHtml(m.role)}</span>` : ''}
                 </p>
                 <p class="text-xs text-zinc-500">
-                  ${roleLabel(m.role)}
+                  ${teamRoleLabel(m.role)}
                   ${m.profiles?.rank ? ` · ${escapeHtml(m.profiles.rank)}` : ''}
                   ${m.profiles?.riot_id ? ` · ${escapeHtml(m.profiles.riot_id)}` : ''}
                 </p>
@@ -107,6 +131,14 @@ export async function initPlayerTeam(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    document.getElementById('btn-save-role')?.addEventListener('click', async () => {
+      const sel = document.getElementById('self-role-select') as HTMLSelectElement
+      const newRole = sel.value || null
+      const { error } = await supabase.from('team_members').update({ role: newRole }).eq('profile_id', session.user.id).eq('status', 'active')
+      if (error) toast('error', error.message)
+      else { toast('success', 'Rol actualizado'); location.reload() }
+    })
   } catch (err) {
     console.error(err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar equipo</p>'
