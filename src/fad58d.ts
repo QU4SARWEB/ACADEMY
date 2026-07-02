@@ -44,6 +44,7 @@ import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/2cb1ad'
 import { renderStudentTaskDetail, initStudentTaskDetail } from '@/b3b32a/75d37c/2f2d16'
 import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/fce448'
 import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
+import { renderStudentTeam, initStudentTeam } from '@/b3b32a/75d37c/f89442'
 import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
 import { renderStudentExamList, initStudentExamList } from '@/b3b32a/75d37c/e1760f'
 import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e16'
@@ -103,6 +104,7 @@ const REALTIME_TABLES: Record<string, string[]> = {
   students: [
     'courses', 'enrollments', 'tasks', 'task_submissions',
     'exams', 'exam_questions', 'exam_attempts', 'schedules', 'payments', 'profiles',
+    'teams', 'team_members',
   ],
   players: [
     'courses', 'enrollments', 'tasks', 'task_submissions',
@@ -277,6 +279,7 @@ dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/tasks/:id', () => renderStudentTaskDetail(), initStudentTaskDetail)
 dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
+dash('/students/team', () => renderStudentTeam(), initStudentTeam)
 dash('/students/scrims', () => renderPlayerScrims(), initPlayerScrims)
 // Player routes
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)

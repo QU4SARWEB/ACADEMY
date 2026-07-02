@@ -1,6 +1,8 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { toast } from '@/4725dc/4f2900'
+import { Icon } from '@/2b3583/bd2119'
+import { escapeHtml } from '@/2b3583/e0ebc3'
 import { renderProfileForm, getProfileFormData, getPublicProfileFormData, initMouseAutoCalc, initPlaylistEditor, initRankSelector } from '@/2b3583/ddf4d5'
 import { uploadFile, getAvatarPath, getBannerPath } from '@/2b3583/76ee3d'
 
@@ -12,9 +14,50 @@ export async function initStudentProfile(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
+    const uid = session.user.id
+    const [{ data: profile }, { data: pubProfile }, { data: teamMembers }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
+      supabase.from('public_profiles').select('*').eq('profile_id', uid).maybeSingle(),
+      supabase.from('team_members').select('*, teams(name, id, logo_url, color, slug)').eq('profile_id', uid),
+    ])
     if (!profile) return
-    const { data: pubProfile } = await supabase.from('public_profiles').select('*').eq('profile_id', session.user.id).maybeSingle()
+
+    const teamIds = (teamMembers ?? []).map((tm: any) => tm.team_id)
+    const { data: teamRosters } = teamIds.length > 0 ? await supabase
+      .from('team_members')
+      .select('*, teams(name, color, slug), profiles(full_name, avatar_url)')
+      .in('team_id', teamIds)
+    : { data: [] }
+
+    const membersByTeam: Record<string, any[]> = {}
+    for (const m of teamRosters ?? []) {
+      if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
+      membersByTeam[m.team_id].push(m)
+    }
+
+    const teamsHtml = (teamMembers ?? []).length === 0
+      ? '<p class="text-sm text-zinc-500">No perteneces a ningún equipo.</p>'
+      : (teamMembers as any[]).map((tm: any) => {
+          const color = tm.teams?.color || '#8B5CF6'
+          const roster = membersByTeam[tm.team_id] || []
+          return `
+            <div class="mb-4 last:mb-0">
+              <div class="mb-2 flex items-center gap-2">
+                <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(tm.teams?.slug || tm.teams?.name || '')}</span>
+                <span class="text-sm font-semibold text-white">${escapeHtml(tm.teams?.name || '')}</span>
+              </div>
+              <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
+                ${roster.map((m: any) => `
+                  <div class="flex items-center gap-2 text-sm ${m.profile_id === uid ? '' : 'text-zinc-400'}" style="${m.profile_id === uid ? `color:${color}` : ''}">
+                    <span class="h-1.5 w-1.5 rounded-full" style="background:${color}"></span>
+                    <span>${escapeHtml(m.profiles?.full_name || 'Desconocido')}</span>
+                    <span class="text-xs text-zinc-600">${escapeHtml(m.role || '')}</span>
+                    ${m.profile_id === uid ? `<span class="text-xs" style="color:${color}">(tú)</span>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>`
+        }).join('')
 
     const html = `
       <div class="max-w-6xl mx-auto">
@@ -22,6 +65,10 @@ export async function initStudentProfile(): Promise<void> {
         <form id="profile-form" class="space-y-6">
           ${renderProfileForm(profile, pubProfile)}
         </form>
+        <div class="mt-8">
+          <h2 class="mb-4 font-heading text-lg font-bold text-white">Equipos</h2>
+          <div id="student-teams-list">${teamsHtml}</div>
+        </div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
