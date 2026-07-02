@@ -38,15 +38,29 @@ export function mountCoachStudentDetail(): void {
 
   ;(async () => {
     try {
-      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: promotionData }, { data: payments }, { data: achievements }, { data: teamMembers }] = await Promise.all([
+      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: promotionData }, { data: payments }, { data: achievements }, { data: teamMembers }, { data: allTeams }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
         supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
         supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
         supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
         supabase.from('payments').select('status, amount, enrollment_id').eq('profile_id', id),
         supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
-        supabase.from('team_members').select('*, teams(name, id, logo_url, color)').eq('profile_id', id),
+        supabase.from('team_members').select('*, teams(name, id, logo_url, color, slug)').eq('profile_id', id),
+        supabase.from('teams').select('id, name').eq('is_active', true).order('name'),
       ])
+
+      const teamIds = (teamMembers ?? []).map((tm: any) => tm.team_id)
+      const { data: teamRosters } = teamIds.length > 0 ? await supabase
+        .from('team_members')
+        .select('*, teams(name, color, slug), profiles(full_name, avatar_url)')
+        .in('team_id', teamIds)
+      : { data: [] }
+
+      const membersByTeam: Record<string, any[]> = {}
+      for (const m of teamRosters ?? []) {
+        if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
+        membersByTeam[m.team_id].push(m)
+      }
 
       // Track recent student visit
       try {
@@ -187,22 +201,46 @@ export function mountCoachStudentDetail(): void {
               </div>
 
               <div class="mt-6">
-                <h2 class="mb-4 font-heading text-lg font-bold text-white">Equipo</h2>
-                ${!teamMembers || (teamMembers as any[]).length === 0
-                  ? '<p class="text-sm text-zinc-500">No pertenece a ningún equipo.</p>'
-                  : `<div class="space-y-3">${(teamMembers as any[]).map((tm: any) => `
-                    <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] p-3">
-                      ${tm.teams?.logo_url
-                        ? `<img src="${escapeHtml(tm.teams.logo_url)}" alt="" class="h-10 w-10 rounded-lg object-cover" />`
-                        : `<div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background:${tm.teams?.color || '#8B5CF6'}20;color:${tm.teams?.color || '#8B5CF6'}">${Icon('users', 16)}</div>`
-                      }
-                      <div>
-                        <p class="text-sm font-medium text-white" style="color:${tm.teams?.color || '#fff'}">${escapeHtml(tm.teams?.name || 'Sin nombre')}</p>
-                        <p class="text-xs text-zinc-500">${escapeHtml(tm.role || 'Miembro')}</p>
-                      </div>
-                    </div>
-                  `).join('')}</div>`
-                }
+                <h2 class="mb-4 font-heading text-lg font-bold text-white">Equipos</h2>
+                <div id="student-teams-list">
+                  ${!teamMembers || (teamMembers as any[]).length === 0
+                    ? '<p class="text-sm text-zinc-500">No pertenece a ningún equipo.</p>'
+                    : (teamMembers as any[]).map((tm: any) => {
+                      const color = tm.teams?.color || '#8B5CF6'
+                      const roster = membersByTeam[tm.team_id] || []
+                      return `
+                        <div class="mb-4 last:mb-0">
+                          <div class="mb-2 flex items-center gap-2">
+                            <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(tm.teams?.slug || tm.teams?.name || '')}</span>
+                            <span class="text-sm font-semibold text-white">${escapeHtml(tm.teams?.name || '')}</span>
+                            <button class="btn-remove-team ml-auto text-red-400 hover:text-red-300 transition" data-tm-id="${escapeHtml(tm.id)}" data-team-name="${escapeHtml(tm.teams?.name || '')}">
+                              ${Icon('x', 14)}
+                            </button>
+                          </div>
+                          <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
+                            ${roster.map((m: any) => `
+                              <div class="flex items-center gap-2 text-sm ${m.profile_id === id ? 'text-[${color}]' : 'text-zinc-400'}">
+                                <span class="h-1.5 w-1.5 rounded-full" style="background:${color}"></span>
+                                <span>${escapeHtml(m.profiles?.full_name || 'Desconocido')}</span>
+                                <span class="text-xs text-zinc-600">${escapeHtml(m.role || '')}</span>
+                                ${m.profile_id === id ? `<span class="text-xs" style="color:${color}">(tú)</span>` : ''}
+                              </div>
+                            `).join('')}
+                          </div>
+                        </div>`
+                    }).join('')
+                  }
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                  <select id="team-select" class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                    <option value="">Seleccionar equipo...</option>
+                    ${(allTeams ?? [])
+                      .filter((t: any) => !(teamMembers ?? []).some((tm: any) => tm.team_id === t.id))
+                      .map((t: any) => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('')
+                    }
+                  </select>
+                  <button id="btn-add-team" class="rounded-lg bg-[#8B5CF6] px-3 py-2 text-sm text-white hover:bg-[#7C3AED] transition">${Icon('plus', 14)}</button>
+                </div>
               </div>
 
               ${promotionData && (promotionData as any[]).length > 0 ? `
@@ -617,5 +655,28 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
 
     toast('success', 'Estudiante inscrito correctamente')
     mountCoachStudentDetail()
+  })
+
+  document.getElementById('btn-add-team')?.addEventListener('click', async () => {
+    const teamId = (document.getElementById('team-select') as HTMLSelectElement)?.value
+    if (!teamId) { toast('warning', 'Selecciona un equipo'); return }
+    const { error } = await supabase.from('team_members').insert({
+      team_id: teamId, profile_id: studentId, role: null,
+    })
+    if (error) { toast('error', error.message); return }
+    toast('success', 'Agregado al equipo')
+    mountCoachStudentDetail()
+  })
+
+  document.querySelectorAll('.btn-remove-team').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tmId = (btn as HTMLElement).dataset.tmId
+      const teamName = (btn as HTMLElement).dataset.teamName || 'este equipo'
+      if (!tmId || !(await confirmDialog(`¿Eliminar de ${teamName}?`))) return
+      const { error } = await supabase.from('team_members').delete().eq('id', tmId)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Eliminado del equipo')
+      mountCoachStudentDetail()
+    })
   })
 }

@@ -30,10 +30,23 @@ export async function initCoachPlayerDetail(): Promise<void> {
 
      const [{ data: payments }, { data: teamMembers }, { data: scrims }, { data: enrollments }] = await Promise.all([
       supabase.from('payments').select('status, amount, enrollment_id, created_at').eq('profile_id', id).order('created_at', { ascending: false }),
-      supabase.from('team_members').select('*, teams(name, id, logo_url, color)').eq('profile_id', id),
+      supabase.from('team_members').select('*, teams(name, id, logo_url, color, slug)').eq('profile_id', id),
       supabase.from('scrims').select('*, team:team_id(name)').eq('opponent_id', id).order('date', { ascending: false }),
       supabase.from('enrollments').select('*, courses(name)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
     ])
+
+    const teamIds = (teamMembers ?? []).map((tm: any) => tm.team_id)
+    const { data: teamRosters } = teamIds.length > 0 ? await supabase
+      .from('team_members')
+      .select('*, teams(name, color, slug), profiles(full_name, avatar_url, riot_id)')
+      .in('team_id', teamIds)
+    : { data: [] }
+
+    const membersByTeam: Record<string, any[]> = {}
+    for (const m of teamRosters ?? []) {
+      if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
+      membersByTeam[m.team_id].push(m)
+    }
 
     const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id)
     const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
@@ -90,22 +103,31 @@ export async function initCoachPlayerDetail(): Promise<void> {
           </div>
         </div>
 
-        <div class="glass rounded-xl p-5">
-          <h2 class="font-heading text-base font-bold text-white mb-3">Equipo</h2>
+        <div class="rounded-xl border border-zinc-800 bg-[#111] p-5">
+          <h2 class="font-heading text-base font-bold text-white mb-3">Equipos</h2>
           ${!teamMembers || teamMembers.length === 0
             ? '<p class="text-sm text-zinc-500">No pertenece a ningún equipo.</p>'
-            : `<div class="space-y-3">${teamMembers.map((tm: any) => `
-              <div class="flex items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-900/50 p-3">
-                ${tm.teams?.logo_url
-                  ? `<img src="${escapeHtml(tm.teams.logo_url)}" alt="" class="h-10 w-10 rounded-lg object-cover" />`
-                  : `<div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background:${tm.teams?.color || '#8B5CF6'}20;color:${tm.teams?.color || '#8B5CF6'}">${Icon('users', 16)}</div>`
-                }
-                <div>
-                  <p class="text-sm font-medium text-white" style="color:${tm.teams?.color || '#fff'}">${escapeHtml(tm.teams?.name || 'Sin nombre')}</p>
-                  <p class="text-xs text-zinc-500">${escapeHtml(tm.role || 'Miembro')}</p>
-                </div>
-              </div>
-            `).join('')}</div>`
+            : (teamMembers as any[]).map((tm: any) => {
+              const color = tm.teams?.color || '#8B5CF6'
+              const roster = membersByTeam[tm.team_id] || []
+              return `
+                <div class="mb-4 last:mb-0">
+                  <div class="mb-2 flex items-center gap-2">
+                    <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(tm.teams?.slug || tm.teams?.name || '')}</span>
+                    <span class="text-sm font-semibold text-white">${escapeHtml(tm.teams?.name || '')}</span>
+                  </div>
+                  <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
+                    ${roster.map((m: any) => `
+                      <div class="flex items-center gap-2 text-sm ${m.profile_id === id ? 'text-[${color}]' : 'text-zinc-400'}">
+                        <span class="h-1.5 w-1.5 rounded-full" style="background:${color}"></span>
+                        <span>${escapeHtml(m.profiles?.full_name || 'Desconocido')}</span>
+                        <span class="text-xs text-zinc-600">${escapeHtml(m.role || '')}</span>
+                        ${m.profile_id === id ? `<span class="text-xs" style="color:${color}">(tú)</span>` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>`
+            }).join('')
           }
         </div>
       </div>
