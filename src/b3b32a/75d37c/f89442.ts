@@ -15,7 +15,7 @@ export async function initStudentTeam(): Promise<void> {
 
     const { data: teamMembers } = await supabase
       .from('team_members')
-      .select('*, teams(name, id, logo_url, color, slug)')
+      .select('*, teams(name, id, logo_url, color, slug, tag)')
       .eq('profile_id', uid)
       .eq('status', 'active')
 
@@ -31,7 +31,7 @@ export async function initStudentTeam(): Promise<void> {
     const teamIds = teamMembers.map((tm: any) => tm.team_id)
     const { data: teamRosters } = teamIds.length > 0 ? await supabase
       .from('team_members')
-      .select('*, teams(name, color, slug), profiles(full_name, avatar_url, rank)')
+      .select('*, teams(name, color, slug, tag), profiles(full_name, avatar_url, rank)')
       .in('team_id', teamIds)
       .eq('status', 'active')
     : { data: [] }
@@ -40,11 +40,6 @@ export async function initStudentTeam(): Promise<void> {
     for (const m of teamRosters ?? []) {
       if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
       membersByTeam[m.team_id].push(m)
-    }
-
-    const teamTypeLabel = (type: string) => {
-      const labels: Record<string, string> = { academico: 'Académico', competitivo: 'Competitivo' }
-      return labels[type] || type
     }
 
     const html = `
@@ -63,7 +58,7 @@ export async function initStudentTeam(): Promise<void> {
                 }
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(teamTypeLabel(team?.type || ''))}</span>
+                    <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(team?.tag || team?.slug || '')}</span>
                     <h2 class="font-heading text-xl font-bold text-white" style="color:${color}">${escapeHtml(team?.name || '')}</h2>
                   </div>
                   <p class="mt-1 text-sm text-zinc-500">${roster.length} miembro${roster.length !== 1 ? 's' : ''}</p>

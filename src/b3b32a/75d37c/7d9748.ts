@@ -18,14 +18,14 @@ export async function initStudentProfile(): Promise<void> {
     const [{ data: profile }, { data: pubProfile }, { data: teamMembers }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
       supabase.from('public_profiles').select('*').eq('profile_id', uid).maybeSingle(),
-      supabase.from('team_members').select('*, teams(name, id, logo_url, color, slug)').eq('profile_id', uid),
+      supabase.from('team_members').select('*, teams(name, id, logo_url, color, slug, tag)').eq('profile_id', uid),
     ])
     if (!profile) return
 
     const teamIds = (teamMembers ?? []).map((tm: any) => tm.team_id)
     const { data: teamRosters } = teamIds.length > 0 ? await supabase
       .from('team_members')
-      .select('*, teams(name, color, slug), profiles(full_name, avatar_url)')
+      .select('*, teams(name, color, slug, tag), profiles(full_name, avatar_url)')
       .in('team_id', teamIds)
     : { data: [] }
 
@@ -33,11 +33,6 @@ export async function initStudentProfile(): Promise<void> {
     for (const m of teamRosters ?? []) {
       if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
       membersByTeam[m.team_id].push(m)
-    }
-
-    const teamTypeLabel = (type: string) => {
-      const labels: Record<string, string> = { academico: 'Académico', competitivo: 'Competitivo' }
-      return labels[type] || type
     }
 
     const teamsHtml = (teamMembers ?? []).length === 0
@@ -48,7 +43,7 @@ export async function initStudentProfile(): Promise<void> {
           return `
             <div class="mb-4 last:mb-0">
               <div class="mb-2 flex items-center gap-2">
-                <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(teamTypeLabel(tm.teams?.type || ''))}</span>
+                <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(tm.teams?.tag || tm.teams?.slug || '')}</span>
                 <span class="text-sm font-semibold text-white">${escapeHtml(tm.teams?.name || '')}</span>
               </div>
               <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
