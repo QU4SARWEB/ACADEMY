@@ -38,13 +38,14 @@ export function mountCoachStudentDetail(): void {
 
   ;(async () => {
     try {
-      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: promotionData }, { data: payments }, { data: achievements }] = await Promise.all([
+      const [{ data: profile }, { data: enrollData }, { data: courses }, { data: promotionData }, { data: payments }, { data: achievements }, { data: teamMembers }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
         supabase.from('enrollments').select('*, courses(name, slug, min_rank, display_order)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
         supabase.from('courses').select('id, name, display_order, min_rank').eq('is_active', true).order('display_order'),
         supabase.from('promotions').select('*, from_course:from_course_id(name), to_course:to_course_id(name)').eq('profile_id', id).order('created_at', { ascending: false }),
         supabase.from('payments').select('status, amount, enrollment_id').eq('profile_id', id),
         supabase.from('member_achievements').select('*').eq('profile_id', id).order('unlocked_at', { ascending: false }),
+        supabase.from('team_members').select('*, teams(name, id, logo_url, color)').eq('profile_id', id),
       ])
 
       // Track recent student visit
@@ -183,6 +184,25 @@ export function mountCoachStudentDetail(): void {
                       </div>
                     </div>`
                 }).join('')}
+              </div>
+
+              <div class="mt-6">
+                <h2 class="mb-4 font-heading text-lg font-bold text-white">Equipo</h2>
+                ${!teamMembers || (teamMembers as any[]).length === 0
+                  ? '<p class="text-sm text-zinc-500">No pertenece a ningún equipo.</p>'
+                  : `<div class="space-y-3">${(teamMembers as any[]).map((tm: any) => `
+                    <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] p-3">
+                      ${tm.teams?.logo_url
+                        ? `<img src="${escapeHtml(tm.teams.logo_url)}" alt="" class="h-10 w-10 rounded-lg object-cover" />`
+                        : `<div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background:${tm.teams?.color || '#8B5CF6'}20;color:${tm.teams?.color || '#8B5CF6'}">${Icon('users', 16)}</div>`
+                      }
+                      <div>
+                        <p class="text-sm font-medium text-white" style="color:${tm.teams?.color || '#fff'}">${escapeHtml(tm.teams?.name || 'Sin nombre')}</p>
+                        <p class="text-xs text-zinc-500">${escapeHtml(tm.role || 'Miembro')}</p>
+                      </div>
+                    </div>
+                  `).join('')}</div>`
+                }
               </div>
 
               ${promotionData && (promotionData as any[]).length > 0 ? `
@@ -557,53 +577,43 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    const { error: enrError } = await supabase.from('enrollments').insert({
+    const { data: newEnroll, error: enrError } = await supabase.from('enrollments').insert({
       profile_id: profileId,
       course_id: courseId,
       type,
       status: 'active',
-    })
+    }).select('id').maybeSingle()
 
-    if (enrError) {
-      document.getElementById('enroll-error')!.textContent = enrError.message
+    if (enrError || !newEnroll) {
+      document.getElementById('enroll-error')!.textContent = enrError?.message || 'Error al crear inscripción'
       document.getElementById('enroll-error')!.classList.remove('hidden')
       return
     }
 
-    const { data: newEnroll } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', profileId)
-      .eq('course_id', courseId)
+    const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
+    const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
+    const { data: studentProfile } = await supabase
+      .from('profiles')
+      .select('scholarship')
+      .eq('id', profileId)
       .maybeSingle()
 
-    if (newEnroll) {
-      const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-      const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
-      const { data: studentProfile } = await supabase
-        .from('profiles')
-        .select('scholarship')
-        .eq('id', profileId)
-        .maybeSingle()
-
-      const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
-      const { error: payErr } = await supabase.from('payments').insert({
-        profile_id: profileId,
-        enrollment_id: newEnroll.id,
-        type,
-        status: payStatus,
-        amount: coursePrice,
-      })
-      if (payErr) {
-        console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
-        toast('error', 'Pago no creado: ' + payErr.message)
-        mountCoachStudentDetail()
-        return
-      } else {
-        toast('success', 'Pago creado (' + payStatus + ')')
-        if (payStatus === 'scholarship' && coursePrice > 0) { autoEnrollGeneralCourses(profileId, type); autoEnrollComplementaria(profileId, type) }
-      }
+    const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
+    const { error: payErr } = await supabase.from('payments').insert({
+      profile_id: profileId,
+      enrollment_id: newEnroll.id,
+      type,
+      status: payStatus,
+      amount: coursePrice,
+    })
+    if (payErr) {
+      console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
+      toast('error', 'Error al crear pago: ' + payErr.message + ' (código: ' + payErr.code + ')')
+      mountCoachStudentDetail()
+      return
     }
+    toast('success', 'Pago creado (' + payStatus + ')')
+    if (payStatus === 'scholarship' && coursePrice > 0) { autoEnrollGeneralCourses(profileId, type); autoEnrollComplementaria(profileId, type) }
 
     toast('success', 'Estudiante inscrito correctamente')
     mountCoachStudentDetail()

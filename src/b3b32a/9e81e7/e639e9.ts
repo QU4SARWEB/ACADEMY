@@ -650,7 +650,8 @@ async function renderCoachPayments(): Promise<void> {
       }
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
       if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }
-      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: profile?.scholarship ? 'scholarship' : 'pending', amount: payAmount })
+      const payStatus = payAmount === 0 ? 'free' : (profile?.scholarship ? 'scholarship' : 'pending')
+      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount })
       toast('success', 'Pago creado')
       const lastCourseId = sessionStorage.getItem('lastPayCourseId')
       if (lastCourseId) {

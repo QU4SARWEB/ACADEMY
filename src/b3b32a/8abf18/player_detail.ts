@@ -39,11 +39,14 @@ export async function initCoachPlayerDetail(): Promise<void> {
     const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
     const available = (courses ?? []).filter((c: any) => !enrolledCourseIds.includes(c.id) && (c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny))
 
+    const priceMap: Record<string, number> = {}
+    for (const c of courses ?? []) priceMap[c.id] = parseFloat(c.price ?? 0)
+
     const displayName = [profile.riot_id || profile.full_name, profile.social_discord].filter(Boolean).join(' | ') || profile.full_name || 'Unknown'
     const initial = (displayName || '?')[0]
     const activeEnrollments = (enrollments ?? []).filter((e: any) => e.status === 'active')
     const hasPaidEnroll = activeEnrollments.some((e: any) => (payments ?? []).some((p: any) => p.enrollment_id === e.id && (p.status === 'paid' || p.status === 'scholarship')))
-    const allFree = !hasPaidEnroll && activeEnrollments.every((e: any) => (payments ?? []).some((p: any) => p.enrollment_id === e.id && p.status === 'free'))
+    const allFree = !hasPaidEnroll && activeEnrollments.every((e: any) => (priceMap[e.course_id] || 0) === 0 || (payments ?? []).some((p: any) => p.enrollment_id === e.id && p.status === 'free'))
     const payStatus = activeEnrollments.length > 0 ? (hasPaidEnroll ? 'pagado' : allFree ? 'gratis' : 'pendiente') : 'sin curso'
 
     const html = `
@@ -113,7 +116,8 @@ export async function initCoachPlayerDetail(): Promise<void> {
           ? '<p class="text-sm text-zinc-500">No inscrito en ningún curso.</p>'
           : `<div class="grid gap-3 sm:grid-cols-2">${activeEnrollments.map((e: any) => {
               const ePayments = (payments ?? []).filter((p: any) => p.enrollment_id === e.id)
-              const eStatus = ePayments.some((p: any) => p.status === 'paid' || p.status === 'scholarship') ? 'pagado' : ePayments.some((p: any) => p.status === 'free') ? 'gratis' : ePayments.length > 0 ? 'pendiente' : 'sin pago'
+              const isFreeCourse = (priceMap[e.course_id] || 0) === 0
+              const eStatus = isFreeCourse ? 'gratis' : ePayments.some((p: any) => p.status === 'paid' || p.status === 'scholarship') ? 'pagado' : ePayments.some((p: any) => p.status === 'free') ? 'gratis' : ePayments.length > 0 ? 'pendiente' : 'sin pago'
               return `<div class="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
                 <div class="flex items-center justify-between">
                   <span class="text-sm font-medium text-white">${escapeHtml(e.courses?.name || '—')}</span>
@@ -252,51 +256,42 @@ export async function initCoachPlayerDetail(): Promise<void> {
         return
       }
 
-      const { error: enrError } = await supabase.from('enrollments').insert({
+      const { data: newEnroll, error: enrError } = await supabase.from('enrollments').insert({
         profile_id: profileId,
         course_id: courseId,
         type,
         status: 'active',
-      })
+      }).select('id').maybeSingle()
 
-      if (enrError) {
-        document.getElementById('enroll-error')!.textContent = enrError.message
+      if (enrError || !newEnroll) {
+        document.getElementById('enroll-error')!.textContent = enrError?.message || 'Error al crear inscripción'
         document.getElementById('enroll-error')!.classList.remove('hidden')
         return
       }
 
-      const { data: newEnroll } = await supabase
-        .from('enrollments')
-        .select('id')
-        .eq('profile_id', profileId)
-        .eq('course_id', courseId)
+      const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
+      const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
+      const { data: playerProfile } = await supabase
+        .from('profiles')
+        .select('scholarship')
+        .eq('id', profileId)
         .maybeSingle()
 
-      if (newEnroll) {
-        const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-        const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
-        const { data: playerProfile } = await supabase
-          .from('profiles')
-          .select('scholarship')
-          .eq('id', profileId)
-          .maybeSingle()
-
-        const payStatus = coursePrice === 0 ? 'free' : (playerProfile?.scholarship ? 'scholarship' : 'pending')
-        const { error: payErr } = await supabase.from('payments').insert({
-          profile_id: profileId,
-          enrollment_id: newEnroll.id,
-          type,
-          status: payStatus,
-          amount: coursePrice,
-        })
-        if (payErr) {
-          console.error('Error creating payment:', payErr)
-          toast('error', 'Pago no creado: ' + payErr.message)
-        } else {
-          toast('success', 'Pago creado (' + payStatus + ')')
-          if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollComplementaria(profileId, type)
-        }
+      const payStatus = coursePrice === 0 ? 'free' : (playerProfile?.scholarship ? 'scholarship' : 'pending')
+      const { error: payErr } = await supabase.from('payments').insert({
+        profile_id: profileId,
+        enrollment_id: newEnroll.id,
+        type,
+        status: payStatus,
+        amount: coursePrice,
+      })
+      if (payErr) {
+        console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
+        toast('error', 'Error al crear pago: ' + payErr.message + ' (código: ' + payErr.code + ')')
+        return
       }
+      toast('success', 'Pago creado (' + payStatus + ')')
+      if (payStatus === 'scholarship' && coursePrice > 0) autoEnrollComplementaria(profileId, type)
 
       toast('success', 'Jugador inscrito correctamente')
       window.location.reload()

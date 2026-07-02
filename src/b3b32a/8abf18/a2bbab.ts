@@ -20,12 +20,15 @@ export async function initCoachPlayers(): Promise<void> {
 
     let paymentsByPlayer: Record<string, any[]> = {}
     let enrollsByPlayer: Record<string, any[]> = {}
+    let priceMap: Record<string, number> = {}
     if (players && players.length > 0) {
       const playerIds = players.map((p: any) => p.id)
-      const [{ data: payments }, { data: enrollments }] = await Promise.all([
+      const [{ data: payments }, { data: enrollments }, { data: courses }] = await Promise.all([
         supabase.from('payments').select('profile_id, amount, status, enrollment_id').in('profile_id', playerIds),
         supabase.from('enrollments').select('id, profile_id, course_id, status, courses!inner(name)').in('profile_id', playerIds),
+        supabase.from('courses').select('id, price'),
       ])
+      if (courses) for (const c of courses) priceMap[c.id] = parseFloat(c.price ?? 0)
       if (payments) {
         for (const p of payments) {
           if (!paymentsByPlayer[p.profile_id]) paymentsByPlayer[p.profile_id] = []
@@ -79,7 +82,7 @@ export async function initCoachPlayers(): Promise<void> {
                   const enrolledCount = pEnrolls.filter((e: any) => e.status === 'active').length
                   const courseNames = [...new Set(pEnrolls.filter((e: any) => e.status === 'active').map((e: any) => e.courses?.name).filter(Boolean))]
                   const hasPaidEnrollment = pEnrolls.some((e: any) => e.status === 'active' && pPayments.some((pp: any) => pp.enrollment_id === e.id && (pp.status === 'paid' || pp.status === 'scholarship')))
-                  const allFree = !hasPaidEnrollment && enrolledCount > 0 && pEnrolls.filter((e: any) => e.status === 'active').every((e: any) => pPayments.some((pp: any) => pp.enrollment_id === e.id && pp.status === 'free'))
+                  const allFree = !hasPaidEnrollment && pEnrolls.filter((e: any) => e.status === 'active').every((e: any) => (priceMap[e.course_id] || 0) === 0 || pPayments.some((pp: any) => pp.enrollment_id === e.id && pp.status === 'free'))
                   const payStatus = enrolledCount > 0 ? (hasPaidEnrollment ? 'pagado' : allFree ? 'gratis' : 'pendiente') : 'sin curso'
                   const payColor = payStatus === 'pagado' ? 'text-green-400' : payStatus === 'gratis' ? 'text-green-400' : payStatus === 'pendiente' ? 'text-yellow-400' : 'text-zinc-500'
                   return `
