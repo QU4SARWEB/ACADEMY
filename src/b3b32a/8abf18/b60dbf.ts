@@ -219,7 +219,7 @@ export function mountCoachStudentDetail(): void {
                           </div>
                           <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
                             ${roster.map((m: any) => `
-                              <div class="flex items-center gap-2 text-sm ${m.profile_id === id ? 'text-[${color}]' : 'text-zinc-400'}">
+                              <div class="flex items-center gap-2 text-sm text-zinc-400" style="color:${m.profile_id === id ? color : undefined}">
                                 <span class="h-1.5 w-1.5 rounded-full" style="background:${color}"></span>
                                 <span>${escapeHtml(m.profiles?.full_name || 'Desconocido')}</span>
                                 <span class="text-xs text-zinc-600">${escapeHtml(m.role || '')}</span>

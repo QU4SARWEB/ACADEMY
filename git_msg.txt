@@ -1,0 +1,1 @@
+fix: color dinamico en lista de companeros de equipo
