@@ -42,10 +42,9 @@ export async function initStudentTeam(): Promise<void> {
       membersByTeam[m.team_id].push(m)
     }
 
-    const teamRoleLabel = (role: string) => {
-      if (role === 'captain') return 'Capitán'
-      if (role === 'coach') return 'Coach'
-      return 'Miembro'
+    const teamTypeLabel = (type: string) => {
+      const labels: Record<string, string> = { academico: 'Académico', competitivo: 'Competitivo' }
+      return labels[type] || type
     }
 
     const html = `
@@ -64,14 +63,14 @@ export async function initStudentTeam(): Promise<void> {
                 }
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(team?.slug || '')}</span>
+                    <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(teamTypeLabel(team?.type || ''))}</span>
                     <h2 class="font-heading text-xl font-bold text-white" style="color:${color}">${escapeHtml(team?.name || '')}</h2>
                   </div>
                   <p class="mt-1 text-sm text-zinc-500">${roster.length} miembro${roster.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
               <div class="space-y-3">
-                ${roster.map((m: any) => {
+                ${roster.length === 0 ? '<p class="text-sm text-zinc-500">No hay miembros registrados en este equipo.</p>' : roster.map((m: any) => {
                   const name = m.profiles?.full_name || 'Desconocido'
                   const isMe = m.profile_id === uid
                   return `
@@ -88,11 +87,10 @@ export async function initStudentTeam(): Promise<void> {
                           ${isMe ? `<span class="ml-2 text-xs" style="color:${color}">(Tú)</span>` : ''}
                         </p>
                         <p class="text-xs text-zinc-500">
-                          ${teamRoleLabel(m.role || '')}
-                          ${m.profiles?.rank ? ` · ${escapeHtml(m.profiles.rank)}` : ''}
+                          ${m.role ? `${escapeHtml(m.role)} · ` : ''}
+                          ${m.profiles?.rank ? escapeHtml(m.profiles.rank) : ''}
                         </p>
                       </div>
-                      ${m.role ? `<span class="rounded bg-zinc-700/50 px-2 py-0.5 text-[10px] text-zinc-300">${escapeHtml(m.role)}</span>` : ''}
                     </div>`
                 }).join('')}
               </div>

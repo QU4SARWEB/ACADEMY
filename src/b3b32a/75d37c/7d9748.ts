@@ -35,6 +35,11 @@ export async function initStudentProfile(): Promise<void> {
       membersByTeam[m.team_id].push(m)
     }
 
+    const teamTypeLabel = (type: string) => {
+      const labels: Record<string, string> = { academico: 'Académico', competitivo: 'Competitivo' }
+      return labels[type] || type
+    }
+
     const teamsHtml = (teamMembers ?? []).length === 0
       ? '<p class="text-sm text-zinc-500">No perteneces a ningún equipo.</p>'
       : (teamMembers as any[]).map((tm: any) => {
@@ -43,15 +48,15 @@ export async function initStudentProfile(): Promise<void> {
           return `
             <div class="mb-4 last:mb-0">
               <div class="mb-2 flex items-center gap-2">
-                <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(tm.teams?.slug || tm.teams?.name || '')}</span>
+                <span class="rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${color}15;color:${color};border:1px solid ${color}30">${escapeHtml(teamTypeLabel(tm.teams?.type || ''))}</span>
                 <span class="text-sm font-semibold text-white">${escapeHtml(tm.teams?.name || '')}</span>
               </div>
               <div class="ml-1 space-y-1.5 border-l-2 border-zinc-700/50 pl-4">
-                ${roster.map((m: any) => `
+                ${roster.length === 0 ? '<p class="text-xs text-zinc-600">No hay miembros registrados.</p>' : roster.map((m: any) => `
                   <div class="flex items-center gap-2 text-sm ${m.profile_id === uid ? '' : 'text-zinc-400'}" style="${m.profile_id === uid ? `color:${color}` : ''}">
                     <span class="h-1.5 w-1.5 rounded-full" style="background:${color}"></span>
                     <span>${escapeHtml(m.profiles?.full_name || 'Desconocido')}</span>
-                    <span class="text-xs text-zinc-600">${escapeHtml(m.role || '')}</span>
+                    ${m.role ? `<span class="text-xs text-zinc-600">${escapeHtml(m.role)}</span>` : ''}
                     ${m.profile_id === uid ? `<span class="text-xs" style="color:${color}">(tú)</span>` : ''}
                   </div>
                 `).join('')}
