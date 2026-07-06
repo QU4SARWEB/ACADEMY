@@ -138,7 +138,6 @@ export function renderHome(): string {
           </div>
           <div class="flex gap-6 text-xs text-zinc-600">
             <a href="#/about" class="hover:text-zinc-400 transition">Sobre nosotros</a>
-            <a href="#/members" class="hover:text-zinc-400 transition">Miembros</a>
             <a href="#/login" class="hover:text-zinc-400 transition">Iniciar sesi\u00f3n</a>
           </div>
           <p class="text-xs text-zinc-600">&copy; ${new Date().getFullYear()} QU4SAR Gaming Academy. Todos los derechos reservados.</p>
