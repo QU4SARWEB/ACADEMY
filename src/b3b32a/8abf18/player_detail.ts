@@ -28,9 +28,8 @@ export async function initCoachPlayerDetail(): Promise<void> {
       return
     }
 
-     const [{ data: payments }, { data: scrims }, { data: enrollments }] = await Promise.all([
+     const [{ data: payments }, { data: enrollments }] = await Promise.all([
       supabase.from('payments').select('status, amount, enrollment_id, created_at').eq('profile_id', id).order('created_at', { ascending: false }),
-      supabase.from('scrims').select('*, team:team_id(name)').eq('opponent_id', id).order('date', { ascending: false }),
       supabase.from('enrollments').select('*, courses(name)').eq('profile_id', id).order('enrolled_at', { ascending: false }),
     ])
 
@@ -152,19 +151,7 @@ export async function initCoachPlayerDetail(): Promise<void> {
         }
       </div>
 
-      <div class="glass rounded-xl p-5 mt-6">
-        <h2 class="font-heading text-base font-bold text-white mb-3">Enfrentamientos recientes</h2>
-        ${!scrims || scrims.length === 0
-          ? '<p class="text-sm text-zinc-500">Sin scrims registrados.</p>'
-          : `<div class="space-y-2">${scrims.slice(0, 10).map((s: any) => `
-            <div class="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3">
-              <span class="text-sm text-zinc-300">vs ${escapeHtml(s.opponent || '—')}</span>
-              <span class="text-xs ${s.result === 'win' ? 'text-green-400' : s.result === 'loss' ? 'text-red-400' : 'text-zinc-500'}">${s.result || '—'}</span>
-              <span class="text-xs text-zinc-500">${s.date ? formatDate(s.date) : ''}</span>
-            </div>
-          `).join('')}</div>`
-        }
-      </div>`
+      `
 
     document.getElementById('page-content')!.innerHTML = html
 

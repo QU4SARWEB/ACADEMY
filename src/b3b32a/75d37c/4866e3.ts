@@ -7,7 +7,7 @@ import { formatDate } from '@/2b3583/6b239c'
 export function renderStudentDashboard(): string {
   return `<div id="page-content">
     <div class="mb-6">${LoadingSkeleton('list', 1)}</div>
-    <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-4">${LoadingSkeleton('card', 4)}</div>
+    <div class="mb-8">${LoadingSkeleton('card', 1)}</div>
     <div>${LoadingSkeleton('card', 3)}</div>
   </div>`
 }
@@ -32,30 +32,11 @@ export async function initStudentDashboard(): Promise<void> {
 
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
-    // Task stats
-    const { data: submissions } = await supabase
-      .from('task_submissions')
-      .select('status')
-      .in('enrollment_id', (enrollments ?? []).map((e: any) => e.id))
-
-    const totalSubs = submissions?.length ?? 0
-    const gradedSubs = submissions?.filter((s: any) => s.status === 'graded').length ?? 0
-
-    // Exam stats
-    let examAvg = '—'
-    const { data: attempts } = await supabase
-      .from('exam_attempts')
-      .select('score')
-      .not('score', 'is', null)
-    const examScores = (attempts ?? []).map((a: any) => a.score).filter((s: any) => s !== null)
-    if (examScores.length > 0) {
-      examAvg = (examScores.reduce((a: number, b: number) => a + b, 0) / examScores.length).toFixed(1)
-    }
 
     // Course progress
     const courseProgress = await Promise.all((enrollments ?? []).map(async (e: any) => {
       const { count: totalMods } = await supabase
-        .from('exams') 
+        .from('course_classes')
         .select('*', { count: 'exact', head: true })
         .eq('course_id', e.course_id)
       const progress = totalMods && totalMods > 0 ? Math.min(Math.round(((e.current_module || 0) / totalMods) * 100), 100) : 0
@@ -70,22 +51,10 @@ export async function initStudentDashboard(): Promise<void> {
         <p class="mt-1 text-sm text-zinc-500">Tu progreso académico</p>
       </div>
 
-      <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-4">
-        <div class="glass rounded-xl p-4 text-center">
+      <div class="mb-8">
+        <div class="glass inline-block rounded-xl p-4 text-center">
           <p class="text-2xl font-bold text-white">${(enrollments ?? []).length}</p>
           <p class="text-xs text-zinc-500">Cursos activos</p>
-        </div>
-        <div class="glass rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-green-400">${totalSubs}</p>
-          <p class="text-xs text-zinc-500">Tareas entregadas</p>
-        </div>
-        <div class="glass rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-[#8B5CF6]">${examAvg}</p>
-          <p class="text-xs text-zinc-500">Promedio exámenes</p>
-        </div>
-        <div class="glass rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-yellow-400">${totalSubs > 0 ? Math.round((gradedSubs / totalSubs) * 100) : 0}%</p>
-          <p class="text-xs text-zinc-500">Tareas calificadas</p>
         </div>
       </div>
 
@@ -119,12 +88,7 @@ export async function initStudentDashboard(): Promise<void> {
           <a href="#/students/courses" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
             ${Icon('bookOpen', 20)} <span class="text-sm text-white">Mis cursos</span>
           </a>
-          <a href="#/students/tasks" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
-            ${Icon('clipboardList', 20)} <span class="text-sm text-white">Tareas</span>
-          </a>
-          <a href="#/students/grades" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
-            ${Icon('scrollText', 20)} <span class="text-sm text-white">Calificaciones</span>
-          </a>
+
           <a href="#/payments" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
             ${Icon('dollarSign', 20)} <span class="text-sm text-white">Pagos</span>
           </a>

@@ -67,13 +67,6 @@ export async function initStudentCourseDetail(): Promise<void> {
             Curso gratuito. ¡Disfruta del curso!
           </div>`
 
-    const { data: examList } = await supabase
-      .from('exams')
-      .select('id, title')
-      .eq('course_id', id)
-      .eq('is_published', true)
-      .order('created_at')
-
     const html = `
       <div>
         ${Breadcrumb([
@@ -91,30 +84,11 @@ export async function initStudentCourseDetail(): Promise<void> {
         ${statusBadge}
 
         <div class="mb-6 flex gap-3">
-          <a href="#/students/courses/${escapeHtml(id)}/exams"
-             class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6]/20 px-3 py-1.5 text-sm text-[#8B5CF6] transition hover:bg-[#8B5CF6]/30">
-            ${Icon('scrollText', 14)} Exámenes (${examList?.length ?? 0})
-          </a>
           <a href="#/payments"
              class="btn-glow-sm flex items-center gap-2 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-500/30">
             ${Icon('dollarSign', 14)} Pagos
           </a>
         </div>
-
-        ${(examList ?? []).length > 0 ? `
-        <div class="glass rounded-xl p-5">
-          <h2 class="mb-3 font-heading text-base font-bold text-white">Exámenes disponibles</h2>
-          <div class="space-y-2">
-            ${(examList ?? []).map((ex: any) => `
-              <a href="#/students/courses/${escapeHtml(id)}/exams/${escapeHtml(ex.id)}"
-                 class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#0A0A0A] px-4 py-3 text-sm text-zinc-300 transition hover:bg-zinc-800/50">
-                ${Icon('scrollText', 14)}
-                <span>${escapeHtml(ex.title)}</span>
-                ${Icon('arrowRight', 14)}
-              </a>
-            `).join('')}
-          </div>
-        </div>` : ''}
 
         <div class="mt-6">
           <h2 class="mb-4 font-heading text-lg font-bold text-white">Clases</h2>

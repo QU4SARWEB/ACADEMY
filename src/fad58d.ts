@@ -23,48 +23,30 @@ import { renderCoachCourseDetail, mountCoachCourseDetail } from '@/b3b32a/8abf18
 import { renderCoachNewCourse, initCoachNewCourse } from '@/b3b32a/8abf18/d74f85'
 import { renderCoachProfile, initCoachProfile } from '@/b3b32a/8abf18/7d9748'
 import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
-import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/2cb1ad'
 import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
 import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
-import { renderCoachScrims, initCoachScrims } from '@/b3b32a/8abf18/634637'
 
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachPlayerDetail, initCoachPlayerDetail } from '@/b3b32a/8abf18/player_detail'
 import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
-import { renderCoachExams, initCoachExams, renderCoachExamAttempt, initCoachExamAttempt, initCoachExamAttemptStandalone } from '@/b3b32a/8abf18/a9f8d1'
-import { renderCoachStudentGrades, initCoachStudentGrades } from '@/b3b32a/8abf18/f1a2b3'
-import { renderCoachGradesList, initCoachGradesList } from '@/b3b32a/8abf18/c1d2e3'
-import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/c5e3f2'
-import { renderCoachNewTask, initCoachNewTask } from '@/b3b32a/8abf18/cdc0b9'
-import { renderCoachTaskDetail, initCoachTaskDetail } from '@/b3b32a/8abf18/2f2d16'
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
 import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
 import { renderStudentProfile, initStudentProfile } from '@/b3b32a/75d37c/7d9748'
-import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/2cb1ad'
-import { renderStudentTaskDetail, initStudentTaskDetail } from '@/b3b32a/75d37c/2f2d16'
-import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/fce448'
 import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
 import { renderStudentTeam, initStudentTeam } from '@/b3b32a/75d37c/f89442'
 import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
-import { renderStudentExamList, initStudentExamList } from '@/b3b32a/75d37c/e1760f'
-import { renderStudentExamTake, initStudentExamTake } from '@/b3b32a/75d37c/916e16'
 
 import { renderPlayerDashboard, initPlayerDashboard } from '@/b3b32a/a2bbab/4866e3'
 import { renderPlayerProfile, initPlayerProfile } from '@/b3b32a/a2bbab/7d9748'
 import { renderPlayerSchedule, initPlayerSchedule } from '@/b3b32a/a2bbab/799855'
-import { renderPlayerTaskDetail, initPlayerTaskDetail } from '@/b3b32a/a2bbab/f8c5e7'
 import { renderPlayerCourseDetail, initPlayerCourseDetail } from '@/b3b32a/a2bbab/a3b2c1'
-import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/e8f6c1'
 import { renderPlayerCourses, initPlayerCourses } from '@/b3b32a/a2bbab/d1e5f3'
-import { renderPlayerScrims, initPlayerScrims } from '@/b3b32a/a2bbab/634637'
 import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
 
 import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
 
 import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
-import { renderTickets, initTickets } from '@/b3b32a/9e81e7/d2e1a4'
-import { renderNewTicket, initNewTicket } from '@/b3b32a/9e81e7/f4b5c6'
 import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
 
 router.setBeforeNavigate(async (path) => authGuard(path))
@@ -103,36 +85,23 @@ router.on('/p/:slug', async () => {
 // Tables that affect the current page — grouped by route prefix
 const REALTIME_TABLES: Record<string, string[]> = {
   coaches: [
-    'courses', 'enrollments', 'tasks', 'task_submissions',
-    'exams', 'exam_questions', 'exam_attempts', 'schedules',
-    'teams', 'scrims', 'promotions', 'questions', 'profiles', 'payments',
+    'courses', 'enrollments', 'schedules',
+    'teams', 'profiles', 'payments',
   ],
   students: [
-    'courses', 'enrollments', 'tasks', 'task_submissions',
-    'exams', 'exam_questions', 'exam_attempts', 'schedules', 'payments', 'profiles',
+    'courses', 'enrollments', 'schedules', 'payments', 'profiles',
     'teams', 'team_members',
   ],
   players: [
-    'courses', 'enrollments', 'tasks', 'task_submissions',
-    'teams', 'team_members', 'scrims', 'schedules', 'payments', 'profiles',
+    'courses', 'enrollments',
+    'teams', 'team_members', 'schedules', 'payments', 'profiles',
   ],
 }
 
-// Routes that should NOT auto-refresh (forms, exams in progress, etc.)
-// Only skip auto-refresh for form/edit pages and exam-taking (with :examId param)
-const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/questions/new', '/settings']
+const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/settings']
 
-// Also skip routes where path has /exams/ followed by another segment (exam taking)
 function shouldAutoRefresh(path: string): boolean {
   if (NO_AUTO_REFRESH_PATTERNS.some(p => path.includes(p))) return false
-  // Skip exam creation: /courses/:id/exams
-  if (path.match(/\/courses\/[^/]+\/exams$/)) return false
-  // Skip exam taking: /exams/:examId (but NOT /exams alone)
-  const examsMatch = path.match(/\/exams\//)
-  if (examsMatch) {
-    const afterExams = path.slice(examsMatch.index! + 7)
-    if (afterExams && afterExams.includes('/')) return false
-  }
   return true
 }
 
@@ -253,23 +222,13 @@ dash('/coaches/courses', () => renderCoachCourses(), mountCoachCourses)
 dash('/coaches/courses/new', () => renderCoachNewCourse(), initCoachNewCourse)
 dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
 dash('/coaches/courses/:id/edit', () => renderCoachEditCourse(), initCoachEditCourse)
-dash('/coaches/courses/:id/exams', () => renderCoachExams(), initCoachExams)
-dash('/coaches/courses/:id/exams/:examId/attempt/:attemptId', () => renderCoachExamAttempt(), initCoachExamAttempt)
-dash('/coaches/courses/:id/grades', () => renderCoachGrades(), initCoachGrades)
 
 dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
 dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
 dash('/coaches/students/:id', () => renderCoachStudentDetail(), mountCoachStudentDetail)
-dash('/coaches/exams/attempt/:examId/:attemptId', () => renderCoachExamAttempt(), initCoachExamAttemptStandalone)
 
-dash('/coaches/grades', () => renderCoachGradesList(), initCoachGradesList)
-dash('/coaches/students/:id/grades', () => renderCoachStudentGrades(), initCoachStudentGrades)
-dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
-dash('/coaches/tasks/new', () => renderCoachNewTask(), initCoachNewTask)
-dash('/coaches/tasks/:id', () => renderCoachTaskDetail(), initCoachTaskDetail)
 dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
 dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
-dash('/coaches/scrims', () => renderCoachScrims(), initCoachScrims)
 
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)
@@ -279,31 +238,19 @@ dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard
 dash('/students/profile', () => renderStudentProfile(), initStudentProfile)
 dash('/students/courses', () => renderStudentCourses(), initStudentCourses)
 dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
-dash('/students/courses/:id/exams', () => renderStudentExamList(), initStudentExamList)
-dash('/students/courses/:id/exams/:examId', () => renderStudentExamTake(), initStudentExamTake)
-dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
-dash('/students/tasks/:id', () => renderStudentTaskDetail(), initStudentTaskDetail)
-dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
 dash('/students/team', () => renderStudentTeam(), initStudentTeam)
-dash('/students/scrims', () => renderPlayerScrims(), initPlayerScrims)
 // Player routes
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
 dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
-dash('/players/tasks', () => renderPlayerTasks(), initPlayerTasks)
-dash('/players/tasks/:id', () => renderPlayerTaskDetail(), initPlayerTaskDetail)
 dash('/players/courses', () => renderPlayerCourses(), initPlayerCourses)
 dash('/players/courses/:id', () => renderPlayerCourseDetail(), initPlayerCourseDetail)
 dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
-dash('/players/scrims', () => renderPlayerScrims(), initPlayerScrims)
 dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
 
 // Shared routes
 dash('/payments', () => renderPayments(), initPayments)
 dash('/settings', () => renderSettings(), initSettings)
-dash('/support', () => renderTickets(), initTickets)
-dash('/support/new', () => renderNewTicket(), initNewTicket)
-dash('/support/:id', () => renderTickets(), initTickets)
 dash('/members', () => renderMembers(), initMembers)
 
 // 404

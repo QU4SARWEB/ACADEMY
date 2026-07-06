@@ -62,16 +62,16 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/grades`, 'scrollText', 'Mis Notas', isStudent), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
-    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer || isStudent), item(`/${prefix}/scrims`, 'sword', 'Enfrentamientos', isPlayer || isStudent || isCoach)],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/support', 'info', 'Soporte', isStudent || isPlayer)],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
+    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer || isStudent)],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
-    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/schedules', 'calendar', 'Horarios')],
-    [item('/coaches/teams', 'users', 'Equipos'), item('/coaches/scrims', 'sword', 'Enfrentamientos'), item('/members', 'users', 'Miembros')],
-    [item('/support', 'info', 'Soporte'), item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/schedules', 'calendar', 'Horarios')],
+    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
+    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const isExpired = !!(window as any).__isExpired
