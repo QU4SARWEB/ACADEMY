@@ -280,7 +280,7 @@ function initBulkActions(students: any[]): void {
 
     // Fetch course price
     const { data: course } = await supabase.from('courses').select('price, name').eq('id', courseId).maybeSingle()
-    const amount = course?.price != null ? parseFloat(course.price) : 1.54
+    const amount = course?.price != null ? parseFloat(course.price) : 4.99
 
     let ok = 0, fail = 0
     for (const pid of ids) {

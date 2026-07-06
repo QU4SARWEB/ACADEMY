@@ -251,7 +251,7 @@ export async function initCoachPlayerDetail(): Promise<void> {
       }
 
       const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-      const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
+      const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 4.99
       const { data: playerProfile } = await supabase
         .from('profiles')
         .select('scholarship')

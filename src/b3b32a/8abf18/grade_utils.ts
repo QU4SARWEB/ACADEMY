@@ -98,7 +98,7 @@ export async function checkAutoPromotion(enrollmentId: string, courseId: string,
 
   if (newEnroll) {
     const { data: promCourse } = await supabase.from('courses').select('price').eq('id', nextCourse.id).maybeSingle()
-    const coursePrice = promCourse?.price ?? 1.54
+    const coursePrice = promCourse?.price ?? 4.99
     const { data: promProfile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
     const hasScholarship = promProfile?.scholarship === true
     let payStatus: string

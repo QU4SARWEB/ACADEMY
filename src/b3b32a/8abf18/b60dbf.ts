@@ -489,7 +489,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
 
       if (promEnroll) {
         const { data: promCourse } = await supabase.from('courses').select('price').eq('id', newCourseId).maybeSingle()
-        const promPrice = promCourse?.price != null ? parseFloat(promCourse.price) : 1.54
+        const promPrice = promCourse?.price != null ? parseFloat(promCourse.price) : 4.99
         const { data: promProf } = await supabase.from('profiles').select('scholarship').eq('id', studentId).maybeSingle()
         const promPayStatus = promPrice === 0 ? 'free' : (promProf?.scholarship ? 'scholarship' : 'pending')
         const { error: payErr } = await supabase.from('payments').insert({
@@ -559,7 +559,7 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
     }
 
     const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-    const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 1.54
+    const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 4.99
     const { data: studentProfile } = await supabase
       .from('profiles')
       .select('scholarship')

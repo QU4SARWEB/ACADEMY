@@ -89,33 +89,27 @@ export function renderHome(): string {
       </section>
 
       <section class="relative z-10 mx-auto mt-32 max-w-5xl px-6">
-        <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Planes</h2>
+        <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Precios</h2>
         <p class="mx-auto mb-10 max-w-2xl text-center text-sm text-zinc-400">
-          Elige el plan que mejor se adapte a tu nivel y objetivos.
+          Actualmente solo ofrecemos el plan Academy. El curso de Posicionamiento es gratuito para todos.
         </p>
-        <div class="grid gap-6 md:grid-cols-3">
-          ${[
-            { name: 'Rookie', price: 'Gratuito', features: ['Acceso a cursos gratuitos', 'Perfil p\u00fablico', 'Seguimiento b\u00e1sico', 'Comunidad'], accent: '#8B5CF6' },
-            { name: 'Academy', price: 'S/. 1.54 / mes', features: ['Todos los cursos', 'Coaching personal', 'Scrims semanales', 'Estad\u00edsticas detalladas', 'Certificado por nivel'], accent: '#8B5CF6', featured: true },
-            { name: 'Pro', price: 'S/. 2.99 / mes', features: ['Todo Academy', 'Torneos exclusivos', 'An\u00e1lisis avanzado', 'Prioridad en scrims', 'Mentor\u00eda 1:1'], accent: '#8B5CF6' },
-          ].map((p, i) => `
-            <div class="glass rounded-xl p-6 ${p.featured ? 'relative border-2 border-[#8B5CF6]/40' : ''}">
-              ${p.featured ? '<span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#8B5CF6] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">M\u00e1s popular</span>' : ''}
-              <h3 class="font-heading text-lg font-bold text-white">${escapeHtml(p.name)}</h3>
-              <p class="mt-2 text-2xl font-bold" style="color:${p.accent}">${escapeHtml(p.price)}</p>
-              <ul class="mt-4 space-y-2">
-                ${p.features.map(f => `
-                  <li class="flex items-center gap-2 text-sm text-zinc-400">
-                    ${Icon('checkCircle', 14)}
-                    <span>${escapeHtml(f)}</span>
-                  </li>
-                `).join('')}
-              </ul>
-              <a href="#/register" class="mt-6 block rounded-lg ${p.featured ? 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED]' : 'border border-zinc-700 text-zinc-300 hover:bg-zinc-800'} px-4 py-2 text-center text-sm font-medium transition">
-                ${i === 0 ? 'Comenzar gratis' : 'Elegir plan'}
-              </a>
-            </div>
-          `).join('')}
+        <div class="mx-auto max-w-sm">
+          <div class="glass rounded-xl p-6 relative border-2 border-[#8B5CF6]/40">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#8B5CF6] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">\u00danico plan</span>
+            <h3 class="font-heading text-lg font-bold text-white">Academy</h3>
+            <p class="mt-2 text-2xl font-bold text-[#8B5CF6]">S/. 4.99 / mes</p>
+            <ul class="mt-4 space-y-2">
+              ${['Todos los cursos', 'Coaching personal', 'Scrims semanales', 'Estad\u00edsticas detalladas', 'Certificado por nivel'].map(f => `
+                <li class="flex items-center gap-2 text-sm text-zinc-400">
+                  ${Icon('checkCircle', 14)}
+                  <span>${escapeHtml(f)}</span>
+                </li>
+              `).join('')}
+            </ul>
+            <a href="#/register" class="mt-6 block rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] px-4 py-2 text-center text-sm font-medium transition">
+              Elegir plan
+            </a>
+          </div>
         </div>
       </section>
 

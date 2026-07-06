@@ -84,7 +84,7 @@ export async function initCoachNewCourse(): Promise<void> {
             <div>
               <label class="mb-1 block text-xs font-medium text-zinc-400">Precio (USD)</label>
               <div class="flex items-center gap-3">
-                <input type="number" name="price" id="field-price" value="1.54" min="0" step="0.01"
+                <input type="number" name="price" id="field-price" value="4.99" min="0" step="0.01"
                   class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
                 <label class="flex items-center gap-1.5 text-xs text-zinc-400 shrink-0">
                   <input type="checkbox" name="isFree" id="field-free"
@@ -119,7 +119,7 @@ export async function initCoachNewCourse(): Promise<void> {
     document.getElementById('field-free')?.addEventListener('change', function(this: HTMLInputElement) {
       const priceInput = document.getElementById('field-price') as HTMLInputElement
       priceInput.disabled = this.checked
-      priceInput.value = this.checked ? '0' : '1.54'
+      priceInput.value = this.checked ? '0' : '4.99'
       priceInput.classList.toggle('opacity-50', this.checked)
     })
 
@@ -154,7 +154,7 @@ export async function initCoachNewCourse(): Promise<void> {
         duration_months: duration,
         min_rank: (fd.get('minRank') as string) || '',
         display_order: parseInt(fd.get('displayOrder') as string) || 0,
-        price: fd.get('isFree') === 'on' ? 0 : (parseFloat(fd.get('price') as string) || 1.54),
+        price: fd.get('isFree') === 'on' ? 0 : (parseFloat(fd.get('price') as string) || 4.99),
         is_active: fd.get('isActive') === 'on',
       }).select().maybeSingle()
 
