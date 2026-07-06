@@ -363,176 +363,117 @@ async function renderCoachPayments(): Promise<void> {
 
   const { data: payments } = await supabase.from('payments').select('*, profiles!inner(full_name, email, avatar_url)').in('enrollment_id', enrollIdFilter)
 
-  const studentCount: Record<string, number> = {}
-  const paidCount: Record<string, number> = {}
-  const scholarshipCount: Record<string, number> = {}
-  const pendingCount: Record<string, number> = {}
-  const expiredCount: Record<string, number> = {}
-  const freeCount: Record<string, number> = {}
-
-  for (const e of enrolls ?? []) {
-    studentCount[e.course_id] = (studentCount[e.course_id] || 0) + 1
-  }
-  for (const p of payments ?? []) {
-    const cid = (enrolls ?? []).find((e: any) => e.id === p.enrollment_id)?.course_id
-    if (!cid) continue
-    if (p.status === 'paid') paidCount[cid] = (paidCount[cid] || 0) + 1
-    else if (p.status === 'scholarship') scholarshipCount[cid] = (scholarshipCount[cid] || 0) + 1
-    else if (p.status === 'pending') pendingCount[cid] = (pendingCount[cid] || 0) + 1
-    else if (p.status === 'expired') expiredCount[cid] = (expiredCount[cid] || 0) + 1
-    if (p.status === 'free') freeCount[cid] = (freeCount[cid] || 0) + 1
-  }
-
   let pendingChanges: { paymentId: string; profileId?: string; newStatus: string; oldStatus: string }[] = []
 
-  const modalsHtml = `
-  <div id="course-payments-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60" role="dialog" aria-modal="true" aria-label="Pagos por curso">
-    <div class="flex min-h-full items-center justify-center p-4">
-      <div class="glass max-w-4xl w-full max-h-[95vh] overflow-y-auto rounded-xl p-6 flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <h2 id="course-payments-title" class="font-heading text-lg font-bold text-white">Pagos del curso</h2>
-          <button id="close-course-payments" class="text-zinc-500 hover:text-white" aria-label="Cerrar">${Icon('x', 18)}</button>
-        </div>
-        <div id="course-payments-list" class="space-y-2 flex-1 overflow-y-auto"></div>
-        <div id="pay-save-bar" class="mt-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
-          <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
-          <div class="flex gap-2">
-            <button id="pay-discard-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Descartar</button>
-            <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
+  const payByCourseEnroll: Record<string, Record<string, any>> = {}
+  for (const p of payments ?? []) {
+    const eid = p.enrollment_id
+    const enr = (enrolls ?? []).find((x: any) => x.id === eid)
+    if (!enr) continue
+    if (!payByCourseEnroll[enr.course_id]) payByCourseEnroll[enr.course_id] = {}
+    payByCourseEnroll[enr.course_id][eid] = p
+  }
+
+  const enrollsByCourse: Record<string, any[]> = {}
+  for (const e of enrolls ?? []) {
+    if (!enrollsByCourse[e.course_id]) enrollsByCourse[e.course_id] = []
+    enrollsByCourse[e.course_id].push(e)
+  }
+
+  const courseTables = (courses ?? []).map((c: any) => {
+    const courseEnrolls = enrollsByCourse[c.id] || []
+    const coursePays = payByCourseEnroll[c.id] || {}
+    const isFree = !c.price || c.price <= 0
+
+    const rows = courseEnrolls.map((e: any) => {
+      const prof = e.profiles || {}
+      const pay = coursePays[e.id]
+      const status = pay?.status || (isFree ? 'free' : 'none')
+
+      const badge = isFree
+        ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
+        : !pay
+          ? '<span class="rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs text-zinc-600">Sin pago</span>'
+          : pay.status === 'paid'
+            ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado</span>'
+            : pay.status === 'pending'
+              ? '<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente</span>'
+              : pay.status === 'scholarship'
+                ? '<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca</span>'
+                : '<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido</span>'
+
+      return `
+        <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-2">
+              <div class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-xs font-bold text-purple-400">
+                ${prof.avatar_url ? `<img src="${escapeHtml(prof.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml((prof.full_name?.charAt(0) ?? '?').toUpperCase())}
+              </div>
+              <span class="text-sm text-white">${escapeHtml(prof.full_name || 'Desconocido')}</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 text-xs text-zinc-500 hidden md:table-cell">${escapeHtml(prof.email || '')}</td>
+          <td class="py-2.5 px-3">${badge}</td>
+          <td class="py-2.5 px-3 text-right">
+            ${!isFree && pay && pay.status !== 'paid' ? `
+              <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
+                data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
+                <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
+                <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
+                <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
+              </select>` : ''}
+            ${!isFree && !pay ? `
+              <button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-enrollment-id="${escapeHtml(e.id)}" data-role="${escapeHtml(prof.role || 'student')}">${Icon('plus', 12)} Crear pago</button>` : ''}
+          </td>
+        </tr>`
+    }).join('')
+
+    const paid = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'paid').length
+    const pending = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'pending').length
+    const scholar = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'scholarship').length
+    const expired = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'expired').length
+
+    return `
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden" data-course-id="${escapeHtml(c.id)}">
+        <div class="flex items-center justify-between bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
+          <div>
+            <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
+            <p class="text-xs text-zinc-500 mt-0.5">
+              ${courseEnrolls.length} inscrito${courseEnrolls.length !== 1 ? 's' : ''}
+              ${!isFree ? ` · ${paid} pagados · ${pending} pendientes${scholar > 0 ? ` · ${scholar} becados` : ''}${expired > 0 ? ` · ${expired} vencidos` : ''}` : ' · Gratis'}
+            </p>
           </div>
         </div>
-      </div>
-    </div>
-  </div>`
+        ${rows.length > 0 ? `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
+                <th class="py-2.5 px-3 font-medium">Estudiante</th>
+                <th class="py-2.5 px-3 font-medium hidden md:table-cell">Email</th>
+                <th class="py-2.5 px-3 font-medium">Estado</th>
+                <th class="py-2.5 px-3 font-medium text-right">Acci\u00f3n</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>` : '<p class="px-4 py-6 text-sm text-zinc-500 text-center">Sin estudiantes inscritos.</p>'}
+      </div>`
+  }).join('')
 
   document.getElementById('page-content')!.innerHTML = `
     <div class="mb-6">
-      <h1 class="font-heading text-2xl font-bold text-white">Gestión de Pagos</h1>
-      <p class="mt-1 text-sm text-zinc-500">Selecciona un curso para ver los pagos de los estudiantes</p>
+      <h1 class="font-heading text-2xl font-bold text-white">Gesti\u00f3n de Pagos</h1>
     </div>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      ${(courses ?? []).length === 0 ? '<p class="text-sm text-zinc-500">No hay cursos.</p>' :
-        (courses ?? []).map((c: any) => {
-          const total = studentCount[c.id] || 0
-          const paid = paidCount[c.id] || 0
-          const pending = pendingCount[c.id] || 0
-          const expired = expiredCount[c.id] || 0
-          const isFree = !c.price || c.price <= 0
-          const scholar = scholarshipCount[c.id] || 0
-          return `
-          <button class="course-pay-btn glass rounded-xl p-5 text-left transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5" data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="font-medium text-white">${escapeHtml(c.name)}</h3>
-              ${Icon('chevronRight', 20)}
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <span class="rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-300">${total} inscritos</span>
-              ${isFree
-                ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratis</span>`
-                : `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">${paid} pagados</span>
-                   ${scholar > 0 ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">${scholar} becados</span>` : ''}
-                   <span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">${pending} pendientes</span>
-                   ${expired > 0 ? `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">${expired} vencidos</span>` : ''}`
-              }
-            </div>
-          </button>`
-        }).join('')
-      }
+    <div id="pay-save-bar" class="mb-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
+      <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
+      <div class="flex gap-2">
+        <button id="pay-discard-btn" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Descartar</button>
+        <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
+      </div>
     </div>
-    `
-
-  document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', modalsHtml)
-
-  // Course payment details
-  const coursePaymentsModal = document.getElementById('course-payments-modal')!
-  document.getElementById('close-course-payments')?.addEventListener('click', () => coursePaymentsModal.classList.add('hidden'))
-  coursePaymentsModal.addEventListener('click', (e) => { if (e.target === coursePaymentsModal) coursePaymentsModal.classList.add('hidden') })
-  coursePaymentsModal.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !coursePaymentsModal.classList.contains('hidden')) coursePaymentsModal.classList.add('hidden') })
-  if (!coursePaymentsModal.getAttribute('tabindex')) coursePaymentsModal.setAttribute('tabindex', '-1')
-
-  document.querySelectorAll('.course-pay-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const courseId = (btn as HTMLElement).dataset.courseId
-      const courseName = (btn as HTMLElement).dataset.courseName || ''
-      if (!courseId) return
-      sessionStorage.setItem('lastPayCourseId', courseId)
-
-      const { data: course } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-      const coursePrice = course?.price ?? 4.99
-      const isFree = !course?.price || course?.price <= 0
-
-      const { data: courseEnrolls } = await supabase
-        .from('enrollments')
-        .select('id, profile_id, status, profiles!inner(full_name, email, avatar_url, role)')
-        .eq('course_id', courseId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-
-      const enrollIds = (courseEnrolls ?? []).map((e: any) => e.id)
-      const { data: coursePays } = enrollIds.length > 0
-        ? await supabase.from('payments').select('*').in('enrollment_id', enrollIds)
-        : { data: [] }
-      const payByEnroll: Record<string, any> = {}
-      for (const p of coursePays ?? []) payByEnroll[p.enrollment_id] = p
-
-      document.getElementById('course-payments-title')!.textContent = `${escapeHtml(courseName)} — Pagos`
-      document.getElementById('course-payments-list')!.innerHTML = (courseEnrolls ?? []).length === 0
-        ? '<p class="text-sm text-zinc-500 text-center py-8">No hay estudiantes inscritos en este curso.</p>'
-        : (courseEnrolls ?? []).map((e: any) => {
-            const prof = e.profiles || {}
-            const pay = payByEnroll[e.id]
-            const status = pay?.status || (isFree ? 'free' : 'none')
-            const amount = pay?.amount || (isFree ? 0 : coursePrice)
-            const badge = isFree
-              ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
-              : !pay
-                ? '<span class="rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs text-zinc-600">Sin pago</span>'
-                : pay.status === 'paid'
-                  ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado</span>'
-                  : pay.status === 'pending'
-                    ? '<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente</span>'
-                    : pay.status === 'scholarship'
-                      ? '<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca</span>'
-                      : '<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido</span>'
-            return `
-            <div class="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                  ${prof.avatar_url ? `<img src="${escapeHtml(prof.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml((prof.full_name?.charAt(0) ?? '?').toUpperCase())}
-                </div>
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-white truncate">${escapeHtml(prof.full_name || 'Desconocido')}</p>
-                  <p class="text-xs text-zinc-500">${escapeHtml(prof.email || '')}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 shrink-0">
-                ${badge}
-                ${!isFree && pay && pay.status !== 'paid' ? `
-                <div class="flex items-center gap-1">
-                  <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
-                    data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
-                    <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                    <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
-                    <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
-                    <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
-                  </select>
-                  ${pay.status === 'pending' && pay.created_at && (Date.now() - new Date(pay.created_at).getTime()) > 432000000
-                    ? `<button class="notify-payment-btn text-xs text-yellow-400 hover:text-yellow-300" data-profile-id="${escapeHtml(prof.id)}" data-payment-id="${escapeHtml(pay.id)}">${Icon('bell', 12)}</button>`
-                    : ''}
-                </div>` : ''}
-                ${!isFree && !pay ? `
-                <button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-enrollment-id="${escapeHtml(e.id)}" data-role="${escapeHtml(prof.role || 'student')}">${Icon('plus', 12)} Crear pago</button>` : ''}
-              </div>
-            </div>`
-          }).join('')
-
-      pendingChanges = []
-      updateSaveBar()
-      coursePaymentsModal.classList.remove('hidden')
-      coursePaymentsModal.focus()
-    })
-  })
+    <div class="space-y-4">${courseTables}</div>`
 
   // Save/Discard bar for pending payment changes
   function updateSaveBar(): void {
@@ -588,11 +529,7 @@ async function renderCoachPayments(): Promise<void> {
 
   document.getElementById('pay-discard-btn')?.addEventListener('click', () => {
     pendingChanges = []
-    const lastCourseId = sessionStorage.getItem('lastPayCourseId')
-    if (lastCourseId) {
-      const btn = document.querySelector(`.course-pay-btn[data-course-id="${lastCourseId}"]`) as HTMLElement
-      if (btn) btn.click()
-    }
+    renderCoachPayments()
   })
 
   // Global modal event handler (delegated, survives DOM changes)
@@ -653,15 +590,7 @@ async function renderCoachPayments(): Promise<void> {
       const payStatus = payAmount === 0 ? 'free' : (profile?.scholarship ? 'scholarship' : 'pending')
       await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount })
       toast('success', 'Pago creado')
-      const lastCourseId = sessionStorage.getItem('lastPayCourseId')
-      if (lastCourseId) {
-        renderCoachPayments().then(() => {
-          const btn = document.querySelector(`.course-pay-btn[data-course-id="${lastCourseId}"]`) as HTMLElement
-          if (btn) setTimeout(() => btn.click(), 100)
-        })
-      } else {
-        renderCoachPayments()
-      }
+      renderCoachPayments()
       return
     }
 
