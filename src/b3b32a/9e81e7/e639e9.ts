@@ -380,6 +380,16 @@ async function renderCoachPayments(): Promise<void> {
     enrollsByCourse[e.course_id].push(e)
   }
 
+  const filterHtml = (courses ?? []).map((c: any) => {
+    const isFree = !c.price || c.price <= 0
+    return `
+    <label class="flex items-center gap-2 rounded-lg border ${isFree ? 'border-zinc-800 bg-zinc-900/50 opacity-50' : 'border-zinc-700 bg-zinc-800/50'} px-3 py-2 text-xs text-zinc-300 cursor-pointer transition hover:bg-zinc-700/50" data-course-filter="${escapeHtml(c.id)}">
+      <input type="checkbox" class="course-filter-cb" data-course-id="${escapeHtml(c.id)}" ${isFree ? '' : 'checked'} />
+      <span>${escapeHtml(c.name)}</span>
+      <span class="text-zinc-500">(${(enrollsByCourse[c.id] || []).length})</span>
+    </label>`
+  }).join('')
+
   const courseTables = (courses ?? []).map((c: any) => {
     const courseEnrolls = enrollsByCourse[c.id] || []
     const coursePays = payByCourseEnroll[c.id] || {}
@@ -435,7 +445,7 @@ async function renderCoachPayments(): Promise<void> {
     const expired = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'expired').length
 
     return `
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden" data-course-id="${escapeHtml(c.id)}">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden' : ''}" data-course-id="${escapeHtml(c.id)}">
         <div class="flex items-center justify-between bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <div>
             <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
@@ -473,7 +483,20 @@ async function renderCoachPayments(): Promise<void> {
         <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
       </div>
     </div>
-    <div class="space-y-4">${courseTables}</div>`
+    <div class="mb-4">
+      <p class="text-xs text-zinc-500 mb-2">Filtrar por curso:</p>
+      <div class="flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
+    </div>
+    <div class="space-y-4" id="course-tables">${courseTables}</div>`
+
+  // Course filter toggles
+  document.querySelectorAll('.course-filter-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const courseId = (cb as HTMLElement).dataset.courseId
+      const table = document.querySelector(`.course-table[data-course-id="${courseId}"]`)
+      if (table) table.classList.toggle('hidden', !(cb as HTMLInputElement).checked)
+    })
+  })
 
   // Save/Discard bar for pending payment changes
   function updateSaveBar(): void {
