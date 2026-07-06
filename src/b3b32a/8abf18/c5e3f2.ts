@@ -196,11 +196,6 @@ export async function initCoachGrades(): Promise<void> {
         letterSpan.textContent = scoreToLetter(val)
         letterSpan.className = `text-[10px] font-medium ${val >= 14 ? 'text-green-400' : val >= 11 ? 'text-yellow-400' : val >= 5 ? 'text-orange-400' : 'text-red-400'}`
       }
-      // Update final for that row
-      const tr = input.closest('tr')!
-      const finalCell = tr.querySelector('td:last-child')!
-      const enrId = enrollmentId
-      const result = (window as any).__calcFinal ? (window as any).__calcFinal(enrId) : null
     })
 
     document.getElementById('btn-add-month')?.addEventListener('click', () => {

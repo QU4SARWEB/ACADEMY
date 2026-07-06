@@ -1,9 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
-import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
+import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
-import { formatDate } from '@/2b3583/6b239c'
-import { toast } from '@/4725dc/4f2900'
 import { router } from '@/f3395c'
 
 function scoreToLetter(s: number): string {

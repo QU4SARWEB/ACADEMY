@@ -13,6 +13,7 @@ import { renderLogin, mountLogin } from '@/fa53b9/d56b69'
 import { renderRegister, mountRegister } from '@/fa53b9/9de4a9'
 import { renderResetPassword, mountResetPassword } from '@/fa53b9/037c60'
 import { renderHome, mountHome } from '@/b3b32a/106a6c'
+import { renderAbout, mountAbout } from '@/b3b32a/9e81e7/about'
 import { renderPublicProfile, initPublicProfile } from '@/b3b32a/9e81e7/90b027'
 import { renderNotFound } from '@/b3b32a/9e81e7/803f10'
 
@@ -72,6 +73,11 @@ router.setBeforeNavigate(async (path) => authGuard(path))
 router.on('/', async () => {
   document.getElementById('app')!.innerHTML = renderHome()
   mountHome()
+})
+
+router.on('/about', async () => {
+  document.getElementById('app')!.innerHTML = renderAbout()
+  mountAbout()
 })
 
 router.on('/login', async () => {

@@ -41,10 +41,6 @@ export async function initCoachTeams(): Promise<void> {
       .in('role', ['player', 'student', 'coach'])
       .order('full_name')
 
-    const { data: allSeasons } = await supabase
-      .from('courses')
-      .select('id, name, is_active')
-
     const container = document.getElementById('page-content')!
     const teamCards = (teams ?? []).map((t: any) => {
       const teamMembers = membersByTeam[t.id] || []

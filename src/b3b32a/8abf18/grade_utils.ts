@@ -1,5 +1,4 @@
 import { supabase } from '@/304244'
-import { toast } from '@/4725dc/4f2900'
 
 function scoreToLetter(score: number): string {
   const s = Math.round(score)
