@@ -5,7 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
-import { autoEnrollComplementaria } from '@/2b3583/course_utils'
+import { initBulkActions } from '@/2b3583/bulk_actions'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -80,11 +80,11 @@ export function mountCoachStudents(): void {
           </div>
         </div>
 
-        <div id="bulk-bar" class="hidden mb-4 flex items-center gap-2 rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-2.5">
+        <div id="bulk-action-bar" class="hidden mb-4 flex items-center gap-2 rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-2.5">
           <span class="text-sm text-zinc-300" id="bulk-count">0 seleccionados</span>
           <div class="ml-auto flex gap-2">
             <button id="bulk-scholarship" class="rounded-lg border border-yellow-500/30 px-3 py-1.5 text-xs text-yellow-400 transition hover:bg-yellow-500/10">${Icon('dollarSign', 12)} Dar beca</button>
-            <button id="bulk-uns-cholarship" class="rounded-lg border border-zinc-600 px-3 py-1.5 text-xs text-zinc-400 transition hover:bg-zinc-800">${Icon('x', 12)} Quitar beca</button>
+            <button id="bulk-unscholarship" class="rounded-lg border border-zinc-600 px-3 py-1.5 text-xs text-zinc-400 transition hover:bg-zinc-800">${Icon('x', 12)} Quitar beca</button>
             <button id="bulk-enroll" class="rounded-lg border border-[#8B5CF6]/30 px-3 py-1.5 text-xs text-[#8B5CF6] transition hover:bg-[#8B5CF6]/10">${Icon('plus', 12)} Inscribir en curso</button>
             <button id="bulk-delete" class="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10">${Icon('trash', 12)} Eliminar</button>
           </div>
@@ -126,7 +126,7 @@ export function mountCoachStudents(): void {
                     const initial = (displayName || '?').charAt(0).toUpperCase()
                     return `
                       <tr class="border-b border-zinc-800/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}">
-                        <td class="py-3 pr-2"><input type="checkbox" class="student-cb h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
+                        <td class="py-3 pr-2"><input type="checkbox" class="row-checkbox h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
                         <td class="py-3 pr-4">
                           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
                             ${s.avatar_url ? `<img src="${escapeHtml(s.avatar_url)}" alt="" class="h-full w-full rounded-full object-cover" />` : escapeHtml(initial)}
@@ -184,7 +184,70 @@ export function mountCoachStudents(): void {
         </div>`
       document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', enrollModalHtml)
 
-      initBulkActions(students ?? [])
+      const container = document.getElementById('page-content')!
+      initBulkActions(container, { role: 'student', afterAction: () => mountCoachStudents() })
+
+      // Bulk enroll setup (student-specific)
+      document.getElementById('bulk-enroll')?.addEventListener('click', () => {
+        document.getElementById('enroll-modal')!.classList.remove('hidden')
+      })
+      document.getElementById('bulk-enroll-cancel')?.addEventListener('click', () => {
+        document.getElementById('enroll-modal')!.classList.add('hidden')
+      })
+      document.getElementById('enroll-modal')?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement
+        const btn = target.closest('.bulk-course-btn') as HTMLElement
+        if (!btn) return
+        document.querySelectorAll('.bulk-course-btn').forEach(b => {
+          b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+          b.classList.add('border-zinc-700', 'text-zinc-300')
+        })
+        btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
+        btn.classList.remove('border-zinc-700', 'text-zinc-300')
+        document.getElementById('bulk-course-id')!.setAttribute('value', btn.dataset.courseId || '')
+      })
+      document.getElementById('bulk-enroll-confirm')?.addEventListener('click', async () => {
+        const ids = Array.from(document.querySelectorAll<HTMLInputElement>('.row-checkbox:checked')).map(cb => cb.value)
+        const courseId = (document.getElementById('bulk-course-id') as HTMLInputElement).value
+        if (!courseId || !ids.length) return
+
+        const { data: course } = await supabase.from('courses').select('price, name').eq('id', courseId).maybeSingle()
+        const amount = course?.price != null ? parseFloat(course.price) : 4.99
+
+        let ok = 0, fail = 0
+        for (const pid of ids) {
+          const { data: enr, error } = await supabase.from('enrollments').upsert({
+            profile_id: pid, course_id: courseId, type: 'student', status: 'active',
+          }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
+          if (error) { fail++; continue }
+
+          if (enr?.id) {
+            const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', pid).maybeSingle()
+            const payStatus = amount === 0 ? 'free' : profile?.scholarship ? 'scholarship' : 'pending'
+            const { error: pe } = await supabase.from('payments').insert({
+              profile_id: pid, enrollment_id: enr.id, type: 'student', status: payStatus, amount,
+            })
+            if (pe) { console.error('Error creating payment:', pe); fail++; continue }
+          }
+          ok++
+        }
+        document.getElementById('enroll-modal')!.classList.add('hidden')
+        toast('success', `${ok} inscritos, ${fail} errores`)
+        window.location.reload()
+      })
+
+      // Hard delete individual inactive students
+      document.querySelectorAll('.hard-delete-student').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = (btn as HTMLElement).dataset.id
+          const name = (btn as HTMLElement).dataset.name
+          if (!id || !(await confirmDialog(`¿Eliminar PERMANENTEMENTE a ${name}? Se borrarán todos sus datos (inscripciones, pagos, respuestas). Esta acción NO se puede deshacer.`, 'Eliminar permanentemente'))) return
+          const { error } = await supabase.from('profiles').delete().eq('id', id).eq('is_active', false)
+          if (error) { toast('error', error.message); return }
+          toast('success', 'Estudiante eliminado permanentemente')
+          window.location.reload()
+        })
+      })
 
       // Search filter
       const searchInput = document.getElementById('student-search') as HTMLInputElement
@@ -207,128 +270,4 @@ export function mountCoachStudents(): void {
   })()
 }
 
-function initBulkActions(students: any[]): void {
-  const cbs = document.querySelectorAll<HTMLInputElement>('.student-cb')
-  const selectAll = document.getElementById('select-all') as HTMLInputElement
-  const bulkBar = document.getElementById('bulk-bar')!
-  const bulkCount = document.getElementById('bulk-count')!
 
-  function updateBulkBar() {
-    const checked = document.querySelectorAll<HTMLInputElement>('.student-cb:checked')
-    bulkCount.textContent = `${checked.length} seleccionados`
-    bulkBar.classList.toggle('hidden', checked.length === 0)
-  }
-
-  selectAll?.addEventListener('change', () => {
-    cbs.forEach(cb => cb.checked = selectAll.checked)
-    updateBulkBar()
-  })
-
-  cbs.forEach(cb => cb.addEventListener('change', updateBulkBar))
-
-  function getSelectedIds(): string[] {
-    return [...document.querySelectorAll<HTMLInputElement>('.student-cb:checked')].map(cb => cb.value)
-  }
-
-  // Bulk scholarship toggle
-  document.getElementById('bulk-scholarship')?.addEventListener('click', async () => {
-    const ids = getSelectedIds()
-    if (!ids.length || !(await confirmDialog(`¿Dar beca a ${ids.length} estudiantes?`))) return
-    for (const id of ids) {
-      await supabase.from('profiles').update({ scholarship: true }).eq('id', id)
-      await supabase.from('payments').update({ status: 'scholarship' }).eq('profile_id', id).eq('status', 'pending')
-      autoEnrollComplementaria(id, 'student')
-    }
-    toast('success', `Beca asignada a ${ids.length} estudiantes`)
-    window.location.reload()
-  })
-
-  document.getElementById('bulk-uns-cholarship')?.addEventListener('click', async () => {
-    const ids = getSelectedIds()
-    if (!ids.length || !(await confirmDialog(`¿Quitar beca a ${ids.length} estudiantes?`))) return
-    for (const id of ids) {
-      await supabase.from('profiles').update({ scholarship: false }).eq('id', id)
-      await supabase.from('payments').update({ status: 'pending' }).eq('profile_id', id).eq('status', 'scholarship')
-    }
-    toast('success', `Beca quitada a ${ids.length} estudiantes`)
-    window.location.reload()
-  })
-
-  // Bulk enroll
-  document.getElementById('bulk-enroll')?.addEventListener('click', () => {
-    document.getElementById('enroll-modal')!.classList.remove('hidden')
-  })
-  document.getElementById('bulk-enroll-cancel')?.addEventListener('click', () => {
-    document.getElementById('enroll-modal')!.classList.add('hidden')
-  })
-  document.getElementById('enroll-modal')?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement
-    const btn = target.closest('.bulk-course-btn') as HTMLElement
-    if (!btn) return
-    document.querySelectorAll('.bulk-course-btn').forEach(b => {
-      b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
-      b.classList.add('border-zinc-700', 'text-zinc-300')
-    })
-    btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
-    btn.classList.remove('border-zinc-700', 'text-zinc-300')
-    document.getElementById('bulk-course-id')!.setAttribute('value', btn.dataset.courseId || '')
-  })
-  document.getElementById('bulk-enroll-confirm')?.addEventListener('click', async () => {
-    const ids = getSelectedIds()
-    const courseId = (document.getElementById('bulk-course-id') as HTMLInputElement).value
-    if (!courseId || !ids.length) return
-
-    // Fetch course price
-    const { data: course } = await supabase.from('courses').select('price, name').eq('id', courseId).maybeSingle()
-    const amount = course?.price != null ? parseFloat(course.price) : 4.99
-
-    let ok = 0, fail = 0
-    for (const pid of ids) {
-      const { data: enr, error } = await supabase.from('enrollments').upsert({
-        profile_id: pid, course_id: courseId, type: 'student', status: 'active',
-      }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select('id').maybeSingle()
-      if (error) { fail++; continue }
-
-      // Create payment if new enrollment was created (not already enrolled)
-      if (enr?.id) {
-        const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', pid).maybeSingle()
-        const payStatus = amount === 0 ? 'free' : profile?.scholarship ? 'scholarship' : 'pending'
-        const { error: pe } = await supabase.from('payments').insert({
-          profile_id: pid, enrollment_id: enr.id, type: 'student', status: payStatus, amount,
-        })
-        if (pe) { console.error('Error creating payment:', pe); fail++; continue }
-      }
-      ok++
-    }
-    document.getElementById('enroll-modal')!.classList.add('hidden')
-    toast('success', `${ok} inscritos, ${fail} errores`)
-    window.location.reload()
-  })
-
-  // Bulk delete (soft: set inactive)
-  document.getElementById('bulk-delete')?.addEventListener('click', async () => {
-    const ids = getSelectedIds()
-    if (!ids.length || !(await confirmDialog(`¿Desactivar ${ids.length} estudiantes?`))) return
-    let ok = 0, fail = 0
-    for (const id of ids) {
-      const { error } = await supabase.from('profiles').update({ is_active: false }).eq('id', id)
-      if (error) fail++
-      else ok++
-    }
-    toast('success', `${ok} desactivados, ${fail} errores`)
-    window.location.reload()
-  })
-
-  // Hard delete individual inactive students
-  document.querySelectorAll('.hard-delete-student').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = (btn as HTMLElement).dataset.id
-      const name = (btn as HTMLElement).dataset.name
-      if (!id || !(await confirmDialog(`¿Eliminar PERMANENTEMENTE a ${name}? Se borrarán todos sus datos (inscripciones, pagos, respuestas). Esta acción NO se puede deshacer.`, 'Eliminar permanentemente'))) return
-      const { error } = await supabase.from('profiles').delete().eq('id', id).eq('is_active', false)
-      if (error) { toast('error', error.message); return }
-      toast('success', 'Estudiante eliminado permanentemente')
-      window.location.reload()
-    })
-  })
-}

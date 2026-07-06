@@ -7,7 +7,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
-import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
+import { createEnrollmentWithPayment } from '@/2b3583/course_utils'
 
 const RANK_ORDER: Record<string, number> = {
   Unranked: 0, Iron: 1, Bronze: 2, Silver: 3, Gold: 4,
@@ -294,57 +294,15 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
       return
     }
 
-    const { data: existing } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', profileId)
-      .eq('course_id', courseId)
-      .maybeSingle()
+    const result = await createEnrollmentWithPayment(profileId, courseId, type)
 
-    if (existing) {
-      document.getElementById('enroll-error')!.textContent = 'Ya está inscrito en este curso'
+    if ('error' in result) {
+      document.getElementById('enroll-error')!.textContent = result.error
       document.getElementById('enroll-error')!.classList.remove('hidden')
       return
     }
 
-    const { data: newEnroll, error: enrError } = await supabase.from('enrollments').insert({
-      profile_id: profileId,
-      course_id: courseId,
-      type,
-      status: 'active',
-    }).select('id').maybeSingle()
-
-    if (enrError || !newEnroll) {
-      document.getElementById('enroll-error')!.textContent = enrError?.message || 'Error al crear inscripción'
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-    const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-    const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 4.99
-    const { data: studentProfile } = await supabase
-      .from('profiles')
-      .select('scholarship')
-      .eq('id', profileId)
-      .maybeSingle()
-
-    const payStatus = coursePrice === 0 ? 'free' : (studentProfile?.scholarship ? 'scholarship' : 'pending')
-    const { error: payErr } = await supabase.from('payments').insert({
-      profile_id: profileId,
-      enrollment_id: newEnroll.id,
-      type,
-      status: payStatus,
-      amount: coursePrice,
-    })
-    if (payErr) {
-      console.error('Error creating payment:', payErr, { profileId, enrollmentId: newEnroll.id, type, payStatus, coursePrice })
-      toast('error', 'Error al crear pago: ' + payErr.message + ' (código: ' + payErr.code + ')')
-      mountCoachStudentDetail()
-      return
-    }
-    toast('success', 'Pago creado (' + payStatus + ')')
-    if (payStatus === 'scholarship' && coursePrice > 0) { autoEnrollGeneralCourses(profileId, type); autoEnrollComplementaria(profileId, type) }
-
+    toast('success', 'Pago creado (' + result.payStatus + ')')
     toast('success', 'Estudiante inscrito correctamente')
     mountCoachStudentDetail()
   })
