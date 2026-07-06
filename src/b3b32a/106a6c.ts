@@ -131,7 +131,7 @@ export function renderHome(): string {
             </ul>
             <p class="mt-4 text-xs text-zinc-500">Paga \u00fanicamente el curso que elijas. Sin mensualidades ni permanencia.</p>
             <a href="#/register" class="mt-auto block rounded-lg bg-[#8B5CF6] px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg shadow-[#8B5CF6]/20 transition hover:bg-[#7C3AED]">
-              Elegir mi curso
+              Inscribirse
             </a>
           </div>
         </div>
