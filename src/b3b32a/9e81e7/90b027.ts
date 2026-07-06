@@ -47,135 +47,109 @@ function rankSvg(icon: string, color: string): string {
   }
 }
 
+function hexToRgb(h: string): string {
+  const hex = h.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  return isNaN(r) ? '139,92,246' : `${r},${g},${b}`
+}
+
+function ytId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+  return m?.[1] ?? null
+}
+
+function ytThumb(id: string): string { return `https://img.youtube.com/vi/${id}/mqdefault.jpg` }
+
+const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play', instagram: 'camera', tiktok: 'music', github: 'code2', website: 'globe', facebook: 'facebook', linkedin: 'linkedin', steam: 'steam', telegram: 'send' }
+
 export function renderPublicProfile(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
 
-export async function initPublicProfile(): Promise<void> {
-  try {
-    const hash = window.location.hash.replace('#', '')
-    const match = hash.match(/^\/p\/(.+)$/)
-    if (!match) {
-      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
-      return
-    }
-    const slug = match[1].toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-    if (!slug) {
-      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
-      return
-    }
+async function resolveProfile(slug: string, rawSlug: string): Promise<any> {
+  let pubProfile: any = null
 
-    let pubProfile: any = null
+  const { data: pp1 } = await supabase
+    .from('public_profiles')
+    .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links, playlist')
+    .eq('slug', slug)
+    .maybeSingle()
 
-    const { data: pp1 } = await supabase
+  if (pp1) {
+    pubProfile = pp1
+  } else {
+    const { data: pp2 } = await supabase
       .from('public_profiles')
       .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links, playlist')
-      .eq('slug', slug)
+      .eq('slug', rawSlug)
       .maybeSingle()
+    if (pp2) pubProfile = pp2
+  }
 
-    if (pp1) {
-      pubProfile = pp1
-    } else {
-      const { data: pp2 } = await supabase
-        .from('public_profiles')
-        .select('profile_id, slug, is_public, display_name, avatar_url, banner_url, bio, social_links, playlist')
-        .eq('slug', match[1])
-        .maybeSingle()
-      if (pp2) pubProfile = pp2
-    }
-
-    if (!pubProfile) {
-      // Try by share_slug
-      const { data: profileBySlug } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, display_name, bio')
-        .eq('share_slug', slug.replace(/[^a-z0-9-]/g, ''))
-        .maybeSingle()
-      if (profileBySlug) {
-        pubProfile = {
-          profile_id: profileBySlug.id,
-          slug,
-          is_public: true,
-          display_name: profileBySlug.display_name ?? profileBySlug.full_name,
-          avatar_url: profileBySlug.avatar_url,
-          banner_url: null,
-          bio: profileBySlug.bio,
-          social_links: {},
-          playlist: [],
-        }
+  if (!pubProfile) {
+    const { data: profileBySlug } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, display_name, bio')
+      .eq('share_slug', slug.replace(/[^a-z0-9-]/g, ''))
+      .maybeSingle()
+    if (profileBySlug) {
+      pubProfile = {
+        profile_id: profileBySlug.id,
+        slug,
+        is_public: true,
+        display_name: profileBySlug.display_name ?? profileBySlug.full_name,
+        avatar_url: profileBySlug.avatar_url,
+        banner_url: null,
+        bio: profileBySlug.bio,
+        social_links: {},
+        playlist: [],
       }
     }
+  }
 
-    // Coach fallback: allow viewing any profile by ID prefix (u-{id})
-    if (!pubProfile && slug.startsWith('u-')) {
-      const idPrefix = slug.slice(2)
-      const prefix = idPrefix.toLowerCase().slice(0, 8).padEnd(8, '0')
-      const hex = parseInt(prefix, 16)
-      const start = hex.toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
-      const end = (hex + 1).toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
-      const { data: coachProfile } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, display_name, bio, role, banner_url, custom_bg_url, role_color')
-        .gte('id', start)
-        .lt('id', end)
-        .limit(1)
-        .maybeSingle()
-      if (coachProfile) {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user?.id) {
-          const { data: viewer } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
-          if (viewer?.role === 'coach') {
-            const { data: ppReal } = await supabase.from('public_profiles').select('playlist, social_links').eq('profile_id', coachProfile.id).maybeSingle()
-            pubProfile = {
-              profile_id: coachProfile.id,
-              slug: `u-${coachProfile.id.slice(0, 8)}`,
-              is_public: false,
-              display_name: coachProfile.display_name ?? coachProfile.full_name,
-              avatar_url: coachProfile.avatar_url,
-              banner_url: coachProfile.banner_url,
-              bio: coachProfile.bio,
-              social_links: (ppReal as any)?.social_links || {},
-              playlist: (ppReal as any)?.playlist || [],
-            }
+  if (!pubProfile && slug.startsWith('u-')) {
+    const idPrefix = slug.slice(2)
+    const prefix = idPrefix.toLowerCase().slice(0, 8).padEnd(8, '0')
+    const hex = parseInt(prefix, 16)
+    const start = hex.toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
+    const end = (hex + 1).toString(16).padStart(8, '0') + '-0000-0000-0000-000000000000'
+    const { data: coachProfile } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, display_name, bio, role, banner_url, custom_bg_url, role_color')
+      .gte('id', start)
+      .lt('id', end)
+      .limit(1)
+      .maybeSingle()
+    if (coachProfile) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        const { data: viewer } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
+        if (viewer?.role === 'coach') {
+          const { data: ppReal } = await supabase.from('public_profiles').select('playlist, social_links').eq('profile_id', coachProfile.id).maybeSingle()
+          pubProfile = {
+            profile_id: coachProfile.id,
+            slug: `u-${coachProfile.id.slice(0, 8)}`,
+            is_public: false,
+            display_name: coachProfile.display_name ?? coachProfile.full_name,
+            avatar_url: coachProfile.avatar_url,
+            banner_url: coachProfile.banner_url,
+            bio: coachProfile.bio,
+            social_links: (ppReal as any)?.social_links || {},
+            playlist: (ppReal as any)?.playlist || [],
           }
         }
       }
     }
+  }
 
-    if (!pubProfile) {
-      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
-      return
-    }
+  return pubProfile
+}
 
-    const profileId = pubProfile.profile_id
-
-    const [profileRes, vodsRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, avatar_url, banner_url, display_name, bio, role, rank, country, riot_id, in_game_role, region, quote, mouse_dpi, mouse_sens, mouse_scope_sens, mouse_hertz, edpi, social_discord, social_youtube, social_twitter, social_twitch, social_instagram, social_tiktok, social_github, social_website, social_facebook, social_linkedin, social_steam, social_telegram, custom_bg_url, role_color, created_at').eq('id', profileId).maybeSingle(),
-      supabase.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
-    ])
-
-    const profile = profileRes.data
-    const vods = vodsRes.data ?? []
-
-    if (!profile) {
-      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
-      return
-    }
-
-    void supabase.rpc('increment_profile_views', { profile_id: profileId })
-
-    // Apply the user's custom theme (background + accent) to the public profile
-    const bgUrl = (profile as any)?.custom_bg_url
-    const accent = (profile as any)?.role_color || '#8B5CF6'
-    function hexToRgb(h: string): string {
-      const hex = h.replace('#', '')
-      const r = parseInt(hex.substring(0, 2), 16)
-      const g = parseInt(hex.substring(2, 4), 16)
-      const b = parseInt(hex.substring(4, 6), 16)
-      return isNaN(r) ? '139,92,246' : `${r},${g},${b}`
-    }
-    const accentRgb = hexToRgb(accent)
-    const themeStyle = `
+function injectTheme(accent: string, bgUrl: string | null | undefined): void {
+  const accentRgb = hexToRgb(accent)
+  const themeStyle = `
       <style id="pub-theme">
         :root { --accent: ${accent}; --accent-rgb: ${accentRgb}; }
         ${bgUrl ? `
@@ -190,142 +164,48 @@ export async function initPublicProfile(): Promise<void> {
         #profile-page .btn-glow { background: var(--accent) !important; }
         .hover-accent-border:hover { border-color: var(--accent) !important; }
       </style>`
-    document.head.insertAdjacentHTML('beforeend', themeStyle)
+  document.head.insertAdjacentHTML('beforeend', themeStyle)
+}
 
-    const xp = 0
-    const rank = findRank(xp)
-    const next = nextRank(xp)
-    const xpInRank = xp - rank.minXP
-    const nextXP = next ? next.minXP - rank.minXP : 1
-    const xpPct = Math.min(100, Math.round((xpInRank / nextXP) * 100))
-    const rankColor = rank.color
-    const displayName = pubProfile.display_name ?? profile.display_name ?? profile.full_name ?? 'Usuario'
-    const avatarUrl = pubProfile.avatar_url ?? profile.avatar_url
-    const bannerUrl = pubProfile.banner_url ?? profile.banner_url
-    const bio = pubProfile.bio ?? profile.bio
-    const socialLinks = {
-      ...(pubProfile.social_links as Record<string, string> || {}),
-      ...(profile.social_discord ? { discord: profile.social_discord } : {}),
-      ...(profile.social_youtube ? { youtube: profile.social_youtube } : {}),
-      ...(profile.social_twitter ? { twitter: profile.social_twitter } : {}),
-      ...(profile.social_twitch ? { twitch: profile.social_twitch } : {}),
-      ...(profile.social_instagram ? { instagram: profile.social_instagram } : {}),
-      ...(profile.social_tiktok ? { tiktok: profile.social_tiktok } : {}),
-      ...(profile.social_github ? { github: profile.social_github } : {}),
-      ...(profile.social_website ? { website: profile.social_website } : {}),
-      ...(profile.social_facebook ? { facebook: profile.social_facebook } : {}),
-      ...(profile.social_linkedin ? { linkedin: profile.social_linkedin } : {}),
-      ...(profile.social_steam ? { steam: profile.social_steam } : {}),
-      ...(profile.social_telegram ? { telegram: profile.social_telegram } : {}),
-    }
-    const playlist = pubProfile.playlist as any[] | null
-    const currentUrl = encodeURIComponent(window.location.href)
+function renderProfileCard(
+  profile: any,
+  pubProfile: any,
+  accent: string,
+  vods: any[],
+  playlist: any[] | null,
+): string {
+  const accentRgb = hexToRgb(accent)
+  const xp = 0
+  const rank = findRank(xp)
+  const next = nextRank(xp)
+  const xpInRank = xp - rank.minXP
+  const nextXP = next ? next.minXP - rank.minXP : 1
+  const xpPct = Math.min(100, Math.round((xpInRank / nextXP) * 100))
+  const rankColor = rank.color
+  const displayName = pubProfile.display_name ?? profile.display_name ?? profile.full_name ?? 'Usuario'
+  const avatarUrl = pubProfile.avatar_url ?? profile.avatar_url
+  const bannerUrl = pubProfile.banner_url ?? profile.banner_url
+  const bio = pubProfile.bio ?? profile.bio
+  const socialLinks = {
+    ...(pubProfile.social_links as Record<string, string> || {}),
+    ...(profile.social_discord ? { discord: profile.social_discord } : {}),
+    ...(profile.social_youtube ? { youtube: profile.social_youtube } : {}),
+    ...(profile.social_twitter ? { twitter: profile.social_twitter } : {}),
+    ...(profile.social_twitch ? { twitch: profile.social_twitch } : {}),
+    ...(profile.social_instagram ? { instagram: profile.social_instagram } : {}),
+    ...(profile.social_tiktok ? { tiktok: profile.social_tiktok } : {}),
+    ...(profile.social_github ? { github: profile.social_github } : {}),
+    ...(profile.social_website ? { website: profile.social_website } : {}),
+    ...(profile.social_facebook ? { facebook: profile.social_facebook } : {}),
+    ...(profile.social_linkedin ? { linkedin: profile.social_linkedin } : {}),
+    ...(profile.social_steam ? { steam: profile.social_steam } : {}),
+    ...(profile.social_telegram ? { telegram: profile.social_telegram } : {}),
+  }
+  const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
+  const quote = profile.quote as string | null
+  const currentUrl = encodeURIComponent(window.location.href)
 
-    const hasConfig = profile.mouse_dpi || profile.mouse_sens != null || profile.mouse_scope_sens != null || profile.mouse_hertz || profile.edpi
-    const quote = profile.quote as string | null
-    const socialIcons: Record<string, string> = { discord: 'Mail', youtube: 'Play', twitter: 'Bell', twitch: 'Play', instagram: 'camera', tiktok: 'music', github: 'code2', website: 'globe', facebook: 'facebook', linkedin: 'linkedin', steam: 'steam', telegram: 'send' }
-
-    function ytId(url: string): string | null {
-      const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
-      return m?.[1] ?? null
-    }
-    function ytThumb(id: string): string { return `https://img.youtube.com/vi/${id}/mqdefault.jpg` }
-
-    let miniPlayer: { item: any; paused: boolean } | null = null
-    let ytPlayerInst: any = null
-    let ytApiLoaded = false
-    const playerCallbacks: Array<() => void> = []
-
-    function loadYtApi(): Promise<void> {
-      if ((window as any).YT?.Player) return Promise.resolve()
-      if (ytApiLoaded) return new Promise(r => playerCallbacks.push(r))
-      ytApiLoaded = true
-      return new Promise(resolve => {
-        playerCallbacks.push(resolve)
-        ;(window as any).onYouTubeIframeAPIReady = () => {
-          const cbs = [...playerCallbacks]
-          playerCallbacks.length = 0
-          cbs.forEach(f => f())
-        }
-        const s = document.createElement('script')
-        s.src = 'https://www.youtube.com/iframe_api'
-        document.head.appendChild(s)
-      })
-    }
-
-    function playItem(item: any, btn: HTMLElement) {
-      const updateBtns = () => {
-        document.querySelectorAll('.playlist-play-btn').forEach(b => {
-          const idx = parseInt((b as HTMLElement).dataset.idx ?? '-1', 10)
-          if (idx === (playlist ?? []).indexOf(item)) {
-            (b as HTMLElement).innerHTML = miniPlayer?.paused ? Icon('play', 16) : Icon('pause', 16)
-          } else {
-            (b as HTMLElement).innerHTML = Icon('play', 16)
-          }
-        })
-      }
-
-      if (miniPlayer && miniPlayer.item === item) {
-        if (miniPlayer.paused) {
-          if (ytPlayerInst && ytId(item.url)) ytPlayerInst.playVideo()
-          miniPlayer.paused = false
-        } else {
-          if (ytPlayerInst && ytId(item.url)) ytPlayerInst.pauseVideo()
-          miniPlayer.paused = true
-        }
-        updateBtns()
-        return
-      }
-
-      miniPlayer = { item, paused: false }
-      const id = ytId(item.url)
-      if (id) {
-        loadYtApi().then(() => {
-          if (ytPlayerInst) {
-            ytPlayerInst.loadVideoById(id)
-          } else {
-            const container = document.getElementById('yt-player-wrap')!
-            container.innerHTML = '<div id="yt-player-inner"></div>'
-            ytPlayerInst = new (window as any).YT.Player('yt-player-inner', {
-              videoId: id,
-              width: 1, height: 1,
-              playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3 },
-              events: { onStateChange: (e: any) => {
-                if (e.data === (window as any).YT.PlayerState.PLAYING) { miniPlayer!.paused = false; updateBtns() }
-                if (e.data === (window as any).YT.PlayerState.PAUSED) { miniPlayer!.paused = true; updateBtns() }
-                if (e.data === (window as any).YT.PlayerState.ENDED) { playNext() }
-              }}
-            })
-          }
-        })
-      }
-      updateBtns()
-    }
-
-    async function fetchThumbnail(item: any): Promise<string | null> {
-      const id = ytId(item.url)
-      return id ? ytThumb(id) : null
-    }
-
-    function playNext() {
-      if (!miniPlayer || !playlist) { miniPlayer = null; updateAllBtns(); return }
-      const curIdx = playlist.indexOf(miniPlayer.item)
-      for (let i = curIdx + 1; i < playlist.length; i++) {
-        if (ytId(playlist[i].url)) {
-          const btn = document.querySelector<HTMLElement>(`.playlist-play-btn[data-idx="${i}"]`)
-          if (btn) { playItem(playlist[i], btn); return }
-        }
-      }
-      miniPlayer = null
-      updateAllBtns()
-    }
-    function updateAllBtns() {
-      document.querySelectorAll('.playlist-play-btn').forEach(b => {
-        (b as HTMLElement).innerHTML = Icon('play', 16)
-      })
-    }
-
-    const html = `
+  return `
 <div id="profile-loading" class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0A0A0A]" style="opacity:1;transition:opacity .4s">
   <div class="flex flex-col items-center gap-3">
     <svg class="animate-spin h-8 w-8 text-[#8B5CF6]" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
@@ -507,10 +387,243 @@ export async function initPublicProfile(): Promise<void> {
     </div>
   </div>
 </div>`
+}
 
-    document.getElementById('page-content')!.innerHTML = html
+function initMiniPlayer(container: HTMLElement, playlist: any[]): void {
+  if (!playlist || playlist.length === 0) return
 
-    // Fade in profile after content is painted
+  let miniPlayer: { item: any; paused: boolean } | null = null
+  let ytPlayerInst: any = null
+  let ytApiLoaded = false
+  const playerCallbacks: Array<() => void> = []
+
+  function loadYtApi(): Promise<void> {
+    if ((window as any).YT?.Player) return Promise.resolve()
+    if (ytApiLoaded) return new Promise(r => playerCallbacks.push(r))
+    ytApiLoaded = true
+    return new Promise(resolve => {
+      playerCallbacks.push(resolve)
+      ;(window as any).onYouTubeIframeAPIReady = () => {
+        const cbs = [...playerCallbacks]
+        playerCallbacks.length = 0
+        cbs.forEach(f => f())
+      }
+      const s = document.createElement('script')
+      s.src = 'https://www.youtube.com/iframe_api'
+      document.head.appendChild(s)
+    })
+  }
+
+  function updateAllBtns() {
+    document.querySelectorAll('.playlist-play-btn').forEach(b => {
+      (b as HTMLElement).innerHTML = Icon('play', 16)
+    })
+  }
+
+  function playItem(item: any, btn: HTMLElement) {
+    const updateBtns = () => {
+      document.querySelectorAll('.playlist-play-btn').forEach(b => {
+        const idx = parseInt((b as HTMLElement).dataset.idx ?? '-1', 10)
+        if (idx === (playlist ?? []).indexOf(item)) {
+          (b as HTMLElement).innerHTML = miniPlayer?.paused ? Icon('play', 16) : Icon('pause', 16)
+        } else {
+          (b as HTMLElement).innerHTML = Icon('play', 16)
+        }
+      })
+    }
+
+    if (miniPlayer && miniPlayer.item === item) {
+      if (miniPlayer.paused) {
+        if (ytPlayerInst && ytId(item.url)) ytPlayerInst.playVideo()
+        miniPlayer.paused = false
+      } else {
+        if (ytPlayerInst && ytId(item.url)) ytPlayerInst.pauseVideo()
+        miniPlayer.paused = true
+      }
+      updateBtns()
+      return
+    }
+
+    miniPlayer = { item, paused: false }
+    const id = ytId(item.url)
+    if (id) {
+      loadYtApi().then(() => {
+        if (ytPlayerInst) {
+          ytPlayerInst.loadVideoById(id)
+        } else {
+          const container = document.getElementById('yt-player-wrap')!
+          container.innerHTML = '<div id="yt-player-inner"></div>'
+          ytPlayerInst = new (window as any).YT.Player('yt-player-inner', {
+            videoId: id,
+            width: 1, height: 1,
+            playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3 },
+            events: { onStateChange: (e: any) => {
+              if (e.data === (window as any).YT.PlayerState.PLAYING) { miniPlayer!.paused = false; updateBtns() }
+              if (e.data === (window as any).YT.PlayerState.PAUSED) { miniPlayer!.paused = true; updateBtns() }
+              if (e.data === (window as any).YT.PlayerState.ENDED) { playNext() }
+            }}
+          })
+        }
+      })
+    }
+    updateBtns()
+  }
+
+  function playNext() {
+    if (!miniPlayer || !playlist) { miniPlayer = null; updateAllBtns(); return }
+    const curIdx = playlist.indexOf(miniPlayer.item)
+    for (let i = curIdx + 1; i < playlist.length; i++) {
+      if (ytId(playlist[i].url)) {
+        const btn = document.querySelector<HTMLElement>(`.playlist-play-btn[data-idx="${i}"]`)
+        if (btn) { playItem(playlist[i], btn); return }
+      }
+    }
+    miniPlayer = null
+    updateAllBtns()
+  }
+
+  // Thumbnail fetch and click handler
+  ;(async () => {
+    const tracks = document.getElementById('playlist-tracks')
+    if (!tracks) return
+    const items = tracks.querySelectorAll<HTMLElement>('[data-idx]')
+    for (let i = 0; i < items.length; i++) {
+      const item = playlist[parseInt(items[i].dataset.idx ?? '0', 10)]
+      if (!item) continue
+      const id = ytId(item.url)
+      const thumb = id ? ytThumb(id) : null
+      const thumbDiv = items[i].querySelector('.playlist-thumb')
+      if (thumbDiv && thumb) {
+        thumbDiv.innerHTML = `<img src="${escapeHtml(thumb)}" alt="" class="h-full w-full object-cover" loading="lazy" />`
+      }
+    }
+    tracks.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.playlist-play-btn') as HTMLElement
+      if (!btn) return
+      const idx = parseInt(btn.dataset.idx ?? '-1', 10)
+      const item = playlist[idx]
+      if (!item) return
+      playItem(item, btn)
+    })
+  })()
+}
+
+async function downloadProfilePNG(slug: string, bgUrl: string | null | undefined): Promise<void> {
+  try {
+    const card = document.getElementById('profile-card')
+    if (!card) return
+    const page = document.getElementById('profile-page')
+    if (!page) return
+
+    const origConsoleError = console.error
+    console.error = () => {}
+
+    const style = document.createElement('style')
+    style.id = 'png-capture-override'
+    style.textContent = `
+      .glass { background: rgb(18, 18, 22) !important; border-color: rgb(30, 30, 40) !important; }
+      .glass [class*="border"] { border-color: rgb(30, 30, 40) !important; }
+      [class*="ring"] { box-shadow: none !important; }
+      * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    `
+    document.head.appendChild(style)
+
+    const wrap = document.createElement('div')
+    wrap.style.cssText = `position:relative;display:inline-block;padding:16px;border-radius:20px;${bgUrl ? `background:url(${bgUrl}) center/cover` : ''}`
+    wrap.style.setProperty('background-color', '#0A0A0A', 'important')
+    const parent = card.parentNode!
+    parent.insertBefore(wrap, card)
+    wrap.appendChild(card)
+
+    const canvas = await domtoimage.toCanvas(wrap, {
+      bgcolor: bgUrl ? undefined : '#0A0A0A',
+      scale: 2,
+      pixelRatio: window.devicePixelRatio || 1,
+      filter: (node: any) => node.tagName !== 'SCRIPT',
+    })
+
+    parent.insertBefore(card, wrap)
+    wrap.remove()
+
+    document.getElementById('png-capture-override')?.remove()
+    console.error = origConsoleError
+
+    const link = document.createElement('a')
+    link.download = `perfil-${slug}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (e) {
+    console.error('Error generando PNG:', e)
+    const errDiv = document.createElement('div')
+    errDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg'
+    errDiv.textContent = 'Error al generar PNG.'
+    document.body.appendChild(errDiv)
+    setTimeout(() => errDiv.remove(), 4000)
+  }
+}
+
+function initProfileInteractions(container: HTMLElement, profileId: string, slug: string, bgUrl: string | null | undefined): void {
+  document.getElementById('download-btn')?.addEventListener('click', () => downloadProfilePNG(slug, bgUrl))
+  document.getElementById('download-btn-2')?.addEventListener('click', () => downloadProfilePNG(slug, bgUrl))
+
+  if (profileId) {
+    const chName = `pub-profile-${profileId}`
+    const existing = supabase.getChannels().find(c => c.topic === chName)
+    if (existing) supabase.removeChannel(existing)
+    const rtChannel = supabase.channel(chName)
+    rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
+    rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'public_profiles', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
+    rtChannel.subscribe()
+  }
+}
+
+export async function initPublicProfile(): Promise<void> {
+  try {
+    const hash = window.location.hash.replace('#', '')
+    const match = hash.match(/^\/p\/(.+)$/)
+    if (!match) {
+      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
+      return
+    }
+    const rawSlug = match[1]
+    const slug = rawSlug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+    if (!slug) {
+      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
+      return
+    }
+
+    const pubProfile = await resolveProfile(slug, rawSlug)
+    if (!pubProfile) {
+      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
+      return
+    }
+
+    const profileId = pubProfile.profile_id
+
+    const [profileRes, vodsRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, avatar_url, banner_url, display_name, bio, role, rank, country, riot_id, in_game_role, region, quote, mouse_dpi, mouse_sens, mouse_scope_sens, mouse_hertz, edpi, social_discord, social_youtube, social_twitter, social_twitch, social_instagram, social_tiktok, social_github, social_website, social_facebook, social_linkedin, social_steam, social_telegram, custom_bg_url, role_color, created_at').eq('id', profileId).maybeSingle(),
+      supabase.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
+    ])
+
+    const profile = profileRes.data
+    const vods = vodsRes.data ?? []
+
+    if (!profile) {
+      document.getElementById('page-content')!.innerHTML = '<div class="flex min-h-screen items-center justify-center bg-[#0A0A0A]"><p class="text-zinc-500">Perfil no encontrado.</p></div>'
+      return
+    }
+
+    void supabase.rpc('increment_profile_views', { profile_id: profileId })
+
+    const bgUrl = (profile as any)?.custom_bg_url
+    const accent = (profile as any)?.role_color || '#8B5CF6'
+
+    injectTheme(accent, bgUrl)
+
+    const playlist = pubProfile.playlist as any[] | null
+
+    document.getElementById('page-content')!.innerHTML = renderProfileCard(profile, pubProfile, accent, vods, playlist)
+
     requestAnimationFrame(() => {
       function fadeIn() {
         const loadingEl = document.getElementById('profile-loading')
@@ -530,104 +643,9 @@ export async function initPublicProfile(): Promise<void> {
       setTimeout(fadeIn, 5000)
     })
 
-    // Init mini player for playlist
-    if (playlist && playlist.length > 0) {
-      (async () => {
-        const tracks = document.getElementById('playlist-tracks')
-        if (!tracks) return
-        const items = tracks.querySelectorAll<HTMLElement>('[data-idx]')
-        for (let i = 0; i < items.length; i++) {
-          const item = playlist[parseInt(items[i].dataset.idx ?? '0', 10)]
-          if (!item) continue
-          const thumb = await fetchThumbnail(item)
-          const thumbDiv = items[i].querySelector('.playlist-thumb')
-          if (thumbDiv && thumb) {
-            thumbDiv.innerHTML = `<img src="${escapeHtml(thumb)}" alt="" class="h-full w-full object-cover" loading="lazy" />`
-          }
-        }
-        tracks.addEventListener('click', (e) => {
-          const btn = (e.target as HTMLElement).closest('.playlist-play-btn') as HTMLElement
-          if (!btn) return
-          const idx = parseInt(btn.dataset.idx ?? '-1', 10)
-          const item = playlist[idx]
-          if (!item) return
-          playItem(item, btn)
-        })
-      })()
-    }
-
-    // Download as PNG
-    async function downloadProfile() {
-      try {
-        const card = document.getElementById('profile-card')
-        if (!card) return
-        const page = document.getElementById('profile-page')
-        if (!page) return
-
-        // Suppress font CSS errors (CORS from Google Fonts)
-        const origConsoleError = console.error
-        console.error = () => {}
-
-        // Override glass styles for clean PNG capture
-        const style = document.createElement('style')
-        style.id = 'png-capture-override'
-        style.textContent = `
-          .glass { background: rgb(18, 18, 22) !important; border-color: rgb(30, 30, 40) !important; }
-          .glass [class*="border"] { border-color: rgb(30, 30, 40) !important; }
-          [class*="ring"] { box-shadow: none !important; }
-          * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-        `
-        document.head.appendChild(style)
-
-        // Temporarily wrap the card in a cropped container with the background
-        const wrap = document.createElement('div')
-        wrap.style.cssText = `position:relative;display:inline-block;padding:16px;border-radius:20px;${bgUrl ? `background:url(${bgUrl}) center/cover` : ''}`
-        wrap.style.setProperty('background-color', '#0A0A0A', 'important')
-        const parent = card.parentNode!
-        parent.insertBefore(wrap, card)
-        wrap.appendChild(card)
-
-        const canvas = await domtoimage.toCanvas(wrap, {
-          bgcolor: bgUrl ? undefined : '#0A0A0A',
-          scale: 2,
-          pixelRatio: window.devicePixelRatio || 1,
-          filter: (node: any) => node.tagName !== 'SCRIPT',
-        })
-
-        // Restore DOM
-        parent.insertBefore(card, wrap)
-        wrap.remove()
-
-        document.getElementById('png-capture-override')?.remove()
-        console.error = origConsoleError
-
-        const link = document.createElement('a')
-        link.download = `perfil-${slug}.png`
-        link.href = canvas.toDataURL('image/png')
-        link.click()
-      } catch (e) {
-        console.error('Error generando PNG:', e)
-        const errDiv = document.createElement('div')
-        errDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg'
-        errDiv.textContent = 'Error al generar PNG.'
-        document.body.appendChild(errDiv)
-        setTimeout(() => errDiv.remove(), 4000)
-      }
-    }
-
-    document.getElementById('download-btn')?.addEventListener('click', downloadProfile)
-    document.getElementById('download-btn-2')?.addEventListener('click', downloadProfile)
-
-    // Real-time: reload public profile when data changes
-    if (profileId) {
-      const chName = `pub-profile-${profileId}`
-      const existing = supabase.getChannels().find(c => c.topic === chName)
-      if (existing) supabase.removeChannel(existing)
-      const rtChannel = supabase.channel(chName)
-      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
-      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'public_profiles', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
-      rtChannel.subscribe()
-    }
+    const container = document.getElementById('page-content')!
+    initMiniPlayer(container, playlist ?? [])
+    initProfileInteractions(container, profileId, slug, bgUrl)
   } catch (err) {
     console.error('Error loading public profile:', err)
     const pc = document.getElementById('page-content')
