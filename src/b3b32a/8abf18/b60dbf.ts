@@ -9,13 +9,6 @@ import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 import { createEnrollmentWithPayment } from '@/2b3583/course_utils'
 
-const RANK_ORDER: Record<string, number> = {
-  Unranked: 0, Iron: 1, Bronze: 2, Silver: 3, Gold: 4,
-  Platinum: 5, Diamond: 6, Ascendant: 7, Immortal: 8, Radiant: 9,
-  Rookie: 1, Trainee: 2, Amateur: 3, Competitor: 4, Elite: 5,
-  'Semi-Pro': 6, Pro: 7,
-}
-
 export function renderCoachStudentDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
@@ -67,35 +60,6 @@ export function mountCoachStudentDetail(): void {
       // Filter out complementaria unless the student has at least one paid/scholarship payment (non-free)
       const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
       const filteredAvailable = (available ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
-
-      const lastEnr = enrollments.find((e: any) => e.status === 'active' || e.status === 'recovery')
-      let eligibility: any = null
-      let nextCourse: any = null
-      if (lastEnr) {
-        const { data: enrFull } = await supabase
-          .from('enrollments')
-          .select('*, profiles(rank, full_name), courses(name, min_rank)')
-          .eq('id', lastEnr.id)
-          .maybeSingle()
-
-        if (enrFull) {
-          const grade = enrFull.final_grade
-          const studentRank = (enrFull as any).profiles?.rank ?? 'Unranked'
-          const minRank = (enrFull as any).courses?.min_rank ?? 'Unranked'
-          const gradeOk = grade != null && grade >= 16
-          const rankOk = (RANK_ORDER[studentRank] ?? 0) >= (RANK_ORDER[minRank] ?? 0)
-          eligibility = {
-            gradeOk, rankOk, eligible: gradeOk && rankOk,
-            grade, minRank, studentRank,
-            reason: !gradeOk ? `Nota insuficiente: ${grade ?? '—'}/20 (mínimo 16)` : !rankOk ? `Rango insuficiente: ${studentRank} (mínimo ${minRank})` : null,
-          }
-          if (lastEnr.courses?.display_order) {
-            nextCourse = (courses ?? []).find((c: any) => c.display_order === lastEnr.courses!.display_order + 1) ?? null
-          }
-        }
-      }
-
-      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
       const html = `
         ${Breadcrumb([
@@ -152,7 +116,7 @@ export function mountCoachStudentDetail(): void {
                           <p class="text-sm capitalize ${statusColor}">
                             ${escapeHtml(enr.status)}${enr.promoted ? ' · Promocionado' : ''}
                           </p>
-                          ${enr.final_grade ? `<p class="text-xs text-zinc-500">Nota: ${enr.final_grade}/20</p>` : ''}
+
                           <div class="mt-1">
                             ${paymentStatus
                               ? `<span class="inline-block rounded-full px-2 py-0.5 text-xs ${paymentStatus === 'paid' || paymentStatus === 'free' ? 'bg-green-500/20 text-green-400' : paymentStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">${paymentStatus === 'paid' ? 'Pagado' : paymentStatus === 'free' ? 'Gratis' : escapeHtml(paymentStatus)}</span>`

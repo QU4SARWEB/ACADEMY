@@ -98,7 +98,6 @@ export interface Enrollment {
   type: 'student' | 'player'
   status: 'active' | 'recovery' | 'graduated' | 'inactive'
   current_module: number
-  final_grade: number | null
   exam_score: number | null
   promoted: boolean
   enrolled_at: string

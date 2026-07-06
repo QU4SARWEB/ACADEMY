@@ -9,15 +9,6 @@ export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
 
-function scoreToLetter(s: number): string {
-  const r = Math.round(s)
-  if (r >= 18) return 'AD'
-  if (r >= 14) return 'A'
-  if (r >= 11) return 'B'
-  if (r >= 5) return 'C'
-  return 'D'
-}
-
 export async function initStudentCourses(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -42,24 +33,6 @@ export async function initStudentCourses(): Promise<void> {
       .order('enrolled_at', { ascending: false })
 
     const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
-
-    const enrollIds = (enrollments ?? []).map((e: any) => e.id)
-
-    // Fetch last monthly grade per enrollment
-    const { data: grades } = enrollIds.length > 0
-      ? await supabase.from('monthly_grades').select('enrollment_id, score, month').in('enrollment_id', enrollIds).order('month', { ascending: false })
-      : { data: [] }
-    const lastGradeByEnroll: Record<string, { score: number; letter: string }> = {}
-    for (const g of grades ?? []) {
-      if (!lastGradeByEnroll[g.enrollment_id]) {
-        lastGradeByEnroll[g.enrollment_id] = { score: Number(g.score), letter: (g as any).letter }
-      }
-    }
-    const gradeByCourse: Record<string, { score: number; letter: string }> = {}
-    for (const e of enrollments ?? []) {
-      const g = lastGradeByEnroll[e.id]
-      if (g) gradeByCourse[e.course_id] = g
-    }
 
     const { data: payments } = await supabase
       .from('payments')
@@ -97,13 +70,8 @@ export async function initStudentCourses(): Promise<void> {
       ? '<p class="text-sm text-zinc-500 col-span-full">No estás inscrito en ningún curso actualmente.</p>'
       : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         ${(enrollments ?? []).map((e: any) => {
-          const c = e.courses || {}
-          const g = gradeByCourse[c.id]
-          let extra = '<div class="space-y-1 mb-3">'
-          if (g) extra += `<div class="flex items-center gap-2 text-xs ${g.score >= 14 ? 'text-green-400' : g.score >= 11 ? 'text-yellow-400' : 'text-zinc-400'}">${Icon('trendingUp', 12)} ${g.score.toFixed(1)}/20 (${escapeHtml(g.letter)})</div>`
-          extra += '</div>'
           const footer = `<a href="#/students/courses/${escapeHtml(e.course_id)}" class="mt-auto pt-3 border-t border-zinc-800 flex items-center justify-between"><span class="text-xs text-zinc-500 group-hover:text-white transition">Ver curso →</span></a>`
-          return courseCard(e, extra, footer)
+          return courseCard(e, '', footer)
         }).join('')}
       </div>`
 
