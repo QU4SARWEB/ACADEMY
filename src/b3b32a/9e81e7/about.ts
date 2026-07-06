@@ -109,7 +109,11 @@ export function renderAbout(): string {
             <img src="qu4sar.ico" alt="" class="h-6 w-6" />
             <span class="text-sm font-bold text-white">QU4SAR Gaming Academy</span>
           </div>
-          <div class="flex gap-6 text-xs text-zinc-600">
+          <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-zinc-600">
+            <a href="https://www.youtube.com/@QU4SAR_ACADEMY" target="_blank" class="hover:text-zinc-400 transition">YouTube</a>
+            <a href="https://www.twitch.tv/qu4sar_academy" target="_blank" class="hover:text-zinc-400 transition">Twitch</a>
+            <a href="https://www.instagram.com/qu4sar._.esports/" target="_blank" class="hover:text-zinc-400 transition">Instagram</a>
+            <a href="https://discord.gg/wbFm5BVWW" target="_blank" class="hover:text-zinc-400 transition">Discord</a>
             <a href="#/" class="hover:text-zinc-400 transition">Inicio</a>
             <a href="#/login" class="hover:text-zinc-400 transition">Iniciar sesi\u00f3n</a>
           </div>

@@ -138,19 +138,28 @@ export function renderHome(): string {
       </section>
 
       <section class="relative z-10 mx-auto mt-32 max-w-5xl px-6">
-        <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Contacto</h2>
+        <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">S\u00edguenos</h2>
         <p class="mx-auto mb-10 max-w-xl text-center text-sm text-zinc-400">
-          \u00bfTienes preguntas o quieres saber m\u00e1s? Escr\u00edbenos y te responderemos a la brevedad.
+          \u00danete a nuestra comunidad y sigue nuestro contenido en todas las plataformas.
         </p>
-        <div class="mx-auto max-w-md space-y-4">
-          <a href="mailto:contacto@qu4sar.com" class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-700 hover:text-white">
-            ${Icon('mail', 18)}
-            <span>contacto@qu4sar.com</span>
-          </a>
-          <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] px-4 py-3 text-sm text-zinc-500">
-            ${Icon('mapPin', 18)}
-            <span>Lima, Per\u00fa</span>
-          </div>
+        <div class="mx-auto grid max-w-lg gap-3 md:grid-cols-2">
+          ${[
+            { href: 'https://qu4sarweb.github.io', label: 'Sitio web', icon: 'externalLink' },
+            { href: 'https://www.youtube.com/@QU4SAR_ACADEMY', label: 'YouTube', icon: 'play' },
+            { href: 'https://www.twitch.tv/qu4sar_academy', label: 'Twitch', icon: 'eye' },
+            { href: 'https://kick.com/qu4sar-academy', label: 'Kick', icon: 'zap' },
+            { href: 'https://www.instagram.com/qu4sar._.esports/', label: 'Instagram', icon: 'image' },
+            { href: 'https://www.tiktok.com/@qu4sar.esports', label: 'TikTok', icon: 'music' },
+            { href: 'mailto:qu4saracademyla@gmail.com', label: 'Correo', icon: 'mail' },
+            { href: 'https://discord.gg/wbFm5BVWW', label: 'Discord', icon: 'users' },
+          ].map(s => `
+            <a href="${escapeHtml(s.href)}" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#111] px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-700 hover:text-white hover:bg-zinc-900">
+              ${Icon(s.icon, 18)}
+              <span>${escapeHtml(s.label)}</span>
+              ${Icon('arrowUpRight', 14)}
+            </a>
+          `).join('')}
         </div>
       </section>
 
@@ -160,7 +169,11 @@ export function renderHome(): string {
             <img src="qu4sar.ico" alt="" class="h-6 w-6" />
             <span class="text-sm font-bold text-white">QU4SAR Gaming Academy</span>
           </div>
-          <div class="flex gap-6 text-xs text-zinc-600">
+          <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-zinc-600">
+            <a href="https://www.youtube.com/@QU4SAR_ACADEMY" target="_blank" class="hover:text-zinc-400 transition">YouTube</a>
+            <a href="https://www.twitch.tv/qu4sar_academy" target="_blank" class="hover:text-zinc-400 transition">Twitch</a>
+            <a href="https://www.instagram.com/qu4sar._.esports/" target="_blank" class="hover:text-zinc-400 transition">Instagram</a>
+            <a href="https://discord.gg/wbFm5BVWW" target="_blank" class="hover:text-zinc-400 transition">Discord</a>
             <a href="#/about" class="hover:text-zinc-400 transition">Sobre nosotros</a>
             <a href="#/login" class="hover:text-zinc-400 transition">Iniciar sesi\u00f3n</a>
           </div>
