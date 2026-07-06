@@ -89,18 +89,49 @@ export function renderHome(): string {
       </section>
 
       <section class="relative z-10 mx-auto mt-32 max-w-5xl px-6">
-        <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Precios</h2>
-        <p class="mx-auto mb-10 max-w-2xl text-center text-sm text-zinc-400">
-          Actualmente solo ofrecemos el plan Academy. El curso de Posicionamiento es gratuito para todos.
-        </p>
-        <div class="mx-auto max-w-sm">
-          <div class="glass rounded-xl p-6 relative border-2 border-[#8B5CF6]/40">
-            <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#8B5CF6] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">\u00danico plan</span>
-            <h3 class="font-heading text-lg font-bold text-white">Cursos</h3>
-            <p class="mt-2 text-2xl font-bold text-[#8B5CF6]">S/. 4.99 <span class="text-base text-zinc-400">/ curso</span></p>
-            <p class="mt-2 text-sm text-zinc-500">Paga solo por el curso que llevas. El curso de Posicionamiento es gratuito.</p>
-            <a href="#/register" class="mt-6 block rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] px-4 py-2 text-center text-sm font-medium transition">
-              Comenzar ahora
+        <div class="mb-10 text-center">
+          <span class="inline-block rounded-full bg-[#8B5CF6]/20 px-4 py-1 text-xs font-medium text-[#8B5CF6]">Inversi\u00f3n \u00fanica por curso</span>
+          <h2 class="mt-4 font-heading text-3xl font-bold text-white md:text-4xl">Invierte en tu futuro competitivo</h2>
+          <p class="mx-auto mt-3 max-w-xl text-sm text-zinc-400">
+            Sin mensualidades ni suscripciones. Pagas \u00fanicamente el curso que quieres llevar
+            y accedes a todos los beneficios de nuestra metodolog\u00eda de entrenamiento.
+          </p>
+        </div>
+        <div class="mx-auto flex max-w-2xl flex-col gap-6 md:flex-row md:items-stretch">
+          <div class="flex flex-1 flex-col rounded-xl border border-zinc-800 bg-[#111] p-6">
+            <h3 class="font-heading text-base font-bold text-white">Posicionamiento</h3>
+            <p class="mt-4 text-3xl font-bold text-green-400">Gratis</p>
+            <p class="mt-2 text-xs text-zinc-500">Curso introductorio sin costo</p>
+            <ul class="mt-6 space-y-2">
+              ${['Fundamentos de Valorant', 'Ejercicios b\u00e1sicos de aim', 'Configuraci\u00f3n \u00f3ptima', 'Sin compromiso'].map(f => `
+                <li class="flex items-start gap-2 text-sm text-zinc-400">
+                  ${Icon('checkCircle', 14)}
+                  <span>${escapeHtml(f)}</span>
+                </li>
+              `).join('')}
+            </ul>
+            <a href="#/register" class="mt-auto block rounded-lg border border-zinc-700 px-4 py-2.5 text-center text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
+              Comenzar gratis
+            </a>
+          </div>
+          <div class="relative flex flex-1 flex-col rounded-xl border-2 border-[#8B5CF6]/40 bg-[#111] p-6">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#8B5CF6] px-5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-[#8B5CF6]/30">M\u00e1s elegido</span>
+            <h3 class="font-heading text-base font-bold text-white">Cursos completos</h3>
+            <p class="mt-4 text-3xl font-bold text-[#8B5CF6]">
+              S/. 4.99 <span class="text-base font-normal text-zinc-500">c/u</span>
+            </p>
+            <p class="mt-2 text-xs text-zinc-500">Cada nivel incluye todo lo necesario para avanzar</p>
+            <ul class="mt-6 space-y-2">
+              ${['Plan de estudios progresivo', 'Seguimiento con coaches', 'Scrims y evaluaciones', 'Acceso a la comunidad', 'Certificado al completar'].map(f => `
+                <li class="flex items-start gap-2 text-sm text-zinc-400">
+                  ${Icon('checkCircle', 14)}
+                  <span>${escapeHtml(f)}</span>
+                </li>
+              `).join('')}
+            </ul>
+            <p class="mt-4 text-xs text-zinc-500">Paga \u00fanicamente el curso que elijas. Sin mensualidades ni permanencia.</p>
+            <a href="#/register" class="mt-auto block rounded-lg bg-[#8B5CF6] px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg shadow-[#8B5CF6]/20 transition hover:bg-[#7C3AED]">
+              Elegir mi curso
             </a>
           </div>
         </div>
