@@ -463,7 +463,6 @@ export async function initCoachTeams(): Promise<void> {
         const teamName = deleteBtn.dataset.teamName || 'este equipo'
         if (!teamId || !(await confirmDialog(`¿Eliminar ${teamName}? También se eliminarán todos los miembros y scrims asociados.`))) return
         await supabase.from('team_members').delete().eq('team_id', teamId)
-        await supabase.from('scrims').delete().eq('team_id', teamId)
         const { error } = await supabase.from('teams').delete().eq('id', teamId)
         if (error) toast('error', error.message)
         else { toast('success', 'Equipo eliminado'); await initCoachTeams() }

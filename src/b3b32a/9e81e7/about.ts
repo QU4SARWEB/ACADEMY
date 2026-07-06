@@ -33,7 +33,7 @@ export function renderAbout(): string {
           <h2 class="font-heading text-2xl font-bold text-white mb-4">Nuestra historia</h2>
           <div class="space-y-4 text-sm text-zinc-400 leading-relaxed">
             <p>
-              QU4SAR Gaming Academy naci\u00f3 en 2024 con una visi\u00f3n clara: democratizar el entrenamiento
+              QU4SAR Gaming Academy naci\u00f3 este a\u00f1o con una visi\u00f3n clara: democratizar el entrenamiento
               de esports y hacer accesible la formaci\u00f3n competitiva de alto nivel para cualquier persona
               con talento y dedicaci\u00f3n.
             </p>

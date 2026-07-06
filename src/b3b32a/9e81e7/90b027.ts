@@ -149,14 +149,12 @@ export async function initPublicProfile(): Promise<void> {
 
     const profileId = pubProfile.profile_id
 
-    const [profileRes, achievementsRes, vodsRes] = await Promise.all([
+    const [profileRes, vodsRes] = await Promise.all([
       supabase.from('profiles').select('id, full_name, avatar_url, banner_url, display_name, bio, role, rank, country, riot_id, in_game_role, region, quote, mouse_dpi, mouse_sens, mouse_scope_sens, mouse_hertz, edpi, social_discord, social_youtube, social_twitter, social_twitch, social_instagram, social_tiktok, social_github, social_website, social_facebook, social_linkedin, social_steam, social_telegram, custom_bg_url, role_color, created_at').eq('id', profileId).maybeSingle(),
-      supabase.from('member_achievements').select('*').eq('profile_id', profileId).order('unlocked_at', { ascending: false }),
       supabase.from('member_vods').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
     ])
 
     const profile = profileRes.data
-    const achievements = achievementsRes.data ?? []
     const vods = vodsRes.data ?? []
 
     if (!profile) {
@@ -194,7 +192,7 @@ export async function initPublicProfile(): Promise<void> {
       </style>`
     document.head.insertAdjacentHTML('beforeend', themeStyle)
 
-    const xp = achievements.length * 150
+    const xp = 0
     const rank = findRank(xp)
     const next = nextRank(xp)
     const xpInRank = xp - rank.minXP
@@ -384,16 +382,11 @@ export async function initPublicProfile(): Promise<void> {
         </div>` : ''}
 
         <!-- Stats Row -->
-        <div class="grid grid-cols-4 gap-3" style="background:transparent!important;backdrop-filter:none!important">
+        <div class="grid grid-cols-3 gap-3" style="background:transparent!important;backdrop-filter:none!important">
           ${(() => {
-            const totalAchievements = achievements.length
             const totalVods = vods.length
             const estTasks = Math.floor(xp / 100)
             return `
-            <div class="glass rounded-xl p-3 text-center">
-              <p class="text-lg font-bold text-white">${totalAchievements}</p>
-              <p class="text-[10px] text-zinc-500">Logros</p>
-            </div>
             <div class="glass rounded-xl p-3 text-center">
               <p class="text-lg font-bold text-white">${totalVods}</p>
               <p class="text-[10px] text-zinc-500">VODs</p>
@@ -468,21 +461,6 @@ export async function initPublicProfile(): Promise<void> {
               </div>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 shrink-0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>`).join('')}
-          </div>
-        </div>` : ''}
-
-        ${achievements.length > 0 ? `
-        <div class="glass rounded-[18px] p-6">
-          <h3 class="mb-4 pb-3 text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(${accentRgb},0.06)">
-            ${Icon('trophy', 14)} Logros
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            ${achievements.map((ach: any) => `
-            <div class="hover-accent-border group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition">
-              ${Icon('trophy', 12)}
-              <span class="text-xs text-zinc-300">${escapeHtml(ach.title)}</span>
-              ${ach.description ? `<div class="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 shadow-xl group-hover:block">${escBr(ach.description)}</div>` : ''}
-            </div>`).join('')}
           </div>
         </div>` : ''}
 
@@ -648,7 +626,6 @@ export async function initPublicProfile(): Promise<void> {
       const rtChannel = supabase.channel(chName)
       rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
       rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'public_profiles', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
-      rtChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'member_achievements', filter: `profile_id=eq.${profileId}` }, () => setTimeout(() => location.reload(), 100))
       rtChannel.subscribe()
     }
   } catch (err) {

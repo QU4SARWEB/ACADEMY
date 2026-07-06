@@ -11,8 +11,8 @@ export function renderLogin(): string {
 
       <div class="glass relative z-10 w-full max-w-sm rounded-xl p-8">
         <div class="mb-6 text-center">
-          <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
-          <h1 class="mt-2 font-heading text-lg font-bold text-white">Iniciar sesión</h1>
+          <img src="qu4sar.ico" alt="QU4SAR" class="mx-auto h-12 w-12" />
+          <h1 class="mt-3 font-heading text-lg font-bold text-white">Iniciar sesión</h1>
           <p class="mt-1 text-sm text-zinc-500">Accede a tu cuenta de QU<span class="text-[#8B5CF6]">4</span>SAR</p>
         </div>
 

@@ -101,15 +101,16 @@ export function renderHome(): string {
           <div class="flex flex-1 flex-col rounded-xl border border-zinc-800 bg-[#111] p-6">
             <h3 class="font-heading text-base font-bold text-white">Posicionamiento</h3>
             <p class="mt-4 text-3xl font-bold text-green-400">Gratis</p>
-            <p class="mt-2 text-xs text-zinc-500">Curso introductorio sin costo</p>
+            <p class="mt-2 text-xs text-zinc-500">Evaluaci\u00f3n de nivel sin costo</p>
             <ul class="mt-6 space-y-2">
-              ${['Fundamentos de Valorant', 'Ejercicios b\u00e1sicos de aim', 'Configuraci\u00f3n \u00f3ptima', 'Sin compromiso'].map(f => `
+              ${['Evaluaci\u00f3n de nivel inicial', 'Examen te\u00f3rico de posicionamiento', 'Examen pr\u00e1ctico en juego', 'Asignaci\u00f3n del curso adecuado para ti'].map(f => `
                 <li class="flex items-start gap-2 text-sm text-zinc-400">
                   ${Icon('checkCircle', 14)}
                   <span>${escapeHtml(f)}</span>
                 </li>
               `).join('')}
             </ul>
+            <p class="mt-3 text-xs text-zinc-500">Luego de la evaluaci\u00f3n se te asignar\u00e1 el curso que corresponda a tu nivel y pagar\u00e1s \u00fanicamente ese curso.</p>
             <a href="#/register" class="mt-auto block rounded-lg border border-zinc-700 px-4 py-2.5 text-center text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
               Comenzar gratis
             </a>

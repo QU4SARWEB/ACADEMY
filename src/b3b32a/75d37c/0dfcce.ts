@@ -43,31 +43,7 @@ export async function initStudentCourses(): Promise<void> {
 
     const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
-    // Fetch tasks count per course
-    const { data: allTasks } = enrolledCourseIds.length > 0
-      ? await supabase.from('tasks').select('course_id').in('course_id', enrolledCourseIds)
-      : { data: [] }
-    const taskCountByCourse: Record<string, number> = {}
-    for (const t of allTasks ?? []) {
-      if (!taskCountByCourse[t.course_id]) taskCountByCourse[t.course_id] = 0
-      taskCountByCourse[t.course_id]++
-    }
-
-    // Fetch student's task submissions completed per course (via enrollments)
     const enrollIds = (enrollments ?? []).map((e: any) => e.id)
-    const { data: submissions } = enrollIds.length > 0
-      ? await supabase.from('task_submissions').select('enrollment_id, status').in('enrollment_id', enrollIds)
-      : { data: [] }
-    const enrCourseMap: Record<string, string> = {}
-    for (const e of enrollments ?? []) enrCourseMap[e.id] = e.course_id
-    const completedByCourse: Record<string, number> = {}
-    for (const s of submissions ?? []) {
-      const cid = enrCourseMap[s.enrollment_id]
-      if (cid && (s.status === 'submitted' || s.status === 'graded')) {
-        if (!completedByCourse[cid]) completedByCourse[cid] = 0
-        completedByCourse[cid]++
-      }
-    }
 
     // Fetch last monthly grade per enrollment
     const { data: grades } = enrollIds.length > 0
@@ -122,11 +98,8 @@ export async function initStudentCourses(): Promise<void> {
       : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         ${(enrollments ?? []).map((e: any) => {
           const c = e.courses || {}
-          const total = taskCountByCourse[c.id] || 0
-          const done = completedByCourse[c.id] || 0
           const g = gradeByCourse[c.id]
           let extra = '<div class="space-y-1 mb-3">'
-          if (total > 0) extra += `<div class="flex items-center gap-2 text-xs text-zinc-400">${Icon('clipboardList', 12)} ${total} tareas · ${done} realizadas</div>`
           if (g) extra += `<div class="flex items-center gap-2 text-xs ${g.score >= 14 ? 'text-green-400' : g.score >= 11 ? 'text-yellow-400' : 'text-zinc-400'}">${Icon('trendingUp', 12)} ${g.score.toFixed(1)}/20 (${escapeHtml(g.letter)})</div>`
           extra += '</div>'
           const footer = `<a href="#/students/courses/${escapeHtml(e.course_id)}" class="mt-auto pt-3 border-t border-zinc-800 flex items-center justify-between"><span class="text-xs text-zinc-500 group-hover:text-white transition">Ver curso →</span></a>`
