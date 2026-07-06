@@ -144,7 +144,6 @@ export function renderHome(): string {
         </p>
         <div class="mx-auto grid max-w-lg gap-3 md:grid-cols-2">
           ${[
-            { href: 'https://qu4sarweb.github.io', label: 'Sitio web', icon: 'externalLink' },
             { href: 'https://www.youtube.com/@QU4SAR_ACADEMY', label: 'YouTube', icon: 'play' },
             { href: 'https://www.twitch.tv/qu4sar_academy', label: 'Twitch', icon: 'eye' },
             { href: 'https://kick.com/qu4sar-academy', label: 'Kick', icon: 'zap' },
