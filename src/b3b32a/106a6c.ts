@@ -96,18 +96,11 @@ export function renderHome(): string {
         <div class="mx-auto max-w-sm">
           <div class="glass rounded-xl p-6 relative border-2 border-[#8B5CF6]/40">
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#8B5CF6] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">\u00danico plan</span>
-            <h3 class="font-heading text-lg font-bold text-white">Academy</h3>
-            <p class="mt-2 text-2xl font-bold text-[#8B5CF6]">S/. 4.99 / mes</p>
-            <ul class="mt-4 space-y-2">
-              ${['Todos los cursos', 'Coaching personal', 'Scrims semanales', 'Estad\u00edsticas detalladas', 'Certificado por nivel'].map(f => `
-                <li class="flex items-center gap-2 text-sm text-zinc-400">
-                  ${Icon('checkCircle', 14)}
-                  <span>${escapeHtml(f)}</span>
-                </li>
-              `).join('')}
-            </ul>
+            <h3 class="font-heading text-lg font-bold text-white">Cursos</h3>
+            <p class="mt-2 text-2xl font-bold text-[#8B5CF6]">S/. 4.99 <span class="text-base text-zinc-400">/ curso</span></p>
+            <p class="mt-2 text-sm text-zinc-500">Paga solo por el curso que llevas. El curso de Posicionamiento es gratuito.</p>
             <a href="#/register" class="mt-6 block rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] px-4 py-2 text-center text-sm font-medium transition">
-              Elegir plan
+              Comenzar ahora
             </a>
           </div>
         </div>
