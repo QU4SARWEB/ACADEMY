@@ -56,20 +56,6 @@ export async function initCoachDashboard(): Promise<void> {
     )
     const expiringCount = expiringPayments.length
 
-    // Students at risk + course averages (consolidated)
-    const { data: allEnrollData } = await supabase
-      .from('enrollments')
-      .select('course_id, final_grade, promoted, profiles!inner(full_name, display_name), courses(name)')
-      .eq('status', 'active')
-      .not('final_grade', 'is', null)
-
-    const riskEnrollments = (allEnrollData ?? [])
-      .filter((e: any) => e.final_grade < 14)
-      .sort((a: any, b: any) => a.final_grade - b.final_grade)
-      .slice(0, 6)
-
-
-
     const kpiCards = [
       { icon: 'users', label: 'Alumnos activos', value: String(studentsCount ?? 0), color: '#8B5CF6' },
       { icon: 'sword', label: 'Jugadores activos', value: String(playersCount ?? 0), color: '#6D28D9' },
@@ -78,20 +64,6 @@ export async function initCoachDashboard(): Promise<void> {
     ]
 
 
-
-    const riskHtml = (riskEnrollments ?? []).length > 0
-      ? (riskEnrollments ?? []).map((e: any) => {
-          const name = e.profiles?.display_name || e.profiles?.full_name || 'Desconocido'
-          return `
-            <div class="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm">
-              <div>
-                <span class="text-red-300">${escapeHtml(name)}</span>
-                <span class="text-zinc-500 text-xs ml-2">${escapeHtml(e.courses?.name || '')}</span>
-              </div>
-              <span class="text-red-400 font-mono text-xs">${e.final_grade ?? '—'}/20</span>
-            </div>`
-        }).join('')
-      : '<p class="text-sm text-zinc-500 text-center py-4">Ningún estudiante en riesgo</p>'
 
     const userName = profile?.display_name || profile?.full_name || 'Coach'
 
@@ -173,18 +145,7 @@ export async function initCoachDashboard(): Promise<void> {
           `).join('')}
         </div>
       </div>` : ''
-      })()}
-
-        <div class="glass rounded-xl p-5">
-          <h2 class="mb-4 font-heading text-base font-bold text-white flex items-center gap-2">
-            ${Icon('alertTriangle', 16)} Estudiantes en riesgo
-            ${(riskEnrollments ?? []).length > 0 ? `<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">${(riskEnrollments ?? []).length}</span>` : ''}
-          </h2>
-          <div class="space-y-2">
-            ${riskHtml}
-            ${(riskEnrollments ?? []).length >= 6 ? '<p class="text-xs text-zinc-500 text-center mt-2">Mostrando los 6 más bajos</p>' : ''}
-          </div>
-        </div>`
+      })()}`
 
     document.getElementById('page-content')!.innerHTML = html
 
