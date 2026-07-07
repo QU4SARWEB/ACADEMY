@@ -381,16 +381,12 @@ async function renderCoachPayments(): Promise<void> {
   }
 
   const filterHtml = (courses ?? []).map((c: any) => {
-    const isFree = !c.price || c.price <= 0
     const total = (enrollsByCourse[c.id] || []).length
-    const checked = !isFree
     return `
     <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
-      ${checked
-        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25'
-        : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}"
-      data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${total}" data-active="${checked ? '1' : '0'}">
-      ${checked ? Icon('checkCircle', 14) : Icon('plus', 12)}
+      bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
+      data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${total}" data-active="1">
+      ${Icon('checkCircle', 14)}
       <span>${escapeHtml(c.name)}</span>
       <span class="text-zinc-500">${total}</span>
     </button>`
@@ -454,7 +450,7 @@ async function renderCoachPayments(): Promise<void> {
     const hasPending = pending > 0
 
     return `
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden free-course' : ''}" data-course-id="${escapeHtml(c.id)}" data-has-paid="${hasPaid ? '1' : '0'}" data-has-pending="${hasPending ? '1' : '0'}" data-is-free="${isFree ? '1' : '0'}">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden' : ''}" data-course-id="${escapeHtml(c.id)}" data-has-paid="${hasPaid ? '1' : '0'}" data-has-pending="${hasPending ? '1' : '0'}" data-is-free="${isFree ? '1' : '0'}">
         <div class="flex items-center justify-between bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <div>
             <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
@@ -536,15 +532,21 @@ async function renderCoachPayments(): Promise<void> {
       const isFree = el.dataset.isFree === '1'
       const hasPaid = el.dataset.hasPaid === '1'
       const hasPending = el.dataset.hasPending === '1'
+
       const showFree = payStatusFilters.has('free')
       const showPaid = payStatusFilters.has('paid')
       const showPending = payStatusFilters.has('pending')
-      const matchesFree = !isFree || showFree
-      const matchesPaid = isFree || showPaid || !hasPaid
-      const matchesPending = !hasPending || showPending
-      const hiddenByPay = !(matchesFree && matchesPaid && matchesPending)
-      const hiddenByCourse = el.dataset.courseId && !document.querySelector(`.course-filter-btn[data-course-id="${el.dataset.courseId}"][data-active="1"]`)
-      el.classList.toggle('hidden', hiddenByPay || !!hiddenByCourse)
+
+      let show = true
+      if (isFree) show = showFree
+      else {
+        show = (hasPaid && showPaid) || (hasPending && showPending)
+      }
+
+      const courseFilterOn = document.querySelector(`.course-filter-btn[data-course-id="${el.dataset.courseId}"][data-active="1"]`)
+      if (!courseFilterOn) show = false
+
+      el.classList.toggle('hidden', !show)
     })
   }
 

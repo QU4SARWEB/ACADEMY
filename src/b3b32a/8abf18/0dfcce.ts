@@ -23,24 +23,11 @@ export function mountCoachCourses(): void {
     const studentCount: Record<string, number> = {}
     for (const e of enrolls ?? []) { if (!studentCount[e.course_id]) studentCount[e.course_id] = 0; studentCount[e.course_id]++ }
 
-    const filterHtml = (courses ?? []).map((c: any) => {
-      const isFree = !c.price || c.price <= 0
-      const total = studentCount[c.id] || 0
-      return `
-      <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
-        bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
-        data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${total}" data-active="1">
-        ${Icon('checkCircle', 14)}
-        <span>${escapeHtml(c.name)}</span>
-        <span class="text-zinc-500">${total}</span>
-      </button>`
-    }).join('')
-
     const tableRows = (courses ?? []).map((c: any) => {
       const total = studentCount[c.id] || 0
       const isFree = !c.price || c.price <= 0
       return `
-      <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50 course-row" data-course-id="${escapeHtml(c.id)}">
+      <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
         <td class="py-3 px-4">
           <a href="#/coaches/courses/${escapeHtml(c.id)}" class="text-sm font-medium text-white hover:text-[#8B5CF6] transition">${escapeHtml(c.name)}</a>
         </td>
@@ -65,7 +52,6 @@ export function mountCoachCourses(): void {
           ${Icon('plus', 16)} Nuevo curso
         </a>
       </div>
-      <div class="mb-4 flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
       <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
         <table class="w-full text-sm">
           <thead>
@@ -84,27 +70,6 @@ export function mountCoachCourses(): void {
 
     const container = document.getElementById('page-content')
     if (container) container.innerHTML = html
-
-    // Filter toggles
-    document.querySelectorAll('.course-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const courseId = (btn as HTMLElement).dataset.courseId
-        const active = (btn as HTMLElement).dataset.active === '1'
-        const tds = container?.querySelectorAll(`.course-row[data-course-id="${courseId}"]`)
-        tds?.forEach(el => (el as HTMLElement).classList.toggle('hidden', active))
-        ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
-        btn.classList.toggle('bg-[#8B5CF6]/15', !active)
-        btn.classList.toggle('text-[#8B5CF6]', !active)
-        btn.classList.toggle('border-[#8B5CF6]/30', !active)
-        btn.classList.toggle('bg-zinc-800/40', active)
-        btn.classList.toggle('text-zinc-500', active)
-        btn.classList.toggle('border-dashed', active)
-        btn.classList.toggle('border-zinc-700/50', active)
-        btn.innerHTML = active
-          ? `${Icon('plus', 12)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
-          : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
-      })
-    })
 
     // Realtime subscription
     if ((window as any).__channels?.courses) {
