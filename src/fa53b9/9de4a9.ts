@@ -1,3 +1,4 @@
+import { supabase } from '@/304244'
 import { signUp, signIn, getProfile } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
@@ -195,15 +196,17 @@ export function mountRegister(): void {
     }
 
     // Auto-login after registration
-    const loginResult = await signIn(email, password)
-    if (loginResult.error) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      await signIn(email, password)
+    }
+    const profile = await getProfile()
+    if (!profile) {
       toast('success', 'Cuenta creada. Inicia sesi\u00f3n para continuar.')
       router.navigate('/login')
       return
     }
-
     toast('success', 'Cuenta creada. Bienvenido.')
-    const profile = await getProfile()
     const prefix = profile?.role === 'coach' ? 'coaches' : profile?.role === 'student' ? 'students' : 'players'
     router.navigate(`/${prefix}/dashboard`)
   })

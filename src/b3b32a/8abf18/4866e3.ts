@@ -27,7 +27,7 @@ export async function initCoachDashboard(): Promise<void> {
 
     // Auto-delete accounts with expired payments older than 5 days
     try {
-      await supabase.rpc('delete_expired_accounts')
+      await supabase.rpc('delete_expired_users')
     } catch (e) {
       // non-critical, ignore
     }
