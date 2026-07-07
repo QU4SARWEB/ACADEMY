@@ -244,10 +244,13 @@ function initSingleActions(container: HTMLElement, reloadFn: () => void): void {
   container.querySelectorAll('.hard-delete-student').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = (btn as HTMLElement).dataset.id
-      const name = (btn as HTMLElement).dataset.name
-      if (!id || !(await confirmDialog(`¿Eliminar PERMANENTEMENTE a ${name}? Se borrarán todos sus datos (inscripciones, pagos, respuestas). Esta acción NO se puede deshacer.`, 'Eliminar permanentemente'))) return
-      const { error } = await supabase.from('profiles').delete().eq('id', id).eq('is_active', false)
-      if (error) { toast('error', error.message); return }
+      const name = (btn as HTMLElement).dataset.name || 'este estudiante'
+      if (!id || !(await confirmDialog(`¿Eliminar PERMANENTEMENTE a ${name}? Se borrarán todos sus datos. Esta acción NO se puede deshacer.`))) return
+      await supabase.from('payments').delete().eq('profile_id', id)
+      await supabase.from('enrollments').delete().eq('profile_id', id)
+      await supabase.from('team_members').delete().eq('profile_id', id)
+      const { error } = await supabase.from('profiles').delete().eq('id', id)
+      if (error) { toast('error', 'Error al eliminar: ' + error.message); return }
       toast('success', 'Estudiante eliminado permanentemente')
       reloadFn()
     })

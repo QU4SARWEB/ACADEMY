@@ -208,6 +208,9 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
 
   document.getElementById('btn-hard-delete')?.addEventListener('click', async () => {
     if (!await confirmDialog('¿Eliminar PERMANENTEMENTE a este estudiante? Se borrarán todos sus datos. Esta acción NO se puede deshacer.', 'Eliminar permanentemente')) return
+    await supabase.from('payments').delete().eq('profile_id', studentId)
+    await supabase.from('enrollments').delete().eq('profile_id', studentId)
+    await supabase.from('team_members').delete().eq('profile_id', studentId)
     const { error } = await supabase.from('profiles').delete().eq('id', studentId)
     if (error) { toast('error', error.message); return }
     toast('success', 'Estudiante eliminado permanentemente')
