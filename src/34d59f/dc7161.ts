@@ -206,22 +206,9 @@ export function initSidebar(): void {
     location.reload()
   })
 
-  // Fetch unread notification count
+  // Sidebar payment countdown for non-coach
   supabase.auth.getSession().then(({ data: { session } }) => {
     if (!session?.user?.id) return
-    supabase.from('notifications').select('id', { count: 'exact', head: true })
-      .eq('profile_id', session.user.id)
-      .eq('read', false)
-      .then(({ count }) => {
-        const n = count ?? 0
-        ;(window as any).__unreadNotifs = n
-        document.querySelectorAll('a[href="#/notifications"]').forEach((a) => {
-          const span = a.querySelector('span')
-          if (span) span.textContent = n > 0 ? 'Notificaciones (' + n + ')' : 'Notificaciones'
-        })
-      })
-
-    // Sidebar payment countdown for non-coach
     const profile = store.get<any>('profile')
     if (profile?.role === 'coach') return
     const countdownEl = document.getElementById('sidebar-payment-countdown')

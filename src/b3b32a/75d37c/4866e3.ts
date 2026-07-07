@@ -33,15 +33,7 @@ export async function initStudentDashboard(): Promise<void> {
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
 
-    // Course progress
-    const courseProgress = await Promise.all((enrollments ?? []).map(async (e: any) => {
-      const { count: totalMods } = await supabase
-        .from('course_classes')
-        .select('*', { count: 'exact', head: true })
-        .eq('course_id', e.course_id)
-      const progress = totalMods && totalMods > 0 ? Math.min(Math.round(((e.current_module || 0) / totalMods) * 100), 100) : 0
-      return { ...e, progress, totalModules: totalMods || 0 }
-    }))
+    const courseProgress = (enrollments ?? []).map((e: any) => ({ ...e, progress: 0, totalModules: 0 }))
 
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
 
