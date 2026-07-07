@@ -72,24 +72,15 @@ export async function signUp(
     is_active: true,
   }, { onConflict: 'id' })
 
-  // Process referral code — makes the new user a coach
+  // Process referral code via SECURITY DEFINER function (bypasses RLS)
   if (referral) {
-    const { data: refCode } = await supabase
-      .from('referral_codes')
-      .select('id')
-      .eq('code', referral)
-      .eq('is_active', true)
-      .maybeSingle()
-
-    if (refCode) {
-      await supabase.from('referral_codes').update({
-        used_by: authData.user.id,
-        used_at: new Date().toISOString(),
-        is_active: false,
-      }).eq('id', refCode.id)
-
-      // Override role to coach
-      await supabase.from('profiles').update({ role: 'coach' }).eq('id', authData.user.id)
+    const { data: used } = await supabase.rpc('use_referral_code', {
+      p_code: referral,
+      p_user_id: authData.user.id,
+    })
+    if (used) {
+      // Force reload profile to get updated role
+      store.set<Profile | null>('profile', null)
     }
   }
 
