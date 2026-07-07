@@ -24,22 +24,33 @@ export async function initCoachCodes(): Promise<void> {
     const codesHtml = (codes ?? []).length === 0
       ? '<p class="text-sm text-zinc-500">No has generado c\u00f3digos de referido todav\u00eda.</p>'
       : (codes ?? []).map((c: any) => {
-          const used = !!c.used_by
-          const usedName = c.used_by_profiles?.full_name || ''
+          const usedBy = c.used_by
+          const usedName = c.used_by_profiles?.full_name || '(cuenta eliminada)'
+          let statusHtml: string
+          let rowClass: string
+          let actionsHtml: string
+          if (usedBy) {
+            statusHtml = '<span class="text-xs text-zinc-500">Usado por ' + escapeHtml(usedName) + '</span>'
+            rowClass = 'border-zinc-800 bg-zinc-900/30'
+            actionsHtml = ''
+          } else if (!c.is_active) {
+            statusHtml = '<span class="text-xs text-zinc-500">Desactivado</span>'
+            rowClass = 'border-zinc-800 bg-zinc-900/30'
+            actionsHtml = `<button class="delete-code-btn text-xs text-red-400 hover:text-red-300 transition" data-id="${escapeHtml(c.id)}">${Icon('trash', 14)}</button>`
+          } else {
+            statusHtml = '<span class="text-xs text-green-400">Disponible</span>'
+            rowClass = 'border-[#8B5CF6]/30 bg-[#8B5CF6]/5'
+            actionsHtml = `
+              <button class="copy-code-btn text-xs text-zinc-400 hover:text-white transition" data-code="${escapeHtml(c.code)}">${Icon('copy', 14)}</button>
+              <button class="delete-code-btn text-xs text-red-400 hover:text-red-300 transition" data-id="${escapeHtml(c.id)}">${Icon('trash', 14)}</button>`
+          }
           return `
-          <div class="flex items-center justify-between rounded-lg border ${used ? 'border-zinc-800 bg-zinc-900/30' : 'border-[#8B5CF6]/30 bg-[#8B5CF6]/5'} px-4 py-3">
+          <div class="flex items-center justify-between rounded-lg border ${rowClass} px-4 py-3">
             <div class="flex items-center gap-3">
               <code class="rounded bg-zinc-800 px-2.5 py-1 text-sm font-mono font-bold text-white select-all">${escapeHtml(c.code)}</code>
-              ${used
-                ? '<span class="text-xs text-zinc-500">Usado por ' + escapeHtml(usedName) + '</span>'
-                : '<span class="text-xs text-green-400">Disponible</span>'
-              }
+              ${statusHtml}
             </div>
-            <div class="flex gap-2">
-              ${!used ? `
-              <button class="copy-code-btn text-xs text-zinc-400 hover:text-white transition" data-code="${escapeHtml(c.code)}">${Icon('copy', 14)}</button>
-              <button class="delete-code-btn text-xs text-red-400 hover:text-red-300 transition" data-id="${escapeHtml(c.id)}">${Icon('trash', 14)}</button>` : ''}
-            </div>
+            <div class="flex gap-2">${actionsHtml}</div>
           </div>`
         }).join('')
 
