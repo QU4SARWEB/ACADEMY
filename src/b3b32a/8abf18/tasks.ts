@@ -6,7 +6,6 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { formatDate } from '@/2b3583/6b239c'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
-import { uploadFileFromInput } from '@/2b3583/76ee3d'
 
 export function renderCoachTasks(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -68,8 +67,6 @@ export async function initCoachTasks(): Promise<void> {
           const course = courseMap.get(t.course_id)
           const subCount = (submissionsByTask[t.id] || []).length
           const gradedCount = (submissionsByTask[t.id] || []).filter((s: any) => s.graded).length
-          const files = (t.files as string[]) || []
-          const links = (t.links as string[]) || []
           return `
           <div class="task-card rounded-xl border border-zinc-800 bg-[#111] p-5 hover:border-zinc-700 transition cursor-pointer"
             data-task-id="${escapeHtml(t.id)}" data-course-id="${escapeHtml(t.course_id)}">
@@ -86,8 +83,6 @@ export async function initCoachTasks(): Promise<void> {
               <span class="flex items-center gap-1">${Icon('users', 12)} ${subCount} entrega${subCount !== 1 ? 's' : ''}</span>
               ${gradedCount > 0 ? `<span class="text-green-400">${gradedCount} calificada${gradedCount !== 1 ? 's' : ''}</span>` : ''}
             </div>
-            ${files.length > 0 ? `<div class="mt-2 flex flex-wrap gap-1">${files.map((f: string) => `<a href="${escapeHtml(f)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA]">${Icon('paperclip', 10)} Archivo</a>`).join('')}</div>` : ''}
-            ${links.length > 0 ? `<div class="mt-1 flex flex-wrap gap-1">${links.map((l: string) => `<a href="${escapeHtml(l)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-blue-400 hover:text-blue-300">${Icon('externalLink', 10)} Link</a>`).join('')}</div>` : ''}
           </div>`
         }).join('')
 
@@ -189,15 +184,6 @@ function renderTaskCreateForm(courses: any[], editTask?: any): string {
             <label class="mb-1 block text-xs text-zinc-400">Fecha de entrega</label>
             <input type="date" name="dueDate" value="${editTask?.due_date || ''}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
           </div>
-          <div>
-            <label class="mb-1 block text-xs text-zinc-400">Archivos (opcional)</label>
-            <input type="file" name="files" multiple class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-zinc-400 outline-none focus:border-[#8B5CF6] file:mr-2 file:rounded file:border-0 file:bg-[#8B5CF6]/20 file:px-2 file:py-1 file:text-xs file:text-[#8B5CF6]" />
-            <div id="file-preview" class="mt-1 flex flex-wrap gap-1"></div>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="mb-1 block text-xs text-zinc-400">Links (opcional, uno por línea)</label>
-            <textarea name="links" rows="2" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="https://...&#10;https://...">${editTask?.links ? (editTask.links as string[]).join('\n') : ''}</textarea>
-          </div>
         </div>
         <p id="task-form-error" class="hidden text-xs text-red-400"></p>
         <div class="flex gap-2">
@@ -210,21 +196,6 @@ function renderTaskCreateForm(courses: any[], editTask?: any): string {
 
 function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: string): void {
   document.getElementById('btn-cancel-task')?.addEventListener('click', () => { container.classList.add('hidden') })
-
-  const fileInput = document.querySelector<HTMLInputElement>('#task-create-form input[name="files"]')
-  const filePreview = document.getElementById('file-preview')
-  const selectedFiles: File[] = []
-
-  fileInput?.addEventListener('change', () => {
-    selectedFiles.length = 0
-    if (!fileInput.files) return
-    for (const f of fileInput.files) selectedFiles.push(f)
-    if (filePreview) {
-      filePreview.innerHTML = selectedFiles.map(f =>
-        `<span class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-1 text-[10px] text-zinc-300">${Icon('paperclip', 10)} ${escapeHtml(f.name)}</span>`
-      ).join('')
-    }
-  })
 
   document.getElementById('task-create-form')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -246,18 +217,6 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
     submitBtn.disabled = true
     submitBtn.textContent = 'Guardando...'
 
-    const uploadedUrls: string[] = []
-    if (selectedFiles.length > 0) {
-      for (const file of selectedFiles) {
-        const { url, error } = await uploadFileFromInput('task-files', coachId, 'tasks', file)
-        if (url) uploadedUrls.push(url)
-        else if (error) toast('error', `Error al subir ${file.name}: ${error}`)
-      }
-    }
-
-    const linksText = fd.get('links') as string
-    const linksArr = linksText ? linksText.split('\n').map(l => l.trim()).filter(l => l.length > 0) : []
-
     const payload: any = {
       course_id: courseId,
       coach_id: coachId,
@@ -265,8 +224,6 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
       description: description || '',
       week_number: weekNumber,
       due_date: dueDate,
-      files: uploadedUrls,
-      links: linksArr,
     }
 
     let error: any
