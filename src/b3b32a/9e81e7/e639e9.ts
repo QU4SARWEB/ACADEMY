@@ -450,8 +450,11 @@ async function renderCoachPayments(): Promise<void> {
     const scholar = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'scholarship').length
     const expired = courseEnrolls.filter((e: any) => coursePays[e.id]?.status === 'expired').length
 
+    const hasPaid = paid > 0
+    const hasPending = pending > 0
+
     return `
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden' : ''}" data-course-id="${escapeHtml(c.id)}">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden free-course' : ''}" data-course-id="${escapeHtml(c.id)}" data-has-paid="${hasPaid ? '1' : '0'}" data-has-pending="${hasPending ? '1' : '0'}" data-is-free="${isFree ? '1' : '0'}">
         <div class="flex items-center justify-between bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <div>
             <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
@@ -489,35 +492,82 @@ async function renderCoachPayments(): Promise<void> {
         <button id="pay-save-btn" class="rounded-lg bg-[#8B5CF6] px-4 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 12)} Guardar cambios</button>
       </div>
     </div>
-    <div class="mb-4">
-      <p class="text-xs text-zinc-500 mb-2">Filtrar por curso:</p>
-      <div class="flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-zinc-500 mr-2">Filtrar:</span>
+      <button class="pay-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25" data-filter="paid" data-active="1">
+        ${Icon('checkCircle', 14)} Pagados
+      </button>
+      <button class="pay-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25" data-filter="free" data-active="1">
+        ${Icon('checkCircle', 14)} Gratis
+      </button>
+      <button class="pay-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25" data-filter="pending" data-active="1">
+        ${Icon('checkCircle', 14)} Pendientes
+      </button>
+      <span class="mx-1 text-zinc-700">|</span>
+      <span class="text-xs text-zinc-500">Cursos:</span>
+      ${filterHtml}
     </div>
     <div class="space-y-4" id="course-tables">${courseTables}</div>`
+
+  // Pay status filter toggles
+  const payStatusFilters = new Set(['paid', 'free', 'pending'])
+  document.querySelectorAll('.pay-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = btn as HTMLElement
+      const filter = el.dataset.filter || ''
+      const active = el.dataset.active === '1'
+      if (active) payStatusFilters.delete(filter)
+      else payStatusFilters.add(filter)
+      el.dataset.active = active ? '0' : '1'
+      el.classList.toggle('bg-[#8B5CF6]/15', !active)
+      el.classList.toggle('text-[#8B5CF6]', !active)
+      el.classList.toggle('bg-zinc-800/40', active)
+      el.classList.toggle('text-zinc-500', active)
+      el.innerHTML = active
+        ? `${Icon('plus', 12)} ${filter.charAt(0).toUpperCase() + filter.slice(1)}`
+        : `${Icon('checkCircle', 14)} ${filter.charAt(0).toUpperCase() + filter.slice(1)}`
+      applyPayFilters()
+    })
+  })
+
+  function applyPayFilters(): void {
+    document.querySelectorAll('.course-table').forEach(table => {
+      const el = table as HTMLElement
+      const isFree = el.dataset.isFree === '1'
+      const hasPaid = el.dataset.hasPaid === '1'
+      const hasPending = el.dataset.hasPending === '1'
+      const showFree = payStatusFilters.has('free')
+      const showPaid = payStatusFilters.has('paid')
+      const showPending = payStatusFilters.has('pending')
+      const matchesFree = !isFree || showFree
+      const matchesPaid = isFree || showPaid || !hasPaid
+      const matchesPending = !hasPending || showPending
+      const hiddenByPay = !(matchesFree && matchesPaid && matchesPending)
+      const hiddenByCourse = el.dataset.courseId && !document.querySelector(`.course-filter-btn[data-course-id="${el.dataset.courseId}"][data-active="1"]`)
+      el.classList.toggle('hidden', hiddenByPay || !!hiddenByCourse)
+    })
+  }
 
   // Course filter toggles
   document.querySelectorAll('.course-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const courseId = (btn as HTMLElement).dataset.courseId
       const active = (btn as HTMLElement).dataset.active === '1'
-      const table = document.querySelector(`.course-table[data-course-id="${courseId}"]`)
-      if (table) {
-        table.classList.toggle('hidden', active)
-        ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
-        btn.classList.toggle('bg-[#8B5CF6]/15', !active)
-        btn.classList.toggle('text-[#8B5CF6]', !active)
-        btn.classList.toggle('border-[#8B5CF6]/30', !active)
-        btn.classList.toggle('hover:bg-[#8B5CF6]/25', !active)
-        btn.classList.toggle('bg-zinc-800/40', active)
-        btn.classList.toggle('text-zinc-500', active)
-        btn.classList.toggle('border-dashed', active)
-        btn.classList.toggle('border-zinc-700/50', active)
-        btn.classList.toggle('hover:bg-zinc-700/50', active)
-        btn.classList.toggle('hover:text-zinc-300', active)
-        btn.innerHTML = active
-          ? `${Icon('plus', 12)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
-          : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
-      }
+      ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
+      btn.classList.toggle('bg-[#8B5CF6]/15', !active)
+      btn.classList.toggle('text-[#8B5CF6]', !active)
+      btn.classList.toggle('border-[#8B5CF6]/30', !active)
+      btn.classList.toggle('hover:bg-[#8B5CF6]/25', !active)
+      btn.classList.toggle('bg-zinc-800/40', active)
+      btn.classList.toggle('text-zinc-500', active)
+      btn.classList.toggle('border-dashed', active)
+      btn.classList.toggle('border-zinc-700/50', active)
+      btn.classList.toggle('hover:bg-zinc-700/50', active)
+      btn.classList.toggle('hover:text-zinc-300', active)
+      btn.innerHTML = active
+        ? `${Icon('plus', 12)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+        : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+      applyPayFilters()
     })
   })
 
