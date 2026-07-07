@@ -2,6 +2,7 @@ import { Spinner, LoadingSkeleton } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachDashboard(): string {
   return `<div id="page-content">
@@ -19,6 +20,8 @@ export async function initCoachDashboard(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
+    const assignedIds = await getAssignedCourseIds(session.user.id)
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
@@ -32,11 +35,34 @@ export async function initCoachDashboard(): Promise<void> {
       // non-critical, ignore
     }
 
+    // Build enrollment-based filter for assigned courses
+    let assignedEnrollIds: string[] | undefined
+    let assignedProfileIds: string[] | undefined
+    if (assignedIds.length > 0) {
+      const { data: enrollData } = await supabase
+        .from('enrollments')
+        .select('id, profile_id')
+        .in('course_id', assignedIds)
+      assignedEnrollIds = [...new Set((enrollData ?? []).map((e: any) => e.id))]
+      assignedProfileIds = [...new Set((enrollData ?? []).map((e: any) => e.profile_id))]
+    }
+
     // KPIs
+    let studentKpiQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true)
+    let playerKpiQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'player').eq('is_active', true)
+    let courseKpiQuery = supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_active', true)
+    if (assignedProfileIds) {
+      studentKpiQuery = studentKpiQuery.in('id', assignedProfileIds)
+      playerKpiQuery = playerKpiQuery.in('id', assignedProfileIds)
+    }
+    if (assignedIds.length > 0) {
+      courseKpiQuery = courseKpiQuery.in('id', assignedIds)
+    }
+
     const [{ count: studentsCount }, { count: playersCount }, { count: coursesCount }] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'player').eq('is_active', true),
-      supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      studentKpiQuery,
+      playerKpiQuery,
+      courseKpiQuery,
     ])
 
 
@@ -44,11 +70,18 @@ export async function initCoachDashboard(): Promise<void> {
     const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
     const SOON_MS = 24 * 60 * 60 * 1000
     const now = Date.now()
-    const { data: pendingPayments } = await supabase
+
+    let pendingPaymentsQuery = supabase
       .from('payments')
       .select('id, created_at, amount, enrollment_id, profiles!inner(full_name, display_name, email, id)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
+    if (assignedEnrollIds) {
+      const filt = assignedEnrollIds.length > 0 ? assignedEnrollIds : ['00000000-0000-0000-0000-000000000000']
+      pendingPaymentsQuery = pendingPaymentsQuery.in('enrollment_id', filt)
+    }
+
+    const { data: pendingPayments } = await pendingPaymentsQuery
 
     // Fetch course names for pending payments
     const pendEnrollIds = [...new Set((pendingPayments ?? []).map((p: any) => p.enrollment_id).filter(Boolean))]

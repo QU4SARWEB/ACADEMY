@@ -4,6 +4,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -12,10 +13,13 @@ export function renderCoachCourses(): string {
 export function mountCoachCourses(): void {
   ;(async () => {
     try {
-    const { data: courses } = await supabase
-      .from('courses')
-      .select('*')
-      .order('display_order')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) return
+    const assignedIds = await getAssignedCourseIds(session.user.id)
+
+    let coursesQuery = supabase.from('courses').select('*').order('display_order')
+    if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+    const { data: courses } = await coursesQuery
 
     const courseIds = (courses ?? []).map((c: any) => c.id)
     const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']

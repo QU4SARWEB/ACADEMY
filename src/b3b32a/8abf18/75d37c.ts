@@ -6,6 +6,7 @@ import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { initBulkActions } from '@/2b3583/bulk_actions'
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -21,22 +22,36 @@ function getStudentCourseIds(enrollments: any[]): Record<string, string[]> {
 }
 
 async function loadStudentData() {
+  const { data: { session } } = await supabase.auth.getSession()
+  const assignedIds = await getAssignedCourseIds(session?.user?.id || '')
+
+  let coursesQuery = supabase.from('courses').select('id, name, display_order, price').eq('is_active', true).order('display_order')
+  if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+
   const [{ data: students }, { data: courses }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, created_at').eq('role', 'student').order('full_name'),
-    supabase.from('courses').select('id, name, display_order, price').eq('is_active', true).order('display_order'),
+    coursesQuery,
   ])
 
   const studentIds = (students ?? []).map((s: any) => s.id)
   const freeCourseIds = new Set((courses ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
 
+  let enrollmentsQuery = supabase.from('enrollments').select('id, profile_id, status, course_id, courses!inner(name)')
+  if (studentIds.length > 0) enrollmentsQuery = enrollmentsQuery.in('profile_id', studentIds)
+  if (assignedIds.length > 0) enrollmentsQuery = enrollmentsQuery.in('course_id', assignedIds)
+
   const [{ data: payments }, { data: enrollments }] = await Promise.all([
     studentIds.length > 0
       ? supabase.from('payments').select('profile_id, status, created_at, enrollment_id').in('profile_id', studentIds).order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
-    studentIds.length > 0
-      ? supabase.from('enrollments').select('id, profile_id, status, course_id, courses!inner(name)').in('profile_id', studentIds)
-      : Promise.resolve({ data: [] }),
+    enrollmentsQuery,
   ])
+
+  // Filter students to only those enrolled in assigned courses
+  const enrolledPids = new Set((enrollments ?? []).map((e: any) => e.profile_id))
+  const filteredStudents = assignedIds.length > 0
+    ? (students ?? []).filter((s: any) => enrolledPids.has(s.id))
+    : (students ?? [])
 
   const paymentByEnrollId: Record<string, string> = {}
   const paidCountPerProfile: Record<string, number> = {}
@@ -87,7 +102,7 @@ async function loadStudentData() {
 
   const studentCourseIds = getStudentCourseIds(enrollments ?? [])
 
-  return { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds }
+  return { students: filteredStudents, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds }
 }
 
 function renderStudentTable(students: any[], courses: any[], paidCountPerProfile: Record<string, number>, scholarCountPerProfile: Record<string, number>, enrollCountPerProfile: Record<string, number>, enrollmentMap: Map<string, { count: number; anyActive: boolean; courses: string[] }>, courseStudentCount: Record<string, number>, courseStudentIds: Record<string, Set<string>>, studentCourseIds: Record<string, string[]>): string {

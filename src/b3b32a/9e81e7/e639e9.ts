@@ -9,6 +9,7 @@ import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzone'
 import type { Profile } from '@/d14a80'
 import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
@@ -353,7 +354,12 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
 }
 
 async function renderCoachPayments(): Promise<void> {
-  const { data: courses } = await supabase.from('courses').select('*').order('display_order')
+  const { data: { session } } = await supabase.auth.getSession()
+  const assignedIds = await getAssignedCourseIds(session?.user?.id || '')
+
+  let coursesQuery = supabase.from('courses').select('*').order('display_order')
+  if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+  const { data: courses } = await coursesQuery
   const courseIds = (courses ?? []).map((c: any) => c.id)
   const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
 

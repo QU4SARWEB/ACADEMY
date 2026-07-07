@@ -6,6 +6,7 @@ import { formatDate } from '@/2b3583/6b239c'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { initBulkActions } from '@/2b3583/bulk_actions'
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachPlayers(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -13,6 +14,13 @@ export function renderCoachPlayers(): string {
 
 export async function initCoachPlayers(): Promise<void> {
   try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) return
+    const assignedIds = await getAssignedCourseIds(session.user.id)
+
+    let coursesQuery = supabase.from('courses').select('id, price, name')
+    if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+
     const { data: players } = await supabase
       .from('profiles')
       .select('id, full_name, email, avatar_url, riot_id, rank, is_active, scholarship, created_at, social_discord')
@@ -23,13 +31,25 @@ export async function initCoachPlayers(): Promise<void> {
     let enrollsByPlayer: Record<string, any[]> = {}
     let priceMap: Record<string, number> = {}
     let coursesList: any[] = []
+    let filteredPlayers: any[] = players ?? []
     if (players && players.length > 0) {
       const playerIds = players.map((p: any) => p.id)
+
+      let enrollmentsQuery = supabase.from('enrollments').select('id, profile_id, course_id, status, courses!inner(name)').in('profile_id', playerIds)
+      if (assignedIds.length > 0) enrollmentsQuery = enrollmentsQuery.in('course_id', assignedIds)
+
       const [{ data: payments }, { data: enrollments }, { data: courses }] = await Promise.all([
         supabase.from('payments').select('profile_id, amount, status, enrollment_id').in('profile_id', playerIds),
-        supabase.from('enrollments').select('id, profile_id, course_id, status, courses!inner(name)').in('profile_id', playerIds),
-        supabase.from('courses').select('id, price, name'),
+        enrollmentsQuery,
+        coursesQuery,
       ])
+
+      // Filter players to only those enrolled in assigned courses
+      if (assignedIds.length > 0) {
+        const enrolledPids = new Set((enrollments ?? []).map((e: any) => e.profile_id))
+        filteredPlayers = players.filter((p: any) => enrolledPids.has(p.id))
+      }
+
       coursesList = courses ?? []
       if (courses) for (const c of courses) priceMap[c.id] = parseFloat(c.price ?? 0)
       if (payments) {
@@ -45,7 +65,7 @@ export async function initCoachPlayers(): Promise<void> {
     }
 
     const enrollCountByCourse: Record<string, number> = {}
-    for (const p of players ?? []) {
+    for (const p of filteredPlayers) {
       const pEnrolls = enrollsByPlayer[p.id] || []
       for (const e of pEnrolls) {
         if (!enrollCountByCourse[e.course_id]) enrollCountByCourse[e.course_id] = 0
@@ -70,7 +90,7 @@ export async function initCoachPlayers(): Promise<void> {
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">Jugadores</h1>
-        <p class="mt-1 text-sm text-zinc-500">${(players ?? []).length} jugadores</p>
+        <p class="mt-1 text-sm text-zinc-500">${(filteredPlayers).length} jugadores</p>
       </div>
       <div class="mb-4 flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
 
@@ -98,9 +118,9 @@ export async function initCoachPlayers(): Promise<void> {
               </tr>
             </thead>
             <tbody>
-              ${(players ?? []).length === 0
+              ${(filteredPlayers).length === 0
                 ? '<tr><td colspan="7" class="py-8 text-center text-zinc-500">No hay jugadores registrados.</td></tr>'
-                : (players ?? []).map((p: any) => {
+                : (filteredPlayers).map((p: any) => {
                     const displayName = [p.riot_id || p.full_name, p.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
                     const initial = (displayName || '?')[0]
                     const pPayments = paymentsByPlayer[p.id] || []
