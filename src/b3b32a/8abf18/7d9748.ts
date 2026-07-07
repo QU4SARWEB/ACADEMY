@@ -60,7 +60,7 @@ export async function initCoachProfile(): Promise<void> {
             <h2 class="font-heading text-lg font-bold text-white">C\u00f3digos de referido</h2>
             <button id="btn-generate-code" class="flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED] transition">${Icon('plus', 14)} Generar c\u00f3digo</button>
           </div>
-          <p class="text-xs text-zinc-500 mb-4">Comparte estos c\u00f3digos con nuevos alumnos. Al registrarse con tu c\u00f3digo, quedar\u00e1n vinculados a ti.</p>
+          <p class="text-xs text-zinc-500 mb-4">Comparte estos c\u00f3digos con nuevos coaches. Al registrarse con tu c\u00f3digo, la persona se convertir\u00e1 en coach autom\u00e1ticamente. Cada c\u00f3digo tiene un solo uso.</p>
           <div id="codes-list" class="space-y-2">${codesHtml}</div>
         </div>
       </div>`

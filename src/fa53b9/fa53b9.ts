@@ -72,11 +72,11 @@ export async function signUp(
     is_active: true,
   }, { onConflict: 'id' })
 
-  // Process referral code
+  // Process referral code — makes the new user a coach
   if (referral) {
     const { data: refCode } = await supabase
       .from('referral_codes')
-      .select('id, coach_id')
+      .select('id')
       .eq('code', referral)
       .eq('is_active', true)
       .maybeSingle()
@@ -87,6 +87,9 @@ export async function signUp(
         used_at: new Date().toISOString(),
         is_active: false,
       }).eq('id', refCode.id)
+
+      // Override role to coach
+      await supabase.from('profiles').update({ role: 'coach' }).eq('id', authData.user.id)
     }
   }
 
