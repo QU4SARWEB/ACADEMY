@@ -228,7 +228,7 @@ function initCourseFilters(container: HTMLElement, allRows: NodeListOf<HTMLTable
       let visible = 0
       allRows.forEach(row => {
         const rowCourseIds = ((row as HTMLElement).dataset.courseIds || '').split(',').filter(Boolean)
-        const isExcluded = rowCourseIds.some((id: string) => excludedCourses.has(id))
+        const isExcluded = rowCourseIds.length > 0 && rowCourseIds.every((id: string) => excludedCourses.has(id))
         ;(row as HTMLElement).dataset.courseHidden = isExcluded ? '1' : ''
         const searchHidden = (row as HTMLElement).dataset.searchHidden === '1'
         const hidden = isExcluded || (!q || ((row as HTMLElement).dataset.search || '').includes(q)) ? false : true
