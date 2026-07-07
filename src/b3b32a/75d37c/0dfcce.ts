@@ -57,7 +57,7 @@ export async function initStudentCourses(): Promise<void> {
           </div>
           <div class="min-w-0 flex-1">
             <h3 class="font-medium text-white truncate">${escapeHtml(cName)}</h3>
-            <p class="text-xs text-zinc-500">${dur} meses</p>
+            <p class="text-xs text-zinc-500">${dur === 0.5 ? '15 d\u00edas' : dur + ' meses'}</p>
           </div>
         </div>
         ${desc ? `<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${escBr(desc)}</p>` : '<div class="flex-1"></div>'}

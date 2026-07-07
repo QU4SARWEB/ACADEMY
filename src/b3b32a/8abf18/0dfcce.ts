@@ -35,7 +35,7 @@ export function mountCoachCourses(): void {
         <td class="py-3 px-4">
           <a href="#/coaches/courses/${escapeHtml(c.id)}" class="text-sm font-medium text-white hover:text-[#8B5CF6] transition">${escapeHtml(c.name)}</a>
         </td>
-        <td class="py-3 px-4 text-sm text-zinc-400">${c.duration_months || '—'} meses</td>
+        <td class="py-3 px-4 text-sm text-zinc-400">${c.duration_months === 0.5 ? '15 d\u00edas' : c.duration_months ? c.duration_months + ' meses' : '—'}</td>
         <td class="py-3 px-4 text-sm text-zinc-400">${total}</td>
         <td class="py-3 px-4 text-sm">${isFree ? '<span class="text-green-400">Gratis</span>' : '<span class="text-zinc-300">S/. ' + c.price + '</span>'}</td>
         <td class="py-3 px-4 text-sm">${c.is_active ? '<span class="text-green-400">Activo</span>' : '<span class="text-zinc-500">Inactivo</span>'}</td>
