@@ -83,18 +83,20 @@ function renderScheduleTable(): void {
   const monthLabel = currentMonth.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
 
   const rows = monthSchedules.length === 0
-    ? '<tr><td colspan="5" class="py-8 text-center text-sm text-zinc-500">Sin horarios este mes.</td></tr>'
+    ? '<tr><td colspan="6" class="py-8 text-center text-sm text-zinc-500">Sin horarios este mes.</td></tr>'
     : monthSchedules.map((s: any) => {
         const course = courseMap.get(s.course_id)
         return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-course-id="${escapeHtml(s.course_id)}">
-          <td class="py-3 px-4 text-sm text-zinc-300">${formatDateLocal(getDateFromSchedule(s))}</td>
+          <td class="py-3 px-4 text-sm text-zinc-300 whitespace-nowrap">${formatDateLocal(getDateFromSchedule(s))}</td>
           <td class="py-3 px-4 text-sm text-white">${escapeHtml(course?.name || 'Desconocido')}</td>
+          <td class="py-3 px-4 text-sm text-zinc-300">${escapeHtml(s.title || '')}</td>
           <td class="py-3 px-4 text-sm text-zinc-400">${s.start_time ? to12h(s.start_time) : '—'} - ${s.end_time ? to12h(s.end_time) : '—'}</td>
           <td class="py-3 px-4 text-right">
             <button class="grade-class-btn flex items-center gap-1 ml-auto text-amber-400 hover:text-amber-300 text-xs" data-schedule-id="${escapeHtml(s.id)}" data-course-id="${escapeHtml(s.course_id)}">${Icon('edit', 12)} Notas</button>
           </td>
           <td class="py-3 px-4 text-right">
+            <button class="btn-edit-schedule flex items-center gap-1 ml-auto text-zinc-400 hover:text-white text-xs mr-2" data-id="${escapeHtml(s.id)}">${Icon('edit', 12)} Editar</button>
             <button class="btn-delete-schedule text-red-400 hover:text-red-300 text-xs flex items-center gap-1 ml-auto" data-id="${escapeHtml(s.id)}">${Icon('trash', 12)} Eliminar</button>
           </td>
         </tr>`
@@ -119,6 +121,7 @@ function renderScheduleTable(): void {
           <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
             <th class="py-3 px-4 font-medium">Fecha</th>
             <th class="py-3 px-4 font-medium">Curso</th>
+            <th class="py-3 px-4 font-medium">T\u00edtulo</th>
             <th class="py-3 px-4 font-medium">Horario</th>
             <th class="py-3 px-4 font-medium text-right">Notas</th>
             <th class="py-3 px-4 font-medium text-right">Acci\u00f3n</th>
@@ -163,6 +166,20 @@ function setupEvents(): void {
     })
   })
 
+  document.querySelectorAll('.btn-edit-schedule').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLElement).dataset.id
+      if (!id) return
+      const { data: sched } = await supabase.from('schedules').select('*').eq('id', id).maybeSingle()
+      if (!sched) return
+      const container = document.getElementById('schedule-form-container')!
+      container.classList.remove('hidden')
+      const course = allCoursesCache.find((c: any) => c.id === sched.course_id)
+      container.innerHTML = renderScheduleCreateForm(sched)
+      bindScheduleFormEvents(container, sched.id)
+    })
+  })
+
   // Grades modal
   document.querySelectorAll('.grade-class-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -182,37 +199,41 @@ function setupEvents(): void {
   initCourseFilters()
 }
 
-function renderScheduleCreateForm(): string {
+function renderScheduleCreateForm(editSched?: any): string {
+  const isEdit = !!editSched
+  const sd = editSched?.schedule_date || ''
+  const st = editSched?.start_time?.slice(0, 5) || ''
+  const et = editSched?.end_time?.slice(0, 5) || ''
   return `
     <div class="glass rounded-xl p-4">
-      <h3 class="mb-3 font-medium text-white">Nuevo horario</h3>
+      <h3 class="mb-3 font-medium text-white">${isEdit ? 'Editar horario' : 'Nuevo horario'}</h3>
       <form id="schedule-create-form" class="space-y-3">
         <div class="grid gap-3 sm:grid-cols-2">
           <div>
             <label class="mb-1 block text-xs text-zinc-400">Curso</label>
             <select name="courseId" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
               <option value="">Seleccionar...</option>
-              ${allCoursesCache.map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
+              ${allCoursesCache.map((c: any) => `<option value="${escapeHtml(c.id)}" ${editSched?.course_id === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
             </select>
           </div>
-          <div><label class="mb-1 block text-xs text-zinc-400">T\u00edtulo</label><input type="text" name="title" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
-          <div><label class="mb-1 block text-xs text-zinc-400">Fecha</label><input type="date" name="scheduleDate" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
-          <div><label class="mb-1 block text-xs text-zinc-400">Hora inicio</label><input type="time" name="startTime" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
-          <div><label class="mb-1 block text-xs text-zinc-400">Hora fin</label><input type="time" name="endTime" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
-          <div><label class="mb-1 block text-xs text-zinc-400">Tipo</label><select name="type" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"><option value="">Seleccionar...</option><option value="academic">Acad\u00e9mico</option><option value="competitive">Competitivo</option></select></div>
-          <div><label class="mb-1 block text-xs text-zinc-400">Ubicaci\u00f3n</label><input type="text" name="location" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">T\u00edtulo</label><input type="text" name="title" value="${escapeHtml(editSched?.title || '')}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">Fecha</label><input type="date" name="scheduleDate" value="${sd}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">Hora inicio</label><input type="time" name="startTime" value="${st}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">Hora fin</label><input type="time" name="endTime" value="${et}" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">Tipo</label><select name="type" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"><option value="">Seleccionar...</option><option value="academic" ${editSched?.type === 'academic' ? 'selected' : ''}>Acad\u00e9mico</option><option value="competitive" ${editSched?.type === 'competitive' ? 'selected' : ''}>Competitivo</option></select></div>
+          <div><label class="mb-1 block text-xs text-zinc-400">Ubicaci\u00f3n</label><input type="text" name="location" value="${escapeHtml(editSched?.location || '')}" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" /></div>
         </div>
-        <div><label class="mb-1 block text-xs text-zinc-400">Descripci\u00f3n</label><textarea name="description" rows="2" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"></textarea></div>
+        <div><label class="mb-1 block text-xs text-zinc-400">Descripci\u00f3n</label><textarea name="description" rows="2" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">${escapeHtml(editSched?.description || '')}</textarea></div>
         <p id="schedule-form-error" class="hidden text-xs text-red-400"></p>
         <div class="flex gap-2">
-          <button type="submit" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">Crear</button>
+          <button type="submit" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">${isEdit ? 'Guardar cambios' : 'Crear'}</button>
           <button type="button" id="btn-cancel-schedule" class="rounded-lg border border-zinc-700 px-4 py-2 text-xs text-zinc-300 hover:bg-zinc-800">Cancelar</button>
         </div>
       </form>
     </div>`
 }
 
-function bindScheduleFormEvents(container: HTMLElement): void {
+function bindScheduleFormEvents(container: HTMLElement, editId?: string): void {
   document.getElementById('btn-cancel-schedule')?.addEventListener('click', () => { container.classList.add('hidden') })
   document.getElementById('schedule-create-form')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -227,7 +248,7 @@ function bindScheduleFormEvents(container: HTMLElement): void {
       return
     }
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'
-    const { error } = await supabase.from('schedules').insert({
+    const payload: any = {
       course_id: courseId,
       title: fd.get('title') as string || 'Clase',
       schedule_date: scheduleDate,
@@ -239,9 +260,15 @@ function bindScheduleFormEvents(container: HTMLElement): void {
       description: fd.get('description') as string || '',
       week_number: 0,
       day_of_week: 0,
-    })
+    }
+    let error: any
+    if (editId) {
+      ({ error } = await supabase.from('schedules').update(payload).eq('id', editId))
+    } else {
+      ({ error } = await supabase.from('schedules').insert(payload))
+    }
     if (error) { toast('error', error.message); return }
-    toast('success', 'Horario creado')
+    toast('success', editId ? 'Horario actualizado' : 'Horario creado')
     container.classList.add('hidden')
     initCoachSchedules()
   })
