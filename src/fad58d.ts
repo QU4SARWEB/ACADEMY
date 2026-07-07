@@ -29,6 +29,9 @@ import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachCodes, initCoachCodes } from '@/b3b32a/8abf18/codes'
 import { renderCoachAssignments, initCoachAssignments } from '@/b3b32a/8abf18/assignments'
 import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/grades'
+import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/tasks'
+import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/tasks'
+import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/tasks'
 
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachPlayerDetail, initCoachPlayerDetail } from '@/b3b32a/8abf18/player_detail'
@@ -235,6 +238,7 @@ dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/codes', () => renderCoachCodes(), initCoachCodes)
 dash('/coaches/assignments', () => renderCoachAssignments(), initCoachAssignments)
 dash('/coaches/grades', () => renderCoachGrades(), initCoachGrades)
+dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
 
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)
@@ -243,6 +247,7 @@ dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDet
 dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard)
 dash('/students/profile', () => renderStudentProfile(), initStudentProfile)
 dash('/students/courses', () => renderStudentCourses(), initStudentCourses)
+dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
 dash('/students/team', () => renderStudentTeam(), initStudentTeam)
@@ -250,6 +255,7 @@ dash('/students/team', () => renderStudentTeam(), initStudentTeam)
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
 dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
 dash('/players/courses', () => renderPlayerCourses(), initPlayerCourses)
+dash('/players/tasks', () => renderPlayerTasks(), initPlayerTasks)
 dash('/players/courses/:id', () => renderPlayerCourseDetail(), initPlayerCourseDetail)
 dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
 dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
