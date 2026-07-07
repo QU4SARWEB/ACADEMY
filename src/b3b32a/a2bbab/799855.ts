@@ -13,7 +13,7 @@ export async function initPlayerSchedule(): Promise<void> {
 
     const [{ data: seasons }, { data: schedules }] = await Promise.all([
       supabase.from('courses').select('id, name').eq('is_active', true).maybeSingle(),
-      supabase.from('schedules').select('*').eq('type', 'competitive').order('day_of_week').order('start_time'),
+      supabase.from('schedules').select('*').eq('type', 'competitive').order('schedule_date').order('start_time'),
     ])
 
     if (!seasons) {

@@ -24,7 +24,7 @@ export async function initStudentSchedule(): Promise<void> {
         .from('schedules')
         .select('*')
         .in('course_id', enrolledCourseIds)
-        .order('day_of_week')
+        .order('schedule_date')
         .order('start_time')
       schedules = data ?? []
     }
