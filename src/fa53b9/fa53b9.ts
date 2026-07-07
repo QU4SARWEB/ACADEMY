@@ -74,13 +74,16 @@ export async function signUp(
 
   // Process referral code via SECURITY DEFINER function (bypasses RLS)
   if (referral) {
-    const { data: used } = await supabase.rpc('use_referral_code', {
+    const { data: used, error: rpcErr } = await supabase.rpc('use_referral_code', {
       p_code: referral,
       p_user_id: authData.user.id,
     })
-    if (used) {
-      // Force reload profile to get updated role
+    if (rpcErr) {
+      console.error('Referral code error:', rpcErr)
+    } else if (used) {
       store.set<Profile | null>('profile', null)
+    } else {
+      console.warn('Referral code not found or already used:', referral)
     }
   }
 
