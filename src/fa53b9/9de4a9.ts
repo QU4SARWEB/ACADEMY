@@ -52,6 +52,13 @@ export function renderRegister(): string {
           </div>
 
           <div>
+            <label for="referral" class="mb-1 block text-xs font-medium text-zinc-400">Código de referido <span class="text-zinc-600">(opcional)</span></label>
+            <input type="text" id="referral" name="referral" maxlength="8"
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none uppercase transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]"
+              placeholder="Ej: ABC12345" autocomplete="off" />
+          </div>
+
+          <div>
             <label class="mb-1 block text-xs font-medium text-zinc-400">Rango en Valorant</label>
             <div class="flex items-center gap-2">
               <select id="rank-name" name="rankName" required
@@ -175,7 +182,9 @@ export function mountRegister(): void {
     const role = formData.get('role') as string
     const rank = rankHidden.value
 
-    const result = await signUp(email, password, fullName, role, rank)
+    const referral = (formData.get('referral') as string || '').toUpperCase().trim()
+
+    const result = await signUp(email, password, fullName, role, rank, referral)
 
     if (result.error) {
       errorEl.textContent = result.error

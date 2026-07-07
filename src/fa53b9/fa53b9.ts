@@ -52,6 +52,7 @@ export async function signUp(
   fullName: string,
   role: string,
   rank = 'Unranked',
+  referral = '',
 ): Promise<{ error?: string; success?: boolean }> {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
@@ -62,7 +63,6 @@ export async function signUp(
   if (authError) return { error: authError.message }
   if (!authData.user) return { error: 'Error al crear usuario' }
 
-  // Profile is auto-created by DB trigger; upsert to overwrite with form data
   await supabase.from('profiles').upsert({
     id: authData.user.id,
     email,
@@ -71,6 +71,24 @@ export async function signUp(
     rank,
     is_active: true,
   }, { onConflict: 'id' })
+
+  // Process referral code
+  if (referral) {
+    const { data: refCode } = await supabase
+      .from('referral_codes')
+      .select('id, coach_id')
+      .eq('code', referral)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (refCode) {
+      await supabase.from('referral_codes').update({
+        used_by: authData.user.id,
+        used_at: new Date().toISOString(),
+        is_active: false,
+      }).eq('id', refCode.id)
+    }
+  }
 
   return { success: true }
 }
