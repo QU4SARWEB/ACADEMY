@@ -23,9 +23,9 @@ export async function initCoachGrades(): Promise<void> {
 
     const { data: allSchedules } = await supabase
       .from('schedules')
-      .select('id, course_id, title, start_time')
+      .select('id, course_id, title, schedule_date, start_time')
       .in('course_id', idFilter)
-      .order('start_time', { ascending: true })
+      .order('schedule_date', { ascending: true })
 
     const schedulesByCourse: Record<string, any[]> = {}
     for (const s of allSchedules ?? []) {
@@ -60,14 +60,13 @@ export async function initCoachGrades(): Promise<void> {
 
     const fmtDate = (d: string) => {
       if (!d) return '—'
-      const dt = new Date(d)
+      const dt = new Date(d + 'T12:00:00')
       return dt.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' })
     }
 
     const fmtTime = (d: string) => {
       if (!d) return ''
-      const dt = new Date(d)
-      return dt.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+      return d.slice(0, 5)
     }
 
     const courseTabs = (courses ?? []).map((c: any) => {
@@ -79,7 +78,7 @@ export async function initCoachGrades(): Promise<void> {
       if (!hasSchedules || !hasStudents) return ''
 
       const headerCells = schedules.map((s: any) =>
-        `<th class="py-2 px-2 text-xs font-medium text-zinc-400 min-w-[90px] text-center" title="${escapeHtml(s.title || '')}">${fmtDate(s.start_time)}<br><span class="text-zinc-600">${fmtTime(s.start_time)}</span></th>`
+        `<th class="py-2 px-2 text-xs font-medium text-zinc-400 min-w-[90px] text-center" title="${escapeHtml(s.title || '')}">${fmtDate(s.schedule_date)}<br><span class="text-zinc-600">${fmtTime(s.start_time)}</span></th>`
       ).join('')
 
       const rows = enrollments.map((e: any) => {
