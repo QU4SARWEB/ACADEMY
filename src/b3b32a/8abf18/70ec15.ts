@@ -42,6 +42,10 @@ function formatDateLocal(d: string): string {
   return dt.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function getDateFromSchedule(s: any): string {
+  return s.schedule_date || (s.start_time ? s.start_time.slice(0, 10) : '')
+}
+
 function getMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
@@ -57,8 +61,9 @@ function renderScheduleTable(): void {
 
   const monthKey = getMonthKey(currentMonth)
   const monthSchedules = allSchedulesCache.filter((s: any) => {
-    if (!s.start_time) return false
-    return getMonthKey(new Date(s.start_time)) === monthKey
+    const sd = getDateFromSchedule(s)
+    if (!sd) return false
+    return getMonthKey(new Date(sd)) === monthKey
   })
 
   const filterHtml = allCoursesCache.map((c: any) => {
@@ -83,9 +88,9 @@ function renderScheduleTable(): void {
         const course = courseMap.get(s.course_id)
         return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-course-id="${escapeHtml(s.course_id)}">
-          <td class="py-3 px-4 text-sm text-zinc-300">${formatDateLocal(s.start_time)}</td>
+          <td class="py-3 px-4 text-sm text-zinc-300">${formatDateLocal(getDateFromSchedule(s))}</td>
           <td class="py-3 px-4 text-sm text-white">${escapeHtml(course?.name || 'Desconocido')}</td>
-          <td class="py-3 px-4 text-sm text-zinc-400">${s.start_time ? to12h(s.start_time.slice(11, 16)) : '—'} - ${s.end_time ? to12h(s.end_time.slice(11, 16)) : '—'}</td>
+          <td class="py-3 px-4 text-sm text-zinc-400">${s.start_time ? to12h(s.start_time) : '—'} - ${s.end_time ? to12h(s.end_time) : '—'}</td>
           <td class="py-3 px-4 text-right">
             <button class="grade-class-btn flex items-center gap-1 ml-auto text-amber-400 hover:text-amber-300 text-xs" data-schedule-id="${escapeHtml(s.id)}" data-course-id="${escapeHtml(s.course_id)}">${Icon('edit', 12)} Notas</button>
           </td>
@@ -222,13 +227,12 @@ function bindScheduleFormEvents(container: HTMLElement): void {
       return
     }
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'
-    const startISO = new Date(`${scheduleDate}T${startTime}:00`).toISOString()
-    const endISO = endTime ? new Date(`${scheduleDate}T${endTime}:00`).toISOString() : null
     const { error } = await supabase.from('schedules').insert({
       course_id: courseId,
       title: fd.get('title') as string || 'Clase',
-      start_time: startISO,
-      end_time: endISO,
+      schedule_date: scheduleDate,
+      start_time: startTime + ':00',
+      end_time: endTime ? endTime + ':00' : null,
       type: fd.get('type') as string || 'academic',
       timezone: tz,
       location: fd.get('location') as string || '',
