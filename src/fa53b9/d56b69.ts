@@ -1,8 +1,10 @@
+import { supabase } from '@/304244'
 import { signIn } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
 
-export function renderLogin(): string {
+export function renderLogin(session?: any): string {
+  const loggedIn = !!session?.user
   return `
     <div class="relative min-h-screen flex items-center justify-center bg-[#0A0A0A] p-4">
       <div class="pointer-events-none fixed inset-0">

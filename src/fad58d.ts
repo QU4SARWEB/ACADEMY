@@ -59,12 +59,14 @@ router.setBeforeNavigate(async (path) => authGuard(path))
 
 // Public routes
 router.on('/', async () => {
-  document.getElementById('app')!.innerHTML = renderHome()
+  const { data: { session } } = await supabase.auth.getSession()
+  document.getElementById('app')!.innerHTML = renderHome(session)
   mountHome()
 })
 
 router.on('/about', async () => {
-  document.getElementById('app')!.innerHTML = renderAbout()
+  const { data: { session } } = await supabase.auth.getSession()
+  document.getElementById('app')!.innerHTML = renderAbout(session)
   mountAbout()
 })
 

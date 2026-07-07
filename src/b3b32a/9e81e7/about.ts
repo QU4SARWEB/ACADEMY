@@ -1,6 +1,8 @@
+import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 
-export function renderAbout(): string {
+export function renderAbout(session?: any): string {
+  const loggedIn = !!session?.user
   return `
     <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
@@ -15,7 +17,10 @@ export function renderAbout(): string {
         </div>
         <div class="flex items-center gap-4 text-sm">
           <a href="#/" class="text-zinc-400 hover:text-white transition">Inicio</a>
-          <a href="#/register" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Registrarse</a>
+          ${loggedIn
+            ? '<a href="#/coaches/dashboard" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Plataforma</a>'
+            : '<a href="#/register" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Registrarse</a>'
+          }
         </div>
       </nav>
 
@@ -124,4 +129,18 @@ export function renderAbout(): string {
 }
 
 export function mountAbout(): void {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      const registerBtn = document.querySelector('nav a[href="#/register"]')
+      const container = registerBtn?.parentElement
+      if (container && registerBtn) {
+        registerBtn.remove()
+        const a = document.createElement('a')
+        a.href = '#/coaches/dashboard'
+        a.className = 'rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition'
+        a.textContent = 'Plataforma'
+        container.appendChild(a)
+      }
+    }
+  })
 }

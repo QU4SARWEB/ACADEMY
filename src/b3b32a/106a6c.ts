@@ -1,7 +1,9 @@
+import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 
-export function renderHome(): string {
+export function renderHome(session?: any): string {
+  const loggedIn = !!session?.user
   return `
     <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
@@ -15,8 +17,10 @@ export function renderHome(): string {
           <span class="font-heading text-lg font-bold text-white">QU4SAR</span>
         </div>
         <div class="flex items-center gap-4 text-sm">
-          <a href="#/login" class="text-zinc-400 hover:text-white transition">Iniciar sesi\u00f3n</a>
-          <a href="#/register" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Registrarse</a>
+          ${loggedIn
+            ? '<a href="#/coaches/dashboard" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Plataforma</a>'
+            : '<a href="#/login" class="text-zinc-400 hover:text-white transition">Iniciar sesi\u00f3n</a>\n          <a href="#/register" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Registrarse</a>'
+          }
         </div>
       </nav>
 
@@ -184,4 +188,20 @@ export function renderHome(): string {
 }
 
 export function mountHome(): void {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      const btn = document.querySelector('nav a[href="#/login"]')
+      const register = document.querySelector('nav a[href="#/register"]')
+      const container = btn?.parentElement
+      if (container && btn && register) {
+        btn.remove()
+        register.remove()
+        const a = document.createElement('a')
+        a.href = '#/coaches/dashboard'
+        a.className = 'rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition'
+        a.textContent = 'Plataforma'
+        container.appendChild(a)
+      }
+    }
+  })
 }
