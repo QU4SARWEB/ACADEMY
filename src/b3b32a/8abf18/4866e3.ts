@@ -25,6 +25,13 @@ export async function initCoachDashboard(): Promise<void> {
       .eq('id', session.user.id)
       .maybeSingle()
 
+    // Auto-delete accounts with expired payments older than 5 days
+    try {
+      await supabase.rpc('delete_expired_accounts')
+    } catch (e) {
+      // non-critical, ignore
+    }
+
     // KPIs
     const [{ count: studentsCount }, { count: playersCount }, { count: coursesCount }] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true),
