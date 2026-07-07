@@ -28,6 +28,7 @@ import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf
 import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
 import { renderCoachCodes, initCoachCodes } from '@/b3b32a/8abf18/codes'
 import { renderCoachAssignments, initCoachAssignments } from '@/b3b32a/8abf18/assignments'
+import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/grades'
 
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachPlayerDetail, initCoachPlayerDetail } from '@/b3b32a/8abf18/player_detail'
@@ -233,6 +234,7 @@ dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
 dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
 dash('/coaches/codes', () => renderCoachCodes(), initCoachCodes)
 dash('/coaches/assignments', () => renderCoachAssignments(), initCoachAssignments)
+dash('/coaches/grades', () => renderCoachGrades(), initCoachGrades)
 
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)

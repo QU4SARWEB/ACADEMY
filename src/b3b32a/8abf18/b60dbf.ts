@@ -61,20 +61,6 @@ export function mountCoachStudentDetail(): void {
       const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
       const filteredAvailable = (available ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
 
-      // Fetch grades for active enrollments
-      const activeEnrollments = enrollments.filter((e: any) => e.status === 'active' || e.status === 'recovery')
-      const gradesByCourse = new Map<string, any[]>()
-      for (const enr of activeEnrollments) {
-        const { data: schedules } = await supabase
-          .from('schedules')
-          .select('*, class_grades!left(*)')
-          .eq('course_id', enr.course_id)
-          .order('start_time', { ascending: true })
-        if (schedules) {
-          gradesByCourse.set(enr.course_id, schedules)
-        }
-      }
-
       const html = `
         ${Breadcrumb([
           { label: 'Estudiantes', href: '#/coaches/students' },
@@ -146,50 +132,6 @@ export function mountCoachStudentDetail(): void {
                 }).join('')}
               </div>
 
-              ${activeEnrollments.length > 0 ? `
-                <h2 class="mb-4 mt-8 font-heading text-lg font-bold text-white">Notas por clase</h2>
-                ${activeEnrollments.map((enr: any) => {
-                  const courseSchedules = gradesByCourse.get(enr.course_id) || []
-                  const grades = courseSchedules.map((s: any) => {
-                    const grade = (s.class_grades || []).find((cg: any) => cg.student_id === id)
-                    return { schedule: s, grade }
-                  })
-                  const totals = grades.filter(g => g.grade).map(g => (g.grade.theory_score || 0) + (g.grade.practice_score || 0))
-                  const avg = totals.length > 0 ? (totals.reduce((a: number, b: number) => a + b, 0) / totals.length).toFixed(2) : '—'
-                  return `
-                    <div class="rounded-lg border border-zinc-800 bg-[#111] p-4 mt-4">
-                      <h3 class="mb-3 font-medium text-white">${escapeHtml(enr.courses?.name || '')}</h3>
-                      <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                          <thead>
-                            <tr class="text-zinc-500 text-xs uppercase">
-                              <th class="pb-2 pr-2">Fecha</th>
-                              <th class="pb-2 pr-2">Teoría (0-5)</th>
-                              <th class="pb-2 pr-2">Práctica (0-15)</th>
-                              <th class="pb-2 pr-2">Total (0-20)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            ${grades.map((g: any) => {
-                              const dateStr = formatDate(g.schedule.start_time)
-                              const theory = g.grade ? (g.grade.theory_score ?? '—') : '—'
-                              const practice = g.grade ? (g.grade.practice_score ?? '—') : '—'
-                              const total = g.grade ? (g.grade.theory_score ?? 0) + (g.grade.practice_score ?? 0) : '—'
-                              return `
-                                <tr class="border-b border-zinc-800/50 text-zinc-300">
-                                  <td class="py-2 pr-2">${dateStr}</td>
-                                  <td class="py-2 pr-2">${theory}</td>
-                                  <td class="py-2 pr-2">${practice}</td>
-                                  <td class="py-2 pr-2 font-medium">${total}</td>
-                                </tr>`
-                            }).join('')}
-                          </tbody>
-                        </table>
-                      </div>
-                      <p class="mt-3 text-sm text-zinc-400"><strong>Promedio final:</strong> ${avg}</p>
-                    </div>`
-                }).join('')}
-              ` : ''}
 
             </div>
 
