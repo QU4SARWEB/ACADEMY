@@ -27,7 +27,7 @@ export async function initCoachTasks(): Promise<void> {
 
     const { data: tasks } = await supabase
       .from('course_tasks')
-      .select('id, course_id, title, description, week_number, due_date, files, links, created_at')
+      .select('id, course_id, title, description, week_number, due_date, created_at')
       .in('course_id', idFilter)
       .order('created_at', { ascending: false })
 
