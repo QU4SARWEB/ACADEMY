@@ -71,7 +71,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/schedules', 'calendar', 'Horarios')],
     [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
-    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'hash', 'C\u00f3digos')],
+    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos')],
   ]
 
   const isExpired = !!(window as any).__isExpired

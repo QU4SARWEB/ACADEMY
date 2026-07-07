@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 
 export function renderCoachCodes(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -37,9 +38,7 @@ export async function initCoachCodes(): Promise<void> {
             <div class="flex gap-2">
               ${!used ? `
               <button class="copy-code-btn text-xs text-zinc-400 hover:text-white transition" data-code="${escapeHtml(c.code)}">${Icon('copy', 14)}</button>
-              <button class="toggle-code-btn text-xs text-zinc-400 hover:text-red-400 transition" data-id="${escapeHtml(c.id)}" data-active="${c.is_active ? '1' : '0'}">
-                ${c.is_active ? Icon('x', 14) : Icon('check', 14)}
-              </button>` : ''}
+              <button class="delete-code-btn text-xs text-red-400 hover:text-red-300 transition" data-id="${escapeHtml(c.id)}">${Icon('trash', 14)}</button>` : ''}
             </div>
           </div>`
         }).join('')
@@ -81,13 +80,13 @@ export async function initCoachCodes(): Promise<void> {
         }
         return
       }
-      const toggleBtn = target.closest('.toggle-code-btn') as HTMLElement
-      if (toggleBtn) {
-        const id = toggleBtn.dataset.id
-        const active = toggleBtn.dataset.active === '1'
-        const { error } = await supabase.from('referral_codes').update({ is_active: !active }).eq('id', id)
+      const deleteBtn = target.closest('.delete-code-btn') as HTMLElement
+      if (deleteBtn) {
+        const id = deleteBtn.dataset.id
+        if (!(await confirmDialog('\u00bfEliminar este c\u00f3digo permanentemente?'))) return
+        const { error } = await supabase.from('referral_codes').delete().eq('id', id)
         if (error) { toast('error', error.message); return }
-        toast('success', active ? 'C\u00f3digo desactivado' : 'C\u00f3digo activado')
+        toast('success', 'C\u00f3digo eliminado')
         initCoachCodes()
       }
     })
