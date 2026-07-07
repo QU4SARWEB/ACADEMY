@@ -382,12 +382,18 @@ async function renderCoachPayments(): Promise<void> {
 
   const filterHtml = (courses ?? []).map((c: any) => {
     const isFree = !c.price || c.price <= 0
+    const total = (enrollsByCourse[c.id] || []).length
+    const checked = !isFree
     return `
-    <label class="flex items-center gap-2 rounded-lg border ${isFree ? 'border-zinc-800 bg-zinc-900/50 opacity-50' : 'border-zinc-700 bg-zinc-800/50'} px-3 py-2 text-xs text-zinc-300 cursor-pointer transition hover:bg-zinc-700/50" data-course-filter="${escapeHtml(c.id)}">
-      <input type="checkbox" class="course-filter-cb" data-course-id="${escapeHtml(c.id)}" ${isFree ? '' : 'checked'} />
+    <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
+      ${checked
+        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25'
+        : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}"
+      data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${total}" data-active="${checked ? '1' : '0'}">
+      ${checked ? Icon('checkCircle', 14) : Icon('plus', 12)}
       <span>${escapeHtml(c.name)}</span>
-      <span class="text-zinc-500">(${(enrollsByCourse[c.id] || []).length})</span>
-    </label>`
+      <span class="text-zinc-500">${total}</span>
+    </button>`
   }).join('')
 
   const courseTables = (courses ?? []).map((c: any) => {
@@ -490,11 +496,28 @@ async function renderCoachPayments(): Promise<void> {
     <div class="space-y-4" id="course-tables">${courseTables}</div>`
 
   // Course filter toggles
-  document.querySelectorAll('.course-filter-cb').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const courseId = (cb as HTMLElement).dataset.courseId
+  document.querySelectorAll('.course-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const courseId = (btn as HTMLElement).dataset.courseId
+      const active = (btn as HTMLElement).dataset.active === '1'
       const table = document.querySelector(`.course-table[data-course-id="${courseId}"]`)
-      if (table) table.classList.toggle('hidden', !(cb as HTMLInputElement).checked)
+      if (table) {
+        table.classList.toggle('hidden', active)
+        ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
+        btn.classList.toggle('bg-[#8B5CF6]/15', !active)
+        btn.classList.toggle('text-[#8B5CF6]', !active)
+        btn.classList.toggle('border-[#8B5CF6]/30', !active)
+        btn.classList.toggle('hover:bg-[#8B5CF6]/25', !active)
+        btn.classList.toggle('bg-zinc-800/40', active)
+        btn.classList.toggle('text-zinc-500', active)
+        btn.classList.toggle('border-dashed', active)
+        btn.classList.toggle('border-zinc-700/50', active)
+        btn.classList.toggle('hover:bg-zinc-700/50', active)
+        btn.classList.toggle('hover:text-zinc-300', active)
+        btn.innerHTML = active
+          ? `${Icon('plus', 12)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+          : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+      }
     })
   })
 

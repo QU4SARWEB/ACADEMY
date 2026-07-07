@@ -11,6 +11,15 @@ export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
 
+function getStudentCourseIds(enrollments: any[]): Record<string, string[]> {
+  const map: Record<string, string[]> = {}
+  for (const e of enrollments ?? []) {
+    if (!map[e.profile_id]) map[e.profile_id] = []
+    if (!map[e.profile_id].includes(e.course_id)) map[e.profile_id].push(e.course_id)
+  }
+  return map
+}
+
 async function loadStudentData() {
   const [{ data: students }, { data: courses }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, created_at').eq('role', 'student').order('full_name'),
@@ -58,6 +67,8 @@ async function loadStudentData() {
   }
 
   const enrollmentMap = new Map<string, { count: number; anyActive: boolean; courses: string[] }>()
+  const courseStudentCount: Record<string, number> = {}
+  const courseStudentIds: Record<string, Set<string>> = {}
   for (const e of enrollments ?? []) {
     const current = enrollmentMap.get(e.profile_id) || { count: 0, anyActive: false, courses: [] }
     current.count++
@@ -65,18 +76,37 @@ async function loadStudentData() {
     const courseName = (e as any).courses?.name
     if (courseName && !current.courses.includes(courseName)) current.courses.push(courseName)
     enrollmentMap.set(e.profile_id, current)
+
+    if (!courseStudentCount[e.course_id]) {
+      courseStudentCount[e.course_id] = 0
+      courseStudentIds[e.course_id] = new Set()
+    }
+    courseStudentCount[e.course_id]++
+    courseStudentIds[e.course_id].add(e.profile_id)
   }
 
-  return { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap }
+  const studentCourseIds = getStudentCourseIds(enrollments ?? [])
+
+  return { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds }
 }
 
-function renderStudentTable(students: any[], courses: any[], paidCountPerProfile: Record<string, number>, scholarCountPerProfile: Record<string, number>, enrollCountPerProfile: Record<string, number>, enrollmentMap: Map<string, { count: number; anyActive: boolean; courses: string[] }>): string {
+function renderStudentTable(students: any[], courses: any[], paidCountPerProfile: Record<string, number>, scholarCountPerProfile: Record<string, number>, enrollCountPerProfile: Record<string, number>, enrollmentMap: Map<string, { count: number; anyActive: boolean; courses: string[] }>, courseStudentCount: Record<string, number>, courseStudentIds: Record<string, Set<string>>, studentCourseIds: Record<string, string[]>): string {
+  const filterHtml = (courses ?? []).map((c: any) => {
+    const total = courseStudentCount[c.id] || 0
+    return `
+    <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
+      bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
+      data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${total}" data-active="1">
+      ${Icon('checkCircle', 14)}
+      <span>${escapeHtml(c.name)}</span>
+      <span class="text-zinc-500">${total}</span>
+    </button>`
+  }).join('')
+
   return `
-    <div class="mb-6 flex items-center justify-between">
-      <div>
-        <h1 class="font-heading text-2xl font-bold text-white">Estudiantes</h1>
-        <p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p>
-      </div>
+    <div class="mb-6">
+      <h1 class="font-heading text-2xl font-bold text-white">Estudiantes</h1>
+      <p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p>
     </div>
 
     <div id="bulk-action-bar" class="hidden mb-4 flex items-center gap-2 rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-2.5">
@@ -99,59 +129,47 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
 
     <div id="no-results" class="hidden py-8 text-center text-sm text-zinc-500">No se encontraron estudiantes.</div>
 
-    <div class="overflow-x-auto">
+    <div class="mb-4 flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
+
+    <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
-            <th class="pb-3 pr-2 font-medium"><input type="checkbox" id="select-all" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"></th>
-            <th class="pb-3 pr-4 font-medium"></th>
-            <th class="pb-3 pr-4 font-medium">Nombre / Riot</th>
-            <th class="pb-3 pr-4 font-medium">Email</th>
-            <th class="pb-3 pr-4 font-medium">Rango</th>
-            <th class="pb-3 pr-4 font-medium">Beca</th>
-            <th class="pb-3 pr-4 font-medium">Pagos</th>
-            <th class="pb-3 pr-4 font-medium">Activo</th>
-            <th class="pb-3 pr-4 font-medium">Cursos</th>
-            <th class="pb-3 pr-4 font-medium">Registro</th>
-            <th class="pb-3 font-medium"></th>
+            <th class="py-3 px-4 font-medium"><input type="checkbox" id="select-all" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]"></th>
+            <th class="py-3 px-4 font-medium">Nombre</th>
+            <th class="py-3 px-4 font-medium">Email</th>
+            <th class="py-3 px-4 font-medium">Cursos</th>
+            <th class="py-3 px-4 font-medium">Estado</th>
+            <th class="py-3 px-4 font-medium">Rol</th>
+            <th class="py-3 px-4 font-medium text-right">Acci\u00f3n</th>
           </tr>
         </thead>
         <tbody id="students-tbody">
           ${(students ?? []).length === 0
-            ? '<tr><td colspan="12" class="pt-4 text-zinc-500">No hay estudiantes.</td></tr>'
+            ? '<tr><td colspan="7" class="py-8 text-center text-sm text-zinc-500">No hay estudiantes.</td></tr>'
             : (students ?? []).map((s: any) => {
                 const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false, courses: [] }
                 const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
                 const initial = (displayName || '?').charAt(0).toUpperCase()
+                const myCourseIds = (studentCourseIds[s.id] || []).join(',')
                 return `
-                  <tr class="border-b border-zinc-800/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}">
-                    <td class="py-3 pr-2"><input type="checkbox" class="row-checkbox h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
-                    <td class="py-3 pr-4">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400">
-                        ${s.avatar_url ? `<img src="${escapeHtml(s.avatar_url)}" alt="" class="h-full w-full rounded-full object-cover" />` : escapeHtml(initial)}
+                  <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}" data-course-ids="${escapeHtml(myCourseIds)}">
+                    <td class="py-3 px-4"><input type="checkbox" class="row-checkbox h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-2">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-400 shrink-0">
+                          ${s.avatar_url ? `<img src="${escapeHtml(s.avatar_url)}" alt="" class="h-full w-full rounded-full object-cover" />` : escapeHtml(initial)}
+                        </div>
+                        <a href="#/coaches/students/${escapeHtml(s.id)}" class="text-sm text-white hover:text-[#8B5CF6] transition">${escapeHtml(displayName)}</a>
                       </div>
                     </td>
-                    <td class="py-3 pr-4"><a href="#/coaches/students/${escapeHtml(s.id)}" class="text-white hover:text-[#8B5CF6] transition">${escapeHtml(displayName)}</a></td>
-                    <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.email || '-')}</td>
-                    <td class="py-3 pr-4 text-zinc-400">${escapeHtml(s.rank || 'Unranked')}</td>
-                    <td class="py-3 pr-4"><span class="text-xs ${s.scholarship ? 'text-yellow-400' : 'text-zinc-600'}">${s.scholarship ? 'Sí' : 'No'}</span></td>
-                    <td class="py-3 pr-4">${(() => {
-                      const paid = paidCountPerProfile[s.id] || 0
-                      const scholar = scholarCountPerProfile[s.id] || 0
-                      const total = enrollCountPerProfile[s.id] || 0
-                      if (total === 0) return '<span class="text-xs text-zinc-600">—</span>'
-                      const paidTotal = paid + scholar
-                      const parts: string[] = []
-                      if (paid > 0) parts.push(`<span class="text-green-400">${paid} pagados</span>`)
-                      if (scholar > 0) parts.push(`<span class="text-blue-400">${scholar} becados</span>`)
-                      const pct = Math.round((paidTotal / total) * 100)
-                      const color = pct >= 100 ? 'bg-green-500/10' : pct > 0 ? 'bg-yellow-500/10' : 'bg-zinc-800/30'
-                      return `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${color}">${paidTotal > 0 ? parts.join(' · ') : `<span class="text-zinc-500">0/${total}</span>`}</span>`
-                    })()}</td>
-                    <td class="py-3 pr-4"><span class="inline-block h-2.5 w-2.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-500'}"></span></td>
-                    <td class="py-3 pr-4 text-zinc-400 text-xs max-w-[120px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
-                    <td class="py-3 text-zinc-500 text-xs">${formatDate(s.created_at)}</td>
-                    <td class="py-3 pl-2">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
+                    <td class="py-3 px-4 text-xs text-zinc-400">${escapeHtml(s.email || '-')}</td>
+                    <td class="py-3 px-4 text-xs text-zinc-400 max-w-[180px] truncate" title="${escapeHtml(enrollment.courses.join(', '))}">${enrollment.count > 0 ? escapeHtml(enrollment.courses.join(', ')) : '—'}</td>
+                    <td class="py-3 px-4">${s.is_active
+                      ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>Activo</span>'
+                      : '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400"><span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Inactivo</span>'}</td>
+                    <td class="py-3 px-4 text-xs text-zinc-500">Estudiante</td>
+                    <td class="py-3 px-4 text-right">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
                   </tr>`
               }).join('')
           }
@@ -169,10 +187,56 @@ function initSearchFilter(container: HTMLElement, allRows: NodeListOf<HTMLTableR
     allRows.forEach(row => {
       const text = (row as HTMLElement).dataset.search || ''
       const match = !q || text.includes(q)
-      row.classList.toggle('hidden', !match)
-      if (match) visible++
+      ;(row as HTMLElement).dataset.searchHidden = match ? '' : '1'
+      const courseHidden = (row as HTMLElement).dataset.courseHidden === '1'
+      row.classList.toggle('hidden', !match || courseHidden)
+      if (match && !courseHidden) visible++
     })
     noResults.classList.toggle('hidden', visible > 0 || !q)
+  })
+}
+
+function initCourseFilters(container: HTMLElement, allRows: NodeListOf<HTMLTableRowElement>): void {
+  container.querySelectorAll('.course-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const courseId = (btn as HTMLElement).dataset.courseId
+      const active = (btn as HTMLElement).dataset.active === '1'
+      ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
+
+      btn.classList.toggle('bg-[#8B5CF6]/15', !active)
+      btn.classList.toggle('text-[#8B5CF6]', !active)
+      btn.classList.toggle('border-[#8B5CF6]/30', !active)
+      btn.classList.toggle('bg-zinc-800/40', active)
+      btn.classList.toggle('text-zinc-500', active)
+      btn.classList.toggle('border-dashed', active)
+      btn.classList.toggle('border-zinc-700/50', active)
+
+      btn.innerHTML = active
+        ? `${Icon('plus', 12)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+        : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
+
+      const excludedCourses = new Set<string>()
+      container.querySelectorAll('.course-filter-btn').forEach(b => {
+        if ((b as HTMLElement).dataset.active === '0') {
+          excludedCourses.add((b as HTMLElement).dataset.courseId || '')
+        }
+      })
+
+      const searchInput = container.querySelector<HTMLInputElement>('#student-search')
+      const q = (searchInput?.value || '').toLowerCase().trim()
+      const noResults = container.querySelector<HTMLElement>('#no-results')
+      let visible = 0
+      allRows.forEach(row => {
+        const rowCourseIds = ((row as HTMLElement).dataset.courseIds || '').split(',').filter(Boolean)
+        const isExcluded = rowCourseIds.some((id: string) => excludedCourses.has(id))
+        ;(row as HTMLElement).dataset.courseHidden = isExcluded ? '1' : ''
+        const searchHidden = (row as HTMLElement).dataset.searchHidden === '1'
+        const hidden = isExcluded || (!q || ((row as HTMLElement).dataset.search || '').includes(q)) ? false : true
+        row.classList.toggle('hidden', isExcluded || searchHidden)
+        if (!isExcluded && !searchHidden) visible++
+      })
+      if (noResults) noResults.classList.toggle('hidden', visible > 0 || !q)
+    })
   })
 }
 
@@ -193,9 +257,9 @@ function initSingleActions(container: HTMLElement, reloadFn: () => void): void {
 export function mountCoachStudents(): void {
   ;(async () => {
     try {
-      const { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap } = await loadStudentData()
+      const { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds } = await loadStudentData()
 
-      const mainHtml = renderStudentTable(students ?? [], courses ?? [], paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap)
+      const mainHtml = renderStudentTable(students ?? [], courses ?? [], paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds)
 
       const enrollModalHtml = `
         <div id="enroll-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60">
@@ -225,10 +289,10 @@ export function mountCoachStudents(): void {
       const allRows = container.querySelectorAll<HTMLTableRowElement>('#students-tbody tr')
 
       initSearchFilter(container, allRows)
+      initCourseFilters(container, allRows)
       initSingleActions(container, () => mountCoachStudents())
       initBulkActions(container, { role: 'student', afterAction: () => mountCoachStudents() })
 
-      // Bulk enroll setup
       document.getElementById('bulk-enroll')?.addEventListener('click', () => {
         document.getElementById('enroll-modal')!.classList.remove('hidden')
       })
