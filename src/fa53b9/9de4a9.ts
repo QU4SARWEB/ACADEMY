@@ -1,4 +1,4 @@
-import { signUp, getProfile, getSession } from '@/fa53b9/fa53b9'
+import { signUp, signIn, getProfile } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
 
@@ -194,15 +194,17 @@ export function mountRegister(): void {
       return
     }
 
-    const session = await getSession()
-    if (session) {
-      toast('success', 'Cuenta creada. Bienvenido.')
-      const profile = await getProfile()
-      const prefix = profile?.role === 'coach' ? 'coaches' : profile?.role === 'student' ? 'students' : 'players'
-      router.navigate(`/${prefix}/dashboard`)
-    } else {
-      toast('success', 'Cuenta creada. Revisa tu correo para confirmar.')
+    // Auto-login after registration
+    const loginResult = await signIn(email, password)
+    if (loginResult.error) {
+      toast('success', 'Cuenta creada. Inicia sesi\u00f3n para continuar.')
       router.navigate('/login')
+      return
     }
+
+    toast('success', 'Cuenta creada. Bienvenido.')
+    const profile = await getProfile()
+    const prefix = profile?.role === 'coach' ? 'coaches' : profile?.role === 'student' ? 'students' : 'players'
+    router.navigate(`/${prefix}/dashboard`)
   })
 }
