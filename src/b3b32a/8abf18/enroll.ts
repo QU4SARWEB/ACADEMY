@@ -17,18 +17,28 @@ export async function initCoachEnroll(): Promise<void> {
 
     const assignedIds = await getAssignedCourseIds(coachId)
 
-    let coursesQuery = supabase.from('courses').select('id, name, price').eq('is_active', true).order('display_order')
+    // Only show PAID courses assigned to this coach (exclude free courses like Posicionamiento)
+    let coursesQuery = supabase.from('courses').select('id, name, price').eq('is_active', true).gt('price', 0).order('display_order')
     if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
     const cRes = await coursesQuery
     const courses = cRes.data ?? []
     const courseIds = courses.map((c: any) => c.id)
-    const courseIdFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
 
-    // Only show students enrolled in the coach's courses
+    // If no assigned courses, show nothing
+    if (courseIds.length === 0) {
+      document.getElementById('page-content')!.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <p class="text-zinc-500">No tienes cursos asignados para gestionar inscripciones.</p>
+          <p class="text-xs text-zinc-600 mt-2">Ve a Asignaciones para asignarte cursos.</p>
+        </div>`
+      return
+    }
+
+    // Only show students enrolled in the coach's paid courses
     const { data: enrollments } = await supabase
       .from('enrollments')
       .select('profile_id')
-      .in('course_id', courseIdFilter)
+      .in('course_id', courseIds)
       .in('status', ['active', 'recovery'])
     const enrolledStudentIds = [...new Set((enrollments ?? []).map((e: any) => e.profile_id))]
 
@@ -43,6 +53,7 @@ export async function initCoachEnroll(): Promise<void> {
       .from('enrollments')
       .select('profile_id, course_id')
       .in('profile_id', sidFilter)
+      .in('course_id', courseIds)
       .in('status', ['active', 'recovery'])
 
     const enrolledMap = new Map<string, Set<string>>()
