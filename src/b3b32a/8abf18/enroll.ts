@@ -26,15 +26,6 @@ export async function initCoachEnroll(): Promise<void> {
       .order('display_order')
     const allCourses = courses ?? []
 
-    // Show ALL active students/players
-    const { data: students } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, avatar_url')
-      .in('role', ['student', 'player'])
-      .eq('is_active', true)
-      .order('full_name')
-    const allStudents = students ?? []
-
     // Courses that can actually be enrolled (assigned to this coach, or all if no assignments)
     let enrollableCourseIds: string[]
     if (hasAssignments) {
@@ -43,6 +34,47 @@ export async function initCoachEnroll(): Promise<void> {
       enrollableCourseIds = allCourses.map((c: any) => c.id)
     }
     const enrollableSet = new Set(enrollableCourseIds)
+
+    // Students logic:
+    // 1. Students enrolled in THIS coach's assigned courses
+    // 2. Students who ONLY have free courses (no paid courses) — unassigned students
+    // 3. Exclude students enrolled in paid courses NOT assigned to this coach
+    const paidCourseIds = allCourses.filter((c: any) => c.price > 0).map((c: any) => c.id)
+    const paidIdFilter = paidCourseIds.length > 0 ? paidCourseIds : ['00000000-0000-0000-0000-000000000000']
+    const assignedPaidIds = allCourses.filter((c: any) => enrollableSet.has(c.id) && c.price > 0).map((c: any) => c.id)
+    const assignedPaidFilter = assignedPaidIds.length > 0 ? assignedPaidIds : ['00000000-0000-0000-0000-000000000000']
+
+    // Get all students with their paid course enrollments
+    const { data: allEnrolls } = await supabase
+      .from('enrollments')
+      .select('profile_id, course_id')
+      .in('course_id', paidIdFilter)
+      .in('status', ['active', 'recovery'])
+    const studentsWithPaid = new Set((allEnrolls ?? []).map((e: any) => e.profile_id))
+
+    // Get students in this coach's assigned paid courses
+    const { data: myEnrolls } = await supabase
+      .from('enrollments')
+      .select('profile_id')
+      .in('course_id', assignedPaidFilter)
+      .in('status', ['active', 'recovery'])
+    const myStudentIds = new Set((myEnrolls ?? []).map((e: any) => e.profile_id))
+
+    // Get all active students
+    const { data: sRes } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('role', ['student', 'player'])
+      .eq('is_active', true)
+      .order('full_name')
+    const allProfiles = sRes ?? []
+
+    // Filter: my students + students with ONLY free courses
+    const allStudents = allProfiles.filter((s: any) => {
+      if (myStudentIds.has(s.id)) return true          // Student has one of my paid courses
+      if (!studentsWithPaid.has(s.id)) return true      // Student has NO paid courses (only free)
+      return false                                      // Student has paid courses not mine
+    })
 
     const studentIds = allStudents.map((s: any) => s.id)
     const sidFilter = studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']
