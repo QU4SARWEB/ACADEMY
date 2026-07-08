@@ -16,55 +16,43 @@ export async function initCoachEnroll(): Promise<void> {
     const coachId = session.user.id
 
     const assignedIds = await getAssignedCourseIds(coachId)
+    const hasAssignments = assignedIds.length > 0
 
-    // Only show PAID courses assigned to this coach (exclude free courses like Posicionamiento)
-    let coursesQuery = supabase.from('courses').select('id, name, price').eq('is_active', true).gt('price', 0).order('display_order')
-    if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
-    const cRes = await coursesQuery
-    const courses = cRes.data ?? []
-    const courseIds = courses.map((c: any) => c.id)
+    // Show ALL active courses (free and paid)
+    const { data: courses } = await supabase
+      .from('courses')
+      .select('id, name, price')
+      .eq('is_active', true)
+      .order('display_order')
+    const allCourses = courses ?? []
 
-    // If no assigned courses, show nothing
-    if (courseIds.length === 0) {
-      document.getElementById('page-content')!.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-20 text-center">
-          <p class="text-zinc-500">No tienes cursos asignados para gestionar inscripciones.</p>
-          <p class="text-xs text-zinc-600 mt-2">Ve a Asignaciones para asignarte cursos.</p>
-        </div>`
-      return
-    }
-
-    // Only show students enrolled in the coach's paid courses
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('profile_id')
-      .in('course_id', courseIds)
-      .in('status', ['active', 'recovery'])
-    const enrolledStudentIds = [...new Set((enrollments ?? []).map((e: any) => e.profile_id))]
-
-    if (enrolledStudentIds.length === 0) {
-      document.getElementById('page-content')!.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-20 text-center">
-          <p class="text-zinc-500">No hay alumnos inscritos en tus cursos asignados.</p>
-        </div>`
-      return
-    }
-    const { data: sRes } = await supabase
+    // Show ALL active students/players
+    const { data: students } = await supabase
       .from('profiles')
       .select('id, full_name, email, avatar_url')
-      .in('id', enrolledStudentIds)
       .in('role', ['student', 'player'])
       .eq('is_active', true)
       .order('full_name')
-    const students = sRes ?? []
+    const allStudents = students ?? []
 
-    const studentIds = students.map((s: any) => s.id)
+    // Courses that can actually be enrolled (assigned to this coach, or all if no assignments)
+    let enrollableCourseIds: string[]
+    if (hasAssignments) {
+      enrollableCourseIds = assignedIds
+    } else {
+      enrollableCourseIds = allCourses.map((c: any) => c.id)
+    }
+    const enrollableSet = new Set(enrollableCourseIds)
+
+    const studentIds = allStudents.map((s: any) => s.id)
     const sidFilter = studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']
+    const allCourseIds = allCourses.map((c: any) => c.id)
+    const cidFilter = allCourseIds.length > 0 ? allCourseIds : ['00000000-0000-0000-0000-000000000000']
     const { data: enrolls } = await supabase
       .from('enrollments')
       .select('profile_id, course_id')
       .in('profile_id', sidFilter)
-      .in('course_id', courseIds)
+      .in('course_id', cidFilter)
       .in('status', ['active', 'recovery'])
 
     const enrolledMap = new Map<string, Set<string>>()
@@ -124,7 +112,7 @@ export async function initCoachEnroll(): Promise<void> {
       updateSaveBar()
     }
 
-    const courseFilterHtml = courses.map((c: any) => `
+    const courseFilterHtml = allCourses.map((c: any) => `
       <button class="enroll-course-filter flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
         data-course-id="${escapeHtml(c.id)}" data-active="1">
         ${Icon('checkCircle', 14)}
@@ -132,7 +120,7 @@ export async function initCoachEnroll(): Promise<void> {
       </button>
     `).join('')
 
-    const tableRows = students.map((s: any) => {
+    const tableRows = allStudents.map((s: any) => {
       const initial = (s.full_name || '?').charAt(0).toUpperCase()
       return `
       <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
@@ -148,7 +136,7 @@ export async function initCoachEnroll(): Promise<void> {
         <td class="py-3 px-4 text-xs text-zinc-400 hidden md:table-cell">${escapeHtml(s.email || '')}</td>
         <td class="py-3 px-4">
           <div class="flex flex-wrap gap-1">
-            ${courses.map((c: any) => {
+            ${allCourses.map((c: any) => {
               const enr = enrolledMap.get(s.id)?.has(c.id)
               return `<span class="course-badge inline-block rounded px-1.5 py-0.5 text-[10px] cursor-pointer transition ${enr ? 'bg-green-500/20 text-green-400' : 'bg-zinc-800 text-zinc-600'}" data-student="${escapeHtml(s.id)}" data-course="${escapeHtml(c.id)}">${escapeHtml(c.name)}</span>`
             }).join('')}
@@ -173,7 +161,7 @@ export async function initCoachEnroll(): Promise<void> {
         <div class="flex items-center gap-3">
           <select id="bulk-course-select" class="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
             <option value="">Curso para todos...</option>
-            ${courses.map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
+            ${allCourses.map((c: any) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}
           </select>
           <button id="btn-mark-all" class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition">${Icon('plus', 14)} Marcar todos</button>
         </div>
@@ -220,6 +208,7 @@ export async function initCoachEnroll(): Promise<void> {
         const sid = el.dataset.student
         const cid = el.dataset.course
         if (!sid || !cid) return
+        if (!enrollableSet.has(cid)) { toast('warning', 'No tienes este curso asignado'); return }
         const isCurrentlyEnrolled = enrolledMap.get(sid)?.has(cid)
         toggleEnroll(sid, cid, !isCurrentlyEnrolled)
       })
@@ -329,7 +318,7 @@ export async function initCoachEnroll(): Promise<void> {
         el.classList.toggle('bg-zinc-800/40', active)
         el.classList.toggle('text-zinc-500', active)
         el.classList.toggle('border-dashed', active)
-        el.innerHTML = active ? `${Icon('plus', 12)} <span>${escapeHtml(courses.find((c: any) => c.id === cid)?.name || '')}</span>` : `${Icon('checkCircle', 14)} <span>${escapeHtml(courses.find((c: any) => c.id === cid)?.name || '')}</span>`
+        el.innerHTML = active ? `${Icon('plus', 12)} <span>${escapeHtml(allCourses.find((c: any) => c.id === cid)?.name || '')}</span>` : `${Icon('checkCircle', 14)} <span>${escapeHtml(allCourses.find((c: any) => c.id === cid)?.name || '')}</span>`
         document.querySelectorAll<HTMLElement>('.course-badge').forEach(badge => {
           if (badge.dataset.course === cid) badge.classList.toggle('opacity-30', active)
         })
