@@ -33,8 +33,7 @@ export async function initCoachAssignments(): Promise<void> {
           const bg = coach.custom_bg_url
           const accent = coach.role_color || '#8B5CF6'
           return `
-          <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
-            ${bg ? `<div class="h-24 bg-cover bg-center" style="background-image:url('${escapeHtml(bg)}')"></div>` : ''}
+          <div class="rounded-xl border border-zinc-800 overflow-hidden ${bg ? '' : 'bg-[#111]'}" ${bg ? `style="background:linear-gradient(rgba(17,17,17,0.92),rgba(17,17,17,0.92)),url('${escapeHtml(bg)}') center/cover"` : ''}>
             <div class="p-5">
             <div class="flex items-center gap-3 mb-4">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold" style="background:${accent}20;color:${accent}">${coach.avatar_url ? `<img src="${escapeHtml(coach.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml((coach.full_name || '?').charAt(0).toUpperCase())}</div>
