@@ -63,16 +63,17 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
     [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
-    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer)],
+    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/exams`, 'scrollText', 'Ex\u00e1menes', isStudent || isPlayer)],
     [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer || isStudent)],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item(`/${prefix}/grades`, 'scrollText', 'Notas', isStudent || isPlayer)],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos')],
     [item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
-    [item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
+    [item('/coaches/exams', 'scrollText', 'Ex\u00e1menes'), item('/coaches/attendance', 'clipboardList', 'Asistencia'), item('/coaches/grades', 'scrollText', 'Notas')],
+    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 

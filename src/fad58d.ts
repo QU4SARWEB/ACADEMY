@@ -33,6 +33,10 @@ import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/tasks'
 import { renderCoachEnroll, initCoachEnroll } from '@/b3b32a/8abf18/enroll'
 import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/tasks'
 import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/tasks'
+import { renderCoachExams, initCoachExams } from '@/b3b32a/8abf18/exams'
+import { renderStudentExamList, initStudentExamList, renderStudentExamDetail, initStudentExamDetail } from '@/b3b32a/75d37c/exams'
+import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/attendance'
+import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/grades'
 
 import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
 import { renderCoachPlayerDetail, initCoachPlayerDetail } from '@/b3b32a/8abf18/player_detail'
@@ -243,6 +247,9 @@ dash('/coaches/assignments', () => renderCoachAssignments(), initCoachAssignment
 dash('/coaches/grades', () => renderCoachGrades(), initCoachGrades)
 dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
 dash('/coaches/enroll', () => renderCoachEnroll(), initCoachEnroll)
+dash('/coaches/exams', () => renderCoachExams(), initCoachExams)
+dash('/coaches/exams/:id', () => renderCoachExams(), initCoachExams)
+dash('/coaches/attendance', () => renderCoachAttendance(), initCoachAttendance)
 
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)
@@ -255,6 +262,9 @@ dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
 dash('/students/team', () => renderStudentTeam(), initStudentTeam)
+dash('/students/exams', () => renderStudentExamList(), initStudentExamList)
+dash('/students/exams/:id', () => renderStudentExamDetail(), initStudentExamDetail)
+dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 // Player routes
 dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
 dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
