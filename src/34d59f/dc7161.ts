@@ -62,16 +62,18 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
+    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer)],
     [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer || isStudent)],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
-    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
-    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
-    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones'), item('/coaches/grades', 'scrollText', 'Notas')],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos')],
+    [item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
+    [item('/coaches/grades', 'scrollText', 'Notas'), item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
+    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 
   const isExpired = !!(window as any).__isExpired
@@ -103,7 +105,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   return `
     <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden border-r border-zinc-800 bg-[#0A0A0A] p-4 flex flex-col">
-      <a href="#/${prefix}/dashboard" class="mb-6 flex items-center gap-2 px-3">
+      <a href="#/" class="mb-6 flex items-center gap-2 px-3">
         <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-base font-bold text-white">QU<span style="color:${accent}">4</span>SAR</span>
       </a>
