@@ -223,11 +223,11 @@ export async function initCoachEnroll(): Promise<void> {
           Seleccionar todos
         </label>
       ${myStudents.length > 0 ? `
-      <div class="mb-6">
+      <div class="w-full mb-6">
         <h2 class="mb-3 font-heading text-base font-bold text-white">Mis alumnos</h2>
         <div class="w-full rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+          <div class="w-full overflow-x-auto">
+            <table class="w-full min-w-full text-sm">
               <thead>
                 <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                   <th class="py-3 px-4 font-medium w-10"></th>
@@ -243,11 +243,11 @@ export async function initCoachEnroll(): Promise<void> {
         </div>
       </div>` : ''}
       ${freeOnlyStudents.length > 0 ? `
-      <div>
+      <div class="w-full">
         <h2 class="mb-3 font-heading text-base font-bold text-zinc-400">Alumnos sin curso asignado (solo cursos gratuitos)</h2>
         <div class="w-full rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+          <div class="w-full overflow-x-auto">
+            <table class="w-full min-w-full text-sm">
               <thead>
                 <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                   <th class="py-3 px-4 font-medium w-10"></th>
