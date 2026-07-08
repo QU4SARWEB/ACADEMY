@@ -203,6 +203,7 @@ export async function initCoachEnroll(): Promise<void> {
     document.getElementById('btn-save-enroll')?.addEventListener('click', async () => {
       const changes = [...pendingChanges]
       if (changes.length === 0) return
+      ;(window as any).__blockReload = true
       const btn = document.getElementById('btn-save-enroll') as HTMLButtonElement
       btn.disabled = true
       btn.textContent = 'Guardando...'
@@ -252,6 +253,7 @@ export async function initCoachEnroll(): Promise<void> {
       else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
       pendingChanges = []
       pendingSet.clear()
+      ;(window as any).__blockReload = false
       initCoachEnroll()
     })
 
