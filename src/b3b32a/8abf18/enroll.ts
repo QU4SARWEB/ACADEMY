@@ -142,7 +142,8 @@ export async function initCoachEnroll(): Promise<void> {
       updateSaveBar()
     }
 
-    const courseFilterHtml = allCourses.map((c: any) => `
+    const coachCourses = allCourses.filter((c: any) => enrollableSet.has(c.id))
+    const courseFilterHtml = coachCourses.map((c: any) => `
       <button class="enroll-course-filter flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
         data-course-id="${escapeHtml(c.id)}" data-active="1">
         ${Icon('checkCircle', 14)}
