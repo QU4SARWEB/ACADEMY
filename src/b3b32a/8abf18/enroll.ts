@@ -3,7 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
-import { createEnrollmentWithPayment } from '@/2b3583/course_utils'
+
 
 export function renderCoachEnroll(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -207,23 +207,45 @@ export async function initCoachEnroll(): Promise<void> {
       btn.disabled = true
       btn.textContent = 'Guardando...'
       let ok = 0, fail = 0
+      // Group by course for batch processing
+      const enrollByCourse = new Map<string, { ids: string[]; type: string }>()
+      const unenrollByCourse = new Map<string, string[]>()
       for (const c of changes) {
-        try {
-          if (c.enroll) {
-            const result = await createEnrollmentWithPayment(c.studentId, c.courseId, c.type)
-            if ('error' in result) { fail++ } else { ok++ }
-          } else {
-            const { data: enrs } = await supabase.from('enrollments').select('id').eq('profile_id', c.studentId).eq('course_id', c.courseId)
-            const eids = (enrs ?? []).map((e: any) => e.id)
-            if (eids.length > 0) {
-              await supabase.from('payments').delete().in('enrollment_id', eids)
-              await supabase.from('enrollments').delete().eq('profile_id', c.studentId).eq('course_id', c.courseId)
-            }
-            ok++
+        if (c.enroll) {
+          if (!enrollByCourse.has(c.courseId)) enrollByCourse.set(c.courseId, { ids: [], type: c.type })
+          enrollByCourse.get(c.courseId)!.ids.push(c.studentId)
+        } else {
+          if (!unenrollByCourse.has(c.courseId)) unenrollByCourse.set(c.courseId, [])
+          unenrollByCourse.get(c.courseId)!.push(c.studentId)
+        }
+      }
+
+      // Process unenrollments by course
+      for (const [cid, sids] of unenrollByCourse) {
+        const { data: enrs } = await supabase.from('enrollments').select('id').in('profile_id', sids).eq('course_id', cid)
+        const eids = (enrs ?? []).map((e: any) => e.id)
+        if (eids.length > 0) {
+          await supabase.from('payments').delete().in('enrollment_id', eids)
+          await supabase.from('enrollments').delete().in('id', eids)
+        }
+        ok += sids.length
+      }
+
+      // Process enrollments by course
+      for (const [cid, data] of enrollByCourse) {
+        const { data: result, error } = await supabase.rpc('batch_enroll', {
+          p_student_ids: data.ids,
+          p_course_id: cid,
+          p_type: data.type,
+        })
+        if (error) {
+          fail += data.ids.length
+          toast('error', 'Error batch: ' + error.message)
+        } else {
+          for (const r of result ?? []) {
+            if (r.ok) ok++
+            else fail++
           }
-        } catch (e) {
-          console.error('Error processing change:', c, e)
-          fail++
         }
       }
       if (fail > 0) toast('warning', `${ok} exitoso${ok !== 1 ? 's' : ''}, ${fail} error${fail !== 1 ? 'es' : ''}`)
