@@ -201,27 +201,35 @@ export async function initCoachEnroll(): Promise<void> {
 
     // Save all pending changes
     document.getElementById('btn-save-enroll')?.addEventListener('click', async () => {
-      if (pendingChanges.length === 0) return
+      const changes = [...pendingChanges]
+      if (changes.length === 0) return
       const btn = document.getElementById('btn-save-enroll') as HTMLButtonElement
       btn.disabled = true
       btn.textContent = 'Guardando...'
       let ok = 0, fail = 0
-      for (const c of pendingChanges) {
-        if (c.enroll) {
-          const result = await createEnrollmentWithPayment(c.studentId, c.courseId, c.type)
-          if ('error' in result) { fail++ } else { ok++ }
-        } else {
-          const { data: enrs } = await supabase.from('enrollments').select('id').eq('profile_id', c.studentId).eq('course_id', c.courseId)
-          const eids = (enrs ?? []).map((e: any) => e.id)
-          if (eids.length > 0) {
-            await supabase.from('payments').delete().in('enrollment_id', eids)
-            await supabase.from('enrollments').delete().eq('profile_id', c.studentId).eq('course_id', c.courseId)
+      for (const c of changes) {
+        try {
+          if (c.enroll) {
+            const result = await createEnrollmentWithPayment(c.studentId, c.courseId, c.type)
+            if ('error' in result) { fail++ } else { ok++ }
+          } else {
+            const { data: enrs } = await supabase.from('enrollments').select('id').eq('profile_id', c.studentId).eq('course_id', c.courseId)
+            const eids = (enrs ?? []).map((e: any) => e.id)
+            if (eids.length > 0) {
+              await supabase.from('payments').delete().in('enrollment_id', eids)
+              await supabase.from('enrollments').delete().eq('profile_id', c.studentId).eq('course_id', c.courseId)
+            }
+            ok++
           }
-          ok++
+        } catch (e) {
+          console.error('Error processing change:', c, e)
+          fail++
         }
       }
       if (fail > 0) toast('warning', `${ok} exitoso${ok !== 1 ? 's' : ''}, ${fail} error${fail !== 1 ? 'es' : ''}`)
       else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
+      pendingChanges = []
+      pendingSet.clear()
       initCoachEnroll()
     })
 
