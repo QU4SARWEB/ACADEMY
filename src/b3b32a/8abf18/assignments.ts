@@ -11,7 +11,7 @@ export function renderCoachAssignments(): string {
 export async function initCoachAssignments(): Promise<void> {
   try {
     const [{ data: coaches }, { data: courses }] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, avatar_url').eq('role', 'coach').eq('is_active', true).order('full_name'),
+      supabase.from('profiles').select('id, full_name, email, avatar_url, role_color, custom_bg_url').eq('role', 'coach').eq('is_active', true).order('full_name'),
       supabase.from('courses').select('id, name, price').eq('is_active', true).order('display_order'),
     ])
 
@@ -30,10 +30,14 @@ export async function initCoachAssignments(): Promise<void> {
       <div class="space-y-4">
         ${(coaches ?? []).map((coach: any) => {
           const coachCourses = assignedMap.get(coach.id) || new Set()
+          const bg = coach.custom_bg_url
+          const accent = coach.role_color || '#8B5CF6'
           return `
-          <div class="rounded-xl border border-zinc-800 bg-[#111] p-5">
+          <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
+            ${bg ? `<div class="h-24 bg-cover bg-center" style="background-image:url('${escapeHtml(bg)}')"></div>` : ''}
+            <div class="p-5">
             <div class="flex items-center gap-3 mb-4">
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-sm font-bold text-[#8B5CF6] overflow-hidden">${coach.avatar_url ? `<img src="${escapeHtml(coach.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml((coach.full_name || '?').charAt(0).toUpperCase())}</div>
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold" style="background:${accent}20;color:${accent}">${coach.avatar_url ? `<img src="${escapeHtml(coach.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml((coach.full_name || '?').charAt(0).toUpperCase())}</div>
               <div>
                 <h3 class="text-sm font-semibold text-white">${escapeHtml(coach.full_name || '')}</h3>
                 <p class="text-xs text-zinc-500">${escapeHtml(coach.email || '')}</p>
@@ -53,6 +57,7 @@ export async function initCoachAssignments(): Promise<void> {
                 </button>`
               }).join('')}
             </div>
+          </div>
           </div>`
         }).join('')}
       </div>`
