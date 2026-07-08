@@ -3,7 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
-
+import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachEnroll(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -13,14 +13,29 @@ export async function initCoachEnroll(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
+    const coachId = session.user.id
 
-    const [studentsRes, coursesRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, avatar_url').in('role', ['student', 'player']).eq('is_active', true).order('full_name'),
-      supabase.from('courses').select('id, name, price').eq('is_active', true).order('display_order'),
-    ])
+    const assignedIds = await getAssignedCourseIds(coachId)
 
-    const students = studentsRes.data ?? []
-    const courses = coursesRes.data ?? []
+    let coursesQuery = supabase.from('courses').select('id, name, price').eq('is_active', true).order('display_order')
+    if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+    const cRes = await coursesQuery
+    const courses = cRes.data ?? []
+    const courseIds = courses.map((c: any) => c.id)
+    const courseIdFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
+
+    // Only show students enrolled in the coach's courses
+    const { data: enrollments } = await supabase
+      .from('enrollments')
+      .select('profile_id')
+      .in('course_id', courseIdFilter)
+      .in('status', ['active', 'recovery'])
+    const enrolledStudentIds = [...new Set((enrollments ?? []).map((e: any) => e.profile_id))]
+
+    let studentsQuery = supabase.from('profiles').select('id, full_name, email, avatar_url').in('role', ['student', 'player']).eq('is_active', true)
+    if (enrolledStudentIds.length > 0) studentsQuery = studentsQuery.in('id', enrolledStudentIds)
+    const sRes = await studentsQuery.order('full_name')
+    const students = sRes.data ?? []
 
     const studentIds = students.map((s: any) => s.id)
     const sidFilter = studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']
