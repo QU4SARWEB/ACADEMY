@@ -63,7 +63,7 @@ export async function initCoachEnroll(): Promise<void> {
     // Get all active students
     const { data: sRes } = await supabase
       .from('profiles')
-      .select('id, full_name, email, avatar_url')
+      .select('id, full_name, display_name, email, avatar_url, riot_id, social_discord')
       .in('role', ['student', 'player'])
       .eq('is_active', true)
       .order('full_name')
@@ -150,6 +150,11 @@ export async function initCoachEnroll(): Promise<void> {
       </button>
     `).join('')
 
+    function fmtProfile(p: any): string {
+      const parts = [p.riot_id, p.social_discord, p.display_name, p.full_name].filter(Boolean)
+      return parts.join(' | ')
+    }
+
     function renderTableRows(students: any[]): string {
       return students.map((s: any) => {
       const initial = (s.full_name || '?').charAt(0).toUpperCase()
@@ -161,7 +166,9 @@ export async function initCoachEnroll(): Promise<void> {
             <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">
               ${s.avatar_url ? `<img src="${escapeHtml(s.avatar_url)}" alt="" class="h-full w-full object-cover" />` : escapeHtml(initial)}
             </div>
-            <span class="text-sm text-white">${escapeHtml(s.full_name || '')}</span>
+            <div class="min-w-0">
+              <span class="text-sm text-white">${escapeHtml(fmtProfile(s))}</span>
+            </div>
           </div>
         </td>
         <td class="py-3 px-4 text-xs text-zinc-400 hidden md:table-cell">${escapeHtml(s.email || '')}</td>
@@ -218,7 +225,7 @@ export async function initCoachEnroll(): Promise<void> {
       ${myStudents.length > 0 ? `
       <div class="mb-6">
         <h2 class="mb-3 font-heading text-base font-bold text-white">Mis alumnos</h2>
-        <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
+        <div class="w-full rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
@@ -238,7 +245,7 @@ export async function initCoachEnroll(): Promise<void> {
       ${freeOnlyStudents.length > 0 ? `
       <div>
         <h2 class="mb-3 font-heading text-base font-bold text-zinc-400">Alumnos sin curso asignado (solo cursos gratuitos)</h2>
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        <div class="w-full rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
