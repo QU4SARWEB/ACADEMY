@@ -42,10 +42,21 @@ export async function initCoachEnroll(): Promise<void> {
       .in('status', ['active', 'recovery'])
     const enrolledStudentIds = [...new Set((enrollments ?? []).map((e: any) => e.profile_id))]
 
-    let studentsQuery = supabase.from('profiles').select('id, full_name, email, avatar_url').in('role', ['student', 'player']).eq('is_active', true)
-    if (enrolledStudentIds.length > 0) studentsQuery = studentsQuery.in('id', enrolledStudentIds)
-    const sRes = await studentsQuery.order('full_name')
-    const students = sRes.data ?? []
+    if (enrolledStudentIds.length === 0) {
+      document.getElementById('page-content')!.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <p class="text-zinc-500">No hay alumnos inscritos en tus cursos asignados.</p>
+        </div>`
+      return
+    }
+    const { data: sRes } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url')
+      .in('id', enrolledStudentIds)
+      .in('role', ['student', 'player'])
+      .eq('is_active', true)
+      .order('full_name')
+    const students = sRes ?? []
 
     const studentIds = students.map((s: any) => s.id)
     const sidFilter = studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']
