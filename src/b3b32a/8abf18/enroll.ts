@@ -69,14 +69,12 @@ export async function initCoachEnroll(): Promise<void> {
       .order('full_name')
     const allProfiles = sRes ?? []
 
-    // Filter: my students + students with ONLY free courses
-    const allStudents = allProfiles.filter((s: any) => {
-      if (myStudentIds.has(s.id)) return true          // Student has one of my paid courses
-      if (!studentsWithPaid.has(s.id)) return true      // Student has NO paid courses (only free)
-      return false                                      // Student has paid courses not mine
-    })
+    // Split: my students vs students with ONLY free courses
+    const myStudents = allProfiles.filter((s: any) => myStudentIds.has(s.id))
+    const freeOnlyStudents = allProfiles.filter((s: any) => !myStudentIds.has(s.id) && !studentsWithPaid.has(s.id))
 
-    const studentIds = allStudents.map((s: any) => s.id)
+    const allDisplayStudents = [...myStudents, ...freeOnlyStudents]
+    const studentIds = allDisplayStudents.map((s: any) => s.id)
     const sidFilter = studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']
     const allCourseIds = allCourses.map((c: any) => c.id)
     const cidFilter = allCourseIds.length > 0 ? allCourseIds : ['00000000-0000-0000-0000-000000000000']
@@ -152,7 +150,8 @@ export async function initCoachEnroll(): Promise<void> {
       </button>
     `).join('')
 
-    const tableRows = allStudents.map((s: any) => {
+    function renderTableRows(students: any[]): string {
+      return students.map((s: any) => {
       const initial = (s.full_name || '?').charAt(0).toUpperCase()
       return `
       <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
@@ -183,6 +182,7 @@ export async function initCoachEnroll(): Promise<void> {
         </td>
       </tr>`
     }).join('')
+    }
 
     document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6 flex items-center justify-between">
@@ -215,23 +215,46 @@ export async function initCoachEnroll(): Promise<void> {
           <input type="checkbox" id="select-all-enroll" class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]">
           Seleccionar todos
         </label>
-      </div>
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
-                <th class="py-3 px-4 font-medium w-10"></th>
-                <th class="py-3 px-4 font-medium">Nombre</th>
-                <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
-                <th class="py-3 px-4 font-medium">Cursos</th>
-                <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
+      ${myStudents.length > 0 ? `
+      <div class="mb-6">
+        <h2 class="mb-3 font-heading text-base font-bold text-white">Mis alumnos</h2>
+        <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
+                  <th class="py-3 px-4 font-medium w-10"></th>
+                  <th class="py-3 px-4 font-medium">Nombre</th>
+                  <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
+                  <th class="py-3 px-4 font-medium">Cursos</th>
+                  <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
+                </tr>
+              </thead>
+              <tbody>${renderTableRows(myStudents)}</tbody>
+            </table>
+          </div>
         </div>
-      </div>`
+      </div>` : ''}
+      ${freeOnlyStudents.length > 0 ? `
+      <div>
+        <h2 class="mb-3 font-heading text-base font-bold text-zinc-400">Alumnos sin curso asignado (solo cursos gratuitos)</h2>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
+                  <th class="py-3 px-4 font-medium w-10"></th>
+                  <th class="py-3 px-4 font-medium">Nombre</th>
+                  <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
+                  <th class="py-3 px-4 font-medium">Cursos</th>
+                  <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
+                </tr>
+              </thead>
+              <tbody>${renderTableRows(freeOnlyStudents)}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>` : ''}`
 
     // Click badge to toggle pending change
     document.querySelectorAll('.course-badge').forEach(badge => {
