@@ -30,6 +30,7 @@ import { renderCoachCodes, initCoachCodes } from '@/b3b32a/8abf18/codes'
 import { renderCoachAssignments, initCoachAssignments } from '@/b3b32a/8abf18/assignments'
 import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/grades'
 import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/tasks'
+import { renderCoachEnroll, initCoachEnroll } from '@/b3b32a/8abf18/enroll'
 import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/tasks'
 import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/tasks'
 
@@ -241,6 +242,7 @@ dash('/coaches/codes', () => renderCoachCodes(), initCoachCodes)
 dash('/coaches/assignments', () => renderCoachAssignments(), initCoachAssignments)
 dash('/coaches/grades', () => renderCoachGrades(), initCoachGrades)
 dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
+dash('/coaches/enroll', () => renderCoachEnroll(), initCoachEnroll)
 
 dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
 dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)

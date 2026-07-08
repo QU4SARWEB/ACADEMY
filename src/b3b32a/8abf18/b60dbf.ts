@@ -7,7 +7,6 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
-import { createEnrollmentWithPayment } from '@/2b3583/course_utils'
 
 export function renderCoachStudentDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -52,14 +51,6 @@ export function mountCoachStudentDetail(): void {
           else paymentByEnroll.set(key, p.status)
         }
       }
-
-      const enrolledCourseIds = enrollments.map((e: any) => e.course_id)
-      const { data: available } = enrolledCourseIds.length > 0
-        ? await supabase.from('courses').select('id, name').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.join(',')})`).neq('slug', 'clase-general').order('name')
-        : await supabase.from('courses').select('id, name').eq('is_active', true).neq('slug', 'clase-general').order('name')
-      // Filter out complementaria unless the student has at least one paid/scholarship payment (non-free)
-      const hasPaidAny = (payments ?? []).some((p: any) => (p.status === 'paid' || p.status === 'scholarship') && p.enrollment_id)
-      const filteredAvailable = (available ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
 
       const html = `
         ${Breadcrumb([
@@ -147,34 +138,6 @@ export function mountCoachStudentDetail(): void {
                 </div>
               </div>
 
-              <div class="mt-4 rounded-lg border border-zinc-800 bg-[#111] p-4">
-                <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
-                  ${Icon('bookOpen', 14)} Inscribir en curso
-                </h3>
-                <form id="form-enroll" class="mt-3 space-y-3">
-                  <input type="hidden" name="profileId" value="${escapeHtml(id)}" />
-                  <div>
-                    <input type="hidden" name="courseId" id="enroll-course-id" value="" />
-                    <div class="flex flex-wrap gap-2" id="enroll-course-grid">
-                      ${filteredAvailable.length === 0 ? '<p class="text-xs text-zinc-500">Ya está inscrito en todos los cursos.</p>' : filteredAvailable.map((c: any) => `
-                        <button type="button" class="enroll-course-btn rounded-xl border px-4 py-2 text-sm text-zinc-300 transition hover:border-[#8B5CF6] hover:text-white border-zinc-700 bg-zinc-900/50"
-                          data-course-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>
-                      `).join('')}
-                    </div>
-                  </div>
-                  <div class="flex gap-2">
-                    <input type="hidden" name="seasonId" value="" />
-                    <select name="type" class="rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
-                      <option value="student">Alumno</option>
-                      <option value="player">Jugador</option>
-                    </select>
-                  </div>
-                  <p id="enroll-error" class="hidden text-xs text-red-400"></p>
-                  <button type="submit" class="btn-glow rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-                    ${Icon('plus', 14)} Inscribir
-                  </button>
-                </form>
-              </div>
             </div>
           </div>
         </div>`
@@ -234,45 +197,6 @@ function attachEventListeners(studentId: string, isActive: boolean, hasScholarsh
         window.location.reload()
       } catch (err: any) { toast('error', err?.message || 'Error al eliminar'); console.error(err) }
     })
-  })
-
-  // Course selector buttons
-  document.querySelectorAll('.enroll-course-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.enroll-course-btn').forEach(b => {
-        b.classList.remove('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
-        b.classList.add('border-zinc-700', 'text-zinc-300')
-      })
-      btn.classList.add('bg-[#8B5CF6]/20', 'border-[#8B5CF6]', 'text-white')
-      btn.classList.remove('border-zinc-700', 'text-zinc-300')
-      document.getElementById('enroll-course-id')!.setAttribute('value', (btn as HTMLElement).dataset.courseId || '')
-    })
-  })
-
-  document.getElementById('form-enroll')?.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    const fd = new FormData(e.target as HTMLFormElement)
-    const profileId = fd.get('profileId') as string
-    const courseId = fd.get('courseId') as string
-    const type = (fd.get('type') as string) || 'student'
-
-    if (!courseId) {
-      document.getElementById('enroll-error')!.textContent = 'Selecciona un curso'
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-    const result = await createEnrollmentWithPayment(profileId, courseId, type)
-
-    if ('error' in result) {
-      document.getElementById('enroll-error')!.textContent = result.error
-      document.getElementById('enroll-error')!.classList.remove('hidden')
-      return
-    }
-
-    toast('success', 'Pago creado (' + result.payStatus + ')')
-    toast('success', 'Estudiante inscrito correctamente')
-    mountCoachStudentDetail()
   })
 
 }
