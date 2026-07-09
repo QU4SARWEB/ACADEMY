@@ -153,8 +153,7 @@ export async function initStudentExamDetail(): Promise<void> {
       .order('order_index', { ascending: true })
 
     const questions = (eqs ?? []).map((eq: any) => {
-      const q = eq.questions || {}
-      return { ...q, examQuestionId: eq.id }
+      return { ...eq, text: eq.question, examQuestionId: eq.id, points: eq.points }
     })
 
     const { data: existingResult } = await supabase
