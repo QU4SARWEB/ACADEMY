@@ -41,8 +41,24 @@ export function renderSchedulePage(
       return sd && getMonthKey(sd) === monthKey
     })
 
+    // Week filtering
+    const scheduleWeeks = [...new Set(monthSchedules.map((s: any) => s.week_number).filter((w: any) => w > 0))].sort()
+    let currentWeek: number | null = scheduleWeeks.length > 0 ? scheduleWeeks[0] : null
+    const savedWeek = sessionStorage.getItem('studentScheduleWeek')
+    if (savedWeek && scheduleWeeks.includes(parseInt(savedWeek))) currentWeek = parseInt(savedWeek)
+    const filteredSchedules = currentWeek ? monthSchedules.filter((s: any) => s.week_number === currentWeek) : monthSchedules
+
+    const schedWeekHtml = scheduleWeeks.length > 1 ? `
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+        <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+        ${scheduleWeeks.map((w: number) => `
+          <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === currentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
+        `).join('')}
+      </div>` : ''
+
     const schedByDate: Record<string, any[]> = {}
-    for (const s of monthSchedules) {
+    for (const s of filteredSchedules) {
       const sd = getDateFromSchedule(s)
       if (!sd) continue
       if (!schedByDate[sd]) schedByDate[sd] = []
@@ -53,8 +69,6 @@ export function renderSchedulePage(
 
     const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
     const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
-
-    const dateSections = sortedDates.map(date => {
       const dayScheds = schedByDate[date]
       return `
       <div class="glass rounded-xl p-5 mb-4">
@@ -117,6 +131,7 @@ export function renderSchedulePage(
         <span class="text-sm font-semibold text-white capitalize">${monthLabel}</span>
         <button id="btn-next-month" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 transition">${Icon('chevronRight', 14)}</button>
       </div>
+      ${schedWeekHtml}
       ${dateSections || '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horarios este mes.</p></div>'}
       ${schedules.length === 0 ? '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay horarios publicados.</p></div>' : ''}`
 
@@ -132,6 +147,15 @@ export function renderSchedulePage(
     document.getElementById('btn-next-month')?.addEventListener('click', () => {
       currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
       render()
+    })
+
+    document.querySelectorAll('.sched-week-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const week = (btn as HTMLElement).dataset.week
+        if (week === 'all') sessionStorage.removeItem('studentScheduleWeek')
+        else sessionStorage.setItem('studentScheduleWeek', week!)
+        render()
+      })
     })
 
     // Schedule item modal

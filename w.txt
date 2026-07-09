@@ -1,1 +1,0 @@
-fix: mostrar archivo adjunto en tareas con visor google
