@@ -169,7 +169,7 @@ export async function initStudentExamDetail(): Promise<void> {
       const { data: ans } = await supabase
         .from('exam_answers')
         .select('*')
-        .eq('exam_result_id', result.id)
+        .eq('exam_id', examId)
       renderReadOnlyExam(container, exam, questions, result, ans ?? [])
       return
     }
@@ -435,20 +435,20 @@ async function submitExam(
         const score = isCorrect ? points : 0
         if (isCorrect) totalScore += points
         answersToInsert.push({
-          exam_result_id: result.id,
+          exam_id: examId,
           question_id: q.id,
+          student_id: uid,
           answer: userAnswer || null,
-          is_correct: isCorrect,
           score: score,
           graded: true,
         })
       } else if (q.type === 'detail') {
         hasDetail = true
         answersToInsert.push({
-          exam_result_id: result.id,
+          exam_id: examId,
           question_id: q.id,
+          student_id: uid,
           answer: userAnswer || null,
-          is_correct: null,
           score: 0,
           graded: false,
         })

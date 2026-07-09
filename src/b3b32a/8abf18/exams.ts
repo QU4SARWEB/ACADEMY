@@ -964,8 +964,9 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
         let answer = answersByQuestion[q.id]
         if (!answer) {
           const { data: newAns } = await supabase.from('exam_answers').insert({
-            exam_result_id: result.id,
+            exam_id: examId,
             question_id: q.id,
+            student_id: studentId,
             answer: '',
           }).select().maybeSingle()
           answer = newAns
