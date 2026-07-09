@@ -75,7 +75,10 @@ export async function initCoachTasks(): Promise<void> {
                 <h3 class="text-sm font-semibold text-white">${escapeHtml(t.title)}</h3>
                 <p class="text-xs text-zinc-500 mt-1">${escapeHtml(course?.name || 'Desconocido')} · Semana ${escapeHtml(String(t.week_number))}</p>
               </div>
-              <button class="delete-task-btn text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(t.id)}" title="Eliminar tarea">${Icon('trash', 14)}</button>
+              <div class="flex items-center gap-1">
+                <button class="edit-task-btn text-zinc-400 hover:text-white transition" data-task-id="${escapeHtml(t.id)}" title="Editar tarea">${Icon('edit', 13)}</button>
+                <button class="delete-task-btn text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(t.id)}" title="Eliminar tarea">${Icon('trash', 14)}</button>
+              </div>
             </div>
             ${t.description ? `<p class="text-xs text-zinc-400 mb-3 line-clamp-2">${escapeHtml(t.description)}</p>` : ''}
             <div class="flex items-center gap-4 text-xs text-zinc-500">
@@ -111,6 +114,7 @@ function bindTaskEvents(courses: any[], coachId: string): void {
   setupNewTaskButton(courses, coachId)
   setupTaskCardClicks()
   setupDeleteTaskButtons()
+  setupEditTaskButtons()
 }
 
 function initCourseFilters(): void {
@@ -251,6 +255,27 @@ function setupTaskCardClicks(): void {
       const taskId = (card as HTMLElement).dataset.taskId
       if (!taskId) return
       openTaskSubmissionsModal(taskId)
+    })
+  })
+}
+
+function setupEditTaskButtons(): void {
+  document.querySelectorAll('.edit-task-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation()
+      const taskId = (btn as HTMLElement).dataset.taskId
+      if (!taskId) return
+      const { data: task } = await supabase.from('course_tasks').select('*').eq('id', taskId).maybeSingle()
+      if (!task) return
+      const container = document.getElementById('task-form-container')!
+      container.classList.remove('hidden')
+      container.scrollIntoView({ behavior: 'smooth' })
+      const courses: any[] = []
+      document.querySelectorAll('#task-create-form select[name="courseId"] option').forEach((opt: any) => {
+        if (opt.value) courses.push({ id: opt.value, name: opt.text })
+      })
+      container.innerHTML = renderTaskCreateForm(courses, task)
+      bindTaskFormEvents(container, '', taskId)
     })
   })
 }

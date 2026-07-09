@@ -83,8 +83,24 @@ export async function initCoachExams(): Promise<void> {
 
     const courseMap = new Map((courses ?? []).map((c: any) => [c.id, c]))
 
+    // Week navigation
+    const allWeeks = [...new Set((exams ?? []).map((e: any) => e.week_number).filter(Boolean))].sort()
+    const savedWeek = sessionStorage.getItem('examWeek')
+    let currentWeek: number | null = savedWeek ? parseInt(savedWeek) : (allWeeks.length > 0 ? allWeeks[0] : null)
+
+    const weekFilterHtml = allWeeks.map((w: number) => `
+      <button class="week-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
+        ${w === currentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}"
+        data-week="${w}">
+        ${Icon('calendar', 12)}
+        <span>Semana ${w}</span>
+      </button>
+    `).join('')
+
+    const filteredExams = currentWeek ? (exams ?? []).filter((e: any) => e.week_number === currentWeek) : (exams ?? [])
+
     const filterHtml = (courses ?? []).map((c: any) => {
-      const examCount = (exams ?? []).filter((e: any) => e.course_id === c.id).length
+      const examCount = filteredExams.filter((e: any) => e.course_id === c.id).length
       return `
       <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
         bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
@@ -95,9 +111,9 @@ export async function initCoachExams(): Promise<void> {
       </button>`
     }).join('')
 
-    const examCards = (exams ?? []).length === 0
+    const examCards = filteredExams.length === 0
       ? '<div class="col-span-full py-12 text-center text-sm text-zinc-500">No hay exámenes creados. Crea tu primer examen.</div>'
-      : (exams ?? []).map((e: any) => {
+      : filteredExams.map((e: any) => {
           const course = courseMap.get(e.course_id)
           const qs = questionsByExam[e.id] || []
           const totalPoints = qs.reduce((sum: number, q: any) => sum + (q.points || 0), 0)
@@ -149,6 +165,14 @@ export async function initCoachExams(): Promise<void> {
         <button id="btn-new-exam" class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">${Icon('plus', 14)} Nuevo examen</button>
       </div>
       <div id="exam-form-container" class="hidden mb-6"></div>
+      ${allWeeks.length > 1 ? `
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+        <button class="week-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">
+          ${Icon('calendar', 12)} Todas
+        </button>
+        ${weekFilterHtml}
+      </div>` : ''}
       <div class="mb-4 flex flex-wrap items-center gap-2" id="course-filters">${filterHtml}</div>
       <div id="exam-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${examCards}</div>`
 
@@ -161,6 +185,19 @@ export async function initCoachExams(): Promise<void> {
 }
 
 function bindExamEvents(courses: any[], coachId: string): void {
+  // Week filter
+  document.querySelectorAll('.week-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const week = (btn as HTMLElement).dataset.week
+      if (week === 'all') {
+        sessionStorage.removeItem('examWeek')
+      } else {
+        sessionStorage.setItem('examWeek', week!)
+      }
+      initCoachExams()
+    })
+  })
+
   initCourseFilters()
   document.getElementById('btn-new-exam')?.addEventListener('click', () => {
     const container = document.getElementById('exam-form-container')!
