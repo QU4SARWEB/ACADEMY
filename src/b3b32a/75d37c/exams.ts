@@ -46,7 +46,7 @@ export async function initStudentExamList(): Promise<void> {
       .from('exam_results')
       .select('*')
       .in('exam_id', examIds)
-      .eq('profile_id', session.user.id)
+      .eq('student_id', session.user.id)
 
     const resultMap = new Map<string, any>()
     for (const r of results ?? []) resultMap.set(r.exam_id, r)
@@ -102,7 +102,7 @@ export async function initStudentExamList(): Promise<void> {
                   ${weekLabel ? `<span class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${escapeHtml(weekLabel)}</span>` : ''}
                   ${statusBadge(status)}
                 </div>
-                ${isGraded ? `<p class="mt-2 text-sm font-bold text-green-400">${result.score}/${exam.max_score || result.score}</p>` : ''}
+                ${isGraded ? `<p class="mt-2 text-sm font-bold text-green-400">${result.total_score}/20</p>` : ''}
               </div>
               <a href="#/students/exams/${escapeHtml(exam.id)}" class="flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED] shrink-0">
                 ${Icon(btnIcon, 14)} ${btnLabel}
@@ -161,7 +161,7 @@ export async function initStudentExamDetail(): Promise<void> {
       .from('exam_results')
       .select('*')
       .eq('exam_id', examId)
-      .eq('profile_id', uid)
+      .eq('student_id', uid)
       .maybeSingle()
 
     let result = existingResult
@@ -181,10 +181,10 @@ export async function initStudentExamDetail(): Promise<void> {
         .from('exam_results')
         .insert({
           exam_id: examId,
-          profile_id: uid,
+          student_id: uid,
           status: 'in_progress',
-          max_score: maxScore,
-          started_at: new Date().toISOString(),
+          total_score: 0,
+          submitted_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -266,11 +266,10 @@ function renderReadOnlyExam(
   }).join('')
 
   let totalScoreHtml = ''
-  if (isGraded && result.score != null) {
-    const maxScore = result.max_score || result.score
-    const pct = maxScore > 0 ? Math.round((result.score / maxScore) * 100) : 0
-    const color = pct >= 70 ? 'text-green-400' : pct >= 50 ? 'text-yellow-400' : 'text-red-400'
-    totalScoreHtml = `<div class="glass rounded-xl p-5 text-center"><p class="text-sm text-zinc-500">Calificación total</p><p class="text-3xl font-bold ${color}">${result.score}/${maxScore}</p><p class="text-xs text-zinc-600 mt-1">${pct}%</p></div>`
+  if (isGraded && result.total_score != null) {
+    const score = result.total_score
+    const color = score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'
+    totalScoreHtml = `<div class="glass rounded-xl p-5 text-center"><p class="text-sm text-zinc-500">Calificación total</p><p class="text-3xl font-bold ${color}">${score}/20</p><p class="text-xs text-zinc-600 mt-1">${Math.round(score / 20 * 100)}%</p></div>`
   }
 
   container.innerHTML = `
@@ -278,7 +277,7 @@ function renderReadOnlyExam(
       <div class="mb-6">
         <a href="#/students/exams" class="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition mb-2">${Icon('arrowLeft', 14)} Volver a exámenes</a>
         <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">${statusLabels[result.status] || result.status}${isGraded && result.score != null ? ` · ${result.score}/${result.max_score || result.score} pts` : ''}</p>
+        <p class="mt-1 text-sm text-zinc-500">${statusLabels[result.status] || result.status}${isGraded && result.total_score != null ? ` · ${result.total_score}/20 pts` : ''}</p>
       </div>
       ${totalScoreHtml}
       <div class="space-y-4 mt-6">${questionHtml}</div>
@@ -467,8 +466,7 @@ async function submitExam(
       .from('exam_results')
       .update({
         status: finalStatus,
-        score: totalScore,
-        max_score: maxScore,
+        total_score: totalScore,
         submitted_at: new Date().toISOString(),
       })
       .eq('id', result.id)
