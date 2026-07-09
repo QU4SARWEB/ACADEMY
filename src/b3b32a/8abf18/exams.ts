@@ -52,8 +52,8 @@ export async function initCoachExams(): Promise<void> {
     const examFilter = examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000']
 
     const [{ data: questions }, { data: results }] = await Promise.all([
-      supabase.from('exam_questions').select('*').in('exam_id', examFilter).order('order'),
-      supabase.from('exam_results').select('exam_id, student_id, total_score, graded').in('exam_id', examFilter),
+      supabase.from('exam_questions').select('*').in('exam_id', examFilter).order('order_index'),
+      supabase.from('exam_results').select('exam_id, student_id, total_score, status').in('exam_id', examFilter),
     ])
 
     const questionsByExam: Record<string, any[]> = {}
@@ -101,7 +101,7 @@ export async function initCoachExams(): Promise<void> {
           const qs = questionsByExam[e.id] || []
           const totalPoints = qs.reduce((sum: number, q: any) => sum + (q.points || 0), 0)
           const examResults = resultsByExam[e.id] || []
-          const completedCount = examResults.filter((r: any) => r.graded).length
+          const completedCount = examResults.filter((r: any) => r.status === 'graded').length
           const enrolledCount = enrollCountByCourse[e.course_id]?.size || 0
           return `
           <div class="exam-card rounded-xl border border-zinc-800 bg-[#111] p-5 hover:border-zinc-700 transition"
@@ -676,7 +676,7 @@ async function openExamResultsModal(examId: string): Promise<void> {
 
   document.getElementById('results-modal-title')!.textContent = `${exam.title} - ${exam.courses?.name || ''}`
 
-  const { data: questions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order')
+  const { data: questions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_index')
   const totalPoints = (questions ?? []).reduce((s, q) => s + (q.points || 0), 0)
 
   const { data: enrollments } = await supabase
@@ -716,9 +716,9 @@ async function openExamResultsModal(examId: string): Promise<void> {
         } else if (!result.submitted_at) {
           status = statusIcons.in_progress
           score = '—'
-        } else if (result.graded) {
+        } else if (result.status === 'graded') {
           status = statusIcons.graded
-          score = `${result.total_score ?? '?'}/${totalPoints}`
+          score = `${result.total_score ?? '?'}/20`
         } else {
           const answers = (result.exam_answers || []) as any[]
           const gradedCount = answers.filter((a: any) => a.graded).length

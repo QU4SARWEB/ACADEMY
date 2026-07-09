@@ -165,7 +165,7 @@ export async function initStudentExamDetail(): Promise<void> {
 
     let result = existingResult
 
-    if (result && (result.status === 'review' || result.status === 'graded')) {
+    if (result && (result.status === 'reviewing' || result.status === 'graded')) {
       const { data: ans } = await supabase
         .from('exam_answers')
         .select('*')
@@ -460,7 +460,7 @@ async function submitExam(
       if (ansErr) throw ansErr
     }
 
-    const finalStatus = hasDetail ? 'review' : 'graded'
+    const finalStatus = hasDetail ? 'reviewing' : 'graded'
     const { error: updateErr } = await supabase
       .from('exam_results')
       .update({
