@@ -31,8 +31,9 @@ export async function initStudentExamList(): Promise<void> {
       .from('exams')
       .select('*')
       .in('course_id', courseIds)
-      .eq('is_published', true)
-      .order('month', { ascending: true })
+      .eq('published', true)
+      .not('title', 'ilike', '%practico%')
+      .order('created_at', { ascending: true })
 
     if (!exams || exams.length === 0) {
       document.getElementById('page-content')!.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay exámenes disponibles.</p></div>'

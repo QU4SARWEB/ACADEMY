@@ -45,6 +45,7 @@ export async function initCoachExams(): Promise<void> {
       .from('exams')
       .select('id, course_id, title, description, week_number, is_final, published, created_at')
       .in('course_id', idFilter)
+      .not('title', 'ilike', '%practico%')
       .order('created_at', { ascending: false })
 
     const examIds = (exams ?? []).map((e: any) => e.id)
