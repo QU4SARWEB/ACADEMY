@@ -810,8 +810,8 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
       .insert({ exam_id: examId, student_id: studentId })
       .select('*')
       .maybeSingle()
-      .maybeSingle()
     result = newResult || null
+    if (result) result.exam_answers = []
     if (!result) { toast('error', 'Error al iniciar la revisión'); return }
   }
 
