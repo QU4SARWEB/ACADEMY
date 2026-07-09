@@ -72,6 +72,22 @@ function renderAttendanceTable(): void {
     return getMonthKey(new Date(sd)) === monthKey
   })
 
+  // Week filtering
+  const attWeeks = [...new Set(monthSchedules.map((s: any) => s.week_number).filter((w: any) => w > 0))].sort()
+  let attCurrentWeek: number | null = attWeeks.length > 0 ? attWeeks[0] : null
+  const savedWeek = sessionStorage.getItem('coachAttendanceWeek')
+  if (savedWeek && attWeeks.includes(parseInt(savedWeek))) attCurrentWeek = parseInt(savedWeek)
+  const filteredSchedules = attCurrentWeek ? monthSchedules.filter((s: any) => s.week_number === attCurrentWeek) : monthSchedules
+
+  const attWeekHtml = attWeeks.length > 1 ? `
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+      <button class="att-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+      ${attWeeks.map((w: number) => `
+        <button class="att-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === attCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
+      `).join('')}
+    </div>` : ''
+
   const filterHtml = allCoursesCache.map((c: any) => {
     const total = schedCount[c.id] || 0
     return `
@@ -88,9 +104,9 @@ function renderAttendanceTable(): void {
   const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
   const monthLabel = currentMonth.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
 
-  const rows = monthSchedules.length === 0
-    ? '<tr><td colspan="5" class="py-8 text-center text-sm text-zinc-500">Sin horarios este mes.</td></tr>'
-    : monthSchedules.map((s: any) => {
+  const rows = filteredSchedules.length === 0
+    ? '<tr><td colspan="4" class="py-8 text-center text-sm text-zinc-500">Sin horarios esta semana.</td></tr>'
+    : filteredSchedules.map((s: any) => {
         const course = courseMap.get(s.course_id)
         return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-course-id="${escapeHtml(s.course_id)}">
@@ -112,7 +128,9 @@ function renderAttendanceTable(): void {
       <button id="btn-prev-month" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 transition">${Icon('chevronRight', 14)}</button>
       <span class="text-sm font-semibold text-white capitalize">${monthLabel}</span>
       <button id="btn-next-month" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 transition">${Icon('chevronRight', 14)}</button>
-      <span class="mx-2 text-zinc-700">|</span>
+    </div>
+    ${attWeekHtml}
+    <div class="mb-4 flex flex-wrap items-center gap-2">
       ${filterHtml}
     </div>
     <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
@@ -142,6 +160,15 @@ function setupEvents(): void {
   document.getElementById('btn-next-month')?.addEventListener('click', () => {
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
     renderAttendanceTable()
+  })
+
+  document.querySelectorAll('.att-week-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const week = (btn as HTMLElement).dataset.week
+      if (week === 'all') sessionStorage.removeItem('coachAttendanceWeek')
+      else sessionStorage.setItem('coachAttendanceWeek', week!)
+      renderAttendanceTable()
+    })
   })
 
   document.querySelectorAll('.btn-attendance').forEach(btn => {
