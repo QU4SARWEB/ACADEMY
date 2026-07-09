@@ -86,6 +86,7 @@ export async function initStudentExamList(): Promise<void> {
           let btnIcon: string
           if (status === 'pending') { btnLabel = 'Comenzar'; btnIcon = 'play' }
           else if (status === 'in_progress') { btnLabel = 'Continuar'; btnIcon = 'arrowRight' }
+          else if (status === 'graded') { btnLabel = 'Reintentar'; btnIcon = 'rotate' }
           else { btnLabel = 'Ver resultado'; btnIcon = 'eye' }
           const courseName = courseMap.get(exam.course_id) || 'Curso'
           const weekLabel = exam.month ? `Sem ${exam.month}` : ''
@@ -165,12 +166,21 @@ export async function initStudentExamDetail(): Promise<void> {
 
     let result = existingResult
 
-    if (result && (result.status === 'reviewing' || result.status === 'graded')) {
+    if (result && result.status === 'graded') {
       const { data: ans } = await supabase
         .from('exam_answers')
         .select('*')
         .eq('exam_id', examId)
-      renderReadOnlyExam(container, exam, questions, result, ans ?? [])
+      renderReadOnlyExam(container, exam, questions, result, ans ?? [], true)
+      return
+    }
+
+    if (result && result.status === 'reviewing') {
+      const { data: ans } = await supabase
+        .from('exam_answers')
+        .select('*')
+        .eq('exam_id', examId)
+      renderReadOnlyExam(container, exam, questions, result, ans ?? [], false)
       return
     }
 
@@ -207,7 +217,8 @@ function renderReadOnlyExam(
   exam: any,
   questions: any[],
   result: any,
-  answers: any[]
+  answers: any[],
+  canRetry = false,
 ): void {
   const answerMap = new Map<string, any>()
   for (const a of answers) answerMap.set(a.question_id, a)
@@ -271,6 +282,11 @@ function renderReadOnlyExam(
     totalScoreHtml = `<div class="glass rounded-xl p-5 text-center"><p class="text-sm text-zinc-500">Calificación total</p><p class="text-3xl font-bold ${color}">${score}/20</p><p class="text-xs text-zinc-600 mt-1">${Math.round(score / 20 * 100)}%</p></div>`
   }
 
+  const retryHtml = canRetry ? `
+    <div class="mt-6 flex justify-center">
+      <button id="btn-retry-exam" class="flex items-center gap-2 rounded-lg bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/30 transition">${Icon('rotate', 16)} Reintentar examen</button>
+    </div>` : ''
+
   container.innerHTML = `
     <div>
       <div class="mb-6">
@@ -279,11 +295,25 @@ function renderReadOnlyExam(
         <p class="mt-1 text-sm text-zinc-500">${statusLabels[result.status] || result.status}${isGraded && result.total_score != null ? ` · ${result.total_score}/20 pts` : ''}</p>
       </div>
       ${totalScoreHtml}
+      ${retryHtml}
       <div class="space-y-4 mt-6">${questionHtml}</div>
       <div class="mt-6">
         <a href="#/students/exams" class="inline-flex items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:text-white transition">${Icon('arrowLeft', 14)} Volver a exámenes</a>
       </div>
     </div>`
+
+  if (canRetry) {
+    document.getElementById('btn-retry-exam')?.addEventListener('click', async () => {
+      const examId = exam.id
+      const uid = (await supabase.auth.getSession()).data.session?.user?.id
+      if (!uid || !examId) return
+      if (!confirm('¿Estás seguro de reintentar el examen? Tu nota anterior se eliminará.')) return
+      await supabase.from('exam_answers').delete().eq('exam_id', examId).eq('student_id', uid)
+      await supabase.from('exam_results').delete().eq('exam_id', examId).eq('student_id', uid)
+      toast('success', 'Puedes volver a rendir el examen')
+      location.hash = `#/students/exams/${examId}`
+    })
+  }
 }
 
 function renderInteractiveExam(

@@ -107,7 +107,10 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
                 ${badge}
               </div>
               ${task.description ? `<p class="mb-4 text-sm text-zinc-400">${escapeHtml(task.description)}</p>` : ''}
-              ${hasSubmitted ? renderSubmission(submitted) : renderSubmissionForm(task, studentId)}
+              ${hasSubmitted ? `<div>${renderSubmission(submitted)}
+                ${isGraded ? `<div class="mt-3 flex justify-end">
+                  <button class="retry-task-btn text-xs flex items-center gap-1 text-amber-400 hover:text-amber-300 transition" data-task-id="${escapeHtml(task.id)}">${Icon('rotate', 12)} Reenviar</button>
+                </div>` : ''}</div>` : renderSubmissionForm(task, studentId)}
             </div>`
         }).join('')}
       </div>`
@@ -148,9 +151,9 @@ function renderSubmission(sub: any): string {
         </div>
       </div>` : ''}
       ${isGraded ? `<div class="flex items-center gap-2 pt-2 border-t border-zinc-700/50">
-        <span class="text-xs text-zinc-500">Calificación:</span>
+        <span class="text-xs text-zinc-500">Calificaci\u00f3n:</span>
         <span class="text-sm font-bold ${parseFloat(sub.score) >= 14 ? 'text-green-400' : parseFloat(sub.score) >= 11 ? 'text-yellow-400' : 'text-red-400'}">${sub.score}/20</span>
-      </div>` : `<p class="text-xs text-zinc-600 pt-2 border-t border-zinc-700/50">Esperando calificación...</p>`}
+      </div>` : `<p class="text-xs text-zinc-600 pt-2 border-t border-zinc-700/50">Esperando calificaci\u00f3n...</p>`}
     </div>`
 }
 
@@ -323,6 +326,17 @@ function bindTaskEvents(containerId: string, studentId: string, role: 'student' 
         btn.removeAttribute('disabled')
         btn.innerHTML = `${Icon('upload', 14)} Entregar tarea`
       }
+    })
+  })
+
+  // Retry task buttons
+  document.querySelectorAll('.retry-task-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = btn as HTMLElement
+      const taskId = el.dataset.taskId
+      if (!taskId || !confirm('¿Reenviar tarea? Se eliminará tu calificación anterior.')) return
+      supabase.from('task_submissions').delete().eq('task_id', taskId).eq('student_id', studentId)
+      loadAndRenderTasks(containerId, studentId, role)
     })
   })
 }
