@@ -62,9 +62,25 @@ export async function initCoachTasks(): Promise<void> {
 
     const fmtDate = (d: string) => d ? formatDate(d, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 
-    const taskCards = (tasks ?? []).length === 0
-      ? '<div class="col-span-full py-12 text-center text-sm text-zinc-500">No hay tareas creadas. Crea tu primera tarea.</div>'
-      : (tasks ?? []).map((t: any) => {
+    // Week filtering
+    const taskWeeks = [...new Set((tasks ?? []).map((t: any) => t.week_number).filter(Boolean))].sort()
+    let taskCurrentWeek: number | null = taskWeeks.length > 0 ? taskWeeks[0] : null
+    const savedTaskWeek = sessionStorage.getItem('coachTaskWeek')
+    if (savedTaskWeek && taskWeeks.includes(parseInt(savedTaskWeek))) taskCurrentWeek = parseInt(savedTaskWeek)
+    const filteredTasks = taskCurrentWeek ? (tasks ?? []).filter((t: any) => t.week_number === taskCurrentWeek) : (tasks ?? [])
+
+    const taskWeekHtml = taskWeeks.length > 1 ? `
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+        <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+        ${taskWeeks.map((w: number) => `
+          <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === taskCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
+        `).join('')}
+      </div>` : ''
+
+    const taskCards = filteredTasks.length === 0
+      ? '<div class="col-span-full py-12 text-center text-sm text-zinc-500">No hay tareas esta semana.</div>'
+      : filteredTasks.map((t: any) => {
           const course = courseMap.get(t.course_id)
           const subCount = (submissionsByTask[t.id] || []).length
           const gradedCount = (submissionsByTask[t.id] || []).filter((s: any) => s.graded).length
@@ -100,6 +116,7 @@ export async function initCoachTasks(): Promise<void> {
         <button id="btn-new-task" class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">${Icon('plus', 14)} Nueva tarea</button>
       </div>
       <div id="task-form-container" class="hidden mb-6"></div>
+      ${taskWeekHtml}
       <div class="mb-4 flex flex-wrap items-center gap-2" id="course-filters">${filterHtml}</div>
       <div id="task-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${taskCards}</div>`
 
@@ -112,6 +129,15 @@ export async function initCoachTasks(): Promise<void> {
 }
 
 function bindTaskEvents(courses: any[], coachId: string): void {
+  document.querySelectorAll('.task-week-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const week = (btn as HTMLElement).dataset.week
+      if (week === 'all') sessionStorage.removeItem('coachTaskWeek')
+      else sessionStorage.setItem('coachTaskWeek', week!)
+      initCoachTasks()
+    })
+  })
+
   initCourseFilters()
   setupNewTaskButton(courses, coachId)
   setupTaskCardClicks()

@@ -66,6 +66,22 @@ function renderScheduleTable(): void {
     return getMonthKey(new Date(sd)) === monthKey
   })
 
+  // Week filtering
+  const schedWeeks = [...new Set(monthSchedules.map((s: any) => s.week_number).filter((w: any) => w > 0))].sort()
+  let schedCurrentWeek: number | null = schedWeeks.length > 0 ? schedWeeks[0] : null
+  const savedSchedWeek = sessionStorage.getItem('coachScheduleWeek')
+  if (savedSchedWeek && schedWeeks.includes(parseInt(savedSchedWeek))) schedCurrentWeek = parseInt(savedSchedWeek)
+  const filteredSchedules = schedCurrentWeek ? monthSchedules.filter((s: any) => s.week_number === schedCurrentWeek) : monthSchedules
+
+  const schedWeekHtml = schedWeeks.length > 1 ? `
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+      <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+      ${schedWeeks.map((w: number) => `
+        <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === schedCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
+      `).join('')}
+    </div>` : ''
+
   const filterHtml = allCoursesCache.map((c: any) => {
     const total = schedCount[c.id] || 0
     return `
@@ -82,9 +98,9 @@ function renderScheduleTable(): void {
   const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
   const monthLabel = currentMonth.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
 
-  const rows = monthSchedules.length === 0
-    ? '<tr><td colspan="6" class="py-8 text-center text-sm text-zinc-500">Sin horarios este mes.</td></tr>'
-    : monthSchedules.map((s: any) => {
+  const rows = filteredSchedules.length === 0
+    ? '<tr><td colspan="6" class="py-8 text-center text-sm text-zinc-500">Sin horarios esta semana.</td></tr>'
+    : filteredSchedules.map((s: any) => {
         const course = courseMap.get(s.course_id)
         return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-course-id="${escapeHtml(s.course_id)}">
@@ -112,7 +128,9 @@ function renderScheduleTable(): void {
       <button id="btn-prev-month" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 transition">${Icon('chevronRight', 14)}</button>
       <span class="text-sm font-semibold text-white capitalize">${monthLabel}</span>
       <button id="btn-next-month" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 transition">${Icon('chevronRight', 14)}</button>
-      <span class="mx-2 text-zinc-700">|</span>
+    </div>
+    ${schedWeekHtml}
+    <div class="mb-4 flex flex-wrap items-center gap-2">
       ${filterHtml}
     </div>
     <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
@@ -144,6 +162,15 @@ function setupEvents(): void {
   document.getElementById('btn-next-month')?.addEventListener('click', () => {
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
     renderScheduleTable()
+  })
+
+  document.querySelectorAll('.sched-week-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const week = (btn as HTMLElement).dataset.week
+      if (week === 'all') sessionStorage.removeItem('coachScheduleWeek')
+      else sessionStorage.setItem('coachScheduleWeek', week!)
+      renderScheduleTable()
+    })
   })
 
   document.getElementById('btn-new-schedule')?.addEventListener('click', () => {
