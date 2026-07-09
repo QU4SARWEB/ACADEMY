@@ -1,1 +1,0 @@
-fix: exam_result_id -> exam_id, is_correct, student_id en answers

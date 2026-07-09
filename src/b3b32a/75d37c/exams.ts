@@ -435,9 +435,9 @@ async function submitExam(
         const score = isCorrect ? points : 0
         if (isCorrect) totalScore += points
         answersToInsert.push({
-          exam_id: examId,
+          exam_id: exam.id,
           question_id: q.id,
-          student_id: uid,
+          student_id: userId,
           answer: userAnswer || null,
           score: score,
           graded: true,
@@ -445,9 +445,9 @@ async function submitExam(
       } else if (q.type === 'detail') {
         hasDetail = true
         answersToInsert.push({
-          exam_id: examId,
+          exam_id: exam.id,
           question_id: q.id,
-          student_id: uid,
+          student_id: userId,
           answer: userAnswer || null,
           score: 0,
           graded: false,
