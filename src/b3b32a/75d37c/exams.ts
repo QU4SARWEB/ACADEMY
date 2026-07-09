@@ -72,13 +72,36 @@ export async function initStudentExamList(): Promise<void> {
       return `<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ${m[s] || 'bg-zinc-800 text-zinc-400'}">${l[s] || escapeHtml(s)}</span>`
     }
 
+    // Week filtering
+    const weeks = [...new Set(exams.map((e: any) => e.week_number).filter(Boolean))].sort()
+    let currentWeek: number | null = weeks.length > 0 ? weeks[0] : null
+    const savedWeek = sessionStorage.getItem('studentExamWeek')
+    if (savedWeek && weeks.includes(parseInt(savedWeek))) currentWeek = parseInt(savedWeek)
+    const filteredExams = currentWeek ? exams.filter((e: any) => e.week_number === currentWeek) : exams
+
+    const weekHtml = weeks.length > 1 ? `
+      <div class="mb-4 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+        <button class="student-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">
+          ${Icon('calendar', 12)} Todas
+        </button>
+        ${weeks.map((w: number) => `
+          <button class="student-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
+            ${w === currentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}"
+            data-week="${w}">
+            ${Icon('calendar', 12)} Semana ${w}
+          </button>
+        `).join('')}
+      </div>` : ''
+
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('fileText', 22)} Exámenes</h1>
-        <p class="mt-1 text-sm text-zinc-500">Exámenes disponibles</p>
+        <p class="mt-1 text-sm text-zinc-500">${filteredExams.length} examen${filteredExams.length !== 1 ? 'es' : ''} disponible${filteredExams.length !== 1 ? 's' : ''}</p>
       </div>
+      ${weekHtml}
       <div class="space-y-4">
-        ${exams.map((exam: any) => {
+        ${filteredExams.map((exam: any) => {
           const result = resultMap.get(exam.id)
           const status = result?.status || 'pending'
           const isGraded = status === 'graded'
@@ -113,6 +136,16 @@ export async function initStudentExamList(): Promise<void> {
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
+
+    // Week filter events
+    document.querySelectorAll('.student-week-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const week = (btn as HTMLElement).dataset.week
+        if (week === 'all') sessionStorage.removeItem('studentExamWeek')
+        else sessionStorage.setItem('studentExamWeek', week!)
+        initStudentExamList()
+      })
+    })
   } catch (err) {
     console.error('Error loading exams:', err)
     document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar exámenes</p>'

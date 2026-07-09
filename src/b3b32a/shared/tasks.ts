@@ -60,6 +60,22 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
 
     const fmtDate = (d: string) => d ? formatDate(d) : '—'
 
+    // Week filtering
+    const taskWeeks = [...new Set(tasks.map((t: any) => t.week_number).filter(Boolean))].sort()
+    let currentWeek: number | null = taskWeeks.length > 0 ? taskWeeks[0] : null
+    const savedWeek = sessionStorage.getItem('studentTaskWeek')
+    if (savedWeek && taskWeeks.includes(parseInt(savedWeek))) currentWeek = parseInt(savedWeek)
+    const filteredTasks = currentWeek ? tasks.filter((t: any) => t.week_number === currentWeek) : tasks
+
+    const weekFilterHtml = taskWeeks.length > 1 ? `
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-zinc-500 mr-1">Semana:</span>
+        <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+        ${taskWeeks.map((w: number) => `
+          <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === currentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
+        `).join('')}
+      </div>` : ''
+
     const filterChips = uniqueCourseIds.map(cid => `
       <button class="task-filter-chip rounded-lg px-3 py-1.5 text-xs font-medium transition border ${courseMap.get(cid) === courseMap.get(uniqueCourseIds[0]) ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-course-id="${escapeHtml(cid)}">
         ${escapeHtml(courseMap.get(cid) || 'Curso')}
@@ -71,14 +87,15 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
     const html = `
       <div class="mb-6">
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('clipboardList', 22)} Tareas</h1>
-        <p class="mt-1 text-sm text-zinc-500">Revisa y entrega tus tareas</p>
+        <p class="mt-1 text-sm text-zinc-500">${filteredTasks.length} tarea${filteredTasks.length !== 1 ? 's' : ''} disponible${filteredTasks.length !== 1 ? 's' : ''}</p>
       </div>
+      ${weekFilterHtml}
       <div class="mb-4 flex flex-wrap gap-2 ${allActive}" id="task-filter-bar">
         <button class="task-filter-chip rounded-lg px-3 py-1.5 text-xs font-medium transition border bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30" data-course-id="all">Todos</button>
         ${filterChips}
       </div>
       <div class="space-y-4" id="task-list">
-        ${tasks.map((task: any) => {
+        ${filteredTasks.map((task: any) => {
           const submitted = submissionMap.get(task.id)
           const courseName = courseMap.get(task.course_id) || 'Curso'
           const hasSubmitted = !!submitted
@@ -187,6 +204,16 @@ function renderSubmissionForm(task: any, studentId: string): string {
 }
 
 function bindTaskEvents(containerId: string, studentId: string, role: 'student' | 'player'): void {
+  // Week filter
+  document.querySelectorAll('.task-week-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const week = (btn as HTMLElement).dataset.week
+      if (week === 'all') sessionStorage.removeItem('studentTaskWeek')
+      else sessionStorage.setItem('studentTaskWeek', week!)
+      loadAndRenderTasks(containerId, studentId, role)
+    })
+  })
+
   const filterChips = document.querySelectorAll('.task-filter-chip')
   filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
