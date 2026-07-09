@@ -123,7 +123,10 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
                 </div>
                 ${badge}
               </div>
-              ${task.description ? `<p class="mb-4 text-sm text-zinc-400">${escapeHtml(task.description)}</p>` : ''}
+              ${task.description ? `<p class="mb-3 text-sm text-zinc-400">${escapeHtml(task.description)}</p>` : ''}
+              ${task.file_url ? `<div class="mb-3">
+                <a href="https://docs.google.com/viewer?url=${encodeURIComponent(task.file_url)}&embedded=true" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-lg bg-[#8B5CF6]/15 px-3 py-1.5 text-xs font-medium text-[#8B5CF6] hover:bg-[#8B5CF6]/25 transition">${Icon('fileText', 14)} Ver formato de trabajo</a>
+              </div>` : ''}
               ${hasSubmitted ? `<div>${renderSubmission(submitted)}
                 ${isGraded ? `<div class="mt-3 flex justify-end">
                   <button class="retry-task-btn text-xs flex items-center gap-1 text-amber-400 hover:text-amber-300 transition" data-task-id="${escapeHtml(task.id)}">${Icon('rotate', 12)} Reenviar</button>

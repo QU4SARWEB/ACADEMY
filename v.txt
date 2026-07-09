@@ -1,1 +1,0 @@
-feat: semanas en examenes y tareas de alumnos (default semana 1)
