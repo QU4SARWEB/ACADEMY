@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { formatDate } from '@/2b3583/6b239c'
+import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachTasks(): string {
@@ -27,7 +28,7 @@ export async function initCoachTasks(): Promise<void> {
 
     const { data: tasks } = await supabase
       .from('course_tasks')
-      .select('id, course_id, title, description, week_number, due_date, created_at')
+      .select('id, course_id, title, description, week_number, due_date, created_at, file_url')
       .in('course_id', idFilter)
       .order('created_at', { ascending: false })
 
@@ -85,6 +86,7 @@ export async function initCoachTasks(): Promise<void> {
               <span class="flex items-center gap-1">${Icon('calendar', 12)} Vence: ${fmtDate(t.due_date)}</span>
               <span class="flex items-center gap-1">${Icon('users', 12)} ${subCount} entrega${subCount !== 1 ? 's' : ''}</span>
               ${gradedCount > 0 ? `<span class="text-green-400">${gradedCount} calificada${gradedCount !== 1 ? 's' : ''}</span>` : ''}
+              ${t.file_url ? `<a href="${escapeHtml(t.file_url)}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA]">${Icon('paperclip', 10)} Archivo</a>` : ''}
             </div>
           </div>`
         }).join('')
@@ -188,6 +190,10 @@ function renderTaskCreateForm(courses: any[], editTask?: any): string {
             <label class="mb-1 block text-xs text-zinc-400">Fecha de entrega</label>
             <input type="date" name="dueDate" value="${editTask?.due_date || ''}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
           </div>
+          <div class="sm:col-span-2">
+            <label class="mb-1 block text-xs text-zinc-400">Archivo adjunto (opcional)</label>
+            <input type="file" name="taskFile" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-zinc-400 outline-none focus:border-[#8B5CF6] file:mr-2 file:rounded file:border-0 file:bg-[#8B5CF6]/20 file:px-2 file:py-1 file:text-xs file:text-[#8B5CF6]" />
+          </div>
         </div>
         <p id="task-form-error" class="hidden text-xs text-red-400"></p>
         <div class="flex gap-2">
@@ -221,6 +227,15 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
     submitBtn.disabled = true
     submitBtn.textContent = 'Guardando...'
 
+    // Upload file if present
+    const fileInput = document.querySelector<HTMLInputElement>('#task-create-form input[name="taskFile"]')
+    let fileUrl = ''
+    if (fileInput?.files?.length) {
+      const { url, error: upErr } = await uploadFileFromInput('task-files', coachId, `tasks/${Date.now()}`, fileInput.files[0])
+      if (upErr) { toast('error', 'Error al subir archivo: ' + upErr); return }
+      if (url) fileUrl = url
+    }
+
     const payload: any = {
       course_id: courseId,
       coach_id: coachId,
@@ -229,6 +244,7 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
       week_number: weekNumber,
       due_date: dueDate,
     }
+    if (fileUrl) payload.file_url = fileUrl
 
     let error: any
     if (editId) {
