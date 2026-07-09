@@ -108,14 +108,15 @@ export async function initCoachPractical(): Promise<void> {
       // Assign resultsMap to exam for the render function
       ex.resultsMap = resultsMap
 
-      const rows = (students ?? []).map((s: any) => renderStudentRow(s, c.id)).join('')
+      const studentList = students ?? []
+    const rows = studentList.map((s: any) => renderStudentRow(s, c.id)).join('')
       if (!rows) return ''
 
       return `
       <div class="w-full mb-6">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)} — Examen Pr\u00e1ctico</h2>
-          <span class="text-xs text-zinc-500">${students.length} alumno${students.length !== 1 ? 's' : ''} con teor\u00edco aprobado</span>
+          <span class="text-xs text-zinc-500">${studentList.length} alumno${studentList.length !== 1 ? 's' : ''} con teor\u00edco aprobado</span>
         </div>
         <div class="w-full rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
           <div class="w-full overflow-x-auto">
