@@ -689,11 +689,23 @@ async function openExamResultsModal(examId: string): Promise<void> {
 
   const { data: results } = await supabase
     .from('exam_results')
-    .select('*, exam_answers(*)')
+    .select('*')
     .eq('exam_id', examId)
+
+  const { data: allAnswers } = await supabase
+    .from('exam_answers')
+    .select('*')
+    .eq('exam_id', examId)
+
+  const answersByStudent: Record<string, any[]> = {}
+  for (const a of allAnswers ?? []) {
+    if (!answersByStudent[a.student_id]) answersByStudent[a.student_id] = []
+    answersByStudent[a.student_id].push(a)
+  }
 
   const resultsByStudent: Record<string, any> = {}
   for (const r of results ?? []) {
+    r.exam_answers = answersByStudent[r.student_id] || []
     resultsByStudent[r.student_id] = r
   }
 
@@ -776,16 +788,28 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
 
   let { data: result } = await supabase
     .from('exam_results')
-    .select('*, exam_answers(*)')
+    .select('*')
     .eq('exam_id', examId)
     .eq('student_id', studentId)
     .maybeSingle()
+
+  // Fetch answers separately (no FK relationship)
+  let { data: studentAnswers } = await supabase
+    .from('exam_answers')
+    .select('*')
+    .eq('exam_id', examId)
+    .eq('student_id', studentId)
+
+  if (result) {
+    result.exam_answers = studentAnswers || []
+  }
 
   if (!result) {
     const { data: newResult } = await supabase
       .from('exam_results')
       .insert({ exam_id: examId, student_id: studentId })
-      .select('*, exam_answers(*)')
+      .select('*')
+      .maybeSingle()
       .maybeSingle()
     result = newResult || null
     if (!result) { toast('error', 'Error al iniciar la revisión'); return }
