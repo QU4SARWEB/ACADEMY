@@ -24,6 +24,7 @@ interface TempQuestion {
 
 const QUESTION_ICONS: Record<string, string> = {
   multiple: 'clipboardList',
+  true_false: 'checkCircle',
   truefalse: 'checkCircle',
   detail: 'fileText',
 }
@@ -197,11 +198,11 @@ function bindExamEvents(courses: any[], coachId: string): void {
       const { data: exam } = await supabase.from('exams').select('*').eq('id', examId).maybeSingle()
       if (!exam) { toast('error', 'Examen no encontrado'); return }
 
-      const { data: questionsData } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order')
+      const { data: questionsData } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_index')
       const currentQuestions: TempQuestion[] = (questionsData ?? []).map((q: any) => ({
         id: q.id,
         type: q.type,
-        question_text: q.question_text,
+        question_text: q.question,
         options: q.options || [],
         correct_answer: q.correct_answer || '',
         points: q.points || 0,
@@ -340,7 +341,7 @@ function renderExamCreateForm(courses: any[], editExam?: any, currentQuestions?:
 }
 
 function renderQuestionItem(q: TempQuestion, index: number): string {
-  const typeNames: Record<string, string> = { multiple: 'Múltiple', truefalse: 'Verdadero/Falso', detail: 'Detalle' }
+  const typeNames: Record<string, string> = { multiple: 'M\u00faltiple', true_false: 'Verdadero/Falso', truefalse: 'Verdadero/Falso', detail: 'Detalle' }
   return `
     <div class="question-item flex items-start gap-2 rounded-lg border border-zinc-700/50 bg-zinc-900/30 px-3 py-2" data-qid="${escapeHtml(q.id)}">
       <span class="text-xs text-zinc-500 mt-0.5 shrink-0 w-5">${index + 1}.</span>
@@ -676,8 +677,9 @@ async function openExamResultsModal(examId: string): Promise<void> {
 
   document.getElementById('results-modal-title')!.textContent = `${exam.title} - ${exam.courses?.name || ''}`
 
-  const { data: questions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_index')
-  const totalPoints = (questions ?? []).reduce((s, q) => s + (q.points || 0), 0)
+  const { data: rawQuestions } = await supabase.from('exam_questions').select('*').eq('exam_id', examId).order('order_index')
+  const questions = (rawQuestions ?? []).map((q: any) => ({ ...q, question_text: q.question }))
+  const totalPoints = questions.reduce((s, q) => s + (q.points || 0), 0)
 
   const { data: enrollments } = await supabase
     .from('enrollments')
