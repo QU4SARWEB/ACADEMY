@@ -1,1 +1,0 @@
-fix: columnas correctas exam_results (total_score, student_id)

@@ -148,9 +148,9 @@ export async function initStudentExamDetail(): Promise<void> {
 
     const { data: eqs } = await supabase
       .from('exam_questions')
-      .select('*, questions(*)')
+      .select('*')
       .eq('exam_id', examId)
-      .order('display_order', { ascending: true })
+      .order('order_index', { ascending: true })
 
     const questions = (eqs ?? []).map((eq: any) => {
       const q = eq.questions || {}
