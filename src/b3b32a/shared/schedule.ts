@@ -69,6 +69,7 @@ export function renderSchedulePage(
 
     const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
     const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    const dateSections = sortedDates.map(date => {
       const dayScheds = schedByDate[date]
       return `
       <div class="glass rounded-xl p-5 mb-4">
