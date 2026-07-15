@@ -361,9 +361,16 @@ async function openTaskSubmissionsModal(taskId: string): Promise<void> {
 
   const { data: subs } = await supabase
     .from('task_submissions')
-    .select('id, student_id, message, files, links, score, graded, graded_at, created_at, profiles(full_name)')
+    .select('id, student_id, message, files, links, score, graded, graded_at, created_at')
     .eq('task_id', taskId)
     .order('created_at', { ascending: false })
+
+  // Fetch student names separately
+  const studentIds = [...new Set((subs ?? []).map((s: any) => s.student_id))]
+  const { data: studentProfiles } = studentIds.length > 0
+    ? await supabase.from('profiles').select('id, full_name').in('id', studentIds)
+    : { data: [] }
+  const nameMap = new Map((studentProfiles ?? []).map((p: any) => [p.id, p.full_name]))
 
   const rows = !subs || subs.length === 0
     ? '<tr><td colspan="6" class="py-8 text-center text-sm text-zinc-500">No hay entregas para esta tarea.</td></tr>'
@@ -371,9 +378,10 @@ async function openTaskSubmissionsModal(taskId: string): Promise<void> {
         const files: string[] = (s.files as string[]) || []
         const links: string[] = (s.links as string[]) || []
         const graded = s.graded
+        const studentName = nameMap.get(s.student_id) || 'Desconocido'
         return `
         <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30" data-submission-id="${escapeHtml(s.id)}">
-          <td class="py-3 px-3 text-sm text-white">${escapeHtml(s.profiles?.full_name || 'Desconocido')}</td>
+          <td class="py-3 px-3 text-sm text-white">${escapeHtml(studentName)}</td>
           <td class="py-3 px-3 text-xs text-zinc-400 max-w-[200px]">${s.message ? escapeHtml(s.message).slice(0, 100) : '<span class="text-zinc-600">—</span>'}</td>
           <td class="py-3 px-3">
             ${files.length > 0 ? files.map(f => `<a href="${escapeHtml(f)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA] mr-1">${Icon('download', 10)} Archivo</a>`).join('') : '<span class="text-xs text-zinc-600">—</span>'}
