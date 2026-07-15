@@ -37,7 +37,7 @@ export async function initCoachTasks(): Promise<void> {
 
     const { data: submissions } = await supabase
       .from('task_submissions')
-      .select('task_id, student_id, profiles!inner(full_name), message, files, links, score, graded, graded_at, created_at')
+      .select('task_id, student_id, profiles(full_name), message, files, links, score, graded, graded_at, created_at')
       .in('task_id', taskFilter)
 
     const submissionsByTask: Record<string, any[]> = {}
@@ -361,7 +361,7 @@ async function openTaskSubmissionsModal(taskId: string): Promise<void> {
 
   const { data: subs } = await supabase
     .from('task_submissions')
-    .select('id, student_id, message, files, links, score, graded, graded_at, created_at, profiles!inner(full_name)')
+    .select('id, student_id, message, files, links, score, graded, graded_at, created_at, profiles(full_name)')
     .eq('task_id', taskId)
     .order('created_at', { ascending: false })
 
