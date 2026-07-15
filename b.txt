@@ -1,1 +1,0 @@
-fix: coach tasks default todas las semanas + ver entregas

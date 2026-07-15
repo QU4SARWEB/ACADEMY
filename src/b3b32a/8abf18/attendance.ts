@@ -74,7 +74,7 @@ function renderAttendanceTable(): void {
 
   // Week filtering
   const attWeeks = [...new Set(monthSchedules.map((s: any) => s.week_number).filter((w: any) => w > 0))].sort()
-  let attCurrentWeek: number | null = attWeeks.length > 0 ? attWeeks[0] : null
+  let attCurrentWeek: number | null = null
   const savedWeek = sessionStorage.getItem('coachAttendanceWeek')
   if (savedWeek && attWeeks.includes(parseInt(savedWeek))) attCurrentWeek = parseInt(savedWeek)
   const filteredSchedules = attCurrentWeek ? monthSchedules.filter((s: any) => s.week_number === attCurrentWeek) : monthSchedules
@@ -82,7 +82,7 @@ function renderAttendanceTable(): void {
   const attWeekHtml = attWeeks.length > 1 ? `
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <span class="text-xs text-zinc-500 mr-1">Semana:</span>
-      <button class="att-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+      <button class="att-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${!attCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="all">${Icon('calendar', 12)} Todas</button>
       ${attWeeks.map((w: number) => `
         <button class="att-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === attCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
       `).join('')}

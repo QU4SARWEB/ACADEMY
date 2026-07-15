@@ -68,7 +68,7 @@ function renderScheduleTable(): void {
 
   // Week filtering
   const schedWeeks = [...new Set(monthSchedules.map((s: any) => s.week_number).filter((w: any) => w > 0))].sort()
-  let schedCurrentWeek: number | null = schedWeeks.length > 0 ? schedWeeks[0] : null
+  let schedCurrentWeek: number | null = null
   const savedSchedWeek = sessionStorage.getItem('coachScheduleWeek')
   if (savedSchedWeek && schedWeeks.includes(parseInt(savedSchedWeek))) schedCurrentWeek = parseInt(savedSchedWeek)
   const filteredSchedules = schedCurrentWeek ? monthSchedules.filter((s: any) => s.week_number === schedCurrentWeek) : monthSchedules
@@ -76,7 +76,7 @@ function renderScheduleTable(): void {
   const schedWeekHtml = schedWeeks.length > 1 ? `
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <span class="text-xs text-zinc-500 mr-1">Semana:</span>
-      <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+      <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${!schedCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="all">${Icon('calendar', 12)} Todas</button>
       ${schedWeeks.map((w: number) => `
         <button class="sched-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === schedCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
       `).join('')}
