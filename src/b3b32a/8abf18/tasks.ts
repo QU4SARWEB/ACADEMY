@@ -64,7 +64,7 @@ export async function initCoachTasks(): Promise<void> {
 
     // Week filtering
     const taskWeeks = [...new Set((tasks ?? []).map((t: any) => t.week_number).filter(Boolean))].sort()
-    let taskCurrentWeek: number | null = taskWeeks.length > 0 ? taskWeeks[0] : null
+    let taskCurrentWeek: number | null = null
     const savedTaskWeek = sessionStorage.getItem('coachTaskWeek')
     if (savedTaskWeek && taskWeeks.includes(parseInt(savedTaskWeek))) taskCurrentWeek = parseInt(savedTaskWeek)
     const filteredTasks = taskCurrentWeek ? (tasks ?? []).filter((t: any) => t.week_number === taskCurrentWeek) : (tasks ?? [])
@@ -72,7 +72,7 @@ export async function initCoachTasks(): Promise<void> {
     const taskWeekHtml = taskWeeks.length > 1 ? `
       <div class="mb-3 flex flex-wrap items-center gap-2">
         <span class="text-xs text-zinc-500 mr-1">Semana:</span>
-        <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300" data-week="all">${Icon('calendar', 12)} Todas</button>
+        <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${!taskCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="all">${Icon('calendar', 12)} Todas</button>
         ${taskWeeks.map((w: number) => `
           <button class="task-week-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none ${w === taskCurrentWeek ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}" data-week="${w}">${Icon('calendar', 12)} Semana ${w}</button>
         `).join('')}
