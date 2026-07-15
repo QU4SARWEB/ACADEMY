@@ -37,7 +37,7 @@ export async function initCoachTasks(): Promise<void> {
 
     const { data: submissions } = await supabase
       .from('task_submissions')
-      .select('task_id, student_id, profiles(full_name), message, files, links, score, graded, graded_at, created_at')
+      .select('task_id, student_id, graded')
       .in('task_id', taskFilter)
 
     const submissionsByTask: Record<string, any[]> = {}
