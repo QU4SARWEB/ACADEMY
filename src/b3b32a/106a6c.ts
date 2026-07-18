@@ -7,8 +7,7 @@ export function renderHome(session?: any): string {
   return `
     <div class="relative min-h-screen overflow-hidden">
       <style>
-        @keyframes ws1 { 0% { transform: translateX(-30%); } 100% { transform: translateX(30%); } }
-        @keyframes ws2 { 0% { transform: translateX(25%); } 100% { transform: translateX(-25%); } }
+        @keyframes ws { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       </style>
       <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
@@ -55,11 +54,19 @@ export function renderHome(session?: any): string {
         </div>
       </section>
 
-      <div class="relative z-10 h-16 md:h-24 -mb-px overflow-hidden pointer-events-none">
-        <div class="absolute inset-x-[-50%] bottom-0 h-[200%] rounded-[50%] bg-[#0A0A0A]/20" style="animation:ws1 10s ease-in-out infinite alternate;"></div>
-        <div class="absolute inset-x-[-50%] bottom-0 h-[170%] rounded-[50%] bg-[#0A0A0A]/45" style="animation:ws2 7s ease-in-out infinite alternate-reverse;"></div>
-        <div class="absolute inset-x-[-50%] bottom-0 h-[140%] rounded-[50%] bg-[#0A0A0A]/70" style="animation:ws1 5s ease-in-out infinite alternate-reverse;"></div>
-        <div class="absolute inset-x-[-50%] bottom-0 h-[110%] rounded-[50%] bg-[#0A0A0A]" style="animation:ws2 3.5s ease-in-out infinite alternate;"></div>
+      <div class="relative z-10 h-20 md:h-28 -mb-[1px] overflow-hidden pointer-events-none">
+        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 15s linear infinite;">
+          <path d="M0,35 C80,5 160,65 240,35 C320,5 400,65 480,35 C560,5 640,65 720,35 C800,5 880,65 960,35 V100 H0 Z" fill="#0A0A0A" opacity="0.2"/>
+        </svg>
+        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 10s linear infinite reverse;">
+          <path d="M0,38 C80,8 160,68 240,38 C320,8 400,68 480,38 C560,8 640,68 720,38 C800,8 880,68 960,38 V100 H0 Z" fill="#0A0A0A" opacity="0.45"/>
+        </svg>
+        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 6s linear infinite;">
+          <path d="M0,42 C80,12 160,72 240,42 C320,12 400,72 480,42 C560,12 640,72 720,42 C800,12 880,72 960,42 V100 H0 Z" fill="#0A0A0A" opacity="0.75"/>
+        </svg>
+        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 3.5s linear infinite reverse;">
+          <path d="M0,45 C80,15 160,75 240,45 C320,15 400,75 480,45 C560,15 640,75 720,45 C800,15 880,75 960,45 V100 H0 Z" fill="#0A0A0A" opacity="1"/>
+        </svg>
       </div>
 
       <div class="bg-[#0A0A0A] pt-12 md:pt-16 relative z-10">

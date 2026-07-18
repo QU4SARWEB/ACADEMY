@@ -1,1 +1,1 @@
-fix: ondas con rounded-50% y altura >100% para mostrar arco ?
+feat: ondas SVG con curvas bezier, loop continuo sin costuras
