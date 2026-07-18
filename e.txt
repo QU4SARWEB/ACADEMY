@@ -1,1 +1,1 @@
-feat: rediseño landing con fondo fijo, navbar sticky y efecto agua
+feat: ondas animadas tipo agua entre hero y contenido

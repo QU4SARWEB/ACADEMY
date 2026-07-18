@@ -6,6 +6,12 @@ export function renderHome(session?: any): string {
   const loggedIn = !!session?.user
   return `
     <div class="relative min-h-screen overflow-hidden">
+      <style>
+        @keyframes wave1 { 0% { transform: translateX(-15%); } 100% { transform: translateX(15%); } }
+        @keyframes wave2 { 0% { transform: translateX(10%); } 100% { transform: translateX(-25%); } }
+        @keyframes wave3 { 0% { transform: translateX(-5%); } 100% { transform: translateX(20%); } }
+        @keyframes wave4 { 0% { transform: translateX(0); } 100% { transform: translateX(-30%); } }
+      </style>
       <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
       <div class="pointer-events-none fixed inset-0" style="z-index:-1">
@@ -51,7 +57,14 @@ export function renderHome(session?: any): string {
         </div>
       </section>
 
-      <div class="bg-[#0A0A0A] pt-12 md:pt-16 rounded-t-[60px] md:rounded-t-[120px] -mt-12 md:-mt-16 relative z-10 shadow-[0_-30px_80px_rgba(10,10,10,0.85)]">
+      <div class="relative z-10 h-20 md:h-28 -mb-1 overflow-hidden pointer-events-none">
+        <div class="absolute bottom-0 w-[200%] h-[130%] rounded-t-[50%] bg-[#0A0A0A]/20" style="animation: wave1 12s ease-in-out infinite alternate;"></div>
+        <div class="absolute bottom-0 w-[200%] h-[110%] rounded-t-[50%] bg-[#0A0A0A]/40" style="animation: wave2 9s ease-in-out infinite alternate-reverse;"></div>
+        <div class="absolute bottom-0 w-[200%] h-[90%] rounded-t-[50%] bg-[#0A0A0A]/70" style="animation: wave3 6s ease-in-out infinite alternate;"></div>
+        <div class="absolute bottom-0 w-[200%] h-[70%] rounded-t-[50%] bg-[#0A0A0A]" style="animation: wave4 4s ease-in-out infinite alternate-reverse;"></div>
+      </div>
+
+      <div class="bg-[#0A0A0A] pt-12 md:pt-16 relative z-10">
       <section class="mx-auto mt-16 md:mt-24 max-w-5xl px-6">
         <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Sobre QU4SAR</h2>
         <p class="mx-auto mb-12 max-w-2xl text-center text-sm text-zinc-400 leading-relaxed">
