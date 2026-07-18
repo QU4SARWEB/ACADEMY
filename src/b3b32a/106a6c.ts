@@ -9,7 +9,7 @@ export function renderHome(session?: any): string {
       <style>
         @keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }
       </style>
-      <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
+      <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.png") center/cover no-repeat fixed; z-index:-2'></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
       <div class="pointer-events-none fixed inset-0" style="z-index:-1">
         <div class="absolute -left-32 top-1/4 h-64 w-64 rounded-full bg-[#8B5CF6]/15 blur-3xl"></div>

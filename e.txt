@@ -1,1 +1,1 @@
-fix: olas más grandes con viewBox 120 y crestas en y=0
+fix: ruta relativa para imagen de fondo en GitHub Pages
