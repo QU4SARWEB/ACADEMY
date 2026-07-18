@@ -1,1 +1,1 @@
-fix: ondas nunca se cruzan por el centro para evitar plano
+fix: ondas con círculos perfectos para curvatura constante
