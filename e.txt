@@ -1,1 +1,1 @@
-feat: imagen de fondo fija con parallax en landing
+feat: rediseño landing con fondo fijo, navbar sticky y efecto agua
