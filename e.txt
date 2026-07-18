@@ -1,1 +1,1 @@
-fix: S/. -> $ (dólares en vez de soles)
+feat: titulo y descripcion movidos a zona de contenido, hero solo logo+botones

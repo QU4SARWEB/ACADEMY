@@ -29,21 +29,13 @@ export function renderHome(session?: any): string {
         </div>
       </nav>
 
-      <section class="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 pt-20 text-center">
+      <section class="relative z-10 mx-auto flex max-w-6xl flex-col items-center justify-center px-6 pt-28 pb-16 md:pt-36 md:pb-20 text-center">
         <div class="animate-float mb-8">
           <div class="relative">
             <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/20 blur-xl"></div>
             <img src="qu4sar.ico" alt="QU4SAR" class="relative h-24 w-24 md:h-32 md:w-32" />
           </div>
         </div>
-        <h1 class="font-heading text-4xl font-bold text-white md:text-7xl leading-tight">
-          QU<span class="text-[#8B5CF6]">4</span>SAR<br />
-          <span class="text-2xl md:text-4xl font-light text-zinc-300">Gaming Academy</span>
-        </h1>
-        <p class="mt-6 max-w-lg text-base text-zinc-400 leading-relaxed">
-          La academia de esports que transforma tu pasi\u00f3n en rendimiento competitivo.
-          Entrena con coaches profesionales y lleva tu juego al siguiente nivel.
-        </p>
         <div class="mt-10 flex flex-col sm:flex-row gap-4">
           <a href="#/register" class="btn-glow rounded-xl bg-[#8B5CF6] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#8B5CF6]/25 transition-all hover:bg-[#7C3AED] hover:shadow-xl hover:shadow-[#8B5CF6]/30 hover:-translate-y-0.5 active:translate-y-0">
             Comienza ahora
@@ -93,8 +85,18 @@ export function renderHome(session?: any): string {
         </svg>
       </div>
 
-      <div class="bg-[#0A0A0A] pt-12 md:pt-16 relative z-10">
-      <section class="mx-auto mt-16 md:mt-24 max-w-5xl px-6">
+      <div class="bg-[#0A0A0A] pt-12 md:pt-16 pb-4 relative z-10">
+      <section class="mx-auto max-w-5xl px-6 text-center">
+        <h1 class="font-heading text-4xl font-bold text-white md:text-7xl leading-tight">
+          QU<span class="text-[#8B5CF6]">4</span>SAR<br />
+          <span class="text-2xl md:text-4xl font-light text-zinc-300">Gaming Academy</span>
+        </h1>
+        <p class="mt-6 mx-auto max-w-lg text-base text-zinc-400 leading-relaxed">
+          La academia de esports que transforma tu pasi\u00f3n en rendimiento competitivo.
+          Entrena con coaches profesionales y lleva tu juego al siguiente nivel.
+        </p>
+      </section>
+      <section class="mx-auto mt-20 md:mt-28 max-w-5xl px-6">
         <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Sobre QU4SAR</h2>
         <p class="mx-auto mb-12 max-w-2xl text-center text-sm text-zinc-400 leading-relaxed">
           QU4SAR Gaming Academy nace con la misi\u00f3n de formar a la pr\u00f3xima generaci\u00f3n de talento competitivo.
