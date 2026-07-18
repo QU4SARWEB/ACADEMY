@@ -1,1 +1,1 @@
-fix: ruta relativa para imagen de fondo en GitHub Pages
+fix: S/. -> $ (dólares en vez de soles)

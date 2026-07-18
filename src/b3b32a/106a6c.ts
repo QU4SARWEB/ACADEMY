@@ -172,7 +172,7 @@ export function renderHome(session?: any): string {
             <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#8B5CF6] px-5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-[#8B5CF6]/30">M\u00e1s elegido</span>
             <h3 class="font-heading text-base font-bold text-white">Cursos completos</h3>
             <p class="mt-5 text-4xl font-bold text-[#8B5CF6]">
-              S/. 4.99 <span class="text-base font-normal text-zinc-500">c/u</span>
+              $4.99 <span class="text-base font-normal text-zinc-500">c/u</span>
             </p>
             <p class="mt-2 text-xs text-zinc-500">Cada nivel incluye todo lo necesario para avanzar</p>
             <ul class="mt-6 space-y-3">
