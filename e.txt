@@ -1,1 +1,1 @@
-feat: ondas SVG con curvas bezier, loop continuo sin costuras
+feat: ondas SVG estacionarias con animate attributeName=d

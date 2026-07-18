@@ -7,7 +7,7 @@ export function renderHome(session?: any): string {
   return `
     <div class="relative min-h-screen overflow-hidden">
       <style>
-        @keyframes ws { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }
       </style>
       <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
@@ -55,17 +55,41 @@ export function renderHome(session?: any): string {
       </section>
 
       <div class="relative z-10 h-20 md:h-28 -mb-[1px] overflow-hidden pointer-events-none">
-        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 15s linear infinite;">
-          <path d="M0,35 C80,5 160,65 240,35 C320,5 400,65 480,35 C560,5 640,65 720,35 C800,5 880,65 960,35 V100 H0 Z" fill="#0A0A0A" opacity="0.2"/>
+        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 100">
+          <path fill="#0A0A0A" opacity="0.2" d="M0,35 C80,5 160,65 240,35 C320,5 400,65 480,35 C560,5 640,65 720,35 C800,5 880,65 960,35 V100 H0 Z">
+            <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
+              M0,35 C80,5 160,65 240,35 C320,5 400,65 480,35 C560,5 640,65 720,35 C800,5 880,65 960,35 V100 H0 Z;
+              M0,35 C80,65 160,5 240,35 C320,65 400,5 480,35 C560,65 640,5 720,35 C800,65 880,5 960,35 V100 H0 Z;
+              M0,35 C80,5 160,65 240,35 C320,5 400,65 480,35 C560,5 640,65 720,35 C800,5 880,65 960,35 V100 H0 Z
+            "/>
+          </path>
         </svg>
-        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 10s linear infinite reverse;">
-          <path d="M0,38 C80,8 160,68 240,38 C320,8 400,68 480,38 C560,8 640,68 720,38 C800,8 880,68 960,38 V100 H0 Z" fill="#0A0A0A" opacity="0.45"/>
+        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 100">
+          <path fill="#0A0A0A" opacity="0.45" d="M0,38 C80,8 160,68 240,38 C320,8 400,68 480,38 C560,8 640,68 720,38 C800,8 880,68 960,38 V100 H0 Z">
+            <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
+              M0,38 C80,8 160,68 240,38 C320,8 400,68 480,38 C560,8 640,68 720,38 C800,8 880,68 960,38 V100 H0 Z;
+              M0,38 C80,68 160,8 240,38 C320,68 400,8 480,38 C560,68 640,8 720,38 C800,68 880,8 960,38 V100 H0 Z;
+              M0,38 C80,8 160,68 240,38 C320,8 400,68 480,38 C560,8 640,68 720,38 C800,8 880,68 960,38 V100 H0 Z
+            "/>
+          </path>
         </svg>
-        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 6s linear infinite;">
-          <path d="M0,42 C80,12 160,72 240,42 C320,12 400,72 480,42 C560,12 640,72 720,42 C800,12 880,72 960,42 V100 H0 Z" fill="#0A0A0A" opacity="0.75"/>
+        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 100">
+          <path fill="#0A0A0A" opacity="0.75" d="M0,42 C80,12 160,72 240,42 C320,12 400,72 480,42 C560,12 640,72 720,42 C800,12 880,72 960,42 V100 H0 Z">
+            <animate attributeName="d" dur="4s" repeatCount="indefinite" values="
+              M0,42 C80,12 160,72 240,42 C320,12 400,72 480,42 C560,12 640,72 720,42 C800,12 880,72 960,42 V100 H0 Z;
+              M0,42 C80,72 160,12 240,42 C320,72 400,12 480,42 C560,72 640,12 720,42 C800,72 880,12 960,42 V100 H0 Z;
+              M0,42 C80,12 160,72 240,42 C320,12 400,72 480,42 C560,12 640,72 720,42 C800,12 880,72 960,42 V100 H0 Z
+            "/>
+          </path>
         </svg>
-        <svg class="absolute inset-0 w-[200%] h-full left-[-50%]" preserveAspectRatio="none" viewBox="0 0 960 100" style="animation:ws 3.5s linear infinite reverse;">
-          <path d="M0,45 C80,15 160,75 240,45 C320,15 400,75 480,45 C560,15 640,75 720,45 C800,15 880,75 960,45 V100 H0 Z" fill="#0A0A0A" opacity="1"/>
+        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 100">
+          <path fill="#0A0A0A" opacity="1" d="M0,45 C80,15 160,75 240,45 C320,15 400,75 480,45 C560,15 640,75 720,45 C800,15 880,75 960,45 V100 H0 Z">
+            <animate attributeName="d" dur="3s" repeatCount="indefinite" values="
+              M0,45 C80,15 160,75 240,45 C320,15 400,75 480,45 C560,15 640,75 720,45 C800,15 880,75 960,45 V100 H0 Z;
+              M0,45 C80,75 160,15 240,45 C320,75 400,15 480,45 C560,75 640,15 720,45 C800,75 880,15 960,45 V100 H0 Z;
+              M0,45 C80,15 160,75 240,45 C320,15 400,75 480,45 C560,15 640,75 720,45 C800,15 880,75 960,45 V100 H0 Z
+            "/>
+          </path>
         </svg>
       </div>
 
