@@ -1,1 +1,1 @@
-fix: ondas con círculos perfectos para curvatura constante
+fix: keyframes con ciclo completo sin alternate para movimiento continuo
