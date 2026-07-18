@@ -1,1 +1,1 @@
-feat: ondas SVG estacionarias con animate attributeName=d
+fix: olas más grandes con viewBox 120 y crestas en y=0
