@@ -1,1 +1,1 @@
-fix: eliminar profiles join en modal de entregas
+feat: imagen de fondo fija con parallax en landing

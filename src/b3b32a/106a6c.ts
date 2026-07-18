@@ -5,13 +5,15 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 export function renderHome(session?: any): string {
   const loggedIn = !!session?.user
   return `
-    <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
-      <div class="pointer-events-none fixed inset-0">
+    <div class="relative min-h-screen overflow-hidden">
+      <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
+      <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
+      <div class="pointer-events-none fixed inset-0" style="z-index:-1">
         <div class="absolute -left-32 top-1/4 h-64 w-64 rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
         <div class="absolute -right-32 top-1/2 h-96 w-96 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
       </div>
 
-      <nav class="relative z-10 flex items-center justify-between border-b border-zinc-800 px-6 py-4 md:px-12">
+      <nav class="relative z-10 flex items-center justify-between border-b border-zinc-800 bg-[#0A0A0A]/70 backdrop-blur-md px-6 py-4 md:px-12">
         <div class="flex items-center gap-2">
           <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
           <span class="font-heading text-lg font-bold text-white">QU4SAR</span>
@@ -24,7 +26,7 @@ export function renderHome(session?: any): string {
         </div>
       </nav>
 
-      <section class="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-6 pt-24 text-center md:pt-32">
+      <section class="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center px-6 pt-24 text-center md:pt-32">
         <div class="animate-float mb-6">
           <img src="qu4sar.ico" alt="QU4SAR" class="h-24 w-24 md:h-32 md:w-32" />
         </div>
@@ -45,7 +47,8 @@ export function renderHome(session?: any): string {
         </div>
       </section>
 
-      <section class="relative z-10 mx-auto mt-32 max-w-5xl px-6">
+      <div class="bg-[#0A0A0A] pt-8 rounded-t-[40px] -mt-8 relative z-10">
+      <section class="mx-auto mt-24 max-w-5xl px-6">
         <h2 class="mb-4 text-center font-heading text-2xl font-bold text-white">Sobre QU4SAR</h2>
         <p class="mx-auto mb-10 max-w-2xl text-center text-sm text-zinc-400">
           QU4SAR Gaming Academy nace con la misi\u00f3n de formar a la pr\u00f3xima generaci\u00f3n de talento competitivo.
@@ -166,8 +169,9 @@ export function renderHome(session?: any): string {
           `).join('')}
         </div>
       </section>
+      </div>
 
-      <footer class="relative z-10 mt-32 border-t border-zinc-800 px-6 py-8">
+      <footer class="bg-[#0A0A0A] border-t border-zinc-800 px-6 py-8 relative z-10">
         <div class="mx-auto flex max-w-5xl flex-col items-center gap-4 text-center md:flex-row md:justify-between">
           <div class="flex items-center gap-2">
             <img src="qu4sar.ico" alt="" class="h-6 w-6" />
