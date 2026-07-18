@@ -7,10 +7,8 @@ export function renderHome(session?: any): string {
   return `
     <div class="relative min-h-screen overflow-hidden">
       <style>
-        @keyframes w1 { 0% { transform: translateX(-35%); } 50% { transform: translateX(-15%); } 100% { transform: translateX(-35%); } }
-        @keyframes w2 { 0% { transform: translateX(15%); } 50% { transform: translateX(35%); } 100% { transform: translateX(15%); } }
-        @keyframes w3 { 0% { transform: translateX(-20%); } 50% { transform: translateX(0%); } 100% { transform: translateX(-20%); } }
-        @keyframes w4 { 0% { transform: translateX(0%); } 50% { transform: translateX(20%); } 100% { transform: translateX(0%); } }
+        @keyframes ws1 { 0% { transform: translateX(-30%); } 100% { transform: translateX(30%); } }
+        @keyframes ws2 { 0% { transform: translateX(25%); } 100% { transform: translateX(-25%); } }
       </style>
       <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
@@ -57,11 +55,11 @@ export function renderHome(session?: any): string {
         </div>
       </section>
 
-      <div class="relative z-10 h-20 md:h-28 -mb-1 overflow-hidden pointer-events-none">
-        <div class="absolute bottom-0 w-[300%] left-[-100%] h-[200%] rounded-[50%_50%_0_0] bg-[#0A0A0A]/20" style="animation:w1 12s ease-in-out infinite;"></div>
-        <div class="absolute bottom-0 w-[300%] left-[-100%] h-[170%] rounded-[50%_50%_0_0] bg-[#0A0A0A]/40" style="animation:w2 10s ease-in-out infinite;"></div>
-        <div class="absolute bottom-0 w-[300%] left-[-100%] h-[140%] rounded-[50%_50%_0_0] bg-[#0A0A0A]/70" style="animation:w3 7s ease-in-out infinite;"></div>
-        <div class="absolute bottom-0 w-[300%] left-[-100%] h-[110%] rounded-[50%_50%_0_0] bg-[#0A0A0A]" style="animation:w4 5s ease-in-out infinite;"></div>
+      <div class="relative z-10 h-16 md:h-24 -mb-px overflow-hidden pointer-events-none">
+        <div class="absolute inset-x-[-50%] bottom-0 h-[200%] rounded-[50%] bg-[#0A0A0A]/20" style="animation:ws1 10s ease-in-out infinite alternate;"></div>
+        <div class="absolute inset-x-[-50%] bottom-0 h-[170%] rounded-[50%] bg-[#0A0A0A]/45" style="animation:ws2 7s ease-in-out infinite alternate-reverse;"></div>
+        <div class="absolute inset-x-[-50%] bottom-0 h-[140%] rounded-[50%] bg-[#0A0A0A]/70" style="animation:ws1 5s ease-in-out infinite alternate-reverse;"></div>
+        <div class="absolute inset-x-[-50%] bottom-0 h-[110%] rounded-[50%] bg-[#0A0A0A]" style="animation:ws2 3.5s ease-in-out infinite alternate;"></div>
       </div>
 
       <div class="bg-[#0A0A0A] pt-12 md:pt-16 relative z-10">

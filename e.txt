@@ -1,1 +1,1 @@
-fix: keyframes con ciclo completo sin alternate para movimiento continuo
+fix: ondas con rounded-50% y altura >100% para mostrar arco ?
