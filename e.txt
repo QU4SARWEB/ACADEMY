@@ -1,1 +1,1 @@
-feat: titulo y descripcion movidos a zona de contenido, hero solo logo+botones
+fix: hero con min-h-screen para mostrar imagen completa

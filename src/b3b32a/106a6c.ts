@@ -29,7 +29,7 @@ export function renderHome(session?: any): string {
         </div>
       </nav>
 
-      <section class="relative z-10 mx-auto flex max-w-6xl flex-col items-center justify-center px-6 pt-28 pb-16 md:pt-36 md:pb-20 text-center">
+      <section class="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 pt-20 text-center">
         <div class="animate-float mb-8">
           <div class="relative">
             <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/20 blur-xl"></div>
