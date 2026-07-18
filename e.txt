@@ -1,1 +1,1 @@
-feat: ondas animadas tipo agua entre hero y contenido
+fix: ondas nunca se cruzan por el centro para evitar plano

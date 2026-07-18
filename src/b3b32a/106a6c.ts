@@ -7,10 +7,10 @@ export function renderHome(session?: any): string {
   return `
     <div class="relative min-h-screen overflow-hidden">
       <style>
-        @keyframes wave1 { 0% { transform: translateX(-15%); } 100% { transform: translateX(15%); } }
-        @keyframes wave2 { 0% { transform: translateX(10%); } 100% { transform: translateX(-25%); } }
-        @keyframes wave3 { 0% { transform: translateX(-5%); } 100% { transform: translateX(20%); } }
-        @keyframes wave4 { 0% { transform: translateX(0); } 100% { transform: translateX(-30%); } }
+        @keyframes w1 { 0% { transform: translateX(-40%); } 100% { transform: translateX(-20%); } }
+        @keyframes w2 { 0% { transform: translateX(10%); } 100% { transform: translateX(35%); } }
+        @keyframes w3 { 0% { transform: translateX(-25%); } 100% { transform: translateX(-5%); } }
+        @keyframes w4 { 0% { transform: translateX(20%); } 100% { transform: translateX(40%); } }
       </style>
       <div class="fixed inset-0" style="background: url('/qu4sarfondoPublico.png') center/cover no-repeat fixed; z-index:-2"></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.55); z-index:-1"></div>
@@ -58,10 +58,10 @@ export function renderHome(session?: any): string {
       </section>
 
       <div class="relative z-10 h-20 md:h-28 -mb-1 overflow-hidden pointer-events-none">
-        <div class="absolute bottom-0 w-[200%] h-[130%] rounded-t-[50%] bg-[#0A0A0A]/20" style="animation: wave1 12s ease-in-out infinite alternate;"></div>
-        <div class="absolute bottom-0 w-[200%] h-[110%] rounded-t-[50%] bg-[#0A0A0A]/40" style="animation: wave2 9s ease-in-out infinite alternate-reverse;"></div>
-        <div class="absolute bottom-0 w-[200%] h-[90%] rounded-t-[50%] bg-[#0A0A0A]/70" style="animation: wave3 6s ease-in-out infinite alternate;"></div>
-        <div class="absolute bottom-0 w-[200%] h-[70%] rounded-t-[50%] bg-[#0A0A0A]" style="animation: wave4 4s ease-in-out infinite alternate-reverse;"></div>
+        <div class="absolute bottom-0 w-[250%] left-[-75%] h-[140%] rounded-t-[50%] bg-[#0A0A0A]/20" style="animation: w1 14s ease-in-out infinite alternate;"></div>
+        <div class="absolute bottom-0 w-[250%] left-[-75%] h-[115%] rounded-t-[50%] bg-[#0A0A0A]/40" style="animation: w2 10s ease-in-out infinite alternate-reverse;"></div>
+        <div class="absolute bottom-0 w-[250%] left-[-75%] h-[90%] rounded-t-[50%] bg-[#0A0A0A]/70" style="animation: w3 7s ease-in-out infinite alternate;"></div>
+        <div class="absolute bottom-0 w-[250%] left-[-75%] h-[65%] rounded-t-[50%] bg-[#0A0A0A]" style="animation: w4 5s ease-in-out infinite alternate-reverse;"></div>
       </div>
 
       <div class="bg-[#0A0A0A] pt-12 md:pt-16 relative z-10">
