@@ -32,6 +32,27 @@ export async function initStudentDashboard(): Promise<void> {
 
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
+    let payStatusHtml = ''
+    const { data: myPayments } = await supabase.from('payments').select('status, paid_at, created_at').eq('profile_id', session.user.id).order('created_at', { ascending: false })
+    const paidPay = (myPayments ?? []).find((p: any) => p.status === 'paid')
+    const pendingPay = (myPayments ?? []).find((p: any) => p.status === 'pending')
+    if (paidPay?.paid_at) {
+      const elapsed = Date.now() - new Date(paidPay.paid_at).getTime()
+      const remaining = Math.max(0, 30 - Math.floor(elapsed / 86400000))
+      payStatusHtml = remaining > 0
+        ? `<div class="rounded-xl border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-400 mb-6">Suscripción activa — ${remaining} día${remaining !== 1 ? 's' : ''} restantes</div>`
+        : `<div class="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400 mb-6">Suscripción vencida — <a href="#/payments" class="underline hover:text-red-300">renueva aquí</a></div>`
+    } else if (pendingPay?.created_at) {
+      const expiresAt = new Date(pendingPay.created_at).getTime() + 172800000
+      const diff = expiresAt - Date.now()
+      if (diff > 0) {
+        const h = Math.floor(diff / 3600000)
+        const m = Math.floor((diff % 3600000) / 60000)
+        payStatusHtml = `<div class="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-400 mb-6">Pago pendiente — vence en ${h}h ${m}m — <a href="#/payments" class="underline hover:text-yellow-300">pagar ahora</a></div>`
+      } else {
+        payStatusHtml = `<div class="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400 mb-6">Pago vencido — <a href="#/payments" class="underline hover:text-red-300">regulariza aquí</a></div>`
+      }
+    }
 
     const courseProgress = (enrollments ?? []).map((e: any) => ({ ...e, progress: 0, totalModules: 0 }))
 
@@ -42,6 +63,8 @@ export async function initStudentDashboard(): Promise<void> {
         <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
         <p class="mt-1 text-sm text-zinc-500">Tu progreso académico</p>
       </div>
+
+      ${payStatusHtml}
 
       <div class="mb-8">
         <div class="glass inline-block rounded-xl p-4 text-center">

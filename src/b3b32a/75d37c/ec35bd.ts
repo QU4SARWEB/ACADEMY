@@ -29,6 +29,7 @@ export async function initStudentCourseDetail(): Promise<void> {
     }
 
     let paymentStatus: string | null = null
+    let paidAt: string | null = null
     const { data: enrollment } = await supabase
       .from('enrollments')
       .select('id')
@@ -39,11 +40,18 @@ export async function initStudentCourseDetail(): Promise<void> {
     if (enrollment) {
       const { data: payment } = await supabase
         .from('payments')
-        .select('status, amount')
+        .select('status, amount, paid_at')
         .eq('enrollment_id', enrollment.id)
         .order('created_at', { ascending: false })
         .maybeSingle()
-      if (payment) paymentStatus = payment.status
+      if (payment) { paymentStatus = payment.status; paidAt = payment.paid_at }
+    }
+
+    let paidDaysLeft = ''
+    if (paidAt) {
+      const elapsed = Date.now() - new Date(paidAt).getTime()
+      const remaining = Math.max(0, 30 - Math.floor(elapsed / 86400000))
+      paidDaysLeft = remaining > 0 ? ` — ${remaining} día${remaining !== 1 ? 's' : ''} restantes` : ' — vencida'
     }
 
     const statusBadge = paymentStatus === 'pending'
@@ -52,7 +60,7 @@ export async function initStudentCourseDetail(): Promise<void> {
         </div>`
       : paymentStatus === 'paid'
       ? `<div class="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-400">
-          Pago confirmado. ¡Disfruta del curso!
+          Pago confirmado${paidDaysLeft}
         </div>`
       : paymentStatus === 'scholarship'
       ? `<div class="mb-6 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-400">

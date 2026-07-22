@@ -1,1 +1,1 @@
-feat: contador de horas en pendientes vista coach
+feat: contador suscripcion en dashboard alumno y detalle curso
