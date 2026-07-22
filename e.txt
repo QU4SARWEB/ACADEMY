@@ -1,1 +1,1 @@
-feat: eliminado sistema players + contador dias en pagos alumnos
+feat: contador de horas en pendientes vista coach

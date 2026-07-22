@@ -427,6 +427,16 @@ async function renderCoachPayments(): Promise<void> {
         const elapsed = Date.now() - new Date(pay.paid_at).getTime()
         const remaining = Math.max(0, 30 - Math.floor(elapsed / (24 * 60 * 60 * 1000)))
         daysLeft = remaining > 0 ? ` <span class="text-zinc-500">· ${remaining}d</span>` : ' <span class="text-red-400">· vence hoy</span>'
+      } else if (pay?.created_at && pay?.status === 'pending') {
+        const expiresAt = new Date(pay.created_at).getTime() + 172800000
+        const diff = expiresAt - Date.now()
+        if (diff > 0) {
+          const h = Math.floor(diff / 3600000)
+          const m = Math.floor((diff % 3600000) / 60000)
+          daysLeft = ` <span class="text-xs text-yellow-400">· ${h}h ${m}m</span>`
+        } else {
+          daysLeft = ' <span class="text-xs text-red-400">· vencido</span>'
+        }
       }
 
       const badge = isFree
