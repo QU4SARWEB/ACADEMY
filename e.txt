@@ -1,1 +1,1 @@
-feat: contador suscripcion en dashboard alumno y detalle curso
+fix: cursos sin pagos no se ocultan en filtro de pagos

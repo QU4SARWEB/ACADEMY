@@ -487,7 +487,7 @@ async function renderCoachPayments(): Promise<void> {
     const hasPending = pending > 0
 
     return `
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden' : ''}" data-course-id="${escapeHtml(c.id)}" data-has-paid="${hasPaid ? '1' : '0'}" data-has-pending="${hasPending ? '1' : '0'}" data-is-free="${isFree ? '1' : '0'}">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden course-table ${isFree ? 'hidden' : ''}" data-course-id="${escapeHtml(c.id)}" data-has-paid="${hasPaid ? '1' : '0'}" data-has-pending="${hasPending ? '1' : '0'}" data-is-free="${isFree ? '1' : '0'}" data-total-enrolls="${courseEnrolls.length}">
         <div class="flex items-center justify-between bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <div>
             <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
@@ -570,14 +570,16 @@ async function renderCoachPayments(): Promise<void> {
       const hasPaid = el.dataset.hasPaid === '1'
       const hasPending = el.dataset.hasPending === '1'
 
+      const totalEnrolls = parseInt(el.dataset.totalEnrolls || '0')
       const showFree = payStatusFilters.has('free')
       const showPaid = payStatusFilters.has('paid')
       const showPending = payStatusFilters.has('pending')
 
       let show = true
       if (isFree) show = showFree
+      else if (totalEnrolls === 0) show = false
       else {
-        show = (hasPaid && showPaid) || (hasPending && showPending)
+        show = (hasPaid && showPaid) || (hasPending && showPending) || totalEnrolls > 0
       }
 
       const courseFilterOn = document.querySelector(`.course-filter-btn[data-course-id="${el.dataset.courseId}"][data-active="1"]`)
