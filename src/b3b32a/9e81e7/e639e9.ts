@@ -42,6 +42,13 @@ async function renderStudentPayments(userId: string): Promise<void> {
       await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
     }
   }
+  const PAID_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000
+  const { data: paidPays } = await supabase.from('payments').select('id, paid_at').eq('profile_id', userId).eq('status', 'paid')
+  for (const pp of paidPays ?? []) {
+    if (pp.paid_at && Date.now() - new Date(pp.paid_at).getTime() > PAID_EXPIRE_MS) {
+      await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', pp.id)
+    }
+  }
   let { data: payments } = await supabase
     .from('payments')
     .select('*')
@@ -433,7 +440,7 @@ async function renderCoachPayments(): Promise<void> {
           <td class="py-2.5 px-3 text-xs text-zinc-500 hidden md:table-cell">${escapeHtml(prof.email || '')}</td>
           <td class="py-2.5 px-3">${badge}</td>
           <td class="py-2.5 px-3 text-right">
-            ${!isFree && pay && pay.status !== 'paid' ? `
+            ${!isFree && pay ? `
               <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
                 data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
                 <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>

@@ -1,1 +1,1 @@
-fix: hero con min-h-screen para mostrar imagen completa
+feat: paid expira 30d -> pending; coaches modifican paid a vencido/pendiente/beca

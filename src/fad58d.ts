@@ -176,6 +176,18 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
             await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
           }
         }
+        // Auto-revert paid to pending after 30 days
+        const PAID_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000
+        const { data: paidPays } = await supabase
+          .from('payments')
+          .select('id, paid_at')
+          .eq('profile_id', profile.id)
+          .eq('status', 'paid')
+        for (const pp of paidPays ?? []) {
+          if (pp.paid_at && Date.now() - new Date(pp.paid_at).getTime() > PAID_EXPIRE_MS) {
+            await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', pp.id)
+          }
+        }
       }
       // Check if user has expired payments (block access except /payments)
       let isExpired = false
