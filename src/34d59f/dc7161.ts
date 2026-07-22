@@ -12,7 +12,7 @@ export function DashboardLayout(contentHtml: string): string {
   const previewRole = sessionStorage.getItem('previewRole') || ''
   const effectiveRole = previewRole || profile?.role || ''
   const role = effectiveRole
-  const prefix = role === 'coach' ? 'coaches' : role === 'student' ? 'students' : 'players'
+  const prefix = role === 'coach' ? 'coaches' : 'students'
   const accent = (profile as any)?.role_color || '#8B5CF6'
   const bgUrl = (profile as any)?.custom_bg_url || ''
 
@@ -54,7 +54,8 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const effectiveRole = previewRole || role
   const isCoach = effectiveRole === 'coach'
   const isStudent = effectiveRole === 'student'
-  const isPlayer = effectiveRole === 'player'
+
+
   const accent = (profile as any)?.role_color || '#8B5CF6'
 
   type NavItem = { href?: string; icon?: string; label?: string; show?: boolean }
@@ -62,15 +63,15 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent || isPlayer)],
-    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent || isPlayer), item(`/${prefix}/exams`, 'scrollText', 'Ex\u00e1menes', isStudent || isPlayer)],
-    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isPlayer || isStudent)],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item(`/${prefix}/grades`, 'scrollText', 'Notas', isStudent || isPlayer)],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent)],
+    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent), item(`/${prefix}/exams`, 'scrollText', 'Ex\u00e1menes', isStudent)],
+    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isStudent)],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item(`/${prefix}/grades`, 'scrollText', 'Notas', isStudent)],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
-    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/players', 'sword', 'Jugadores'), item('/coaches/courses', 'bookOpen', 'Cursos')],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
     [item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
     [item('/coaches/exams', 'scrollText', 'Ex\u00e1menes'), item('/coaches/practical', 'target', 'Ex\u00e1menes Pr\u00e1ctico'), item('/coaches/attendance', 'clipboardList', 'Asistencia'), item('/coaches/grades', 'scrollText', 'Notas')],
     [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],

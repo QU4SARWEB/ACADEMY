@@ -207,7 +207,7 @@ export function mountRegister(): void {
       return
     }
     toast('success', 'Cuenta creada. Bienvenido.')
-    const prefix = profile?.role === 'coach' ? 'coaches' : profile?.role === 'student' ? 'students' : 'players'
+    const prefix = profile?.role === 'coach' ? 'coaches' : 'students'
     router.navigate(`/${prefix}/dashboard`)
   })
 }

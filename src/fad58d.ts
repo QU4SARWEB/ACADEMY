@@ -32,15 +32,14 @@ import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/grades'
 import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/tasks'
 import { renderCoachEnroll, initCoachEnroll } from '@/b3b32a/8abf18/enroll'
 import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/tasks'
-import { renderPlayerTasks, initPlayerTasks } from '@/b3b32a/a2bbab/tasks'
+
 import { renderCoachExams, initCoachExams } from '@/b3b32a/8abf18/exams'
 import { renderStudentExamList, initStudentExamList, renderStudentExamDetail, initStudentExamDetail } from '@/b3b32a/75d37c/exams'
 import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/attendance'
 import { renderCoachPractical, initCoachPractical } from '@/b3b32a/8abf18/practical'
 import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/grades'
 
-import { renderCoachPlayers, initCoachPlayers } from '@/b3b32a/8abf18/a2bbab'
-import { renderCoachPlayerDetail, initCoachPlayerDetail } from '@/b3b32a/8abf18/player_detail'
+
 import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
 import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
@@ -49,12 +48,7 @@ import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/7998
 import { renderStudentTeam, initStudentTeam } from '@/b3b32a/75d37c/f89442'
 import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
 
-import { renderPlayerDashboard, initPlayerDashboard } from '@/b3b32a/a2bbab/4866e3'
-import { renderPlayerProfile, initPlayerProfile } from '@/b3b32a/a2bbab/7d9748'
-import { renderPlayerSchedule, initPlayerSchedule } from '@/b3b32a/a2bbab/799855'
-import { renderPlayerCourseDetail, initPlayerCourseDetail } from '@/b3b32a/a2bbab/a3b2c1'
-import { renderPlayerCourses, initPlayerCourses } from '@/b3b32a/a2bbab/d1e5f3'
-import { renderPlayerTeam, initPlayerTeam } from '@/b3b32a/a2bbab/f89442'
+
 
 import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
 
@@ -106,10 +100,7 @@ const REALTIME_TABLES: Record<string, string[]> = {
     'courses', 'enrollments', 'schedules', 'payments', 'profiles',
     'teams', 'team_members',
   ],
-  players: [
-    'courses', 'enrollments',
-    'teams', 'team_members', 'schedules', 'payments', 'profiles',
-  ],
+
 }
 
 const NO_AUTO_REFRESH_PATTERNS = ['/new', '/edit', '/settings']
@@ -155,7 +146,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       // Mobile detection: block non-essential routes
       if (isMobile() && profile) {
         const isCoach = profile.role === 'coach'
-        const schedulePaths = ['/schedule', '/students/schedule', '/players/schedule']
+        const schedulePaths = ['/schedule', '/students/schedule']
         const isAllowed = path === '/payments' || schedulePaths.includes(path)
         if (isCoach || !isAllowed) {
           app.innerHTML = renderMobileBlocked()
@@ -265,8 +256,8 @@ dash('/coaches/exams/:id', () => renderCoachExams(), initCoachExams)
 dash('/coaches/attendance', () => renderCoachAttendance(), initCoachAttendance)
 dash('/coaches/practical', () => renderCoachPractical(), initCoachPractical)
 
-dash('/coaches/players', () => renderCoachPlayers(), initCoachPlayers)
-dash('/coaches/players/:id', () => renderCoachPlayerDetail(), initCoachPlayerDetail)
+
+
 
 // Student routes
 dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard)
@@ -280,13 +271,8 @@ dash('/students/exams', () => renderStudentExamList(), initStudentExamList)
 dash('/students/exams/:id', () => renderStudentExamDetail(), initStudentExamDetail)
 dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 // Player routes
-dash('/players/dashboard', () => renderPlayerDashboard(), initPlayerDashboard)
-dash('/players/profile', () => renderPlayerProfile(), initPlayerProfile)
-dash('/players/courses', () => renderPlayerCourses(), initPlayerCourses)
-dash('/players/tasks', () => renderPlayerTasks(), initPlayerTasks)
-dash('/players/courses/:id', () => renderPlayerCourseDetail(), initPlayerCourseDetail)
-dash('/players/schedule', () => renderPlayerSchedule(), initPlayerSchedule)
-dash('/players/team', () => renderPlayerTeam(), initPlayerTeam)
+
+
 
 // Shared routes
 dash('/payments', () => renderPayments(), initPayments)
@@ -311,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (session && (!location.hash || location.hash === '#' || location.hash === '#/')) {
       getProfile().then((profile) => {
         if (profile) {
-          const prefix = profile.role === 'coach' ? 'coaches' : profile.role === 'student' ? 'students' : 'players'
+          const prefix = profile.role === 'coach' ? 'coaches' : 'students'
           location.hash = `/${prefix}/dashboard`
         }
       }).catch(() => {})

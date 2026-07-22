@@ -49,19 +49,16 @@ export async function initCoachDashboard(): Promise<void> {
 
     // KPIs
     let studentKpiQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('is_active', true)
-    let playerKpiQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'player').eq('is_active', true)
     let courseKpiQuery = supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_active', true)
     if (assignedProfileIds) {
       studentKpiQuery = studentKpiQuery.in('id', assignedProfileIds)
-      playerKpiQuery = playerKpiQuery.in('id', assignedProfileIds)
     }
     if (assignedIds.length > 0) {
       courseKpiQuery = courseKpiQuery.in('id', assignedIds)
     }
 
-    const [{ count: studentsCount }, { count: playersCount }, { count: coursesCount }] = await Promise.all([
+    const [{ count: studentsCount }, { count: coursesCount }] = await Promise.all([
       studentKpiQuery,
-      playerKpiQuery,
       courseKpiQuery,
     ])
 
@@ -98,7 +95,8 @@ export async function initCoachDashboard(): Promise<void> {
 
     const kpiCards = [
       { icon: 'users', label: 'Alumnos activos', value: String(studentsCount ?? 0), color: '#8B5CF6' },
-      { icon: 'sword', label: 'Jugadores activos', value: String(playersCount ?? 0), color: '#6D28D9' },
+
+
       { icon: 'bookOpen', label: 'Cursos activos', value: String(coursesCount ?? 0), color: '#7C3AED' },
       { icon: 'dollarSign', label: 'Pagos por vencer', value: String(expiringCount), color: '#F59E0B' },
     ]

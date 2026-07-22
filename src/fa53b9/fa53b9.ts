@@ -5,7 +5,6 @@ import { store } from '@/9ed39e/8cd892'
 const ROLE_PREFIX: Record<string, string> = {
   coach: 'coaches',
   student: 'students',
-  player: 'players',
 }
 
 export async function getSession() {

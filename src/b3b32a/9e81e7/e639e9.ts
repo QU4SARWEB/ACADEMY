@@ -148,7 +148,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || 'Pago')}</p>
-              <p class="text-xs text-zinc-500">${p.paid_at ? 'Pagado: ' + formatDate(p.paid_at) : ''}</p>
+              ${p.paid_at ? `<p class="text-xs text-zinc-500">Pagado: ${formatDate(p.paid_at)}<span class="text-zinc-600"> · </span><span class="paid-countdown" data-paid-at="${new Date(p.paid_at).getTime()}" data-expires="${new Date(p.paid_at).getTime() + 2592000000}"></span></p>` : ''}
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
@@ -301,10 +301,8 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
 
 function startPaymentCountdown(): void {
   const tick = () => {
-    const els = document.querySelectorAll<HTMLElement>('.payment-countdown')
-    if (els.length === 0) return
     const now = Date.now()
-    els.forEach(el => {
+    document.querySelectorAll<HTMLElement>('.payment-countdown').forEach(el => {
       const expires = parseInt(el.dataset.expires || '0')
       if (!expires) return
       const diff = expires - now
@@ -320,10 +318,19 @@ function startPaymentCountdown(): void {
       el.textContent = `Vence en: ${text}`
       el.className = 'payment-countdown block text-xs mt-1' + (diff < 86400000 ? ' text-red-400' : diff < 172800000 ? ' text-yellow-400' : ' text-zinc-400')
     })
+    document.querySelectorAll<HTMLElement>('.paid-countdown').forEach(el => {
+      const paidAt = parseInt(el.dataset.paidAt || '0')
+      if (!paidAt) return
+      const elapsed = now - paidAt
+      const remaining = Math.max(0, 30 - Math.floor(elapsed / 86400000))
+      if (remaining <= 0) { el.textContent = 'Vencido'; el.className = 'paid-countdown text-red-400'; return }
+      el.textContent = `${remaining}d restantes`
+      el.className = 'paid-countdown' + (remaining <= 3 ? ' text-red-400' : remaining <= 7 ? ' text-yellow-400' : ' text-zinc-500')
+    })
   }
   tick()
   if ((window as any).__intvCountdown) clearInterval((window as any).__intvCountdown)
-  ;(window as any).__intvCountdown = setInterval(tick, 1000)
+  ;(window as any).__intvCountdown = setInterval(tick, 60000)
 }
 
 function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {

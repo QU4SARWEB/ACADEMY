@@ -581,8 +581,7 @@ function initTeamEventHandlers(container: HTMLElement, teams: any[], membersByTe
     }
     const { data: unassigned } = await query
 
-    const students = (unassigned ?? []).filter((p: any) => p.role === 'student')
-    const players = (unassigned ?? []).filter((p: any) => p.role === 'player')
+    const students = (unassigned ?? []).filter((p: any) => p.role === 'student' || p.role === 'player')
 
     let assigned = 0
     const doAssign = async (profiles: any[], teams: any[]) => {
@@ -595,7 +594,7 @@ function initTeamEventHandlers(container: HTMLElement, teams: any[], membersByTe
     }
 
     await doAssign(students, acadTeams)
-    await doAssign(players, compTeams)
+    await doAssign(students, compTeams)
 
     if (assigned > 0) {
       toast('success', `${assigned} perfiles asignados automáticamente`)
