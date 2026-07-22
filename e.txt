@@ -1,1 +1,1 @@
-feat: paid expira 30d -> pending; coaches modifican paid a vencido/pendiente/beca
+feat: contador de dias restantes en pagos pagados

@@ -415,12 +415,19 @@ async function renderCoachPayments(): Promise<void> {
       const pay = coursePays[e.id]
       const status = pay?.status || (isFree ? 'free' : 'none')
 
+      let daysLeft = ''
+      if (pay?.paid_at) {
+        const elapsed = Date.now() - new Date(pay.paid_at).getTime()
+        const remaining = Math.max(0, 30 - Math.floor(elapsed / (24 * 60 * 60 * 1000)))
+        daysLeft = remaining > 0 ? ` <span class="text-zinc-500">· ${remaining}d</span>` : ' <span class="text-red-400">· vence hoy</span>'
+      }
+
       const badge = isFree
         ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
         : !pay
           ? '<span class="rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs text-zinc-600">Sin pago</span>'
           : pay.status === 'paid'
-            ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado</span>'
+            ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado${daysLeft}</span>`
             : pay.status === 'pending'
               ? '<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente</span>'
               : pay.status === 'scholarship'
