@@ -335,7 +335,7 @@ export function mountCoachStudents(): void {
         if (!courseId || !ids.length) return
 
         const { data: course } = await supabase.from('courses').select('price, name').eq('id', courseId).maybeSingle()
-        const amount = course?.price != null ? parseFloat(course.price) : 4.99
+        const amount = course?.price != null ? parseFloat(course.price) : 15
 
         let ok = 0, fail = 0
         for (const pid of ids) {

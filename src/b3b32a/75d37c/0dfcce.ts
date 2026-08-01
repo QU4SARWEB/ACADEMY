@@ -122,8 +122,8 @@ export async function initStudentCourses(): Promise<void> {
           const alreadyPassed = (prevEnrolls ?? []).some((x: any) => x.final_grade !== null && x.final_grade >= 14 && x.promoted)
           if (!alreadyPassed) {
             const payStatus = course?.price === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')
-            await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: payStatus, amount: course?.price ?? 4.99 })
-            if (payStatus === 'scholarship' && (course?.price ?? 4.99) > 0) autoEnrollComplementaria(session.user.id, 'student')
+            await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: payStatus, amount: course?.price ?? 15 })
+            if (payStatus === 'scholarship' && (course?.price ?? 15) > 0) autoEnrollComplementaria(session.user.id, 'student')
           }
         }
         toast('success', `¡Inscrito en ${course?.name ?? 'el curso'}!`)

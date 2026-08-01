@@ -86,7 +86,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
   }
   const { data: coursePrices } = await supabase.from('courses').select('id, price').in('id', [...new Set((enrollments ?? []).map((e: any) => e.course_id))])
   const priceMap: Record<string, number> = {}
-  for (const c of coursePrices ?? []) priceMap[c.id] = c.price ?? 4.99
+  for (const c of coursePrices ?? []) priceMap[c.id] = c.price ?? 15
   const freeCourses = new Set((coursePrices ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
   for (const e of enrollments ?? []) {
     if (freeCourses.has(e.course_id)) continue
@@ -97,7 +97,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
         enrollment_id: e.id,
         type: e.type || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
-        amount: priceMap[e.course_id] ?? 4.99,
+        amount: priceMap[e.course_id] ?? 15,
       })
       if (insErr && insErr.code === '23505') {
       } else if (insErr) {
@@ -154,13 +154,13 @@ async function renderStudentPayments(userId: string): Promise<void> {
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
               : p.status === 'free'
                 ? `<span class="shrink-0 text-sm font-medium text-green-400">Gratuito</span>`
-                : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 4.99}</span>`
+                : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 15}</span>`
             }
           </div>
           ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 172800000}"></span>` : ''}
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
-            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 4.99}"></div>
+            <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 15}"></div>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
               <span class="text-zinc-600">O</span>
               ${p.receipt_url
@@ -717,10 +717,10 @@ async function renderCoachPayments(): Promise<void> {
       if (!profileId) return
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
       const { data: firstEnroll } = await supabase.from('enrollments').select('course_id').eq('profile_id', profileId).limit(1).maybeSingle()
-      let payAmount = 4.99
+      let payAmount = 15
       if (firstEnroll) {
         const { data: courseRow } = await supabase.from('courses').select('price').eq('id', firstEnroll.course_id).maybeSingle()
-        if (courseRow) payAmount = courseRow.price ?? 4.99
+        if (courseRow) payAmount = courseRow.price ?? 15
       }
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
       if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }

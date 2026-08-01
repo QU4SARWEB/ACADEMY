@@ -120,7 +120,7 @@ export async function initCoachEditCourse(): Promise<void> {
       const priceInput = document.querySelector<HTMLInputElement>('input[name="price"]')
       if (priceInput) {
         priceInput.disabled = this.checked
-        priceInput.value = this.checked ? '0' : '4.99'
+        priceInput.value = this.checked ? '0' : '15'
         priceInput.classList.toggle('opacity-50', this.checked)
       }
     })

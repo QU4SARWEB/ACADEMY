@@ -42,7 +42,7 @@ export async function createEnrollmentWithPayment(
   if (enrError || !newEnroll) return { error: enrError?.message || 'Error al crear inscripci\u00f3n' }
 
   const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-  const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 4.99
+  const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 15
 
   const { data: prof } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
   const payStatus = coursePrice === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')
