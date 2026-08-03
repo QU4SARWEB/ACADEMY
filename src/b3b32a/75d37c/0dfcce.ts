@@ -93,6 +93,7 @@ export async function initStudentCourses(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Tu formación</span>
         <h1 class="font-heading text-2xl font-bold text-white">Mis cursos</h1>
       </div>
       ${enrollHtml}

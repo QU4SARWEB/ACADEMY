@@ -96,6 +96,7 @@ export async function initStudentExamList(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Evaluaciones disponibles</span>
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('fileText', 22)} Exámenes</h1>
         <p class="mt-1 text-sm text-zinc-500">${filteredExams.length} examen${filteredExams.length !== 1 ? 'es' : ''} disponible${filteredExams.length !== 1 ? 's' : ''}</p>
       </div>

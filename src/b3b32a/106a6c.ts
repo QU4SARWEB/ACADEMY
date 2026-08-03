@@ -59,7 +59,7 @@ function waves(): string {
 
 function hero(session: any): string {
   return `
-    <header class="relative z-10 mx-auto flex min-h-[78vh] max-w-6xl flex-col items-center justify-center px-6 pt-10 text-center">
+    <header class="relative z-10 mx-auto flex min-h-[62vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 text-center">
       ${embers()}
       <div class="animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
@@ -100,7 +100,7 @@ export function renderHome(session?: any): string {
 
       ${waves()}
 
-      <div class="bg-[#0A0A0A] relative z-10 pt-14 md:pt-20">
+      <div class="bg-[#0A0A0A] relative z-10 pt-8 md:pt-12">
 
         <!-- Stats -->
         <section class="mx-auto max-w-5xl px-6">
@@ -200,35 +200,68 @@ export function renderHome(session?: any): string {
 
         <!-- Precios / Offers -->
         <section id="precios" class="mx-auto mt-28 md:mt-32 max-w-5xl scroll-mt-24 px-6">
-          <div class="flex flex-col gap-2 mb-10">
+          <div class="flex flex-col gap-2 mb-10 text-center items-center">
             <span class="lbl">Inversión única por curso</span>
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
-            <p class="s-title-sub">Sin mensualidades ni suscripciones. Pagas únicamente el curso que quieres llevar y accedes a todos los beneficios de la academia.</p>
+            <p class="s-title-sub">Una inversión única. Sin mensualidades, sin permanencia, sin letra pequeña. Pagas el curso que quieres y accedes a todo el entrenamiento.</p>
           </div>
           <div class="offer-grid">
-            <article class="offer-card reveal" style="--i:0">
+            <article class="offer-card offer-card--free reveal" style="--i:0">
               <h3 class="offer-card__title">Posicionamiento</h3>
-              <div class="offer-card__price"><span class="offer-card__amount">Gratis</span></div>
-              <p class="offer-card__blurb">Evaluación de nivel sin costo. Te ubicamos en el curso adecuado según tu rango actual.</p>
-              <div class="offer-card__mode"><span class="dot"></span>Online</div>
+              <div class="offer-card__price"><span class="offer-card__amount amount-free">Gratis</span></div>
+              <p class="offer-card__blurb">Evaluación de nivel para saber dónde empiezas.</p>
               <ul class="offer-card__list">
-                ${['Evaluación de nivel inicial', 'Examen teórico de posicionamiento', 'Examen práctico en juego', 'Asignación del curso adecuado para ti'].map(f => `
+                ${['Evaluación de nivel inicial', 'Examen teórico de posicionamiento', 'Examen práctico en juego'].map(f => `
                   <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
               </ul>
+              <p class="offer-card__hint">Solo el primer paso.</p>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Comenzar gratis</a></div>
             </article>
             <article class="offer-card featured reveal" style="--i:1">
               <span class="offer-card__badge">Más elegido</span>
+              <span class="offer-card__badge--secondary">Mejor valor</span>
               <h3 class="offer-card__title">Cursos completos</h3>
-              <div class="offer-card__price"><span class="offer-card__amount">$15</span><span class="offer-card__unit">USD · por curso</span></div>
-              <p class="offer-card__blurb">Acceso completo a tu nivel: plan de estudios, seguimiento con coaches, scrims y evaluaciones.</p>
-              <div class="offer-card__mode"><span class="dot"></span>Online · Discord</div>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · pago único</span></div>
+              <p class="offer-card__save">Sin mensualidades ni permanencia</p>
+              <p class="offer-card__blurb">El entrenamiento completo para tu rango: de la teoría a la práctica real, con coaches que siguen tu progreso semana a semana. Es la diferencia entre jugar más y jugar mejor.</p>
               <ul class="offer-card__list">
-                ${['Plan de estudios progresivo', 'Seguimiento con coaches', 'Scrims y evaluaciones', 'Acceso a la comunidad', 'Certificado al completar'].map(f => `
+                ${[
+                  'Plan de estudios progresivo diseñado para tu nivel (Rookie a Pro)',
+                  'Seguimiento 1 a 1 con coaches certificados',
+                  'Scrims y evaluaciones semanales para medir tu avance',
+                  'Análisis de tu gameplay con feedback accionable',
+                  'Comunidad exclusiva en Discord con eventos y torneos',
+                  'Certificado oficial QU4SAR al completar',
+                  'Acceso en PC y Valorant Mobile',
+                ].map(f => `
                   <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
+          </div>
+
+          <!-- Mini comparador -->
+          <div class="compare reveal mt-10" style="--i:2">
+            <div class="compare__head">
+              <span>Beneficio</span>
+              <span>Gratis</span>
+              <span>Cursos <em>$15</em></span>
+            </div>
+            ${[
+              { label: 'Evaluación de nivel inicial', free: true, paid: true },
+              { label: 'Examen teórico y práctico', free: true, paid: true },
+              { label: 'Plan de estudios por rango', free: false, paid: true },
+              { label: 'Seguimiento con coaches', free: false, paid: true },
+              { label: 'Scrims y torneos', free: false, paid: true },
+              { label: 'Comunidad exclusiva', free: false, paid: true },
+              { label: 'Certificado oficial', free: false, paid: true },
+            ].map((r, i) => `
+              <div class="compare__row">
+                <span>${escapeHtml(r.label)}</span>
+                <span class="${r.free ? 'yes' : 'no'}">${r.free ? '✓' : '—'}</span>
+                <span class="yes paid">${r.paid ? '✓' : '—'}</span>
+              </div>
+            `).join('')}
           </div>
         </section>
 
@@ -278,7 +311,7 @@ export function renderHome(session?: any): string {
         <!-- Novedades: Valorant Mobile -->
         <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
           <div class="news-banner reveal">
-            <div class="news-banner__icon">${Icon('zap', 56)}</div>
+            <img src="Vmobile.jpg" alt="Valorant Mobile en QU4SAR" class="news-banner__img" />
             <div class="min-w-0 flex-1 relative">
               <span class="news-banner__badge"><span class="pulse-dot"></span>Novedades</span>
               <h2 class="news-banner__title">Ahora integramos <em>Valorant Mobile.</em></h2>
@@ -303,8 +336,8 @@ export function renderHome(session?: any): string {
             <span class="t-label">Cubre ambas plataformas</span>
             <span class="t-item active">${Icon('play', 14)} PC</span>
             <span class="t-item">${Icon('smartphone', 14)} Mobile</span>
-            <span class="t-item">${Icon('users', 14)} Crossplay</span>
             <span class="t-item">${Icon('trophy', 14)} Competitivo</span>
+            <span class="t-item">${Icon('target', 14)} Ranked</span>
           </div>
         </section>
 

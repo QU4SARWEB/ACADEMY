@@ -22,7 +22,10 @@ export async function initSettings(): Promise<void> {
 
     const html = `
       <div class="max-w-xl mx-auto">
-        <h1 class="mb-6 font-heading text-2xl font-bold text-white">${Icon('settings', 22)} Personalizar</h1>
+        <div class="mb-6">
+          <span class="kicker">Tu experiencia</span>
+          <h1 class="font-heading text-2xl font-bold text-white">${Icon('settings', 22)} Personalizar</h1>
+        </div>
 
         <div class="glass rounded-xl p-6 mb-6">
           <h2 class="mb-4 font-heading text-base font-bold text-white">Color de acento</h2>

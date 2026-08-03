@@ -108,8 +108,9 @@ export async function initCoachTasks(): Promise<void> {
         }).join('')
 
     const html = `
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-end justify-between">
         <div>
+          <span class="kicker">Entregas y calificación</span>
           <h1 class="font-heading text-2xl font-bold text-white">Tareas</h1>
           <p class="mt-1 text-sm text-zinc-500">Gestiona las tareas de tus cursos y califica las entregas.</p>
         </div>

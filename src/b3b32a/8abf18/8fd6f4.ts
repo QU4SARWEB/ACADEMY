@@ -613,8 +613,9 @@ export async function initCoachTeams(): Promise<void> {
     const teamCards = renderTeamCards(teams, membersByTeam, allProfiles)
 
     container.innerHTML = `
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-end justify-between">
         <div>
+          <span class="kicker">Roster competitivo</span>
           <h1 class="font-heading text-2xl font-bold text-white">Equipos</h1>
           <p class="mt-1 text-sm text-zinc-500">${(teams ?? []).length} equipos</p>
         </div>

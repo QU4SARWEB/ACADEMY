@@ -129,6 +129,7 @@ export async function initCoachGrades(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Calificaciones de la academia</span>
         <h1 class="font-heading text-2xl font-bold text-white">Notas</h1>
         <p class="mt-1 text-sm text-zinc-500">Planilla de notas por curso — Teor\u00eda (0-5) + Pr\u00e1ctica (0-15) = Total (0-20)</p>
       </div>

@@ -119,8 +119,11 @@ function renderScheduleTable(): void {
       }).join('')
 
   const html = `
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="font-heading text-2xl font-bold text-white">Horarios</h1>
+    <div class="mb-6 flex items-end justify-between">
+      <div>
+        <span class="kicker">Clases y sesiones</span>
+        <h1 class="font-heading text-2xl font-bold text-white">Horarios</h1>
+      </div>
       <button id="btn-new-schedule" class="btn-glow-sm flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7C3AED]">${Icon('plus', 14)} Nuevo horario</button>
     </div>
     <div id="schedule-form-container" class="hidden mb-6"></div>

@@ -157,8 +157,9 @@ export async function initCoachExams(): Promise<void> {
         }).join('')
 
     const html = `
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-end justify-between">
         <div>
+          <span class="kicker">Evaluaciones teóricas</span>
           <h1 class="font-heading text-2xl font-bold text-white">Exámenes</h1>
           <p class="mt-1 text-sm text-zinc-500">Gestiona los exámenes de tus cursos.</p>
         </div>

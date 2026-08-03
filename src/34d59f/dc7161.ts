@@ -86,16 +86,19 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const currentHash = location.hash.slice(1)
 
   let itemsHtml = ''
+  const groupLabels = ['Academia', 'Entrenamiento', 'Gestión', 'Cuenta']
   for (let gi = 0; gi < groups.length; gi++) {
-    if (gi > 0) itemsHtml += '<div class="border-t border-zinc-800/60"></div>'
+    if (gi > 0) itemsHtml += '<div class="mt-2 mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest" style="color:${accent}66">${groupLabels[gi] || ""}</div>'
     for (const it of groups[gi]) {
       const href = it.href!
       const isActive = currentHash === href || currentHash.startsWith(href + '/')
-      const active = isActive ? 'bg-zinc-800 text-white border-l-2' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+      const active = isActive
+        ? 'text-white border-l-2'
+        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
       itemsHtml += `
         <a href="#${escapeHtml(it.href!)}"
            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-           style="${isActive ? `border-color:${accent}` : ''}">
+           style="${isActive ? `border-color:${accent};background:${accent}14` : ''}">
           ${Icon(it.icon!, 18)}
           <span>${escapeHtml(it.label!)}</span>
         </a>`
@@ -109,7 +112,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden border-r border-zinc-800 bg-[#0A0A0A] p-4 flex flex-col">
       <a href="#/" class="mb-6 flex items-center gap-2 px-3">
         <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
-        <span class="font-heading text-base font-bold text-white">QU<span style="color:${accent}">4</span>SAR</span>
+        <span class="font-heading text-base font-bold" style="background:linear-gradient(90deg,#fff,${accent});-webkit-background-clip:text;background-clip:text;color:transparent">QU<span>4</span>SAR</span>
       </a>
 
       <div class="mb-4 flex items-center gap-3 rounded-lg bg-zinc-900/50 px-3 py-2">

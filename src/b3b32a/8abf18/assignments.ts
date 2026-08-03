@@ -24,6 +24,7 @@ export async function initCoachAssignments(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Coaches y cursos</span>
         <h1 class="font-heading text-2xl font-bold text-white">Asignaciones</h1>
         <p class="mt-1 text-sm text-zinc-500">Asigna cursos a cada coach. Solo ver\u00e1n los cursos que tengan asignados.</p>
       </div>

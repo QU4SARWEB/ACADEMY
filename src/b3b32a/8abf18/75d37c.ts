@@ -120,6 +120,7 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
 
   return `
     <div class="mb-6">
+      <span class="kicker">Gestión de alumnos</span>
       <h1 class="font-heading text-2xl font-bold text-white">Estudiantes</h1>
       <p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p>
     </div>

@@ -193,8 +193,9 @@ export async function initCoachEnroll(): Promise<void> {
     }
 
     document.getElementById('page-content')!.innerHTML = `
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-end justify-between">
         <div>
+          <span class="kicker">Matrícula de alumnos</span>
           <h1 class="font-heading text-2xl font-bold text-white">Inscribir</h1>
           <p class="mt-1 text-sm text-zinc-500">Selecciona alumnos y haz clic en los cursos para marcar cambios. Despu\u00e9s presiona "Guardar cambios".</p>
         </div>

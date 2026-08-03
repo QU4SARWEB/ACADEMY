@@ -55,8 +55,9 @@ export async function initCoachCodes(): Promise<void> {
         }).join('')
 
     document.getElementById('page-content')!.innerHTML = `
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex items-end justify-between">
         <div>
+          <span class="kicker">Referidos y crecimiento</span>
           <h1 class="font-heading text-2xl font-bold text-white">C\u00f3digos de referido</h1>
           <p class="mt-1 text-sm text-zinc-500">Comparte estos c\u00f3digos con nuevos coaches. Al registrarse con tu c\u00f3digo, la persona se convertir\u00e1 en coach autom\u00e1ticamente. Cada c\u00f3digo tiene un solo uso.</p>
         </div>

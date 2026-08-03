@@ -106,21 +106,22 @@ export async function initCoachDashboard(): Promise<void> {
     const userName = profile?.display_name || profile?.full_name || 'Coach'
 
     const html = `
-      <div class="mb-6">
-        <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">Panel de control — QU<span class="text-[#8B5CF6]">4</span>SAR Analytics</p>
+      <div class="section-head mb-6">
+        <span class="kicker">Panel de control · QU4SAR Analytics</span>
+        <h1>Bienvenido, ${escapeHtml(userName)}</h1>
+        <p>Resumen de tu academia y actividad reciente.</p>
       </div>
 
       <div class="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         ${kpiCards.map(c => `
-          <div class="glass rounded-xl p-4">
+          <div class="kpi-card">
             <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background: ${c.color}20">
+              <div class="kpi-icon" style="background: ${c.color}20">
                 <span style="color: ${c.color}">${Icon(c.icon, 18)}</span>
               </div>
               <div>
-                <p class="text-xl font-bold text-white">${escapeHtml(c.value)}</p>
-                <p class="text-[10px] text-zinc-500">${escapeHtml(c.label)}</p>
+                <p class="kpi-value">${escapeHtml(c.value)}</p>
+                <p class="kpi-label">${escapeHtml(c.label)}</p>
               </div>
             </div>
           </div>

@@ -140,6 +140,7 @@ export async function initCoachPractical(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6">
+        <span class="kicker">Evaluaciones en juego</span>
         <h1 class="font-heading text-2xl font-bold text-white">Ex\u00e1menes Pr\u00e1cticos</h1>
         <p class="mt-1 text-sm text-zinc-500">Califica a los alumnos que aprobaron el examen te\u00f3rico. Solo se muestran alumnos con te\u00f3rico calificado.</p>
       </div>

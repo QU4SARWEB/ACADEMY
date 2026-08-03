@@ -120,6 +120,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
 
   const html = `
     <div class="mb-6">
+      <span class="kicker">Historial y facturación</span>
       <h1 class="font-heading text-2xl font-bold text-white">Pagos</h1>
       <p class="mt-1 text-sm text-zinc-500">Historial de pagos y facturación</p>
     </div>
@@ -516,6 +517,7 @@ async function renderCoachPayments(): Promise<void> {
 
   document.getElementById('page-content')!.innerHTML = `
     <div class="mb-6">
+      <span class="kicker">Administración de pagos</span>
       <h1 class="font-heading text-2xl font-bold text-white">Gesti\u00f3n de Pagos</h1>
     </div>
     <div id="pay-save-bar" class="mb-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">

@@ -180,6 +180,7 @@ export async function initStudentGrades(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Rendimiento académico</span>
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('scrollText', 22)} Mis notas</h1>
         <p class="mt-1 text-sm text-zinc-500">Resumen de calificaciones por curso</p>
       </div>

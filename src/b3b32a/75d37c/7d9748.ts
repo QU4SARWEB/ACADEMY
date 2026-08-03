@@ -61,7 +61,10 @@ export async function initStudentProfile(): Promise<void> {
 
     const html = `
       <div class="max-w-6xl mx-auto">
-        <h1 class="mb-6 font-heading text-2xl font-bold text-white">Mi Perfil</h1>
+        <div class="mb-6">
+          <span class="kicker">Tu identidad</span>
+          <h1 class="font-heading text-2xl font-bold text-white">Mi Perfil</h1>
+        </div>
         <form id="profile-form" class="space-y-6">
           ${renderProfileForm(profile, pubProfile)}
         </form>

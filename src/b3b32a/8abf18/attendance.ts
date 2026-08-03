@@ -121,7 +121,8 @@ function renderAttendanceTable(): void {
       }).join('')
 
   const html = `
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6">
+      <span class="kicker">Control de presencia</span>
       <h1 class="font-heading text-2xl font-bold text-white">Asistencia</h1>
     </div>
     <div class="mb-4 flex flex-wrap items-center gap-2">

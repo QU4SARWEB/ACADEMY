@@ -73,6 +73,7 @@ export async function initMembers(): Promise<void> {
 
     const html = `
       <div class="mb-6">
+        <span class="kicker">Comunidad QU4SAR</span>
         <h1 class="font-heading text-2xl font-bold text-white">Miembros</h1>
         <p class="mt-1 text-sm text-zinc-500">${total} miembros registrados</p>
       </div>

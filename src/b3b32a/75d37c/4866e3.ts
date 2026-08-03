@@ -59,17 +59,18 @@ export async function initStudentDashboard(): Promise<void> {
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
 
     const html = `
-      <div class="mb-6">
-        <h1 class="font-heading text-2xl font-bold text-white">Bienvenido, ${escapeHtml(userName)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">Tu progreso académico</p>
+      <div class="section-head mb-6">
+        <span class="kicker">Tu progreso académico</span>
+        <h1>Bienvenido, ${escapeHtml(userName)}</h1>
+        <p>Todo lo que necesitas para avanzar, en un solo lugar.</p>
       </div>
 
       ${payStatusHtml}
 
       <div class="mb-8">
-        <div class="glass inline-block rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-white">${(enrollments ?? []).length}</p>
-          <p class="text-xs text-zinc-500">Cursos activos</p>
+        <div class="kpi-card inline-block text-center px-6 py-4">
+          <p class="kpi-value">${(enrollments ?? []).length}</p>
+          <p class="kpi-label">Cursos activos</p>
         </div>
       </div>
 
