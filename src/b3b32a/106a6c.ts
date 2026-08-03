@@ -102,30 +102,8 @@ export function renderHome(session?: any): string {
 
       <div class="bg-[#0A0A0A] relative z-10 pt-8 md:pt-12">
 
-        <!-- Stats -->
-        <section class="mx-auto max-w-5xl px-6">
-          <div class="stats-bar reveal">
-            <div class="stat">
-              <div class="stat__num">7<em>+</em></div>
-              <div class="stat__label">Niveles de juego</div>
-            </div>
-            <div class="stat">
-              <div class="stat__num">100<em>%</em></div>
-              <div class="stat__label">Entrenamiento online</div>
-            </div>
-            <div class="stat">
-              <div class="stat__num">Rookie<em>→</em>Pro</div>
-              <div class="stat__label">Método progresivo</div>
-            </div>
-            <div class="stat">
-              <div class="stat__num">PC<em> + </em>Mobile</div>
-              <div class="stat__label">Plataformas</div>
-            </div>
-          </div>
-        </section>
-
         <!-- Roster: Cursos -->
-        <section id="cursos" class="mx-auto mt-24 md:mt-28 max-w-5xl scroll-mt-24 px-6">
+        <section id="cursos" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El plan de entrenamiento</span>
             <h2 class="s-title">Aprende por <em>niveles.</em></h2>
@@ -151,7 +129,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Briefing -->
-        <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El briefing</span>
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
@@ -178,7 +156,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Cómo funciona -->
-        <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El método</span>
             <h2 class="s-title">Cómo <em>funciona.</em></h2>
@@ -198,12 +176,38 @@ export function renderHome(session?: any): string {
           </div>
         </section>
 
+        <!-- Coaches -->
+        <section id="coaches" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
+          <div class="flex flex-col gap-2 mb-10">
+            <span class="lbl">El staff</span>
+            <h2 class="s-title">Entrena con <em>nuestros coaches.</em></h2>
+            <p class="s-title-sub">Profesionales con experiencia competitiva real, listos para llevarte al siguiente nivel.</p>
+          </div>
+          <div id="coaches-grid" class="roster-grid">
+            ${Array.from({ length: 3 }).map((_, i) => `
+              <div class="roster-card reveal" style="--i:${i}">
+                <div class="roster-card__poster">
+                  <span class="poster-fallback">Q</span>
+                  <div class="roster-card__shade"></div>
+                  <span class="roster-card__corner tl">● Coach</span>
+                  <span class="roster-card__corner tr">VAL · 2026</span>
+                  <span class="roster-card__name">Cargando…</span>
+                </div>
+                <div class="roster-card__body">
+                  <span class="roster-card__creds">QU4SAR Gaming Academy</span>
+                  <span class="roster-card__meta"><span>—</span><span>—</span></span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+
         <!-- Precios / Offers -->
-        <section id="precios" class="mx-auto mt-28 md:mt-32 max-w-5xl scroll-mt-24 px-6">
+        <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
           <div class="flex flex-col gap-2 mb-10 text-center items-center">
-            <span class="lbl">Inversión única por curso</span>
+            <span class="lbl">Mensualidad única · acceso total</span>
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
-            <p class="s-title-sub">Una inversión única. Sin mensualidades, sin permanencia, sin letra pequeña. Pagas el curso que quieres y accedes a todo el entrenamiento.</p>
+            <p class="s-title-sub">Una mensualidad simple y flexible. Accedes a tu curso por rango y a todos los beneficios de la academia mientras entrenes con nosotros.</p>
           </div>
           <div class="offer-grid">
             <article class="offer-card offer-card--free reveal" style="--i:0">
@@ -221,8 +225,8 @@ export function renderHome(session?: any): string {
               <span class="offer-card__badge">Más elegido</span>
               <span class="offer-card__badge--secondary">Mejor valor</span>
               <h3 class="offer-card__title">Cursos completos</h3>
-              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · pago único</span></div>
-              <p class="offer-card__save">Sin mensualidades ni permanencia</p>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · por mes</span></div>
+              <p class="offer-card__save">Mensualidad · sin permanencia</p>
               <p class="offer-card__blurb">El entrenamiento completo para tu rango: de la teoría a la práctica real, con coaches que siguen tu progreso semana a semana. Es la diferencia entre jugar más y jugar mejor.</p>
               <ul class="offer-card__list">
                 ${[
@@ -266,7 +270,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Features: Qué incluye -->
-        <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">Qué incluye</span>
             <h2 class="s-title">Todo lo que necesitas <em>para subir.</em></h2>
@@ -288,7 +292,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Comunidad -->
-        <section id="comunidad" class="mx-auto mt-28 md:mt-32 max-w-5xl scroll-mt-24 px-6">
+        <section id="comunidad" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
           <div class="community-grid">
             <div class="reveal">
               <span class="lbl">Comunidad · Discord</span>
@@ -309,7 +313,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Novedades: Valorant Mobile -->
-        <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="news-banner reveal">
             <img src="Vmobile.jpg" alt="Valorant Mobile en QU4SAR" class="news-banner__img" />
             <div class="min-w-0 flex-1 relative">
@@ -342,7 +346,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- FAQ -->
-        <section id="faq" class="mx-auto mt-28 md:mt-32 max-w-5xl scroll-mt-24 px-6">
+        <section id="faq" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">FAQ</span>
             <h2 class="s-title">Lo que <em>siempre preguntan.</em></h2>
@@ -352,7 +356,7 @@ export function renderHome(session?: any): string {
               { q: '¿Sirve si soy Hierro o Bronce?', a: 'Sí. El método se adapta a tu rango: primero trabajamos aim, crosshair y fundamentos. El coach empieza donde estás, sea cual sea tu nivel.' },
               { q: '¿Ya entrenan Valorant Mobile?', a: 'Sí. Acabamos de integrar Valorant Mobile a la academia: cursos, coaching y comunidad adaptados para que entrenes también desde tu celular (iOS y Android), manteniendo el soporte completo para PC.' },
               { q: '¿Qué incluye la comunidad de Discord?', a: 'Es el hub de QU4SAR: anuncios, clips, guías, eventos, busco-equipo, tickets de soporte y salas de voz para clases y coordinación.' },
-              { q: '¿Cómo se paga el curso?', a: 'Pagas una sola vez por curso (USD 15) por PayPal o subiendo tu comprobante. Sin mensualidades ni permanencia.' },
+              { q: '¿Cómo se paga el curso?', a: 'Pagas una mensualidad de USD 15 por PayPal o subiendo tu comprobante. Sin permanencia: renuevas mientras sigas entrenando con nosotros.' },
               { q: '¿Qué necesito para mi primera clase?', a: 'Tu rango actual, Valorant instalado (PC o Mobile), Discord y ganas de mejorar. Los coaches te guían en el resto.' },
               { q: '¿Los cursos son online?', a: 'Sí. Todo el entrenamiento es online vía Discord: clases, scrims, evaluaciones y seguimiento, en las dos plataformas.' },
             ].map((f, i) => `
@@ -365,7 +369,7 @@ export function renderHome(session?: any): string {
         </section>
 
         <!-- Outro -->
-        <section class="outro mt-20 md:mt-24">
+        <section class="outro mt-16 md:mt-20">
           <h2>De cero a Pro. <em>Empezamos cuando quieras.</em></h2>
           <div class="outro__ctas">
             <a href="#/" data-scroll="cursos" class="btn btn-primary">Ver cursos →</a>
@@ -413,6 +417,46 @@ export async function mountHome(): Promise<void> {
               <p class="roster-card__tag">${escapeHtml((c.description || 'Programa de entrenamiento para subir tu nivel competitivo.').slice(0, 90))}${(c.description?.length ?? 0) > 90 ? '…' : ''}</p>
               <div class="roster-card__meta"><span>${isFree ? 'Gratis' : `$${c.price} USD`}</span><span>${escapeHtml(c.min_rank || 'Todos')}</span></div>
               <span class="roster-card__cta">Ver curso →</span>
+            </div>
+          </a>`
+      }).join('')
+    }
+  }
+
+  // Cargar coaches reales (rol coach) con su avatar
+  const { data: coaches } = await supabase
+    .from('profiles')
+    .select('id, full_name, display_name, avatar_url, riot_id, in_game_role, rank, quote')
+    .eq('role', 'coach')
+    .eq('is_active', true)
+    .order('full_name', { ascending: true })
+  const cgrid = document.getElementById('coaches-grid')
+  if (cgrid) {
+    const list = coaches ?? []
+    if (list.length === 0) {
+      cgrid.innerHTML = '<p class="text-sm text-zinc-500 col-span-3">Los coaches se anuncian pronto. Únete al Discord para conocerlos primero.</p>'
+    } else {
+      cgrid.innerHTML = list.map((co: any, i: number) => {
+        const name = co.display_name || co.full_name || 'Coach'
+        const tag = [co.riot_id, co.in_game_role].filter(Boolean).join(' · ') || (co.rank || 'Coach QU4SAR')
+        const initial = name.charAt(0).toUpperCase()
+        return `
+          <a href="#/register" class="roster-card reveal in" style="--i:${i % 3}">
+            <div class="roster-card__poster">
+              ${co.avatar_url
+                ? `<img src="${escapeHtml(co.avatar_url)}" alt="${escapeHtml(name)}" class="poster-art" />`
+                : `<span class="poster-fallback">${escapeHtml(initial)}</span>`}
+              <div class="roster-card__shade"></div>
+              <span class="roster-card__corner tl">● Coach</span>
+              <span class="roster-card__corner tr">VAL · 2026</span>
+              <span class="roster-card__name">${escapeHtml(name)}</span>
+              <span class="roster-card__sub">${escapeHtml(tag)}</span>
+            </div>
+            <div class="roster-card__body">
+              <span class="roster-card__creds">QU4SAR Gaming Academy</span>
+              <p class="roster-card__tag">${escapeHtml(co.quote || 'Coach certificado listo para ayudarte a subir de rango con un plan a tu medida.')}</p>
+              <div class="roster-card__meta"><span>Coach</span><span>${escapeHtml(co.rank || '—')}</span></div>
+              <span class="roster-card__cta">Entrenar con él →</span>
             </div>
           </a>`
       }).join('')
