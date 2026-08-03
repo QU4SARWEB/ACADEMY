@@ -102,8 +102,30 @@ export function renderHome(session?: any): string {
 
       <div class="bg-[#0A0A0A] relative z-10 pt-14 md:pt-20">
 
+        <!-- Stats -->
+        <section class="mx-auto max-w-5xl px-6">
+          <div class="stats-bar reveal">
+            <div class="stat">
+              <div class="stat__num">7<em>+</em></div>
+              <div class="stat__label">Niveles de juego</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num">100<em>%</em></div>
+              <div class="stat__label">Entrenamiento online</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num">Rookie<em>→</em>Pro</div>
+              <div class="stat__label">Método progresivo</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num">PC<em> + </em>Mobile</div>
+              <div class="stat__label">Plataformas</div>
+            </div>
+          </div>
+        </section>
+
         <!-- Roster: Cursos -->
-        <section id="cursos" class="mx-auto max-w-5xl scroll-mt-24 px-6">
+        <section id="cursos" class="mx-auto mt-24 md:mt-28 max-w-5xl scroll-mt-24 px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El plan de entrenamiento</span>
             <h2 class="s-title">Aprende por <em>niveles.</em></h2>
@@ -152,6 +174,27 @@ export function renderHome(session?: any): string {
               <p class="mt-3 text-xs text-zinc-500">Coaches QU4SAR · Footage de partidas oficiales</p>
               <a href="#/" data-scroll="precios" class="btn btn-ghost mt-6">Empieza 1 a 1 →</a>
             </div>
+          </div>
+        </section>
+
+        <!-- Cómo funciona -->
+        <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
+          <div class="flex flex-col gap-2 mb-10">
+            <span class="lbl">El método</span>
+            <h2 class="s-title">Cómo <em>funciona.</em></h2>
+          </div>
+          <div class="steps-grid">
+            ${[
+              { title: 'Posicionamiento', body: 'Entras gratis y evaluamos tu nivel con exámenes teóricos y prácticos en juego. Sabes exactamente dónde empezar.' },
+              { title: 'Entrena tu nivel', body: 'Accedes a tu curso por rango con plan de estudios, seguimiento de coaches, tareas y análisis de tu gameplay.' },
+              { title: 'Compite y asciende', body: 'Aplica lo aprendido en scrims y torneos. Mide tu progreso y asciende al siguiente nivel de la academia.' },
+            ].map((s, i) => `
+              <article class="step reveal" style="--i:${i}">
+                <span class="step__num">PASO ${i + 1}</span>
+                <h3 class="step__title">${escapeHtml(s.title)}</h3>
+                <p class="step__body">${escapeHtml(s.body)}</p>
+              </article>
+            `).join('')}
           </div>
         </section>
 
@@ -232,29 +275,36 @@ export function renderHome(session?: any): string {
           </div>
         </section>
 
-        <!-- Testimonios -->
+        <!-- Novedades: Valorant Mobile -->
         <section class="mx-auto mt-28 md:mt-32 max-w-5xl px-6">
-          <div class="flex flex-col gap-2 mb-10">
-            <span class="lbl">Testimonios</span>
-            <h2 class="s-title">Lo que dicen <em>los alumnos.</em></h2>
+          <div class="news-banner reveal">
+            <div class="news-banner__icon">${Icon('zap', 56)}</div>
+            <div class="min-w-0 flex-1 relative">
+              <span class="news-banner__badge"><span class="pulse-dot"></span>Novedades</span>
+              <h2 class="news-banner__title">Ahora integramos <em>Valorant Mobile.</em></h2>
+              <p class="news-banner__body">
+                QU4SAR siempre está en evolución. Ampliamos nuestra academia para que también entrenes
+                y compitas desde tu teléfono: cursos, coaching y comunidad ahora cubren Valorant Mobile,
+                sin dejar de lado el juego en PC.
+              </p>
+              <div class="news-banner__meta">
+                <span>${Icon('smartphone', 16)} Valorant Mobile · iOS y Android</span>
+                <span>${Icon('checkCircle', 16)} Cursos y coaching adaptados</span>
+                <span>${Icon('zap', 16)} Siempre en actualización</span>
+              </div>
+              <div class="news-banner__ctas">
+                <a href="#/register" class="btn btn-primary">Únete a la academia →</a>
+                <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Entérate primero</a>
+              </div>
+            </div>
           </div>
-          <div class="equotes-grid">
-            ${[
-              { q: 'Subí de Plata a Diamante en una temporada. El método funciona y el seguimiento es real.', n: 'ALUMNO QU4SAR', small: 'PLATA → DIAMANTE', delta: '+3 DIVS' },
-              { q: 'Los VOD reviews me abrieron los ojos. Ahora entiendo por qué pierdo cada duelo.', n: 'ESTUDIANTE', small: 'CURSO TRAINEE', delta: '+CONSISTENCIA' },
-              { q: 'Los scrims y los torneos internos me dieron la confianza que no tenía en ranked.', n: 'JUGADOR', small: 'CURSO COMPETITOR', delta: '+CONFIANZA' },
-              { q: 'Empecé sin saber nada y ya siento que juego con cabeza. Los coaches explican increíble.', n: 'ALUMNO', small: 'CURSO ROOKIE', delta: '+VISIÓN' },
-              { q: 'La comunidad es otra cosa. Encontré equipo, hice amigos y subo de rango disfrutando.', n: 'MIEMBRO', small: 'COMUNIDAD DISCORD', delta: '+EQUIPO' },
-              { q: 'Vale cada dólar. El plan progresivo y el feedback hacen toda la diferencia.', n: 'ESTUDIANTE', small: 'CURSOS COMPLETOS', delta: '+MOTIVACIÓN' },
-            ].map((t, i) => `
-              <article class="equote reveal" style="--i:${i % 3}">
-                <p class="equote__q">«${escapeHtml(t.q)}»</p>
-                <div class="equote__by">
-                  <div class="n">${escapeHtml(t.n)}<small>${escapeHtml(t.small)}</small></div>
-                  <span class="equote__delta">${escapeHtml(t.delta)}</span>
-                </div>
-              </article>
-            `).join('')}
+
+          <div class="platform-ticker reveal" style="--i:1">
+            <span class="t-label">Cubre ambas plataformas</span>
+            <span class="t-item active">${Icon('play', 14)} PC</span>
+            <span class="t-item">${Icon('smartphone', 14)} Mobile</span>
+            <span class="t-item">${Icon('users', 14)} Crossplay</span>
+            <span class="t-item">${Icon('trophy', 14)} Competitivo</span>
           </div>
         </section>
 
@@ -266,11 +316,12 @@ export function renderHome(session?: any): string {
           </div>
           <div class="faq-b">
             ${[
-              { q: '¿Sirve si soy Hierro o Bronce?', a: 'Sí. El método se adapta a tu rango: primero trabajamos aim, crosshair y fundamentos. El coach empieza donde estás.' },
+              { q: '¿Sirve si soy Hierro o Bronce?', a: 'Sí. El método se adapta a tu rango: primero trabajamos aim, crosshair y fundamentos. El coach empieza donde estás, sea cual sea tu nivel.' },
+              { q: '¿Ya entrenan Valorant Mobile?', a: 'Sí. Acabamos de integrar Valorant Mobile a la academia: cursos, coaching y comunidad adaptados para que entrenes también desde tu celular (iOS y Android), manteniendo el soporte completo para PC.' },
               { q: '¿Qué incluye la comunidad de Discord?', a: 'Es el hub de QU4SAR: anuncios, clips, guías, eventos, busco-equipo, tickets de soporte y salas de voz para clases y coordinación.' },
               { q: '¿Cómo se paga el curso?', a: 'Pagas una sola vez por curso (USD 15) por PayPal o subiendo tu comprobante. Sin mensualidades ni permanencia.' },
-              { q: '¿Qué necesito para mi primera clase?', a: 'Tu rango actual, Valorant instalado, Discord y ganas de mejorar. Los coaches te guían en el resto.' },
-              { q: '¿Los cursos son online?', a: 'Sí. Todo el entrenamiento es online vía Discord: clases, scrims, evaluaciones y seguimiento.' },
+              { q: '¿Qué necesito para mi primera clase?', a: 'Tu rango actual, Valorant instalado (PC o Mobile), Discord y ganas de mejorar. Los coaches te guían en el resto.' },
+              { q: '¿Los cursos son online?', a: 'Sí. Todo el entrenamiento es online vía Discord: clases, scrims, evaluaciones y seguimiento, en las dos plataformas.' },
             ].map((f, i) => `
               <details class="reveal" style="--i:${i}">
                 <summary><span class="num">Q · ${String(i + 1).padStart(2, '0')}</span><span>${escapeHtml(f.q)}</span><span class="chev">+</span></summary>
