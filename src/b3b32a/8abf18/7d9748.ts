@@ -2,7 +2,7 @@ import { supabase } from '@/304244'
 import { toast } from '@/4725dc/4f2900'
 import { Spinner } from '@/4725dc/a14fa2'
 import { renderProfileForm, getProfileFormData, getPublicProfileFormData, initMouseAutoCalc, initPlaylistEditor, initRankSelector } from '@/2b3583/ddf4d5'
-import { uploadFile, getAvatarPath, getBannerPath } from '@/2b3583/76ee3d'
+import { uploadFile, getAvatarPath, getBannerPath, getCoachImagePath } from '@/2b3583/76ee3d'
 
 export function renderCoachProfile(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -62,6 +62,31 @@ export async function initCoachProfile(): Promise<void> {
     })
     document.getElementById('banner-upload')?.addEventListener('change', () => {
       handleImageUpload('banner-upload', 'banner-upload-status', 'banners', getBannerPath)
+    })
+    // Imagen de presentación del coach (roster público) -> bucket 'coaches', guarda en banner_url
+    document.getElementById('coach-img-upload')?.addEventListener('change', () => {
+      const input = document.getElementById('coach-img-upload') as HTMLInputElement
+      const file = input?.files?.[0]
+      if (!file) return
+      const status = document.getElementById('coach-img-upload-status')
+      if (status) status.classList.remove('hidden')
+      const path = getCoachImagePath(userId, file.name)
+      uploadFile('coaches', path, file).then(({ url, error: uploadErr }) => {
+        input.value = ''
+        if (status) status.classList.add('hidden')
+        if (uploadErr) { toast('error', uploadErr); return }
+        if (url) {
+          supabase.from('profiles').update({ banner_url: url }).eq('id', userId)
+            .then(({ error }) => {
+              if (error) { toast('error', 'Error al guardar la imagen'); return }
+              const img = document.getElementById('coach-img')
+              const img2 = document.getElementById('banner-img')
+              if (img) (img as HTMLImageElement).src = url
+              if (img2) (img2 as HTMLImageElement).src = url
+              toast('success', 'Imagen de presentación actualizada')
+            })
+        }
+      })
     })
 
     initMouseAutoCalc()

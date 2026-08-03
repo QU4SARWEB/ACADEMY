@@ -124,6 +124,24 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
         <p class="mt-1 text-xs text-zinc-500">Haz clic en la imagen para subir un banner. Formatos: JPG, PNG, WebP, GIF</p>
       </div>
 
+      ${isCoach ? `
+      <div class="rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 p-4">
+        <label class="block text-xs font-medium text-zinc-300 mb-1">Imagen de presentación (roster público)</label>
+        <div class="relative h-56 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900" id="coach-img-preview">
+          ${profile.banner_url
+            ? `<img id="coach-img" src="${profile.banner_url}" alt="" class="h-full w-full object-cover" />`
+            : '<div class="flex h-full items-center justify-center text-zinc-600"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><p class="ml-2 text-xs">Sin imagen</p></div>'
+          }
+          <label class="absolute inset-0 flex cursor-pointer items-center justify-center gap-2 bg-black/60 opacity-0 transition hover:opacity-100">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span class="text-xs text-white">Subir imagen de presentación</span>
+            <input type="file" id="coach-img-upload" accept="image/*,image/gif" class="hidden" />
+          </label>
+        </div>
+        <p id="coach-img-upload-status" class="mt-1 hidden text-xs text-purple-400">Subiendo imagen...</p>
+        <p class="mt-1 text-xs text-zinc-500">Esta imagen se muestra en la tarjeta del roster público de la web. Recomendado: retrato vertical 3:4.</p>
+      </div>` : ''}
+
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label class="block text-xs font-medium text-zinc-400">País</label>

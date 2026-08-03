@@ -28,6 +28,11 @@ export function getBannerPath(userId: string, fileName: string): string {
   return `${userId}/${fileName}`
 }
 
+export function getCoachImagePath(userId: string, fileName: string): string {
+  const ext = fileName.split('.').pop() || 'png'
+  return `${userId}/presentacion.${ext}`
+}
+
 export function getFilePath(userId: string, prefix: string, fileName: string): string {
   const ext = fileName.split('.').pop() || 'bin'
   const ts = Date.now()
