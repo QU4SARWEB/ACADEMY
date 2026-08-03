@@ -28,7 +28,7 @@ export function renderPublicNavbar(session?: any, opts: { active?: string; links
 
   const navLinks = links
     ? [
-        { label: 'Cursos', dataScroll: 'cursos' },
+        { label: 'Coaches', dataScroll: 'coaches' },
         { label: 'Precios', dataScroll: 'precios' },
         { label: 'Comunidad', dataScroll: 'comunidad' },
         { label: 'FAQ', dataScroll: 'faq' },
@@ -88,7 +88,7 @@ export function renderPublicFooter(): string {
           <span class="h">Academia</span>
           <a href="#/">Inicio</a>
           <a href="#/about">Sobre nosotros</a>
-          <a href="#/" data-scroll="cursos">Cursos</a>
+          <a href="#/" data-scroll="coaches">Coaches</a>
           <a href="#/" data-scroll="precios">Precios</a>
         </div>
         <div>

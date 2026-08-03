@@ -88,7 +88,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   let itemsHtml = ''
   const groupLabels = ['Academia', 'Entrenamiento', 'Gestión', 'Cuenta']
   for (let gi = 0; gi < groups.length; gi++) {
-    if (gi > 0) itemsHtml += '<div class="mt-2 mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest" style="color:${accent}66">${groupLabels[gi] || ""}</div>'
+    if (gi > 0) itemsHtml += `<div class="mt-2 mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest" style="color:${accent}66">${groupLabels[gi] || ''}</div>`
     for (const it of groups[gi]) {
       const href = it.href!
       const isActive = currentHash === href || currentHash.startsWith(href + '/')

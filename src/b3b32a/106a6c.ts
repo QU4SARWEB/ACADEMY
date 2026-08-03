@@ -76,7 +76,7 @@ function hero(session: any): string {
       </p>
       <p class="mt-3 text-xs text-zinc-500 tracking-wide reveal" style="--i:3">Todos los ranks · ES / EN · Online</p>
       <div class="mt-8 flex flex-col gap-4 sm:flex-row reveal" style="--i:4">
-        <a href="#/" data-scroll="cursos" class="btn btn-primary">Ver cursos →</a>
+            <a href="#/" data-scroll="coaches" class="btn btn-primary">Ver coaches →</a>
         <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Únete al Discord</a>
       </div>
     </header>`
@@ -101,32 +101,6 @@ export function renderHome(session?: any): string {
       ${waves()}
 
       <div class="bg-[#0A0A0A] relative z-10 pt-8 md:pt-12">
-
-        <!-- Roster: Cursos -->
-        <section id="cursos" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
-          <div class="flex flex-col gap-2 mb-10">
-            <span class="lbl">El plan de entrenamiento</span>
-            <h2 class="s-title">Aprende por <em>niveles.</em></h2>
-            <p class="s-title-sub">Cada curso está diseñado para tu rango. Avanza de Rookie a Pro con un método progresivo y seguimiento real de coaches.</p>
-          </div>
-          <div id="courses-grid" class="roster-grid">
-            ${Array.from({ length: 4 }).map((_, i) => `
-              <div class="roster-card reveal" style="--i:${i}">
-                <div class="roster-card__poster">
-                  <span class="poster-fallback">Q</span>
-                  <div class="roster-card__shade"></div>
-                  <span class="roster-card__corner tl">● Curso</span>
-                  <span class="roster-card__corner tr">VAL · 2026</span>
-                  <span class="roster-card__name">Cargando…</span>
-                </div>
-                <div class="roster-card__body">
-                  <span class="roster-card__creds">QU4SAR Gaming Academy</span>
-                  <span class="roster-card__meta"><span>—</span><span>—</span></span>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </section>
 
         <!-- Briefing -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
@@ -372,7 +346,7 @@ export function renderHome(session?: any): string {
         <section class="outro mt-16 md:mt-20">
           <h2>De cero a Pro. <em>Empezamos cuando quieras.</em></h2>
           <div class="outro__ctas">
-            <a href="#/" data-scroll="cursos" class="btn btn-primary">Ver cursos →</a>
+        <a href="#/" data-scroll="coaches" class="btn btn-primary">Ver coaches →</a>
             <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Unirse al Discord</a>
           </div>
         </section>
@@ -386,43 +360,6 @@ export function renderHome(session?: any): string {
 export async function mountHome(): Promise<void> {
   mountPublicNav()
 
-  // Cargar cursos reales para el roster
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('id, name, slug, description, duration_months, min_rank, price, display_order, is_active')
-    .eq('is_active', true)
-    .order('display_order')
-  const grid = document.getElementById('courses-grid')
-  if (grid) {
-    const list = (courses ?? []).filter((c: any) => c.slug !== 'posicionamiento' && c.slug !== 'clase complementaria')
-    if (list.length === 0) {
-      grid.innerHTML = '<p class="text-sm text-zinc-500 col-span-2">No hay cursos disponibles por ahora.</p>'
-    } else {
-      grid.innerHTML = list.map((c: any, i: number) => {
-        const isFree = !c.price || c.price <= 0
-        const initial = (c.name || 'Q').charAt(0).toUpperCase()
-        const months = c.duration_months ? `${c.duration_months} mes${c.duration_months > 1 ? 'es' : ''}` : 'Online'
-        return `
-          <a href="#/register" class="roster-card reveal in" style="--i:${i % 4}">
-            <div class="roster-card__poster">
-              <span class="poster-fallback">${escapeHtml(initial)}</span>
-              <div class="roster-card__shade"></div>
-              <span class="roster-card__corner tl">● Curso</span>
-              <span class="roster-card__corner tr">VAL · 2026</span>
-              <span class="roster-card__name">${escapeHtml(c.name)}</span>
-              <span class="roster-card__sub">${escapeHtml(c.min_rank || 'Todos los rangos')}</span>
-            </div>
-            <div class="roster-card__body">
-              <span class="roster-card__creds">${escapeHtml(months)} · Plan progresivo</span>
-              <p class="roster-card__tag">${escapeHtml((c.description || 'Programa de entrenamiento para subir tu nivel competitivo.').slice(0, 90))}${(c.description?.length ?? 0) > 90 ? '…' : ''}</p>
-              <div class="roster-card__meta"><span>${isFree ? 'Gratis' : `$${c.price} USD`}</span><span>${escapeHtml(c.min_rank || 'Todos')}</span></div>
-              <span class="roster-card__cta">Ver curso →</span>
-            </div>
-          </a>`
-      }).join('')
-    }
-  }
-
   // Cargar coaches reales (rol coach) con su avatar
   const { data: coaches } = await supabase
     .from('profiles')
@@ -432,7 +369,13 @@ export async function mountHome(): Promise<void> {
     .order('full_name', { ascending: true })
   const cgrid = document.getElementById('coaches-grid')
   if (cgrid) {
-    const list = coaches ?? []
+    // QU4SAR es la cuenta general admin: nunca se muestra como coach
+    const ADMIN_IDS = ['3a7fd441-6b64-4684-94db-660721bf9367']
+    const list = (coaches ?? []).filter((c: any) => {
+      if (ADMIN_IDS.includes(c.id)) return false
+      const n = String(c.full_name || c.display_name || '').trim().toLowerCase()
+      return n !== 'qu4sar'
+    })
     if (list.length === 0) {
       cgrid.innerHTML = '<p class="text-sm text-zinc-500 col-span-3">Los coaches se anuncian pronto. Únete al Discord para conocerlos primero.</p>'
     } else {
