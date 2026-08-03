@@ -1,8 +1,7 @@
-import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
+import { renderDiscordBanner, renderPublicNavbar, renderPublicFooter, mountPublicNav } from '@/b3b32a/shared/public_nav'
 
 export function renderAbout(session?: any): string {
-  const loggedIn = !!session?.user
   return `
     <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
@@ -10,42 +9,28 @@ export function renderAbout(session?: any): string {
         <div class="absolute -right-32 bottom-1/4 h-96 w-96 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
       </div>
 
-      <nav class="relative z-10 flex items-center justify-between border-b border-zinc-800 px-6 py-4 md:px-12">
-        <div class="flex items-center gap-2">
-          <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
-          <span class="font-heading text-lg font-bold text-white">QU4SAR</span>
-        </div>
-        <div class="flex items-center gap-4 text-sm">
-          <a href="#/" class="text-zinc-400 hover:text-white transition">Inicio</a>
-          ${loggedIn
-            ? '<a href="#/coaches/dashboard" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Plataforma</a>'
-            : '<a href="#/register" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition">Registrarse</a>'
-          }
-        </div>
-      </nav>
+      ${renderDiscordBanner()}
+      ${renderPublicNavbar(session, { active: 'about', links: false })}
 
-      <section class="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-32">
-        <div class="text-center mb-16">
-          <h1 class="font-heading text-4xl font-bold text-white md:text-5xl">
-            Sobre <span class="text-[#8B5CF6]">QU4SAR</span>
-          </h1>
-          <p class="mt-4 max-w-2xl mx-auto text-base text-zinc-400">
-            Conoce nuestra historia, equipo y visi\u00f3n para el futuro de los esports.
-          </p>
+      <section class="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-28">
+        <div class="text-center mb-14">
+          <span class="lbl">Sobre nosotros</span>
+          <h1 class="s-title">Sobre <em>QU4SAR</em></h1>
+          <p class="s-title-sub mx-auto">Conoce nuestra historia, equipo y visión para el futuro de los esports.</p>
         </div>
 
-        <div class="glass rounded-xl p-8 mb-8">
-          <h2 class="font-heading text-2xl font-bold text-white mb-4">Nuestra historia</h2>
+        <div class="hud glass rounded-xl p-8 mb-8 reveal">
+          <span class="lbl">Nuestra historia</span>
           <div class="space-y-4 text-sm text-zinc-400 leading-relaxed">
             <p>
-              QU4SAR Gaming Academy naci\u00f3 este a\u00f1o con una visi\u00f3n clara: democratizar el entrenamiento
-              de esports y hacer accesible la formaci\u00f3n competitiva de alto nivel para cualquier persona
-              con talento y dedicaci\u00f3n.
+              QU4SAR Gaming Academy nació este año con una visión clara: democratizar el entrenamiento
+              de esports y hacer accesible la formación competitiva de alto nivel para cualquier persona
+              con talento y dedicación.
             </p>
             <p>
               Desde nuestros inicios, hemos trabajado con coaches profesionales y jugadores de alto
-              rendimiento para desarrollar una metodolog\u00eda de ense\u00f1anza \u00fanica que combina
-              t\u00e9cnica, estrategia y desarrollo mental.
+              rendimiento para desarrollar una metodología de enseñanza única que combina
+              técnica, estrategia y desarrollo mental.
             </p>
             <p>
               Hoy, QU4SAR es una comunidad en crecimiento de jugadores apasionados que buscan llevar
@@ -56,31 +41,31 @@ export function renderAbout(session?: any): string {
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 mb-8">
-          <div class="glass rounded-xl p-8">
+          <div class="glass rounded-xl p-8 reveal" style="--i:0">
             <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
               ${Icon('target', 24)}
             </div>
-            <h2 class="font-heading text-xl font-bold text-white mb-3">Misi\u00f3n</h2>
+            <h2 class="font-heading text-xl font-bold text-white mb-3">Misión</h2>
             <p class="text-sm text-zinc-400 leading-relaxed">
-              Formar jugadores de esports integrales, con habilidades t\u00e9cnicas, t\u00e1cticas y
-              mentales s\u00f3lidas, prepar\u00e1ndolos para competir al m\u00e1s alto nivel y
+              Formar jugadores de esports integrales, con habilidades técnicas, tácticas y
+              mentales sólidas, preparándolos para competir al más alto nivel y
               desarrollarse como profesionales dentro y fuera del juego.
             </p>
           </div>
-          <div class="glass rounded-xl p-8">
+          <div class="glass rounded-xl p-8 reveal" style="--i:1">
             <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
               ${Icon('eye', 24)}
             </div>
-            <h2 class="font-heading text-xl font-bold text-white mb-3">Visi\u00f3n</h2>
+            <h2 class="font-heading text-xl font-bold text-white mb-3">Visión</h2>
             <p class="text-sm text-zinc-400 leading-relaxed">
-              Ser la academia de esports de referencia en Latinoam\u00e9rica, reconocida por la
-              excelencia de nuestros egresados y por transformar la pasi\u00f3n por los videojuegos
+              Ser la academia de esports de referencia en Latinoamérica, reconocida por la
+              excelencia de nuestros egresados y por transformar la pasión por los videojuegos
               en carreras profesionales sostenibles.
             </p>
           </div>
         </div>
 
-        <div class="glass rounded-xl p-8 mb-8">
+        <div class="glass rounded-xl p-8 mb-8 reveal">
           <h2 class="font-heading text-2xl font-bold text-white mb-6">Nuestro equipo</h2>
           <div class="grid gap-6 md:grid-cols-3">
             ${[
@@ -101,46 +86,15 @@ export function renderAbout(session?: any): string {
         </div>
 
         <div class="text-center">
-          <a href="#/register" class="btn-glow inline-block rounded-lg bg-[#8B5CF6] px-8 py-3 text-sm font-medium text-white transition hover:bg-[#7C3AED]">
-            \u00danete a QU4SAR
-          </a>
+          <a href="#/register" class="btn btn-primary inline-flex">Únete a QU4SAR</a>
           <p class="mt-3 text-xs text-zinc-600">Comienza tu viaje hoy. Sin compromiso.</p>
         </div>
       </section>
 
-      <footer class="relative z-10 border-t border-zinc-800 px-6 py-8">
-        <div class="mx-auto flex max-w-5xl flex-col items-center gap-4 text-center md:flex-row md:justify-between">
-          <div class="flex items-center gap-2">
-            <img src="qu4sar.ico" alt="" class="h-6 w-6" />
-            <span class="text-sm font-bold text-white">QU4SAR Gaming Academy</span>
-          </div>
-          <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-zinc-600">
-            <a href="https://www.youtube.com/@QU4SAR_ACADEMY" target="_blank" class="hover:text-zinc-400 transition">YouTube</a>
-            <a href="https://www.twitch.tv/qu4sar_academy" target="_blank" class="hover:text-zinc-400 transition">Twitch</a>
-            <a href="https://www.instagram.com/qu4sar._.esports/" target="_blank" class="hover:text-zinc-400 transition">Instagram</a>
-            <a href="https://discord.gg/wbFm5BVWW" target="_blank" class="hover:text-zinc-400 transition">Discord</a>
-            <a href="#/" class="hover:text-zinc-400 transition">Inicio</a>
-            <a href="#/login" class="hover:text-zinc-400 transition">Iniciar sesi\u00f3n</a>
-          </div>
-          <p class="text-xs text-zinc-600">&copy; ${new Date().getFullYear()} QU4SAR Gaming Academy. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      ${renderPublicFooter()}
     </div>`
 }
 
 export function mountAbout(): void {
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      const registerBtn = document.querySelector('nav a[href="#/register"]')
-      const container = registerBtn?.parentElement
-      if (container && registerBtn) {
-        registerBtn.remove()
-        const a = document.createElement('a')
-        a.href = '#/coaches/dashboard'
-        a.className = 'rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white hover:bg-[#7C3AED] transition'
-        a.textContent = 'Plataforma'
-        container.appendChild(a)
-      }
-    }
-  })
+  mountPublicNav()
 }

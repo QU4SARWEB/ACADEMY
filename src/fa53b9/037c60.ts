@@ -2,39 +2,51 @@ import { resetPassword, updatePassword } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
+import { renderDiscordBanner, renderPublicNavbar, mountPublicNav } from '@/b3b32a/shared/public_nav'
+
+function authShell(body: string): string {
+  return `
+    <div class="relative min-h-screen bg-[#0A0A0A]">
+      <div class="pointer-events-none fixed inset-0">
+        <div class="absolute -left-32 top-1/4 h-64 w-64 rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
+      </div>
+      ${renderDiscordBanner()}
+      ${renderPublicNavbar(undefined, { active: 'login', links: false })}
+      <div class="relative z-10 flex min-h-[calc(100vh-110px)] items-center justify-center px-4 pb-16">
+        ${body}
+      </div>
+    </div>`
+}
 
 export function renderResetPassword(): string {
   const hash = location.hash
   const isRecovery = hash.includes('type=recovery')
 
   if (isRecovery) {
-    return `
-      <div class="relative min-h-screen flex items-center justify-center bg-[#0A0A0A] p-4">
-        <div class="glass relative z-10 w-full max-w-sm rounded-xl p-8">
-          <div class="mb-6 text-center">
-            <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
-            <h1 class="mt-2 font-heading text-lg font-bold text-white">Nueva contraseña</h1>
-          </div>
-          <form id="update-password-form" class="space-y-4">
-            <div>
-              <label for="password" class="mb-1 block text-xs font-medium text-zinc-400">Nueva contraseña</label>
-              <input type="password" id="password" name="password" required minlength="6"
-                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]"
-                placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
-            </div>
-            <p id="reset-error" class="hidden text-xs text-red-400"></p>
-            <button type="submit" id="reset-submit"
-              class="btn-glow flex w-full items-center justify-center rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED] disabled:opacity-50">
-              Actualizar contraseña
-            </button>
-          </form>
+    return authShell(`
+      <div class="glass relative w-full max-w-sm rounded-xl p-8">
+        <div class="mb-6 text-center">
+          <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
+          <h1 class="mt-2 font-heading text-lg font-bold text-white">Nueva contraseña</h1>
         </div>
-      </div>`
+        <form id="update-password-form" class="space-y-4">
+          <div>
+            <label for="password" class="mb-1 block text-xs font-medium text-zinc-400">Nueva contraseña</label>
+            <input type="password" id="password" name="password" required minlength="6"
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]"
+              placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+          </div>
+          <p id="reset-error" class="hidden text-xs text-red-400"></p>
+          <button type="submit" id="reset-submit"
+            class="btn-glow flex w-full items-center justify-center rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED] disabled:opacity-50">
+            Actualizar contraseña
+          </button>
+        </form>
+      </div>`)
   }
 
-  return `
-    <div class="relative min-h-screen flex items-center justify-center bg-[#0A0A0A] p-4">
-      <div class="glass relative z-10 w-full max-w-sm rounded-xl p-8">
+  return authShell(`
+      <div class="glass relative w-full max-w-sm rounded-xl p-8">
         <div class="mb-6 text-center">
           <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
           <h1 class="mt-2 font-heading text-lg font-bold text-white">Recuperar contraseña</h1>
@@ -57,11 +69,11 @@ export function renderResetPassword(): string {
         <p class="mt-4 text-center text-xs text-zinc-500">
           <a href="#/login" class="text-[#8B5CF6] hover:underline">Volver al inicio de sesión</a>
         </p>
-      </div>
-    </div>`
+      </div>`)
 }
 
 export function mountResetPassword(): void {
+  mountPublicNav()
   const hash = location.hash
   const isRecovery = hash.includes('type=recovery')
 

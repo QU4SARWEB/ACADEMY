@@ -1,6 +1,29 @@
 # Rediseño esports profesional de QU4SAR (web pública)
 
-> Estado: PLAN aprobado · fecha: 2026-08-01
+> Estado: IMPLEMENTADO · fecha: 2026-08-01
+
+## 0. Resumen de lo implementado
+
+- `src/bc4150/0c54ed.css` — utilidades nuevas: cintillo Discord, navbar `nav-b`,
+  botones `btn-primary`/`btn-ghost`, etiquetas `lbl`, títulos `s-title`,
+  esquinas HUD, partículas `embers`, tarjetas `roster-card`/`offer-card`/
+  `feature`/`equote`, comunidad, FAQ, outro, footer `foot-b`, drawer móvil,
+  animación `reveal` con `--i` y responsive.
+- `src/b3b32a/shared/public_nav.ts` (NUEVO) — cintillo Discord + navbar pública
+  (logo, enlaces por ancla, CTAs según sesión, drawer móvil) + footer
+  compartidos + `mountPublicNav()` (burger, scroll suave, reveal, swap de
+  "Plataforma" al dashboard del rol).
+- `src/b3b32a/106a6c.ts` — `renderHome()` reestructurado estilo zero2hero:
+  hero compacto (sin "Comienza ahora", con embers), olas subidas, roster de
+  cursos desde BD, briefing, precios, features, comunidad, testimonios, FAQ,
+  outro y footer. `mountHome()` async carga cursos reales.
+- `src/b3b32a/9e81e7/about.ts` — navbar/footer compartidos + estética alineada.
+- `src/fa53b9/d56b69.ts` / `9de4a9.ts` / `037c60.ts` — navbar compartida,
+  manteniendo lógica de auth intacta.
+- `src/b3b32a/9e81e7/90b027.ts` — header del perfil público a estética `nav-b`
+  (botón PNG conservado).
+
+No se modificó core, lógica de negocio ni funcionamientos.
 
 ## 1. Objetivo
 

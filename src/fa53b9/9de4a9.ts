@@ -2,6 +2,7 @@ import { supabase } from '@/304244'
 import { signUp, signIn, getProfile } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
+import { renderDiscordBanner, renderPublicNavbar, mountPublicNav } from '@/b3b32a/shared/public_nav'
 
 const RANKS = [
   { name: 'Unranked', hasDivision: false },
@@ -18,12 +19,16 @@ const RANKS = [
 
 export function renderRegister(): string {
   return `
-    <div class="relative min-h-screen flex items-center justify-center bg-[#0A0A0A] p-4">
+    <div class="relative min-h-screen bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
         <div class="absolute -right-32 top-1/4 h-64 w-64 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
       </div>
 
-      <div class="glass relative z-10 w-full max-w-sm rounded-xl p-8">
+      ${renderDiscordBanner()}
+      ${renderPublicNavbar(undefined, { active: 'register', links: false })}
+
+      <div class="relative z-10 flex min-h-[calc(100vh-110px)] items-center justify-center px-4 pb-16">
+      <div class="glass relative w-full max-w-sm rounded-xl p-8">
         <div class="mb-6 text-center">
           <img src="qu4sar.ico" alt="QU4SAR" class="mx-auto h-12 w-12" />
           <h1 class="mt-3 font-heading text-lg font-bold text-white">Crear cuenta</h1>
@@ -105,10 +110,12 @@ export function renderRegister(): string {
           ¿Ya tienes cuenta? <a href="#/login" class="text-[#8B5CF6] hover:underline">Inicia sesión</a>
         </p>
       </div>
+      </div>
     </div>`
 }
 
 export function mountRegister(): void {
+  mountPublicNav()
   const form = document.getElementById('register-form') as HTMLFormElement | null
   const errorEl = document.getElementById('register-error') as HTMLElement | null
   const submitBtn = document.getElementById('register-submit') as HTMLButtonElement | null
