@@ -14,6 +14,22 @@ import { getAssignedCourseIds } from '@/2b3583/assignments'
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
 
+// Sistema mensual: renovación el día 2, corte de pago el día 29
+function nextPayDayTs(): number {
+  const now = new Date()
+  const d = now.getDate()
+  let target = new Date(now.getFullYear(), now.getMonth(), 2)
+  if (d >= 2) target = new Date(now.getFullYear(), now.getMonth() + 1, 2)
+  return target.getTime()
+}
+function nextCutDayTs(): number {
+  const now = new Date()
+  const d = now.getDate()
+  let target = new Date(now.getFullYear(), now.getMonth(), 29)
+  if (d >= 29) target = new Date(now.getFullYear(), now.getMonth() + 1, 29)
+  return target.getTime()
+}
+
 export function renderPayments(): string {
   return `<div id="page-content">${Spinner()}</div>`
 }
@@ -35,17 +51,27 @@ export async function initPayments(): Promise<void> {
 }
 
 async function renderStudentPayments(userId: string): Promise<void> {
-  const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
+  // Sistema mensual: pago el día 2, paid pasa a pending cada día 29
+  const now = new Date()
+  const today = now.getDate()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+
   const { data: pendingPays } = await supabase.from('payments').select('id, created_at').eq('profile_id', userId).eq('status', 'pending')
   for (const pp of pendingPays ?? []) {
-    if (pp.created_at && Date.now() - new Date(pp.created_at).getTime() > EXPIRE_MS) {
-      await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
+    if (pp.created_at) {
+      const created = new Date(pp.created_at)
+      const isLastMonth = created.getMonth() !== currentMonth || created.getFullYear() !== currentYear
+      if (today >= 5 && isLastMonth) {
+        await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
+      }
     }
   }
-  const PAID_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000
   const { data: paidPays } = await supabase.from('payments').select('id, paid_at').eq('profile_id', userId).eq('status', 'paid')
   for (const pp of paidPays ?? []) {
-    if (pp.paid_at && Date.now() - new Date(pp.paid_at).getTime() > PAID_EXPIRE_MS) {
+    const paidAt = pp.paid_at ? new Date(pp.paid_at) : null
+    const paidThisMonth = paidAt && paidAt.getMonth() === currentMonth && paidAt.getFullYear() === currentYear
+    if (today >= 29 && !paidThisMonth) {
       await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', pp.id)
     }
   }
@@ -149,7 +175,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || 'Pago')}</p>
-              ${p.paid_at ? `<p class="text-xs text-zinc-500">Pagado: ${formatDate(p.paid_at)}<span class="text-zinc-600"> · </span><span class="paid-countdown" data-paid-at="${new Date(p.paid_at).getTime()}" data-expires="${new Date(p.paid_at).getTime() + 2592000000}"></span></p>` : ''}
+              ${p.paid_at ? `<p class="text-xs text-zinc-500">Pagado: ${formatDate(p.paid_at)}<span class="text-zinc-600"> · </span><span class="paid-countdown" data-expires="${nextCutDayTs()}"></span></p>` : ''}
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
@@ -158,7 +184,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
                 : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 15}</span>`
             }
           </div>
-          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${new Date(p.created_at).getTime() + 172800000}"></span>` : ''}
+          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${nextPayDayTs()}"></span>` : ''}
           ${p.status === 'pending' ? `
           <div class="flex flex-col gap-2">
             <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 15}"></div>
@@ -425,16 +451,14 @@ async function renderCoachPayments(): Promise<void> {
 
       let daysLeft = ''
       if (pay?.paid_at) {
-        const elapsed = Date.now() - new Date(pay.paid_at).getTime()
-        const remaining = Math.max(0, 30 - Math.floor(elapsed / (24 * 60 * 60 * 1000)))
+        const remaining = Math.max(0, Math.ceil((nextCutDayTs() - Date.now()) / (24 * 60 * 60 * 1000)))
         daysLeft = remaining > 0 ? ` <span class="text-zinc-500">· ${remaining}d</span>` : ' <span class="text-red-400">· vence hoy</span>'
       } else if (pay?.created_at && pay?.status === 'pending') {
-        const expiresAt = new Date(pay.created_at).getTime() + 172800000
-        const diff = expiresAt - Date.now()
+        const diff = nextPayDayTs() - Date.now()
         if (diff > 0) {
-          const h = Math.floor(diff / 3600000)
-          const m = Math.floor((diff % 3600000) / 60000)
-          daysLeft = ` <span class="text-xs text-yellow-400">· ${h}h ${m}m</span>`
+          const d = Math.floor(diff / (24 * 60 * 60 * 1000))
+          const h = Math.floor((diff % (24 * 60 * 60 * 1000)) / 3600000)
+          daysLeft = ` <span class="text-xs text-yellow-400">· ${d}d ${h}h</span>`
         } else {
           daysLeft = ' <span class="text-xs text-red-400">· vencido</span>'
         }

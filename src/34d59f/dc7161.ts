@@ -246,20 +246,23 @@ export function initSidebar(): void {
     const tick = async () => {
       const { data: pendingPays } = await supabase
         .from('payments')
-        .select('created_at')
+        .select('id')
         .eq('profile_id', session.user.id)
         .eq('status', 'pending')
-        .order('created_at', { ascending: true })
         .limit(1)
 
-      const pay = pendingPays?.[0]
-      if (!pay?.created_at) {
+      if (!pendingPays?.length) {
         countdownEl.classList.add('hidden')
         return
       }
-      const EXPIRE_MS = 172800000
 
-      const expiresAt = new Date(pay.created_at).getTime() + EXPIRE_MS
+      // Renovación mensual: se paga el día 2 de cada mes
+      const now = new Date()
+      let nextPay = new Date(now.getFullYear(), now.getMonth(), 2)
+      if (now.getDate() >= 2) {
+        nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 2)
+      }
+      const expiresAt = nextPay.getTime()
       const diff = expiresAt - Date.now()
 
       if (diff <= 0) {
