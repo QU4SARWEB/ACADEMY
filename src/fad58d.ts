@@ -5,7 +5,6 @@ import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
 import { initAutoSave } from '@/4725dc/forms/DraftManager'
-import { isMobile, renderMobileBlocked } from '@/2b3583/mobile'
 
 import '@/bc4150/0c54ed.css'
 
@@ -142,17 +141,6 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar perfil')), 15000)),
       ])
       const profile = store.get<any>('profile')
-
-      // Mobile detection: block non-essential routes
-      if (isMobile() && profile) {
-        const isCoach = profile.role === 'coach'
-        const schedulePaths = ['/schedule', '/students/schedule']
-        const isAllowed = path === '/payments' || schedulePaths.includes(path)
-        if (isCoach || !isAllowed) {
-          app.innerHTML = renderMobileBlocked()
-          return
-        }
-      }
 
       // Sistema de pagos mensual: pago el día 2, la cuenta pasa a pending cada día 29
       if (profile && profile.role !== 'coach') {

@@ -15,6 +15,13 @@ export function DashboardLayout(contentHtml: string): string {
   const prefix = role === 'coach' ? 'coaches' : 'students'
   const accent = (profile as any)?.role_color || '#8B5CF6'
   const bgUrl = (profile as any)?.custom_bg_url || ''
+  const mobileWelcomeKey = profile?.id ? `qu4sar-mobile-welcome:${profile.id}` : ''
+  const isMobilePlatform = profile?.platform === 'mobile'
+  const mobileWelcomeDismissed = isMobilePlatform && !!mobileWelcomeKey && localStorage.getItem(mobileWelcomeKey) === '1'
+  if (isMobilePlatform && !mobileWelcomeDismissed && mobileWelcomeKey) {
+    localStorage.setItem(mobileWelcomeKey, '1')
+  }
+  const showPlatformNotice = !isMobilePlatform || !mobileWelcomeDismissed
 
   // Inject CSS variables for accent color + custom bg
   const style = `
@@ -37,17 +44,19 @@ export function DashboardLayout(contentHtml: string): string {
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
       <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8" tabindex="-1">
-        <div class="mx-auto mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 px-4 py-3 text-sm">
+        ${showPlatformNotice ? `
+        <div id="platform-notice" data-platform-welcome="${isMobilePlatform ? 'true' : 'false'}" class="mx-auto mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 px-4 py-3 text-sm">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-[#C4B5FD]">${Icon('smartphone', 18)}</span>
-          <p class="min-w-0 flex-1 text-zinc-300">
-            <span class="font-semibold text-white">Valorant Mobile ya está integrado.</span>
-            <span class="text-zinc-400"> Ahora también entrenas desde tu celular.</span>
+          <p id="platform-notice-copy" class="min-w-0 flex-1 text-zinc-300">
+            ${isMobilePlatform
+              ? '<span class="font-semibold text-white">Bienvenido al mundo Mobile.</span><span class="text-zinc-400"> Tu academia ahora te acompaña desde el celular.</span>'
+              : '<span class="font-semibold text-white">Valorant Mobile ya está integrado.</span><span class="text-zinc-400"> Cambia tu plataforma a Mobile y entrena desde tu celular.</span>'}
           </p>
-          <button id="change-platform-btn"
+          ${!isMobilePlatform ? `<button id="change-platform-btn"
             class="rounded-lg border border-[#8B5CF6]/40 bg-[#8B5CF6]/15 px-3 py-1.5 text-xs font-medium text-[#C4B5FD] transition hover:bg-[#8B5CF6]/25">
-            Cambiar plataforma
-          </button>
-        </div>
+            Pasar a Mobile
+          </button>` : ''}
+        </div>` : ''}
         ${contentHtml}
       </main>
     </div>`
@@ -119,6 +128,35 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     }
   }
 
+  let mobilePanelSectionsHtml = ''
+  let mobileBottomTabsHtml = ''
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi]
+    const label = groupLabels[gi] || 'Menu'
+    const hasActiveItem = group.some(it => currentHash === it.href || currentHash.startsWith(`${it.href}/`))
+    const activeClass = hasActiveItem ? ' active' : ''
+    const firstIcon = group[0]?.icon || 'layoutDashboard'
+    mobileBottomTabsHtml += `
+      <button type="button" class="sb-mobile-bottom-tab${activeClass}" data-mobile-bottom-category="${gi}" data-mobile-panel-title="${escapeHtml(label)}" aria-expanded="false">
+        ${Icon(firstIcon, 17)}
+        <span>${escapeHtml(label)}</span>
+      </button>`
+    mobilePanelSectionsHtml += `
+      <section class="sb-mobile-panel-section${hasActiveItem ? ' active' : ''}" data-mobile-panel-section="${gi}">
+        <div class="sb-mobile-panel-items">
+          ${group.map(it => {
+            const href = it.href!
+            const isActive = currentHash === href || currentHash.startsWith(href + '/')
+            return `
+              <a href="#${escapeHtml(href)}" class="sb-mobile-nav-item${isActive ? ' active' : ''}">
+                ${Icon(it.icon!, 17)}
+                <span>${escapeHtml(it.label!)}</span>
+              </a>`
+          }).join('')}
+        </div>
+      </section>`
+  }
+
   const userName = profile?.display_name || profile?.full_name || 'Usuario'
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
 
@@ -151,7 +189,6 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       <nav class="sb-nav flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-1">
         ${itemsHtml}
       </nav>
-
       ${!isCoach ? `
       <div id="sidebar-payment-countdown" class="mt-2 hidden rounded-lg px-3 py-3 transition text-center" style="background:${accent}15;color:${accent};border:1px solid ${accent}30">
         <a href="#/payments" class="flex flex-col items-center gap-1">
@@ -167,6 +204,20 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         </a>
       </div>
     </aside>
+    <nav class="sb-mobile-bottom-nav" aria-label="Navegacion movil">
+      <div id="sb-mobile-bottom-panel" class="sb-mobile-bottom-panel" aria-hidden="true">
+        <div class="sb-mobile-bottom-panel-head">
+          <span id="sb-mobile-panel-title">Menu</span>
+          <button type="button" id="sb-mobile-panel-close" aria-label="Cerrar menu">${Icon('x', 18)}</button>
+        </div>
+        <div class="sb-mobile-panel-sections">
+          ${mobilePanelSectionsHtml}
+        </div>
+      </div>
+      <div class="sb-mobile-bottom-tabs">
+        ${mobileBottomTabsHtml}
+      </div>
+    </nav>
     ${isCoach ? `
     <!-- Coach quick actions panel (retractable, bottom-right) -->
     <div id="coach-panel" class="fixed bottom-4 right-0 z-50 flex items-end transition-transform duration-300" style="transform:translateX(0)">
@@ -198,11 +249,33 @@ export function initSidebar(): void {
     await signOut()
   })
 
-  // Cambiar plataforma -> lleva al perfil donde se edita
-  document.getElementById('change-platform-btn')?.addEventListener('click', () => {
-    const profile = store.get<Profile>('profile')
-    const prefix = profile?.role === 'coach' ? 'coaches' : 'students'
-    router.navigate(`/${prefix}/profile`)
+  document.getElementById('change-platform-btn')?.addEventListener('click', async () => {
+    const currentProfile = store.get<Profile>('profile')
+    const platformBtn = document.getElementById('change-platform-btn') as HTMLButtonElement | null
+    const notice = document.getElementById('platform-notice')
+    const noticeCopy = document.getElementById('platform-notice-copy')
+    if (!currentProfile?.id || !platformBtn) return
+
+    platformBtn.disabled = true
+    platformBtn.textContent = 'Actualizando...'
+    const { error } = await supabase
+      .from('profiles')
+      .update({ platform: 'mobile' })
+      .eq('id', currentProfile.id)
+
+    if (error) {
+      platformBtn.disabled = false
+      platformBtn.textContent = 'Intentar de nuevo'
+      if (noticeCopy) noticeCopy.innerHTML = '<span class="font-semibold text-white">No se pudo actualizar la plataforma.</span><span class="text-zinc-400"> Inténtalo nuevamente.</span>'
+      return
+    }
+
+    store.set('profile', { ...currentProfile, platform: 'mobile' })
+    localStorage.setItem(`qu4sar-mobile-welcome:${currentProfile.id}`, '1')
+    if (noticeCopy) noticeCopy.innerHTML = '<span class="font-semibold text-white">Bienvenido al mundo Mobile.</span><span class="text-zinc-400"> Tu academia ahora te acompaña desde el celular.</span>'
+    notice?.setAttribute('data-platform-welcome', 'true')
+    platformBtn.remove()
+    window.setTimeout(() => notice?.remove(), 6500)
   })
 
   // Coach panel toggle
@@ -226,6 +299,51 @@ export function initSidebar(): void {
         sessionStorage.setItem('previewRole', role)
         router.navigate(`/${role}/dashboard`)
       }
+    })
+  })
+
+  const mobilePanel = document.getElementById('sb-mobile-bottom-panel')
+  const mobilePanelTitle = document.getElementById('sb-mobile-panel-title')
+  const mobilePanelClose = document.getElementById('sb-mobile-panel-close')
+  const mobileTabs = Array.from(document.querySelectorAll<HTMLElement>('[data-mobile-bottom-category]'))
+  const mobileSections = Array.from(document.querySelectorAll<HTMLElement>('[data-mobile-panel-section]'))
+
+  const setMobilePanel = (index: string, open: boolean): void => {
+    mobileSections.forEach(section => {
+      section.classList.toggle('active', section.dataset.mobilePanelSection === index)
+    })
+    mobileTabs.forEach(tab => {
+      const selected = tab.dataset.mobileBottomCategory === index
+      tab.classList.toggle('selected', selected)
+      tab.setAttribute('aria-expanded', String(open && selected))
+      if (selected && mobilePanelTitle) mobilePanelTitle.textContent = tab.dataset.mobilePanelTitle || 'Menu'
+    })
+    mobilePanel?.classList.toggle('open', open)
+    mobilePanel?.setAttribute('aria-hidden', String(!open))
+  }
+
+  const initialMobileTab = mobileTabs.find(tab => tab.classList.contains('active')) || mobileTabs[0]
+  if (initialMobileTab) setMobilePanel(initialMobileTab.dataset.mobileBottomCategory || '0', false)
+
+  mobileTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const index = tab.dataset.mobileBottomCategory || '0'
+      const isOpen = mobilePanel?.classList.contains('open') && tab.classList.contains('selected')
+      setMobilePanel(index, !isOpen)
+    })
+  })
+
+  mobilePanelClose?.addEventListener('click', () => {
+    const selected = mobileTabs.find(tab => tab.classList.contains('selected'))
+    setMobilePanel(selected?.dataset.mobileBottomCategory || '0', false)
+  })
+
+  mobileSections.forEach(section => {
+    section.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        mobilePanel?.classList.remove('open')
+        mobilePanel?.setAttribute('aria-hidden', 'true')
+      })
     })
   })
 
