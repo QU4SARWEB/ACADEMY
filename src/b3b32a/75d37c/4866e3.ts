@@ -59,55 +59,114 @@ export async function initStudentDashboard(): Promise<void> {
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
 
     const html = `
-      <div class="section-head mb-6">
-        <span class="kicker">Tu progreso académico</span>
-        <h1>Bienvenido, ${escapeHtml(userName)}</h1>
-        <p>Todo lo que necesitas para avanzar, en un solo lugar.</p>
+      <!-- Encabezado -->
+      <div class="mb-8">
+        <div class="section-head mb-0">
+          <span class="kicker">Tu progreso académico</span>
+          <h1>Bienvenido, ${escapeHtml(userName)}</h1>
+          <p>Todo lo que necesitas para avanzar, en un solo lugar.</p>
+        </div>
       </div>
 
       ${payStatusHtml}
 
-      <div class="mb-8">
-        <div class="kpi-card inline-block text-center px-6 py-4">
-          <p class="kpi-value">${(enrollments ?? []).length}</p>
-          <p class="kpi-label">Cursos activos</p>
+      <!-- KPIs -->
+      <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="kpi-card">
+          <div class="flex items-center gap-4">
+            <div class="kpi-icon" style="background:#8B5CF620">
+              <span style="color:#8B5CF6">${Icon('bookOpen', 20)}</span>
+            </div>
+            <div>
+              <p class="kpi-value">${(enrollments ?? []).length}</p>
+              <p class="kpi-label">Cursos activos</p>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="flex items-center gap-4">
+            <div class="kpi-icon" style="background:#7C3AED20">
+              <span style="color:#7C3AED">${Icon('scrollText', 20)}</span>
+            </div>
+            <div>
+              <p class="kpi-value">${(enrollments ?? []).filter((e: any) => (e as any).current_module > 0).length || (enrollments ?? []).length}</p>
+              <p class="kpi-label">En entrenamiento</p>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="flex items-center gap-4">
+            <div class="kpi-icon" style="background:#22C55E20">
+              <span style="color:#22C55E">${Icon('trophy', 20)}</span>
+            </div>
+            <div>
+              <p class="kpi-value">${(courseProgress ?? []).filter((e: any) => (e as any).progress >= 100).length}</p>
+              <p class="kpi-label">Cursos completados</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="mb-8">
-        <h2 class="mb-4 font-heading text-lg font-bold text-white">Progreso por curso</h2>
-        <div class="space-y-4">
-          ${(courseProgress ?? []).length === 0
-            ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>'
-            : courseProgress.map((e: any) => `
-              <div class="glass rounded-xl p-4">
+      <div class="grid gap-6 lg:grid-cols-2">
+
+        <!-- Progreso por curso -->
+        <div class="card p-5">
+          <div class="mb-4 flex items-center gap-2">
+            <h2 class="font-heading text-base font-bold text-white">Progreso por curso</h2>
+            <a href="#/students/courses" class="ml-auto text-xs text-[#8B5CF6] hover:underline">Ver cursos →</a>
+          </div>
+          <div class="space-y-4">
+            ${(courseProgress ?? []).length === 0
+              ? '<p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p>'
+              : courseProgress.map((e: any) => `
+              <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4">
                 <div class="flex items-center justify-between mb-2">
-                  <div>
-                    <h3 class="font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
-                    <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || '')}</p>
+                  <div class="min-w-0">
+                    <h3 class="truncate font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
+                    <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || 'Programa de entrenamiento')}</p>
                   </div>
-                  <span class="text-sm font-bold text-white">${e.progress}%</span>
+                  <span class="ml-2 shrink-0 text-sm font-bold" style="color:${(e as any).progress >= 100 ? '#22C55E' : '#8B5CF6'}">${e.progress}%</span>
                 </div>
                 <div class="h-2.5 rounded-full bg-zinc-800 overflow-hidden">
-                  <div class="h-full rounded-full bg-[#8B5CF6] transition-all duration-700" style="width:${e.progress}%"></div>
+                  <div class="h-full rounded-full transition-all duration-700" style="width:${e.progress}%;background:linear-gradient(90deg,#8B5CF6,#7C3AED)"></div>
                 </div>
-                <p class="mt-1 text-xs text-zinc-600">Módulo ${e.current_module || 1} de ${e.totalModules}</p>
+                <p class="mt-1.5 text-xs text-zinc-600">Módulo ${e.current_module || 1} de ${e.totalModules || '—'}</p>
               </div>
             `).join('')
-          }
+            }
+          </div>
         </div>
-      </div>
 
-      <div>
-        <h2 class="mb-4 font-heading text-lg font-bold text-white">Acceso rápido</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <a href="#/students/courses" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
-            ${Icon('bookOpen', 20)} <span class="text-sm text-white">Mis cursos</span>
-          </a>
+        <!-- Acceso rápido -->
+        <div class="card p-5">
+          <div class="mb-4 flex items-center gap-2">
+            <h2 class="font-heading text-base font-bold text-white">Acceso rápido</h2>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            ${[
+              { href: '#/students/courses', icon: 'bookOpen', label: 'Mis cursos', color: '#8B5CF6' },
+              { href: '#/students/tasks', icon: 'clipboardList', label: 'Tareas', color: '#7C3AED' },
+              { href: '#/students/exams', icon: 'scrollText', label: 'Exámenes', color: '#F59E0B' },
+              { href: '#/students/grades', icon: 'trophy', label: 'Mis notas', color: '#22C55E' },
+              { href: '#/students/schedule', icon: 'calendar', label: 'Horario', color: '#3B82F6' },
+              { href: '#/payments', icon: 'dollarSign', label: 'Pagos', color: '#EC4899' },
+            ].map((q, i) => `
+              <a href="${q.href}" class="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 transition hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5" style="--i:${i}">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style="background:${q.color}20;color:${q.color}">${Icon(q.icon, 18)}</span>
+                <span class="text-sm text-white">${escapeHtml(q.label)}</span>
+              </a>
+            `).join('')}
+          </div>
 
-          <a href="#/payments" class="glass flex items-center gap-3 rounded-xl p-4 hover:bg-zinc-800/50 transition">
-            ${Icon('dollarSign', 20)} <span class="text-sm text-white">Pagos</span>
-          </a>
+          <div class="mt-6 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 p-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/15 text-[#8B5CF6]">${Icon('zap', 18)}</span>
+              <div>
+                <p class="text-sm font-medium text-white">Consejo del día</p>
+                <p class="mt-0.5 text-xs text-zinc-400">Entrena con constancia: 30 minutos enfocados valen más que 3 horas distraído.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>`
 
