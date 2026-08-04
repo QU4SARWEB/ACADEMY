@@ -15,62 +15,25 @@ function embers(): string {
     </div>`
 }
 
-function waves(): string {
-  const bubblePos = [
-    { left: 6, size: 8, dur: 4, delay: 0, bx: 14 },
-    { left: 18, size: 5, dur: 5.5, delay: 1, bx: -18 },
-    { left: 28, size: 10, dur: 4.5, delay: 0.5, bx: 22 },
-    { left: 39, size: 6, dur: 6, delay: 2, bx: -12 },
-    { left: 47, size: 4, dur: 5, delay: 0.3, bx: 16 },
-    { left: 55, size: 9, dur: 4.8, delay: 1.5, bx: -20 },
-    { left: 64, size: 5, dur: 5.7, delay: 0.8, bx: 10 },
-    { left: 72, size: 7, dur: 4.3, delay: 2.4, bx: -16 },
-    { left: 80, size: 11, dur: 5.2, delay: 1, bx: 18 },
-    { left: 90, size: 5, dur: 6.2, delay: 2.8, bx: -10 },
-    { left: 96, size: 7, dur: 4.9, delay: 0.6, bx: 12 },
-  ]
+function stellarField(): string {
   return `
-    <div class="relative z-10 h-28 md:h-36 -mb-[1px] overflow-visible pointer-events-none">
-      <div class="bubbles">
-        ${bubblePos.map(b => `
-          <span class="bubble" style="left:${b.left}%;width:${b.size}px;height:${b.size}px;--bx:${b.bx}px;animation-duration:${b.dur}s;animation-delay:${b.delay}s"></span>
-        `).join('')}
-      </div>
-      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#3b0a5e" opacity="0.25" d="M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z">
-          <animate attributeName="d" dur="5s" repeatCount="indefinite" values="
-            M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z;
-            M0,36 C80,84 160,-8 240,36 C320,84 400,-8 480,36 C560,84 640,-8 720,36 C800,84 880,-8 960,36 V120 H0 Z;
-            M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z
-          "/>
-        </path>
+    <div class="stellar-field" aria-hidden="true">
+      ${embers()}
+      <svg class="stellar-field__magnetic" viewBox="0 0 960 900" preserveAspectRatio="none">
+        <path d="M80,860 C180,560 270,250 480,90 C690,250 780,560 880,860" />
+        <path d="M160,900 C265,610 330,330 480,160 C630,330 695,610 800,900" />
+        <path d="M15,720 C220,520 315,445 480,360 C645,445 740,520 945,720" />
       </svg>
-      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#3b0a5e" opacity="0.5" d="M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z">
-          <animate attributeName="d" dur="3.8s" repeatCount="indefinite" values="
-            M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z;
-            M0,40 C80,88 160,4 240,40 C320,88 400,-8 480,40 C560,92 640,4 720,40 C800,88 880,-4 960,40 V120 H0 Z;
-            M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z
-          "/>
-        </path>
-      </svg>
-      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#3b0a5e" opacity="0.78" d="M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z">
-          <animate attributeName="d" dur="2.6s" repeatCount="indefinite" values="
-            M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z;
-            M0,46 C80,92 160,8 240,46 C320,94 400,6 480,46 C560,92 640,8 720,46 C800,90 880,4 960,46 V120 H0 Z;
-            M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z
-          "/>
-        </path>
-      </svg>
-      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#3b0a5e" opacity="1" d="M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z">
-          <animate attributeName="d" dur="1.8s" repeatCount="indefinite" values="
-            M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z;
-            M0,52 C80,96 160,12 240,52 C320,98 400,10 480,52 C560,96 640,12 720,52 C800,94 880,8 960,52 V120 H0 Z;
-            M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z
-          "/>
-        </path>
+    </div>`
+}
+
+function waves(): string {
+  return `
+    <div class="stellar-bridge relative z-10 h-32 md:h-44 -mb-[1px] overflow-visible pointer-events-none">
+      <svg class="stellar-bridge__lines absolute inset-0 h-full w-full" viewBox="0 0 960 180" preserveAspectRatio="none" aria-hidden="true">
+        <path class="stellar-bridge__line stellar-bridge__line--glow" d="M40,174 C160,100 230,26 360,70 S600,164 770,58 S900,18 960,28" />
+        <path class="stellar-bridge__line" d="M40,174 C160,100 230,26 360,70 S600,164 770,58 S900,18 960,28" />
+        <path class="stellar-bridge__line stellar-bridge__line--second" d="M0,134 C140,55 240,120 355,96 S570,34 690,96 S850,152 960,82" />
       </svg>
     </div>`
 }
@@ -79,7 +42,7 @@ function hero(session: any): string {
   return `
      <header class="public-enter public-enter--hero relative z-10 mx-auto flex min-h-[62vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 text-center">
       ${embers()}
-      <div class="animate-float mb-6 relative">
+      <div class="stellar-core animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
         <img src="qu4sar.ico" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" />
       </div>
@@ -110,6 +73,7 @@ export function renderHome(session?: any): string {
         <div class="absolute -left-32 top-1/4 h-72 w-72 rounded-full bg-[#8B5CF6]/15 blur-3xl"></div>
         <div class="absolute -right-32 top-1/2 h-96 w-96 rounded-full bg-[#6D28D9]/15 blur-3xl"></div>
       </div>
+      ${stellarField()}
 
       ${renderDiscordBanner()}
       ${renderPublicNavbar(session, { active: 'home' })}
@@ -131,9 +95,9 @@ export function renderHome(session?: any): string {
 
       ${hero(session)}
 
-      ${waves()}
+       ${waves()}
 
-       <div class="relative z-10 pt-2 md:pt-4" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
+        <div class="stellar-content relative z-10 pt-2 md:pt-4">
         <!-- Briefing -->
         <section class="mx-auto mt-4 md:mt-8 max-w-5xl px-6">
            <div class="flex flex-col gap-2 mb-10 reveal">

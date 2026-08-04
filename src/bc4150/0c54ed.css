@@ -2478,6 +2478,337 @@ textarea {
   }
 }
 
+/* ============ One stellar field for the whole landing ============ */
+
+.stellar-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 8%, rgba(255, 255, 255, 0.08), transparent 22%),
+    radial-gradient(ellipse at 22% 24%, rgba(240, 171, 252, 0.1), transparent 32%),
+    radial-gradient(ellipse at 78% 22%, rgba(245, 158, 11, 0.08), transparent 30%),
+    radial-gradient(ellipse at 14% 68%, rgba(239, 68, 68, 0.08), transparent 34%),
+    radial-gradient(ellipse at 50% 8%, rgba(139, 92, 246, 0.16), transparent 38%),
+    radial-gradient(ellipse at 18% 44%, rgba(109, 40, 217, 0.1), transparent 34%),
+    radial-gradient(ellipse at 84% 72%, rgba(124, 58, 237, 0.08), transparent 38%);
+  opacity: 0.88;
+}
+
+.stellar-field::before,
+.stellar-field::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+}
+
+.stellar-field::before {
+  background:
+    radial-gradient(ellipse at 50% 12%, rgba(196, 181, 253, 0.12), transparent 30%),
+    radial-gradient(ellipse at 72% 42%, rgba(245, 158, 11, 0.06), transparent 26%),
+    radial-gradient(ellipse at 24% 62%, rgba(239, 68, 68, 0.05), transparent 28%);
+  filter: blur(26px);
+  animation: stellar-nebula-drift 18s ease-in-out infinite;
+}
+
+.stellar-field::after {
+  background: radial-gradient(ellipse at 50% 0%, transparent 30%, rgba(8, 4, 16, 0.32) 78%);
+}
+
+.stellar-field .embers {
+  opacity: 0.2;
+}
+
+.stellar-field .ember {
+  background: #c4b5fd;
+  box-shadow: 0 0 10px 2px rgba(196, 181, 253, 0.5);
+}
+
+.stellar-field .ember:nth-child(4n) {
+  background: #f0abfc;
+  box-shadow: 0 0 10px 2px rgba(240, 171, 252, 0.5);
+}
+
+.stellar-field .ember:nth-child(7n) {
+  background: #fbbf24;
+  box-shadow: 0 0 9px 2px rgba(245, 158, 11, 0.42);
+}
+
+.stellar-field .ember:nth-child(9n) {
+  background: #fda4af;
+  box-shadow: 0 0 9px 2px rgba(239, 68, 68, 0.34);
+}
+
+.stellar-field__magnetic {
+  position: absolute;
+  inset: -8% 0 0;
+  width: 100%;
+  height: 108%;
+  opacity: 0.14;
+  overflow: visible;
+}
+
+.stellar-field__magnetic path {
+  fill: none;
+  stroke: #a78bfa;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-dasharray: 18 32;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.5));
+  animation: stellar-field-flow 18s linear infinite;
+}
+
+.stellar-field__magnetic path:nth-child(2) {
+  stroke: #c4b5fd;
+  stroke-dasharray: 9 38;
+  animation-duration: 23s;
+  animation-direction: reverse;
+}
+
+.stellar-field__magnetic path:nth-child(3) {
+  opacity: 0.6;
+  stroke-dasharray: 4 44;
+  animation-duration: 28s;
+}
+
+.stellar-core {
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
+}
+
+.stellar-core::before,
+.stellar-core::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.stellar-core::before {
+  inset: -62px;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.35), transparent 10%),
+    radial-gradient(circle at 56% 50%, rgba(240, 171, 252, 0.2), transparent 27%),
+    radial-gradient(circle at 40% 58%, rgba(139, 92, 246, 0.22), transparent 38%),
+    radial-gradient(circle, rgba(109, 40, 217, 0.46), transparent 68%);
+  filter: blur(20px);
+  animation: stellar-core-breathe 4s ease-in-out infinite;
+}
+
+.stellar-core::after {
+  inset: -34px;
+  z-index: -1;
+  border: 0;
+  padding: 1px;
+  background: conic-gradient(from 205deg, transparent 0 20%, rgba(139, 92, 246, 0.2) 28%, rgba(255, 255, 255, 0.78) 42%, rgba(240, 171, 252, 0.5) 55%, transparent 68% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 8px rgba(196, 181, 253, 0.4));
+  animation: stellar-core-ring 14s linear infinite;
+}
+
+.stellar-core > div:first-child {
+  inset: -0.5rem !important;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.34), transparent 16%),
+    radial-gradient(circle, rgba(196, 181, 253, 0.2), rgba(139, 92, 246, 0.12) 42%, transparent 72%) !important;
+  filter: blur(8px);
+}
+
+.stellar-core img {
+  filter: drop-shadow(0 0 8px rgba(196, 181, 253, 0.52)) drop-shadow(0 0 22px rgba(139, 92, 246, 0.42));
+}
+
+.stellar-content {
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+  margin-top: -2rem;
+  padding-top: 2rem !important;
+}
+
+.stellar-content::before {
+  content: "";
+  position: absolute;
+  inset: -92px 0 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08), transparent 20%),
+    radial-gradient(ellipse at 20% 8%, rgba(240, 171, 252, 0.1), transparent 30%),
+    radial-gradient(ellipse at 12% 20%, rgba(139, 92, 246, 0.1), transparent 34%),
+    radial-gradient(ellipse at 86% 48%, rgba(109, 40, 217, 0.08), transparent 38%),
+    radial-gradient(ellipse at 22% 84%, rgba(196, 181, 253, 0.05), transparent 30%);
+  pointer-events: none;
+}
+
+.stellar-content::before {
+  inset: -96px 0 0;
+  z-index: 0;
+  opacity: 0.72;
+}
+
+.stellar-content::before {
+  background: none;
+  opacity: 0;
+}
+
+.stellar-content > section {
+  position: relative;
+  z-index: 1;
+}
+
+.stellar-bridge {
+  position: relative;
+  background: transparent;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 80%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 80%, transparent 100%);
+}
+
+.stellar-bridge::before {
+  content: "";
+  position: absolute;
+  inset: -85px -14% -55px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 24%),
+    radial-gradient(ellipse at 22% 48%, rgba(240, 171, 252, 0.12), transparent 38%),
+    radial-gradient(ellipse at 78% 52%, rgba(139, 92, 246, 0.16), transparent 42%);
+  filter: blur(22px);
+  opacity: 0.8;
+  pointer-events: none;
+  animation: stellar-bridge-breathe 7s ease-in-out infinite;
+}
+
+.stellar-bridge::before {
+  background: none;
+  opacity: 0;
+  filter: none;
+}
+
+.stellar-bridge__lines {
+  z-index: 3;
+  overflow: visible;
+}
+
+.stellar-bridge__line {
+  fill: none;
+  stroke: #c4b5fd;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-dasharray: 22 18;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.46;
+  filter: drop-shadow(0 0 5px rgba(196, 181, 253, 0.46));
+  animation: stellar-bridge-flow 10s linear infinite;
+}
+
+.stellar-bridge__line--glow {
+  stroke: #8b5cf6;
+  stroke-width: 8;
+  stroke-dasharray: none;
+  opacity: 0.12;
+  filter: blur(4px);
+  animation: stellar-bridge-glow 8s ease-in-out infinite;
+}
+
+.stellar-bridge__line--second {
+  stroke: #f0abfc;
+  stroke-width: 0.9;
+  stroke-dasharray: 5 26;
+  opacity: 0.28;
+  animation-duration: 14s;
+  animation-direction: reverse;
+}
+
+.stellar-bridge__line:not(.stellar-bridge__line--glow) {
+  filter:
+    drop-shadow(0 0 5px rgba(196, 181, 253, 0.42))
+    drop-shadow(0 0 9px rgba(240, 171, 252, 0.16));
+}
+
+.stellar-content > section:not(.outro):not(.public-stats) {
+  position: relative;
+}
+
+.stellar-content > section:not(.outro):not(.public-stats)::before {
+  content: "";
+  position: absolute;
+  top: -42px;
+  right: 8%;
+  left: 8%;
+  height: 84px;
+  z-index: -1;
+  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.06), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.public-page > .foot-b {
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes stellar-nebula-drift {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scale(0.98); opacity: 0.55; }
+  50% { transform: translate3d(2%, 1%, 0) scale(1.04); opacity: 0.9; }
+}
+
+@keyframes stellar-field-flow {
+  to { stroke-dashoffset: -260; }
+}
+
+@keyframes stellar-core-breathe {
+  0%, 100% { transform: scale(0.94); opacity: 0.58; }
+  50% { transform: scale(1.08); opacity: 0.95; }
+}
+
+@keyframes stellar-core-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes stellar-bridge-breathe {
+  0%, 100% { opacity: 0.4; transform: scaleY(0.94); }
+  50% { opacity: 0.8; transform: scaleY(1.06); }
+}
+
+@keyframes stellar-bridge-flow {
+  from { stroke-dashoffset: 0; opacity: 0.12; }
+  38% { opacity: 0.6; }
+  to { stroke-dashoffset: -150; opacity: 0.14; }
+}
+
+@keyframes stellar-bridge-glow {
+  0%, 100% { opacity: 0.06; transform: translateY(2px); }
+  50% { opacity: 0.2; transform: translateY(-2px); }
+}
+
+@media (min-width: 768px) {
+  .stellar-content {
+    margin-top: -3rem;
+    padding-top: 3rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stellar-field::before,
+  .stellar-field__magnetic path,
+  .stellar-core::before,
+  .stellar-core::after,
+  .stellar-bridge::before,
+  .stellar-bridge__line {
+    animation: none !important;
+  }
+}
+
 /* ============ Public entry motion ============ */
 
 @keyframes public-fade-up {
