@@ -412,6 +412,14 @@ export async function mountHome(): Promise<void> {
     .order('full_name', { ascending: true })
   const cgrid = document.getElementById('coaches-grid')
   if (cgrid) {
+    cgrid.addEventListener('click', (event) => {
+      const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-coach-courses]')
+      if (!trigger) return
+      event.preventDefault()
+      event.stopPropagation()
+      void showCoachCoursesModal(trigger.dataset.coachId || '', trigger.dataset.coachName || 'Coach')
+    })
+
     // QU4SAR es la cuenta general admin: nunca se muestra como coach
     const ADMIN_IDS = ['3a7fd441-6b64-4684-94db-660721bf9367']
     const list = (coaches ?? []).filter((c: any) => {
@@ -443,7 +451,7 @@ export async function mountHome(): Promise<void> {
               <span class="roster-card__creds">QU4SAR Gaming Academy</span>
               <p class="roster-card__tag">${escapeHtml(co.quote || 'Coach certificado listo para ayudarte a subir de rango con un plan a tu medida.')}</p>
               <div class="roster-card__meta"><span>Coach</span><span>${escapeHtml(co.rank || '—')}</span></div>
-              <span class="roster-card__cta">Ver sus cursos →</span>
+              <span class="roster-card__cta" data-coach-courses data-coach-id="${escapeHtml(co.id)}" data-coach-name="${escapeHtml(name)}">Ver sus cursos →</span>
             </div>
           </a>`
       }).join('')
@@ -470,6 +478,82 @@ export async function mountHome(): Promise<void> {
       })
     }
   }
+}
+
+async function showCoachCoursesModal(coachId: string, coachName: string): Promise<void> {
+  if (!coachId) return
+  document.getElementById('public-coach-courses-modal')?.remove()
+
+  const modal = document.createElement('div')
+  modal.id = 'public-coach-courses-modal'
+  modal.className = 'public-courses-modal'
+  modal.innerHTML = `
+    <div class="public-courses-modal__card" role="dialog" aria-modal="true" aria-labelledby="public-coach-courses-title">
+      <div class="public-courses-modal__head">
+        <div>
+          <span class="lbl">Staff QU4SAR</span>
+          <h2 id="public-coach-courses-title">Cursos de ${escapeHtml(coachName)}</h2>
+        </div>
+        <button type="button" class="public-courses-modal__close" aria-label="Cerrar cursos">${Icon('x', 18)}</button>
+      </div>
+      <div class="public-courses-modal__body" id="public-coach-courses-list">
+        <div class="public-courses-modal__loading"><span></span><span></span><span></span></div>
+      </div>
+      <div class="public-courses-modal__foot">
+        <span>Encuentra tu siguiente nivel.</span>
+        <a href="#/register" class="btn btn-primary">Empezar ahora →</a>
+      </div>
+    </div>`
+
+  const root = document.getElementById('modal-root') || document.body
+  root.appendChild(modal)
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close()
+  }
+  const close = () => {
+    modal.remove()
+    document.removeEventListener('keydown', onKeyDown)
+  }
+  modal.querySelector('.public-courses-modal__close')?.addEventListener('click', close)
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) close()
+  })
+  document.addEventListener('keydown', onKeyDown)
+
+  const { data, error } = await supabase.rpc('get_public_coach_courses', { p_coach_id: coachId })
+  if (!modal.isConnected) return
+  const list = modal.querySelector<HTMLElement>('#public-coach-courses-list')
+  if (!list) return
+
+  if (error) {
+    list.innerHTML = '<p class="public-courses-modal__empty">No pudimos cargar los cursos en este momento.</p>'
+    return
+  }
+
+  const courses = Array.isArray(data) ? data : []
+  if (courses.length === 0) {
+    list.innerHTML = '<p class="public-courses-modal__empty">Este coach está preparando sus cursos. Únete a la academia para conocer su próxima ruta de entrenamiento.</p>'
+    return
+  }
+
+  list.innerHTML = courses.map((course: any, index: number) => {
+    const duration = course.duration_months === 0.5 ? '15 días' : course.duration_months ? `${course.duration_months} meses` : 'Ruta continua'
+    const price = Number(course.price) > 0 ? `$${Number(course.price).toLocaleString('en-US')} / mes` : 'Gratis'
+    return `
+      <article class="public-course-item" style="--course-index:${index}">
+        <div class="public-course-item__mark">${String(index + 1).padStart(2, '0')}</div>
+        <div class="public-course-item__content">
+          <h3>${escapeHtml(course.name || 'Curso QU4SAR')}</h3>
+          <p>${escapeHtml(course.description || 'Entrenamiento estructurado para avanzar con un plan claro.')}</p>
+          <div class="public-course-item__meta">
+            <span>${escapeHtml(course.min_rank || 'Todos los rangos')}</span>
+            <span>${escapeHtml(duration)}</span>
+            <strong>${escapeHtml(price)}</strong>
+          </div>
+        </div>
+      </article>`
+  }).join('')
 }
 
 async function loadPublicStats(): Promise<void> {
