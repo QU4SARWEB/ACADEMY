@@ -134,23 +134,6 @@ export function renderHome(session?: any): string {
       ${waves()}
 
       <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
-        <section class="public-stats mx-auto max-w-5xl px-6 reveal" style="--i:0">
-          <div id="public-stats" class="stats-bar">
-            <div class="stat">
-              <div class="stat__num" data-stat-value="visits">—</div>
-              <div class="stat__label">Visitas</div>
-            </div>
-            <div class="stat">
-              <div class="stat__num" data-stat-value="students">—</div>
-              <div class="stat__label">Alumnos</div>
-            </div>
-            <div class="stat">
-              <div class="stat__num" data-stat-value="registrations">—</div>
-              <div class="stat__label">Registros</div>
-            </div>
-          </div>
-        </section>
-
         <!-- Briefing -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
            <div class="flex flex-col gap-2 mb-10 reveal">
@@ -399,6 +382,23 @@ export function renderHome(session?: any): string {
           <div class="outro__ctas">
             <a href="#/" data-scroll="coaches" class="reveal btn btn-primary" style="--i:1">Ver coaches →</a>
             <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="reveal btn btn-ghost" style="--i:2">Unirse al Discord</a>
+          </div>
+        </section>
+
+        <section class="public-stats mx-auto mt-10 max-w-5xl px-6 reveal" style="--i:0">
+          <div id="public-stats" class="stats-bar">
+            <div class="stat">
+              <div class="stat__num" data-stat-value="visits">—</div>
+              <div class="stat__label">Visitas</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num" data-stat-value="students">—</div>
+              <div class="stat__label">Alumnos</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num" data-stat-value="registrations">—</div>
+              <div class="stat__label">Registros</div>
+            </div>
           </div>
         </section>
 
