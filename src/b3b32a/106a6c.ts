@@ -466,20 +466,26 @@ export async function mountHome(): Promise<void> {
           </a>`
       }).join('')
       // Observar las tarjetas recién creadas para el reveal en scroll
-      if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in')
-            } else {
-              entry.target.classList.remove('in')
-            }
+      // Esperar 2 frames para que el estado inicial (opacity 0) se pinte
+      // y así el reveal haga un fade real, no un pop.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver((entries) => {
+              for (const entry of entries) {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('in')
+                } else {
+                  entry.target.classList.remove('in')
+                }
+              }
+            }, { threshold: 0.2 })
+            cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => io.observe(el))
+          } else {
+            cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => el.classList.add('in'))
           }
-        }, { threshold: 0.2 })
-        cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => io.observe(el))
-      } else {
-        cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => el.classList.add('in'))
-      }
+        })
+      })
     }
   }
 }
