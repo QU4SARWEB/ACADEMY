@@ -516,6 +516,7 @@ async function showCoachCoursesModal(coachId: string, coachName: string): Promis
     document.removeEventListener('keydown', onKeyDown)
   }
   modal.querySelector('.public-courses-modal__close')?.addEventListener('click', close)
+  modal.querySelector<HTMLAnchorElement>('.public-courses-modal__foot a')?.addEventListener('click', close)
   modal.addEventListener('click', (event) => {
     if (event.target === modal) close()
   })
