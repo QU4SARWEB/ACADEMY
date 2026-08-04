@@ -222,9 +222,9 @@ export function renderHome(session?: any): string {
               <ul class="offer-card__list">
                 ${[
                   'Plan de estudios progresivo diseñado para tu nivel (Rookie a Pro)',
-                  'Seguimiento 1 a 1 con coaches certificados',
-                  'Scrims y evaluaciones semanales para medir tu avance',
+                  'Clases en vivo con coaches certificados',
                   'Clases grabadas y material para repasar cuando quieras',
+                  'Scrims y evaluaciones semanales para medir tu avance',
                   'Análisis de tu gameplay con feedback accionable',
                   'Comunidad exclusiva en Discord con eventos y torneos',
                   'Certificado oficial QU4SAR al completar',
@@ -234,28 +234,6 @@ export function renderHome(session?: any): string {
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
-            <article class="offer-card offer-card--pro reveal" style="--i:2">
-              <span class="offer-card__badge offer-card__badge--pro">Experto</span>
-              <span class="offer-card__badge--tertiary">Máximo nivel</span>
-              <h3 class="offer-card__title">Plan Pro</h3>
-              <div class="offer-card__price"><span class="offer-card__amount amount-pro">$20</span><span class="offer-card__unit">USD · por mes</span></div>
-              <p class="offer-card__save">Todo lo de $15, más beneficios exclusivos</p>
-              <p class="offer-card__blurb">El entrenamiento más completo de QU4SAR: prioridad con coaches, más sesiones en vivo y seguimiento individualizado para que llegues a tu máximo potencial.</p>
-              <ul class="offer-card__list">
-                ${[
-                  'Todo lo del plan Cursos completos, incluido',
-                  'Clases en vivo adicionales cada semana',
-                  'Prioridad para reservar sesiones con tu coach',
-                  'Análisis VOD personalizado mensual',
-                  'Plan de entrenamiento individualizado',
-                  'Acceso anticipado a torneos y eventos',
-                  'Insignia PRO y reconocimiento en la comunidad',
-                  'Soporte prioritario en Discord',
-                ].map(f => `
-                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
-              </ul>
-              <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full" style="border-color:#C4B5FD;color:#C4B5FD">Subir a Pro →</a></div>
-            </article>
           </div>
 
           <!-- Mini comparador -->
@@ -264,27 +242,22 @@ export function renderHome(session?: any): string {
               <span>Beneficio</span>
               <span>Gratis</span>
               <span>Cursos <em>$15</em></span>
-              <span>Pro <em>$20</em></span>
             </div>
             ${[
-              { label: 'Evaluación de nivel inicial', free: true, paid: true, pro: true },
-              { label: 'Examen teórico y práctico', free: true, paid: true, pro: true },
-              { label: 'Plan de estudios por rango', free: false, paid: true, pro: true },
-              { label: 'Clases grabadas y material', free: false, paid: true, pro: true },
-              { label: 'Seguimiento con coaches', free: false, paid: true, pro: true },
-              { label: 'Scrims y torneos', free: false, paid: true, pro: true },
-              { label: 'Comunidad exclusiva', free: false, paid: true, pro: true },
-              { label: 'Clases en vivo adicionales', free: false, paid: false, pro: true },
-              { label: 'Análisis VOD personalizado', free: false, paid: false, pro: true },
-              { label: 'Prioridad con tu coach', free: false, paid: false, pro: true },
-              { label: 'Plan individualizado', free: false, paid: false, pro: true },
-              { label: 'Certificado oficial', free: false, paid: true, pro: true },
+              { label: 'Evaluación de nivel inicial', free: true, paid: true },
+              { label: 'Examen teórico y práctico', free: true, paid: true },
+              { label: 'Plan de estudios por rango', free: false, paid: true },
+              { label: 'Clases en vivo con coaches', free: false, paid: true },
+              { label: 'Clases grabadas y material', free: false, paid: true },
+              { label: 'Seguimiento con coaches', free: false, paid: true },
+              { label: 'Scrims y torneos', free: false, paid: true },
+              { label: 'Comunidad exclusiva', free: false, paid: true },
+              { label: 'Certificado oficial', free: false, paid: true },
             ].map((r, i) => `
               <div class="compare__row">
                 <span>${escapeHtml(r.label)}</span>
                 <span class="${r.free ? 'yes' : 'no'}">${r.free ? '✓' : '—'}</span>
                 <span class="yes ${r.paid ? 'paid' : 'no'}">${r.paid ? '✓' : '—'}</span>
-                <span class="yes ${r.pro ? 'pro' : 'no'}">${r.pro ? '✓' : '—'}</span>
               </div>
             `).join('')}
           </div>
