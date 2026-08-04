@@ -362,7 +362,7 @@ export async function mountHome(): Promise<void> {
   // Cargar coaches reales (rol coach) con su avatar
   const { data: coaches } = await supabase
     .from('profiles')
-    .select('id, full_name, display_name, avatar_url, banner_url, riot_id, in_game_role, rank, quote')
+    .select('id, full_name, display_name, avatar_url, presentation_image, riot_id, in_game_role, rank, quote')
     .eq('role', 'coach')
     .eq('is_active', true)
     .order('full_name', { ascending: true })
@@ -382,7 +382,7 @@ export async function mountHome(): Promise<void> {
         const name = co.display_name || co.full_name || 'Coach'
         const tag = [co.riot_id, co.in_game_role].filter(Boolean).join(' · ') || (co.rank || 'Coach QU4SAR')
         const initial = name.charAt(0).toUpperCase()
-        const presentation = co.banner_url || co.avatar_url
+        const presentation = co.presentation_image || co.avatar_url
         return `
           <a href="#/register" class="roster-card reveal in" style="--i:${i % 3}">
             <div class="roster-card__poster">

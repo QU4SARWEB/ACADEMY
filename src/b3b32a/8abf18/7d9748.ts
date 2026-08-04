@@ -63,7 +63,7 @@ export async function initCoachProfile(): Promise<void> {
     document.getElementById('banner-upload')?.addEventListener('change', () => {
       handleImageUpload('banner-upload', 'banner-upload-status', 'banners', getBannerPath)
     })
-    // Imagen de presentación del coach (roster público) -> bucket 'coaches', guarda en banner_url
+    // Imagen de presentación del coach (roster público) -> bucket 'coaches', guarda en presentation_image
     document.getElementById('coach-img-upload')?.addEventListener('change', () => {
       const input = document.getElementById('coach-img-upload') as HTMLInputElement
       const file = input?.files?.[0]
@@ -76,13 +76,11 @@ export async function initCoachProfile(): Promise<void> {
         if (status) status.classList.add('hidden')
         if (uploadErr) { toast('error', uploadErr); return }
         if (url) {
-          supabase.from('profiles').update({ banner_url: url }).eq('id', userId)
+          supabase.from('profiles').update({ presentation_image: url }).eq('id', userId)
             .then(({ error }) => {
               if (error) { toast('error', 'Error al guardar la imagen'); return }
               const img = document.getElementById('coach-img')
-              const img2 = document.getElementById('banner-img')
               if (img) (img as HTMLImageElement).src = url
-              if (img2) (img2 as HTMLImageElement).src = url
               toast('success', 'Imagen de presentación actualizada')
             })
         }
