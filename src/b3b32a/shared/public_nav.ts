@@ -165,6 +165,19 @@ export function mountPublicNav(): void {
     })
   })
 
+  // Ocultar al bajar / mostrar al subir (navbar + cintillo)
+  const hideEls = document.querySelectorAll<HTMLElement>('.nav-b, .discord-banner')
+  if (hideEls.length > 0) {
+    let lastY = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      const goingDown = y > lastY && y > 80
+      lastY = y
+      hideEls.forEach(el => el.classList.toggle('nav-hidden', goingDown))
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+  }
+
   // Reveal on scroll
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
