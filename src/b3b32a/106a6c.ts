@@ -19,7 +19,7 @@ function waves(): string {
   return `
     <div class="relative z-10 h-24 md:h-32 -mb-[1px] overflow-hidden pointer-events-none">
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#8B5CF6" opacity="0.2" d="M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z">
+        <path fill="#6D28D9" opacity="0.2" d="M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z">
           <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
             M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z;
             M0,40 C80,80 160,0 240,40 C320,80 400,0 480,40 C560,80 640,0 720,40 C800,80 880,0 960,40 V120 H0 Z;
@@ -28,7 +28,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#8B5CF6" opacity="0.45" d="M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z">
+        <path fill="#6D28D9" opacity="0.45" d="M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z">
           <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
             M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z;
             M0,43 C80,83 160,3 240,43 C320,83 400,3 480,43 C560,83 640,3 720,43 C800,83 880,3 960,43 V120 H0 Z;
@@ -37,7 +37,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#8B5CF6" opacity="0.75" d="M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z">
+        <path fill="#6D28D9" opacity="0.75" d="M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z">
           <animate attributeName="d" dur="4.5s" repeatCount="indefinite" values="
             M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z;
             M0,47 C80,87 160,7 240,47 C320,87 400,7 480,47 C560,87 640,7 720,47 C800,87 880,7 960,47 V120 H0 Z;
@@ -46,7 +46,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#8B5CF6" opacity="1" d="M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z">
+        <path fill="#6D28D9" opacity="1" d="M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z">
           <animate attributeName="d" dur="3s" repeatCount="indefinite" values="
             M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z;
             M0,50 C80,90 160,10 240,50 C320,90 400,10 480,50 C560,90 640,10 720,50 C800,90 880,10 960,50 V120 H0 Z;
@@ -100,105 +100,53 @@ export function renderHome(session?: any): string {
 
       ${waves()}
 
-      <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#8B5CF6 0%,#2a0f3d 20%,#0A0A0A 60%)">
+      <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#6D28D9 0%,#1e0b2e 25%,#0A0A0A 65%)">
 
         <!-- Briefing -->
-        <section class="mx-auto mt-16 md:mt-20 max-w-6xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El briefing</span>
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
           </div>
-          <div class="offer-wrap">
-            <div class="offer-side reveal" style="--i:0">
-              <div class="offer-side__card">
-                <span class="os-label">Diagnóstico</span>
-                <div class="os-item">${Icon('target', 15)}<span>Detectamos tus errores clave</span></div>
-                <div class="os-item">${Icon('zap', 15)}<span>Correcciones accionables</span></div>
-                <div class="os-item">${Icon('shield', 15)}<span>Plan a tu rango y estilo</span></div>
+          <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-center">
+            <div class="hud relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
+              <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" />
+              <div class="absolute inset-0 flex items-center justify-center">
+                <button class="flex flex-col items-center gap-2 text-white/90 transition hover:scale-105" aria-label="Ver briefing">
+                  <span class="flex h-16 w-16 items-center justify-center rounded-full border border-[#8B5CF6]/60 bg-[#8B5CF6]/30 backdrop-blur-md">${Icon('play', 26)}</span>
+                  <span class="text-xs tracking-widest uppercase">Ver briefing</span>
+                </button>
               </div>
-              <div class="offer-side__card">
-                <span class="os-label">Resultado</span>
-                <div class="os-item"><span class="offer-side__num">+1</span><span>División en 4 semanas</span></div>
-                <div class="os-item"><span class="offer-side__num">1:1</span><span>Con un coach certificado</span></div>
-                <div class="os-item"><span class="offer-side__num">24/7</span><span>Comunidad de apoyo</span></div>
-              </div>
+              <span class="absolute bottom-3 left-4 text-[11px] text-zinc-400">QU4SAR · Método de entrenamiento</span>
             </div>
-
-            <div class="grid gap-6 items-center">
-              <div class="hud relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
-                <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" />
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <button class="flex flex-col items-center gap-2 text-white/90 transition hover:scale-105" aria-label="Ver briefing">
-                    <span class="flex h-16 w-16 items-center justify-center rounded-full border border-[#8B5CF6]/60 bg-[#8B5CF6]/30 backdrop-blur-md">${Icon('play', 26)}</span>
-                    <span class="text-xs tracking-widest uppercase">Ver briefing</span>
-                  </button>
-                </div>
-                <span class="absolute bottom-3 left-4 text-[11px] text-zinc-400">QU4SAR · Método de entrenamiento</span>
-              </div>
-              <div>
-                <blockquote class="border-l-2 border-[#8B5CF6] pl-5 text-lg text-zinc-200 leading-relaxed">
-                  «La diferencia real no era pegar más balas. Era tomar mejores decisiones.»
-                </blockquote>
-                <p class="mt-3 text-xs text-zinc-500">Coaches QU4SAR · Footage de partidas oficiales</p>
-                <a href="#/" data-scroll="precios" class="btn btn-ghost mt-6">Empieza 1 a 1 →</a>
-              </div>
-            </div>
-
-            <div class="offer-side reveal" style="--i:3">
-              <div class="offer-side__card">
-                <span class="os-label">Metodología</span>
-                <div class="os-item">${Icon('bookOpen', 15)}<span>Teoría aplicada al juego</span></div>
-                <div class="os-item">${Icon('users', 15)}<span>Scrims con tu nivel</span></div>
-                <div class="os-item">${Icon('trophy', 15)}<span>Metas por semana</span></div>
-              </div>
-              <div class="offer-side__card">
-                <span class="os-label">El equipo</span>
-                <div class="os-item">${Icon('checkCircle', 15)}<span>Coaches con rango competitivo</span></div>
-                <div class="os-item">${Icon('checkCircle', 15)}<span>Feedback en cada clase</span></div>
-                <div class="os-item">${Icon('checkCircle', 15)}<span>Seguimiento de tu avance</span></div>
-              </div>
+            <div>
+              <blockquote class="border-l-2 border-[#8B5CF6] pl-5 text-lg text-zinc-200 leading-relaxed">
+                «La diferencia real no era pegar más balas. Era tomar mejores decisiones.»
+              </blockquote>
+              <p class="mt-3 text-xs text-zinc-500">Coaches QU4SAR · Footage de partidas oficiales</p>
+              <a href="#/" data-scroll="precios" class="btn btn-ghost mt-6">Empieza 1 a 1 →</a>
             </div>
           </div>
         </section>
 
         <!-- Cómo funciona -->
-        <section class="mx-auto mt-16 md:mt-20 max-w-6xl px-6">
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="flex flex-col gap-2 mb-10">
             <span class="lbl">El método</span>
             <h2 class="s-title">Cómo <em>funciona.</em></h2>
           </div>
-          <div class="offer-wrap">
-            <div class="offer-side reveal" style="--i:0">
-              <div class="offer-side__card">
-                <span class="os-label">Empezar</span>
-                <div class="os-item">${Icon('plus', 15)}<span>Crea tu cuenta gratis</span></div>
-                <div class="os-item">${Icon('target', 15)}<span>Haz tu posicionamiento</span></div>
-                <div class="os-item">${Icon('calendar', 15)}<span>Elige tu horario</span></div>
-              </div>
-            </div>
-
-            <div class="steps-grid">
-              ${[
-                { title: 'Posicionamiento', body: 'Entras gratis y evaluamos tu nivel con exámenes teóricos y prácticos en juego. Sabes exactamente dónde empezar.' },
-                { title: 'Entrena tu nivel', body: 'Accedes a tu curso por rango con plan de estudios, seguimiento de coaches, tareas y análisis de tu gameplay.' },
-                { title: 'Compite y asciende', body: 'Aplica lo aprendido en scrims y torneos. Mide tu progreso y asciende al siguiente nivel de la academia.' },
-              ].map((s, i) => `
-                <article class="step reveal" style="--i:${i}">
-                  <span class="step__num">PASO ${i + 1}</span>
-                  <h3 class="step__title">${escapeHtml(s.title)}</h3>
-                  <p class="step__body">${escapeHtml(s.body)}</p>
-                </article>
-              `).join('')}
-            </div>
-
-            <div class="offer-side reveal" style="--i:3">
-              <div class="offer-side__card">
-                <span class="os-label">Crecimiento</span>
-                <div class="os-item">${Icon('trendingUp', 15)}<span>Sube de rango mes a mes</span></div>
-                <div class="os-item">${Icon('award', 15)}<span>Certificados por nivel</span></div>
-                <div class="os-item">${Icon('users', 15)}<span>Equipos y comunidad</span></div>
-              </div>
-            </div>
+          <div class="steps-grid">
+            ${[
+              { title: 'Posicionamiento', body: 'Entras gratis y evaluamos tu nivel con exámenes teóricos y prácticos en juego. Sabes exactamente dónde empezar.' },
+              { title: 'Entrena tu nivel', body: 'Accedes a tu curso por rango con plan de estudios, seguimiento de coaches, tareas y análisis de tu gameplay.' },
+              { title: 'Compite y asciende', body: 'Aplica lo aprendido en scrims y torneos. Mide tu progreso y asciende al siguiente nivel de la academia.' },
+            ].map((s, i) => `
+              <article class="step reveal" style="--i:${i}">
+                <span class="step__num">PASO ${i + 1}</span>
+                <h3 class="step__title">${escapeHtml(s.title)}</h3>
+                <p class="step__body">${escapeHtml(s.body)}</p>
+              </article>
+            `).join('')}
           </div>
         </section>
 
@@ -235,28 +183,8 @@ export function renderHome(session?: any): string {
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
             <p class="s-title-sub">Una mensualidad simple y flexible. Accedes a tu curso por rango y a todos los beneficios de la academia mientras entrenes con nosotros.</p>
           </div>
-          <div class="offer-wrap">
-            <div class="offer-side reveal" style="--i:0">
-              <div class="offer-side__card">
-                <span class="os-label">Incluye</span>
-                ${[
-                  { icon: 'video', text: 'Clases grabadas y repaso ilimitado' },
-                  { icon: 'checkCircle', text: 'Material y guías por nivel' },
-                  { icon: 'users', text: 'Comunidad activa en Discord' },
-                  { icon: 'target', text: 'Scrims y torneos internos' },
-                ].map(o => `
-                  <div class="os-item">${Icon(o.icon, 15)}<span>${escapeHtml(o.text)}</span></div>`).join('')}
-              </div>
-              <div class="offer-side__card">
-                <span class="os-label">Ritmo de avance</span>
-                <div class="os-item"><span class="offer-side__num">3<em>×</em></span><span>Clases grabadas por semana</span></div>
-                <div class="os-item"><span class="offer-side__num">1</span><span>Sesión en vivo con coach</span></div>
-                <div class="os-item"><span class="offer-side__num">∞</span><span>Acceso al material del curso</span></div>
-              </div>
-            </div>
-
-            <div class="offer-grid">
-            <article class="offer-card offer-card--free reveal" style="--i:1">
+          <div class="offer-grid">
+            <article class="offer-card offer-card--free reveal" style="--i:0">
               <h3 class="offer-card__title">Posicionamiento</h3>
               <div class="offer-card__price"><span class="offer-card__amount amount-free">Gratis</span></div>
               <p class="offer-card__blurb">Evaluación de nivel para saber dónde empiezas.</p>
@@ -267,7 +195,7 @@ export function renderHome(session?: any): string {
               <p class="offer-card__hint">Solo el primer paso.</p>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Comenzar gratis</a></div>
             </article>
-            <article class="offer-card featured reveal" style="--i:2">
+            <article class="offer-card featured reveal" style="--i:1">
               <span class="offer-card__badge">Más elegido</span>
               <span class="offer-card__badge--secondary">Mejor valor</span>
               <h3 class="offer-card__title">Cursos completos</h3>
@@ -289,22 +217,6 @@ export function renderHome(session?: any): string {
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
-            </div>
-
-            <div class="offer-side reveal" style="--i:3">
-              <div class="offer-side__card">
-                <span class="os-label">Plataformas</span>
-                <div class="os-item">${Icon('play', 15)}<span>PC · Valorant</span></div>
-                <div class="os-item">${Icon('smartphone', 15)}<span>Valorant Mobile · iOS/Android</span></div>
-                <div class="os-item">${Icon('trophy', 15)}<span>Ranked y competitivo</span></div>
-              </div>
-              <div class="offer-side__card">
-                <span class="os-label">A quién va dirigido</span>
-                <div class="os-item">${Icon('target', 15)}<span>De Hierro a Radiante</span></div>
-                <div class="os-item">${Icon('clock', 15)}<span>Entrena a tu ritmo</span></div>
-                <div class="os-item">${Icon('shield', 15)}<span>Garantía de método</span></div>
-              </div>
-            </div>
           </div>
 
           <!-- Mini comparador -->

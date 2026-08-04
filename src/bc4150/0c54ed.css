@@ -484,49 +484,6 @@ button:focus-visible, a:focus-visible {
 .roster-card:hover .roster-card__cta { color: #c4b5fd; transform: translateX(3px); }
 
 /* --- Offers / precios --- */
-.offer-wrap {
-  display: grid;
-  grid-template-columns: 1fr minmax(0, 620px) 1fr;
-  gap: 1.5rem;
-  align-items: stretch;
-}
-.offer-side {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.offer-side__card {
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, #131318, #0d0d11);
-  padding: 1.25rem;
-}
-.offer-side__card .os-label {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.66rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #8b5cf6;
-  margin-bottom: 0.75rem;
-}
-.offer-side__card .os-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: #d4d4d8;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-.offer-side__card .os-item:last-child { border-bottom: 0; }
-.offer-side__card .os-item svg { color: #8b5cf6; flex-shrink: 0; }
-.offer-side__num {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #c4b5fd;
-}
-.offer-side__num em { font-style: normal; color: #fff; }
 .offer-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1332,10 +1289,6 @@ button:focus-visible, a:focus-visible {
 }
 
 /* --- Responsive --- */
-@media (max-width: 1000px) {
-  .offer-wrap { grid-template-columns: 1fr; }
-  .offer-side { display: none; }
-}
 @media (max-width: 900px) {
   .nav-b__links { display: none; }
   .nav-b__burger { display: flex; }
