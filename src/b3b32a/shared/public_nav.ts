@@ -178,7 +178,7 @@ export function mountPublicNav(): void {
     window.addEventListener('scroll', onScroll, { passive: true })
   }
 
-  // Reveal on scroll: aparece al entrar, desaparece al salir
+  // Reveal on scroll: aparece un poco antes de entrar y en ambas direcciones
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -188,7 +188,7 @@ export function mountPublicNav(): void {
           entry.target.classList.remove('in')
         }
       }
-    }, { threshold: 0.12 })
+    }, { rootMargin: '0px 0px 120px 0px', threshold: 0.01 })
     document.querySelectorAll('.reveal').forEach(el => io.observe(el))
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'))
