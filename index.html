@@ -13,6 +13,14 @@
   <body>
     <div id="app"></div>
     <div id="modal-root"></div>
+    <script>
+      if (window.location.hostname.toLowerCase() === 'qu4sarweb.github.io' && window.location.pathname.toLowerCase().startsWith('/academy')) {
+        const target = new URL('https://qu4sar.vercel.app/')
+        target.search = window.location.search
+        target.hash = window.location.hash
+        window.location.replace(target.href)
+      }
+    </script>
     <script type="module" src="/src/fad58d.ts"></script>
   </body>
 </html>
