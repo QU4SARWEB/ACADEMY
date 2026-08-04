@@ -315,7 +315,6 @@ export function renderHome(session?: any): string {
             <span class="t-item active">${Icon('play', 14)} PC</span>
             <span class="t-item">${Icon('smartphone', 14)} Mobile</span>
             <span class="t-item">${Icon('trophy', 14)} Competitivo</span>
-            <span class="t-item">${Icon('target', 14)} Ranked</span>
           </div>
         </section>
 
