@@ -91,17 +91,17 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const studentGroupLabels = ['Resumen', 'Academia', 'Entrenamiento', 'Comunidad', 'Cuenta']
   const groupLabels = isCoach ? coachGroupLabels : studentGroupLabels
   for (let gi = 0; gi < groups.length; gi++) {
-    if (gi > 0) itemsHtml += `<div class="mt-2 mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest" style="color:${accent}66">${groupLabels[gi] || ''}</div>`
+    if (gi > 0) itemsHtml += `<div class="sb-section-label mt-2 mb-1 px-3 pt-3" style="color:${accent}">${groupLabels[gi] || ''}</div>`
     for (const it of groups[gi]) {
       const href = it.href!
       const isActive = currentHash === href || currentHash.startsWith(href + '/')
       const active = isActive
-        ? 'text-white border-l-2'
-        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+        ? 'active text-white'
+        : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-white'
       itemsHtml += `
         <a href="#${escapeHtml(it.href!)}"
-           class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active}"
-           style="${isActive ? `border-color:${accent};background:${accent}14` : ''}">
+           class="sb-nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${active}"
+           style="${isActive ? `--accent:${accent};background:${accent}12;border:1px solid ${accent}1f` : ''}">
           ${Icon(it.icon!, 18)}
           <span>${escapeHtml(it.label!)}</span>
         </a>`
@@ -112,22 +112,23 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
 
   return `
-    <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden border-r border-zinc-800 bg-[#0A0A0A] p-4 flex flex-col">
-      <a href="#/" class="mb-6 flex items-center gap-2 px-3">
+    <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden flex flex-col">
+      <a href="#/" class="sb-brand mb-4 flex items-center gap-2.5">
         <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-base font-bold" style="background:linear-gradient(90deg,#fff,${accent});-webkit-background-clip:text;background-clip:text;color:transparent">QU<span>4</span>SAR</span>
+        <span class="ml-auto text-[9px] font-bold tracking-widest uppercase" style="color:${accent}">Academy</span>
       </a>
 
-      <div class="mb-4 flex items-center gap-3 rounded-lg bg-zinc-900/50 px-3 py-2">
-        <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold" style="background:${accent}20;color:${accent}">
+      <div class="sb-profile mb-4 flex items-center gap-3">
+        <div class="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-sm font-bold ring-2 ring-[#8B5CF6]/30" style="background:${accent}20;color:${accent}">
           ${profile?.avatar_url
             ? `<img src="${escapeHtml(profile.avatar_url)}" alt="" class="h-full w-full object-cover" />`
             : escapeHtml(userName.charAt(0).toUpperCase())
           }
         </div>
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium text-white">${escapeHtml(userName)}</p>
-          <p class="text-xs text-zinc-500">${escapeHtml(userRole)}</p>
+          <p class="truncate text-sm font-semibold text-white">${escapeHtml(userName)}</p>
+          <span class="mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style="background:${accent}18;color:${accent}">${escapeHtml(userRole)}</span>
         </div>
       </div>
 
@@ -136,7 +137,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         <p class="font-medium mb-1">Vista previa: ${previewRole === 'student' ? 'Alumno' : 'Player'}</p>
         <button id="exit-preview" class="underline opacity-80 hover:opacity-100">Salir de vista previa</button>
       </div>` : ''}
-      <nav class="flex flex-col gap-1">
+      <nav class="sb-nav flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-1">
         ${itemsHtml}
       </nav>
 
@@ -148,9 +149,9 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         </a>
       </div>` : ''}
 
-      <div class="mt-auto flex flex-col gap-1 pt-4">
+      <div class="mt-2 flex flex-col gap-1 border-t border-white/5 pt-3">
         <a href="#/settings"
-           class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
+           class="sb-nav-link flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
           ${Icon('settings', 14)} Personalizar
         </a>
       </div>
@@ -175,7 +176,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
       </div>
     </div>` : `
     <button id="logout-btn"
-       class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl bg-zinc-900/90 px-4 py-3 text-sm text-zinc-400 shadow-lg backdrop-blur-md transition hover:bg-red-600 hover:text-white border border-zinc-800">
+       class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl bg-zinc-900/95 px-4 py-3 text-sm text-zinc-400 shadow-lg backdrop-blur-md transition hover:bg-red-600 hover:text-white border border-white/10 hover:border-red-500/40">
       ${Icon('logOut', 18)}
       <span>Cerrar sesión</span>
     </button>`}`

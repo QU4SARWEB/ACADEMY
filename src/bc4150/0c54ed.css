@@ -1207,6 +1207,74 @@ button:focus-visible, a:focus-visible {
 .table-wrap tbody tr:last-child td { border-bottom: 0; }
 .table-wrap tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
+/* --- Sidebar refinada --- */
+#sidebar {
+  background:
+    radial-gradient(120% 40% at 50% 0%, rgba(139, 92, 246, 0.08), transparent 60%),
+    linear-gradient(180deg, #0c0c10, #09090c);
+  border-right: 1px solid rgba(139, 92, 246, 0.12);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+}
+#sidebar .sb-brand {
+  position: relative;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14), rgba(139, 92, 246, 0.02));
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+#sidebar .sb-brand:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.15);
+}
+#sidebar .sb-profile {
+  position: relative;
+  border-radius: 0.9rem;
+  padding: 0.85rem 0.85rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+#sidebar .sb-profile::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 0.9rem;
+  background: linear-gradient(120deg, transparent 30%, rgba(139, 92, 246, 0.25), transparent 70%);
+  pointer-events: none;
+  opacity: 0.5;
+}
+#sidebar .sb-nav-link {
+  position: relative;
+  border-radius: 0.55rem;
+  font-weight: 500;
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+#sidebar .sb-nav-link:hover {
+  transform: translateX(2px);
+}
+#sidebar .sb-nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 3px;
+  background: var(--accent, #8b5cf6);
+  box-shadow: 0 0 8px var(--accent, #8b5cf6);
+}
+#sidebar .sb-nav-link.active {
+  font-weight: 600;
+}
+#sidebar .sb-section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
 /* --- Responsive --- */
 @media (max-width: 900px) {
   .nav-b__links { display: none; }
