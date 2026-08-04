@@ -134,6 +134,23 @@ export function renderHome(session?: any): string {
       ${waves()}
 
       <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
+        <section class="public-stats mx-auto max-w-5xl px-6 reveal" style="--i:0">
+          <div id="public-stats" class="stats-bar">
+            <div class="stat">
+              <div class="stat__num" data-stat-value="visits">—</div>
+              <div class="stat__label">Visitas</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num" data-stat-value="students">—</div>
+              <div class="stat__label">Alumnos</div>
+            </div>
+            <div class="stat">
+              <div class="stat__num" data-stat-value="registrations">—</div>
+              <div class="stat__label">Registros</div>
+            </div>
+          </div>
+        </section>
+
         <!-- Briefing -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
            <div class="flex flex-col gap-2 mb-10 reveal">
@@ -393,6 +410,7 @@ export function renderHome(session?: any): string {
 
 export async function mountHome(): Promise<void> {
   mountPublicNav()
+  void loadPublicStats()
 
   // Efecto de máquina de escribir en el hero
   const tw = document.querySelector<HTMLElement>('.typewriter')
@@ -488,4 +506,41 @@ export async function mountHome(): Promise<void> {
       })
     }
   }
+}
+
+async function loadPublicStats(): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10)
+  const visitKey = 'qu4sar-public-visit-day'
+  const countedToday = localStorage.getItem(visitKey) === today
+  const rpc = countedToday ? 'get_public_site_stats' : 'register_public_site_visit'
+  const { data, error } = await supabase.rpc(rpc)
+  if (error || !data) return
+
+  const stats = Array.isArray(data) ? data[0] : data
+  if (!stats) return
+  if (!countedToday) localStorage.setItem(visitKey, today)
+
+  const values: Record<string, number> = {
+    visits: Number(stats.visits) || 0,
+    students: Number(stats.students) || 0,
+    registrations: Number(stats.registrations) || 0,
+  }
+
+  Object.entries(values).forEach(([key, value]) => {
+    const element = document.querySelector<HTMLElement>(`[data-stat-value="${key}"]`)
+    if (!element) return
+    animateStat(element, value)
+  })
+}
+
+function animateStat(element: HTMLElement, target: number): void {
+  const duration = 900
+  const start = performance.now()
+  const tick = (now: number) => {
+    const progress = Math.min((now - start) / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    element.textContent = Math.round(target * eased).toLocaleString('es-PE')
+    if (progress < 1) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
 }

@@ -2729,3 +2729,13 @@ textarea {
     transition: none !important;
   }
 }
+
+.public-stats .stats-bar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 420px) {
+  .public-stats .stats-bar {
+    grid-template-columns: 1fr;
+  }
+}
