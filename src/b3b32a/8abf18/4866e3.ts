@@ -28,12 +28,9 @@ export async function initCoachDashboard(): Promise<void> {
       .eq('id', session.user.id)
       .maybeSingle()
 
-    // Auto-delete accounts with expired payments older than 5 days
-    try {
-      await supabase.rpc('delete_expired_users')
-    } catch (e) {
-      // non-critical, ignore
-    }
+    // Nota: se desactivó delete_expired_users (borraba cuentas de alumnos
+    // con pagos vencidos, incluidos alumnos activos). Con el sistema mensual
+    // los pagos pasan a pending/expired pero la cuenta se conserva.
 
     // Build enrollment-based filter for assigned courses
     let assignedEnrollIds: string[] | undefined
