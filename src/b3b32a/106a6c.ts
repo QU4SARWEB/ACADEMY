@@ -115,7 +115,7 @@ export function renderHome(session?: any): string {
       ${renderPublicNavbar(session, { active: 'home' })}
 
       <!-- Notificación flotante: Valorant Mobile -->
-      <div class="alert-toast fixed right-4 top-24 z-[70] w-[300px]">
+      <div class="alert-toast fixed right-4 top-36 z-[70] w-[300px]">
         <div class="alert-toast__box rounded-2xl border border-[#8B5CF6]/35 bg-[#141019]/95 p-4 shadow-2xl shadow-[#8B5CF6]/20 backdrop-blur-md">
           <div class="flex items-start gap-3">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-[#C4B5FD]">${Icon('smartphone', 18)}</span>
