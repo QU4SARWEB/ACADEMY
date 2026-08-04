@@ -19,7 +19,7 @@ function waves(): string {
   return `
     <div class="relative z-10 h-24 md:h-32 -mb-[1px] overflow-hidden pointer-events-none">
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#6D28D9" opacity="0.2" d="M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z">
+        <path fill="#4C1D95" opacity="0.2" d="M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z">
           <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
             M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z;
             M0,40 C80,80 160,0 240,40 C320,80 400,0 480,40 C560,80 640,0 720,40 C800,80 880,0 960,40 V120 H0 Z;
@@ -28,7 +28,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#6D28D9" opacity="0.45" d="M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z">
+        <path fill="#4C1D95" opacity="0.45" d="M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z">
           <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
             M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z;
             M0,43 C80,83 160,3 240,43 C320,83 400,3 480,43 C560,83 640,3 720,43 C800,83 880,3 960,43 V120 H0 Z;
@@ -37,7 +37,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#6D28D9" opacity="0.75" d="M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z">
+        <path fill="#4C1D95" opacity="0.75" d="M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z">
           <animate attributeName="d" dur="4.5s" repeatCount="indefinite" values="
             M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z;
             M0,47 C80,87 160,7 240,47 C320,87 400,7 480,47 C560,87 640,7 720,47 C800,87 880,7 960,47 V120 H0 Z;
@@ -46,7 +46,7 @@ function waves(): string {
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#6D28D9" opacity="1" d="M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z">
+        <path fill="#4C1D95" opacity="1" d="M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z">
           <animate attributeName="d" dur="3s" repeatCount="indefinite" values="
             M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z;
             M0,50 C80,90 160,10 240,50 C320,90 400,10 480,50 C560,90 640,10 720,50 C800,90 880,10 960,50 V120 H0 Z;
@@ -100,7 +100,7 @@ export function renderHome(session?: any): string {
 
       ${waves()}
 
-      <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#6D28D9 0%,#1e0b2e 25%,#0A0A0A 65%)">
+      <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
 
         <!-- Briefing -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
