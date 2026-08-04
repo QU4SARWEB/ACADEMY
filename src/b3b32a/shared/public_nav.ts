@@ -165,8 +165,8 @@ export function mountPublicNav(): void {
     })
   })
 
-  // Ocultar al bajar / mostrar al subir (navbar + cintillo)
-  const hideEls = document.querySelectorAll<HTMLElement>('.nav-b, .discord-banner')
+  // Ocultar al bajar / mostrar al subir (navbar + cintillo + notificación)
+  const hideEls = document.querySelectorAll<HTMLElement>('.nav-b, .discord-banner, .alert-toast')
   if (hideEls.length > 0) {
     let lastY = window.scrollY
     const onScroll = () => {

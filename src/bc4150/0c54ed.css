@@ -155,11 +155,13 @@ button:focus-visible, a:focus-visible {
 
 /* --- Navbar pública --- */
 .nav-b,
-.discord-banner {
+.discord-banner,
+.alert-toast {
   transition: transform 0.35s ease;
 }
 .nav-b.nav-hidden,
-.discord-banner.nav-hidden {
+.discord-banner.nav-hidden,
+.alert-toast.nav-hidden {
   transform: translateY(-100%);
 }
 .nav-b {
