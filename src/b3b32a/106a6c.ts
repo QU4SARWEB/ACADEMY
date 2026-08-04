@@ -133,9 +133,9 @@ export function renderHome(session?: any): string {
 
       ${waves()}
 
-      <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
+       <div class="relative z-10 pt-2 md:pt-4" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
         <!-- Briefing -->
-        <section class="mx-auto mt-10 md:mt-14 max-w-5xl px-6">
+        <section class="mx-auto mt-4 md:mt-8 max-w-5xl px-6">
            <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">El briefing</span>
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
