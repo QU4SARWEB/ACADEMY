@@ -451,18 +451,22 @@ async function renderCoachPayments(): Promise<void> {
       const status = pay?.status || (isFree ? 'free' : 'none')
 
       let daysLeft = ''
-      if (pay?.paid_at) {
-        const remaining = Math.max(0, Math.ceil((nextCutDayTs() - Date.now()) / (24 * 60 * 60 * 1000)))
-        daysLeft = remaining > 0 ? ` <span class="text-zinc-500">· ${remaining}d</span>` : ' <span class="text-red-400">· vence hoy</span>'
-      } else if (pay?.created_at && pay?.status === 'pending') {
-        const diff = nextPayDayTs() - Date.now()
-        if (diff > 0) {
-          const d = Math.floor(diff / (24 * 60 * 60 * 1000))
-          const h = Math.floor((diff % (24 * 60 * 60 * 1000)) / 3600000)
-          daysLeft = ` <span class="text-xs text-yellow-400">· ${d}d ${h}h</span>`
-        } else {
-          daysLeft = ' <span class="text-xs text-red-400">· vencido</span>'
-        }
+      const daysTo = (targetTs: number, empty: string) => {
+        const diff = targetTs - Date.now()
+        if (diff <= 0) return ` <span class="text-red-400">· vencido</span>`
+        const d = Math.floor(diff / (24 * 60 * 60 * 1000))
+        const h = Math.floor((diff % (24 * 60 * 60 * 1000)) / 3600000)
+        return d > 0 ? ` <span>· ${d}d ${h}h</span>` : empty
+      }
+      if (pay?.status === 'paid') {
+        daysLeft = daysTo(nextCutDayTs(), ' <span class="text-red-400">· vence hoy</span>')
+      } else if (pay?.status === 'scholarship') {
+        // Los becados se renuevan igual el día 2; mostramos hasta el corte (29)
+        daysLeft = daysTo(nextCutDayTs(), ' <span class="text-red-400">· vence hoy</span>')
+      } else if (pay?.status === 'pending') {
+        daysLeft = daysTo(nextPayDayTs(), ' <span class="text-red-400">· vencido</span>')
+      } else if (pay?.status === 'expired') {
+        daysLeft = ' <span class="text-red-400">· vencido</span>'
       }
 
       const badge = isFree
@@ -472,10 +476,10 @@ async function renderCoachPayments(): Promise<void> {
           : pay.status === 'paid'
             ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado${daysLeft}</span>`
             : pay.status === 'pending'
-              ? '<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente</span>'
+              ? `<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente${daysLeft}</span>`
               : pay.status === 'scholarship'
-                ? '<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca</span>'
-                : '<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido</span>'
+                ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca${daysLeft}</span>`
+                : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido${daysLeft}</span>`
 
       return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
