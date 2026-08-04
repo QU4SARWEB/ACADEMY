@@ -50,6 +50,8 @@ const ICONS: Record<string, string> = {
   rotate: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
   smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
   video: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
+  trendingUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  award: '<path d="M19 5c1.7 0 3 1.3 3 3 0 4-4 5-4 5H6S2 12 2 8c0-1.7 1.3-3 3-3"/><path d="M12 12v6"/><path d="M9 22h6"/><path d="m8 14-1 8"/><path d="m16 14 1 8"/>',
 }
 
 export function Icon(name: string, size = 18): string {

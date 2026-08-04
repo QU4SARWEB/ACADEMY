@@ -355,6 +355,19 @@ button:focus-visible, a:focus-visible {
   grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
 }
+.roster-grid--coaches {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+.roster-grid--coaches .roster-card__poster {
+  aspect-ratio: 3 / 4;
+}
+.roster-grid--coaches .roster-card__name {
+  font-size: 1.3rem;
+}
+.roster-grid--coaches .roster-card__poster .poster-fallback {
+  font-size: 3.5rem;
+}
 .roster-card {
   position: relative;
   display: flex;
@@ -1327,6 +1340,7 @@ button:focus-visible, a:focus-visible {
   .nav-b__links { display: none; }
   .nav-b__burger { display: flex; }
   .roster-grid { grid-template-columns: 1fr; }
+  .roster-grid--coaches { grid-template-columns: 1fr; }
   .offer-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .equotes-grid { grid-template-columns: 1fr; }
