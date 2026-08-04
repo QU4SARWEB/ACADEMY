@@ -86,7 +86,10 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   const currentHash = location.hash.slice(1)
 
   let itemsHtml = ''
-  const groupLabels = ['Academia', 'Entrenamiento', 'Gestión', 'Cuenta']
+  // Etiquetas de grupo alineadas al contenido de cada sección
+  const coachGroupLabels = ['Resumen', 'Academia', 'Entrenamiento', 'Evaluación', 'Comunidad', 'Cuenta']
+  const studentGroupLabels = ['Resumen', 'Academia', 'Entrenamiento', 'Comunidad', 'Cuenta']
+  const groupLabels = isCoach ? coachGroupLabels : studentGroupLabels
   for (let gi = 0; gi < groups.length; gi++) {
     if (gi > 0) itemsHtml += `<div class="mt-2 mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest" style="color:${accent}66">${groupLabels[gi] || ''}</div>`
     for (const it of groups[gi]) {
