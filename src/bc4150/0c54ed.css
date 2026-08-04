@@ -2477,3 +2477,255 @@ textarea {
     line-height: 1.45;
   }
 }
+
+/* ============ Public entry motion ============ */
+
+@keyframes public-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes public-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.public-enter {
+  opacity: 0;
+  animation: public-fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.public-enter--banner {
+  animation-name: public-fade-in;
+  animation-duration: 0.5s;
+}
+
+.public-enter--nav {
+  animation-name: public-fade-in;
+  animation-delay: 0.08s;
+}
+
+.public-enter--card {
+  animation-delay: 0.1s;
+}
+
+.public-enter--footer {
+  animation-delay: 0.08s;
+}
+
+.nav-b.public-enter.nav-hidden,
+.discord-banner.public-enter.nav-hidden {
+  animation: none;
+  transform: translateY(-100%);
+}
+
+.reveal {
+  will-change: opacity, transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-enter,
+  .reveal,
+  .ember,
+  .bubble,
+  .alert-toast,
+  .typewriter-caret {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .public-enter,
+  .reveal,
+  .reveal.in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ============ Varied public motion ============ */
+
+.public-page .reveal {
+  transform: translateY(18px) scale(0.985);
+}
+
+.public-page .reveal.in {
+  transform: translateY(0) scale(1);
+}
+
+.public-page .steps-grid .reveal:nth-child(2n),
+.public-page .features-grid .reveal:nth-child(2n),
+.public-page .equotes-grid .reveal:nth-child(2n) {
+  transform: translateX(-22px) scale(0.98);
+}
+
+.public-page .steps-grid .reveal:nth-child(3n),
+.public-page .features-grid .reveal:nth-child(3n),
+.public-page .equotes-grid .reveal:nth-child(3n) {
+  transform: translateY(25px) scale(0.97);
+}
+
+.public-page .roster-grid .reveal:nth-child(2n) {
+  transform: translateY(24px) rotate(0.5deg) scale(0.98);
+}
+
+.public-page .roster-grid .reveal:nth-child(3n) {
+  transform: translateX(22px) scale(0.98);
+}
+
+.public-page .offer-grid .reveal:nth-child(2) {
+  transform: translateX(24px) scale(0.98);
+}
+
+.public-page .compare__row.reveal:nth-child(2n) {
+  transform: translateX(-16px);
+}
+
+.public-page .compare__row.reveal:nth-child(3n) {
+  transform: translateX(16px);
+}
+
+.public-page .community__perk.reveal:nth-child(2n) {
+  transform: translateX(18px) scale(0.98);
+}
+
+.public-page .community__perk.reveal:nth-child(3n) {
+  transform: translateX(-18px) scale(0.98);
+}
+
+.public-page .steps-grid .reveal.in:nth-child(2n),
+.public-page .steps-grid .reveal.in:nth-child(3n),
+.public-page .features-grid .reveal.in:nth-child(2n),
+.public-page .features-grid .reveal.in:nth-child(3n),
+.public-page .equotes-grid .reveal.in:nth-child(2n),
+.public-page .equotes-grid .reveal.in:nth-child(3n),
+.public-page .roster-grid .reveal.in:nth-child(2n),
+.public-page .roster-grid .reveal.in:nth-child(3n),
+.public-page .offer-grid .reveal.in:nth-child(2),
+.public-page .compare__row.reveal.in:nth-child(2n),
+.public-page .compare__row.reveal.in:nth-child(3n),
+.public-page .community__perk.reveal.in:nth-child(2n),
+.public-page .community__perk.reveal.in:nth-child(3n) {
+  transform: translateY(0) scale(1);
+}
+
+.public-page .reveal.in {
+  transition-duration: 0.72s;
+}
+
+.public-page .feature,
+.public-page .step,
+.public-page .offer-card,
+.public-page .equote,
+.public-page .faq-b details,
+.public-profile #profile-card > *,
+.public-profile > div > div > div:last-child > * {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.public-page .feature:hover,
+.public-page .step:hover,
+.public-page .equote:hover,
+.public-page .faq-b details:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.38);
+  box-shadow: 0 14px 34px rgba(10, 4, 24, 0.28);
+}
+
+.public-page .offer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 38px rgba(139, 92, 246, 0.14);
+}
+
+.public-page .news-banner:hover {
+  border-color: rgba(139, 92, 246, 0.58);
+  box-shadow: 0 18px 46px rgba(72, 28, 124, 0.2);
+}
+
+.public-profile.is-ready #profile-card > *,
+.public-profile.is-ready > div > div > div:last-child > * {
+  opacity: 0;
+  animation: public-fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.public-profile.is-ready #profile-card > *:nth-child(2n),
+.public-profile.is-ready > div > div > div:last-child > *:nth-child(2n) {
+  animation-name: public-profile-slide-left;
+}
+
+.public-profile.is-ready #profile-card > *:nth-child(3n),
+.public-profile.is-ready > div > div > div:last-child > *:nth-child(3n) {
+  animation-name: public-profile-slide-right;
+}
+
+.public-profile.is-ready #profile-card > *:nth-child(1),
+.public-profile.is-ready > div > div > div:last-child > *:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.public-profile.is-ready #profile-card > *:nth-child(2),
+.public-profile.is-ready > div > div > div:last-child > *:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.public-profile.is-ready #profile-card > *:nth-child(3),
+.public-profile.is-ready > div > div > div:last-child > *:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+@keyframes public-profile-slide-left {
+  from { opacity: 0; transform: translateX(-22px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes public-profile-slide-right {
+  from { opacity: 0; transform: translateX(22px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-page .reveal,
+  .public-page .reveal.in,
+  .public-page .feature:hover,
+  .public-page .step:hover,
+  .public-page .offer-card:hover,
+  .public-page .equote:hover,
+  .public-page .faq-b details:hover {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .public-profile.is-ready #profile-card > *,
+  .public-profile.is-ready > div > div > div:last-child > * {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Keep every public block hidden until its reveal state has painted. */
+.public-page .reveal {
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-duration: 0.8s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 100ms);
+}
+
+.public-page .reveal.in {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-page .reveal,
+  .public-page .reveal.in {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

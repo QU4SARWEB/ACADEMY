@@ -14,7 +14,7 @@ const SOCIALS = {
 
 export function renderDiscordBanner(): string {
   return `
-    <a class="discord-banner" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">
+    <a class="discord-banner public-enter public-enter--banner" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">
       <span class="dot pulse-dot"></span>
       <span>La comunidad vive en el Discord: guías, eventos, clips, tickets y busco-equipo.</span>
       <em>Unirse →</em>
@@ -36,7 +36,7 @@ export function renderPublicNavbar(session?: any, opts: { active?: string; links
     : []
 
   return `
-    <nav class="nav-b">
+    <nav class="nav-b public-enter public-enter--nav">
       <a class="mark brand-logo" href="#/">
         <img src="qu4sar.ico" alt="QU4SAR" width="32" height="32" />
         <span>QU<span class="q">4</span>SAR</span>
@@ -75,7 +75,7 @@ export function renderPublicNavbar(session?: any, opts: { active?: string; links
 
 export function renderPublicFooter(): string {
   return `
-    <footer class="foot-b">
+    <footer class="foot-b public-enter public-enter--footer">
       <div class="foot-b__inner">
         <div class="brand-col">
           <a class="mark" href="#/">
@@ -182,11 +182,23 @@ export function mountPublicNav(): void {
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in')
-        } else {
-          entry.target.classList.remove('in')
+        const target = entry.target as HTMLElement
+        if (!entry.isIntersecting) {
+          delete target.dataset.revealPending
+          target.classList.remove('in')
+          continue
         }
+
+        // Let the hidden state paint before starting the fade-in transition.
+        target.dataset.revealPending = '1'
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (target.isConnected && target.dataset.revealPending === '1') {
+              delete target.dataset.revealPending
+              target.classList.add('in')
+            }
+          })
+        })
       }
     }, { threshold: 0.2 })
     document.querySelectorAll('.reveal').forEach(el => io.observe(el))

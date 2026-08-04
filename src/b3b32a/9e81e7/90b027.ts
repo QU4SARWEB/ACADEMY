@@ -212,7 +212,7 @@ function renderProfileCard(
     <p class="text-sm text-zinc-500">Cargando perfil...</p>
   </div>
 </div>
-<div class="min-h-screen bg-[#0A0A0A]" id="profile-page" style="opacity:0;transition:opacity .4s">
+<div class="public-page public-profile min-h-screen bg-[#0A0A0A]" id="profile-page" style="opacity:0;transition:opacity .4s">
   <header class="nav-b">
     <a href="#/" class="mark brand-logo"><img src="qu4sar.ico" alt="QU4SAR" width="32" height="32" /><span>QU<span class="q">4</span>SAR</span></a>
     <nav class="flex items-center gap-4">
@@ -627,7 +627,10 @@ export async function initPublicProfile(): Promise<void> {
         const loadingEl = document.getElementById('profile-loading')
         const pageEl = document.getElementById('profile-page')
         if (loadingEl) loadingEl.remove()
-        if (pageEl) pageEl.style.opacity = '1'
+        if (pageEl) {
+          pageEl.style.opacity = '1'
+          pageEl.classList.add('is-ready')
+        }
       }
       const imgs = document.querySelectorAll<HTMLImageElement>('#profile-page img')
       if (imgs.length === 0) { fadeIn(); return }

@@ -77,7 +77,7 @@ function waves(): string {
 
 function hero(session: any): string {
   return `
-    <header class="relative z-10 mx-auto flex min-h-[62vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 text-center">
+     <header class="public-enter public-enter--hero relative z-10 mx-auto flex min-h-[62vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 text-center">
       ${embers()}
       <div class="animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
@@ -102,7 +102,7 @@ function hero(session: any): string {
 
 export function renderHome(session?: any): string {
   return `
-    <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
+     <div class="public-page relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <style>@keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }</style>
       <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.png") center/cover no-repeat fixed; z-index:-2'></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.35); z-index:-1"></div>
@@ -136,7 +136,7 @@ export function renderHome(session?: any): string {
       <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
         <!-- Briefing -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
-          <div class="flex flex-col gap-2 mb-10">
+           <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">El briefing</span>
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
           </div>
@@ -163,7 +163,7 @@ export function renderHome(session?: any): string {
 
         <!-- Cómo funciona -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
-          <div class="flex flex-col gap-2 mb-10">
+           <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">El método</span>
             <h2 class="s-title">Cómo <em>funciona.</em></h2>
           </div>
@@ -184,7 +184,7 @@ export function renderHome(session?: any): string {
 
         <!-- Coaches -->
         <section id="coaches" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
-          <div class="flex flex-col gap-2 mb-10">
+           <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">El staff</span>
             <h2 class="s-title">Entrena con <em>nuestros coaches.</em></h2>
             <p class="s-title-sub">Profesionales con experiencia competitiva real, listos para llevarte al siguiente nivel.</p>
@@ -210,7 +210,7 @@ export function renderHome(session?: any): string {
 
         <!-- Precios / Offers -->
         <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
-          <div class="flex flex-col gap-2 mb-10 text-center items-center">
+           <div class="flex flex-col gap-2 mb-10 text-center items-center reveal">
             <span class="lbl">Mensualidad única · acceso total</span>
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
             <p class="s-title-sub">Una mensualidad simple y flexible. Accedes a tu curso por rango y a todos los beneficios de la academia mientras entrenes con nosotros.</p>
@@ -280,7 +280,7 @@ export function renderHome(session?: any): string {
 
         <!-- Features: Qué incluye -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
-          <div class="flex flex-col gap-2 mb-10">
+           <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">Qué incluye</span>
             <h2 class="s-title">Todo lo que necesitas <em>para subir.</em></h2>
           </div>
@@ -355,7 +355,7 @@ export function renderHome(session?: any): string {
 
         <!-- FAQ -->
         <section id="faq" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
-          <div class="flex flex-col gap-2 mb-10">
+           <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">FAQ</span>
             <h2 class="s-title">Lo que <em>siempre preguntan.</em></h2>
           </div>

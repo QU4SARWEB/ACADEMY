@@ -3,7 +3,7 @@ import { renderDiscordBanner, renderPublicNavbar, renderPublicFooter, mountPubli
 
 export function renderAbout(session?: any): string {
   return `
-    <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
+     <div class="public-page relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
         <div class="absolute -left-32 top-1/4 h-64 w-64 rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
         <div class="absolute -right-32 bottom-1/4 h-96 w-96 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
@@ -13,7 +13,7 @@ export function renderAbout(session?: any): string {
       ${renderPublicNavbar(session, { active: 'about', links: false })}
 
       <section class="relative z-10 mx-auto max-w-4xl px-6 pt-16 pb-28">
-        <div class="text-center mb-14">
+         <div class="text-center mb-14 reveal">
           <span class="lbl">Sobre nosotros</span>
           <h1 class="s-title">Sobre <em>QU4SAR</em></h1>
           <p class="s-title-sub mx-auto">Conoce nuestra historia, equipo y visión para el futuro de los esports.</p>
@@ -72,8 +72,8 @@ export function renderAbout(session?: any): string {
               { name: 'Coaches', role: 'Entrenadores certificados', icon: 'users' },
               { name: 'Analistas', role: 'Especialistas en rendimiento', icon: 'zap' },
               { name: 'Mentores', role: 'Jugadores con experiencia competitiva', icon: 'trophy' },
-            ].map(m => `
-              <div class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center">
+             ].map((m, i) => `
+               <div class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-center reveal" style="--i:${i}">
                 <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#8B5CF6]/20">
                   ${Icon(m.icon, 24)}
                 </div>

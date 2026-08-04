@@ -6,7 +6,7 @@ import { renderDiscordBanner, renderPublicNavbar, mountPublicNav } from '@/b3b32
 
 function authShell(body: string): string {
   return `
-    <div class="relative min-h-screen bg-[#0A0A0A]">
+     <div class="public-page relative min-h-screen bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
         <div class="absolute -left-32 top-1/4 h-64 w-64 rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
       </div>
@@ -24,7 +24,7 @@ export function renderResetPassword(): string {
 
   if (isRecovery) {
     return authShell(`
-      <div class="glass relative w-full max-w-sm rounded-xl p-8">
+       <div class="glass relative w-full max-w-sm rounded-xl p-8 public-enter public-enter--card">
         <div class="mb-6 text-center">
           <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
           <h1 class="mt-2 font-heading text-lg font-bold text-white">Nueva contraseña</h1>
@@ -46,7 +46,7 @@ export function renderResetPassword(): string {
   }
 
   return authShell(`
-      <div class="glass relative w-full max-w-sm rounded-xl p-8">
+       <div class="glass relative w-full max-w-sm rounded-xl p-8 public-enter public-enter--card">
         <div class="mb-6 text-center">
           <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
           <h1 class="mt-2 font-heading text-lg font-bold text-white">Recuperar contraseña</h1>

@@ -19,7 +19,7 @@ const RANKS = [
 
 export function renderRegister(): string {
   return `
-    <div class="relative min-h-screen bg-[#0A0A0A]">
+     <div class="public-page relative min-h-screen bg-[#0A0A0A]">
       <div class="pointer-events-none fixed inset-0">
         <div class="absolute -right-32 top-1/4 h-64 w-64 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
       </div>
@@ -28,7 +28,7 @@ export function renderRegister(): string {
       ${renderPublicNavbar(undefined, { active: 'register', links: false })}
 
       <div class="relative z-10 flex min-h-[calc(100vh-110px)] items-center justify-center px-4 pb-16">
-      <div class="glass relative w-full max-w-sm rounded-xl p-8">
+       <div class="glass relative w-full max-w-sm rounded-xl p-8 public-enter public-enter--card">
         <div class="mb-6 text-center">
           <img src="qu4sar.ico" alt="QU4SAR" class="mx-auto h-12 w-12" />
           <h1 class="mt-3 font-heading text-lg font-bold text-white">Crear cuenta</h1>
