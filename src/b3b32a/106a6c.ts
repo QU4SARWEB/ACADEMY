@@ -183,8 +183,28 @@ export function renderHome(session?: any): string {
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
             <p class="s-title-sub">Una mensualidad simple y flexible. Accedes a tu curso por rango y a todos los beneficios de la academia mientras entrenes con nosotros.</p>
           </div>
-          <div class="offer-grid">
-            <article class="offer-card offer-card--free reveal" style="--i:0">
+          <div class="offer-wrap">
+            <div class="offer-side reveal" style="--i:0">
+              <div class="offer-side__card">
+                <span class="os-label">Incluye</span>
+                ${[
+                  { icon: 'video', text: 'Clases grabadas y repaso ilimitado' },
+                  { icon: 'checkCircle', text: 'Material y guías por nivel' },
+                  { icon: 'users', text: 'Comunidad activa en Discord' },
+                  { icon: 'target', text: 'Scrims y torneos internos' },
+                ].map(o => `
+                  <div class="os-item">${Icon(o.icon, 15)}<span>${escapeHtml(o.text)}</span></div>`).join('')}
+              </div>
+              <div class="offer-side__card">
+                <span class="os-label">Ritmo de avance</span>
+                <div class="os-item"><span class="offer-side__num">3<em>×</em></span><span>Clases grabadas por semana</span></div>
+                <div class="os-item"><span class="offer-side__num">1</span><span>Sesión en vivo con coach</span></div>
+                <div class="os-item"><span class="offer-side__num">∞</span><span>Acceso al material del curso</span></div>
+              </div>
+            </div>
+
+            <div class="offer-grid">
+            <article class="offer-card offer-card--free reveal" style="--i:1">
               <h3 class="offer-card__title">Posicionamiento</h3>
               <div class="offer-card__price"><span class="offer-card__amount amount-free">Gratis</span></div>
               <p class="offer-card__blurb">Evaluación de nivel para saber dónde empiezas.</p>
@@ -195,7 +215,7 @@ export function renderHome(session?: any): string {
               <p class="offer-card__hint">Solo el primer paso.</p>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Comenzar gratis</a></div>
             </article>
-            <article class="offer-card featured reveal" style="--i:1">
+            <article class="offer-card featured reveal" style="--i:2">
               <span class="offer-card__badge">Más elegido</span>
               <span class="offer-card__badge--secondary">Mejor valor</span>
               <h3 class="offer-card__title">Cursos completos</h3>
@@ -207,6 +227,7 @@ export function renderHome(session?: any): string {
                   'Plan de estudios progresivo diseñado para tu nivel (Rookie a Pro)',
                   'Seguimiento 1 a 1 con coaches certificados',
                   'Scrims y evaluaciones semanales para medir tu avance',
+                  'Clases grabadas y material para repasar cuando quieras',
                   'Análisis de tu gameplay con feedback accionable',
                   'Comunidad exclusiva en Discord con eventos y torneos',
                   'Certificado oficial QU4SAR al completar',
@@ -216,6 +237,22 @@ export function renderHome(session?: any): string {
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
+            </div>
+
+            <div class="offer-side reveal" style="--i:3">
+              <div class="offer-side__card">
+                <span class="os-label">Plataformas</span>
+                <div class="os-item">${Icon('play', 15)}<span>PC · Valorant</span></div>
+                <div class="os-item">${Icon('smartphone', 15)}<span>Valorant Mobile · iOS/Android</span></div>
+                <div class="os-item">${Icon('trophy', 15)}<span>Ranked y competitivo</span></div>
+              </div>
+              <div class="offer-side__card">
+                <span class="os-label">A quién va dirigido</span>
+                <div class="os-item">${Icon('target', 15)}<span>De Hierro a Radiante</span></div>
+                <div class="os-item">${Icon('clock', 15)}<span>Entrena a tu ritmo</span></div>
+                <div class="os-item">${Icon('shield', 15)}<span>Garantía de método</span></div>
+              </div>
+            </div>
           </div>
 
           <!-- Mini comparador -->
@@ -229,6 +266,7 @@ export function renderHome(session?: any): string {
               { label: 'Evaluación de nivel inicial', free: true, paid: true },
               { label: 'Examen teórico y práctico', free: true, paid: true },
               { label: 'Plan de estudios por rango', free: false, paid: true },
+              { label: 'Clases grabadas y material', free: false, paid: true },
               { label: 'Seguimiento con coaches', free: false, paid: true },
               { label: 'Scrims y torneos', free: false, paid: true },
               { label: 'Comunidad exclusiva', free: false, paid: true },
