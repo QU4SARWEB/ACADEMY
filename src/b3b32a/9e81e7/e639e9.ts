@@ -185,7 +185,8 @@ async function renderStudentPayments(userId: string): Promise<void> {
             }
           </div>
           ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${nextPayDayTs()}"></span>` : ''}
-          ${p.status === 'pending' ? `
+          ${p.status === 'expired' ? `<span class="payment-countdown block text-xs mt-1 text-red-400">Vencido — paga para renovar tu suscripción</span>` : ''}
+          ${p.status === 'pending' || p.status === 'expired' ? `
           <div class="flex flex-col gap-2">
             <div class="paypal-btn-container" data-paypal-id="${escapeHtml(p.id)}" data-amount="${p.amount ?? 15}"></div>
             <div class="flex items-center gap-2 text-xs text-zinc-400">
@@ -260,7 +261,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
       errEl.classList.remove('hidden')
       return
     }
-    const { error } = await supabase.from('payments').update({ receipt_url: url }).eq('id', paymentId)
+    const { error } = await supabase.from('payments').update({ receipt_url: url, status: 'pending' }).eq('id', paymentId)
     if (error) {
       const errEl = document.getElementById('receipt-error')!
       errEl.textContent = error.message
