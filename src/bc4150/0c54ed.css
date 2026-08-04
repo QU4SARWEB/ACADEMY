@@ -344,22 +344,22 @@ button:focus-visible, a:focus-visible {
 .bubbles {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 .bubble {
   position: absolute;
   bottom: 10%;
   border-radius: 9999px;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.5), rgba(139, 92, 246, 0.25) 55%, rgba(139, 92, 246, 0));
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), rgba(139, 92, 246, 0.3) 55%, rgba(139, 92, 246, 0));
+  border: 1px solid rgba(139, 92, 246, 0.45);
   animation: bubble-rise linear infinite;
 }
 @keyframes bubble-rise {
   0% { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
-  8% { opacity: 0.9; }
-  55% { opacity: 0.55; }
-  100% { transform: translateY(-340px) translateX(var(--bx, 0px)) scale(1.25); opacity: 0; }
+  8% { opacity: 1; }
+  55% { opacity: 0.6; }
+  100% { transform: translateY(-75vh) translateX(var(--bx, 0px)) scale(1.35); opacity: 0; }
 }
 
 /* --- Tarjetas con entrada escalonada --- */

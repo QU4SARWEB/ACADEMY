@@ -30,7 +30,7 @@ function waves(): string {
     { left: 96, size: 7, dur: 4.9, delay: 0.6, bx: 12 },
   ]
   return `
-    <div class="relative z-10 h-28 md:h-36 -mb-[1px] overflow-hidden pointer-events-none">
+    <div class="relative z-10 h-28 md:h-36 -mb-[1px] overflow-visible pointer-events-none">
       <div class="bubbles">
         ${bubblePos.map(b => `
           <span class="bubble" style="left:${b.left}%;width:${b.size}px;height:${b.size}px;--bx:${b.bx}px;animation-duration:${b.dur}s;animation-delay:${b.delay}s"></span>
@@ -105,7 +105,7 @@ export function renderHome(session?: any): string {
     <div class="relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <style>@keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }</style>
       <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.png") center/cover no-repeat fixed; z-index:-2'></div>
-      <div class="fixed inset-0" style="background: rgba(10,10,10,0.6); z-index:-1"></div>
+      <div class="fixed inset-0" style="background: rgba(10,10,10,0.35); z-index:-1"></div>
       <div class="pointer-events-none fixed inset-0" style="z-index:-1">
         <div class="absolute -left-32 top-1/4 h-72 w-72 rounded-full bg-[#8B5CF6]/15 blur-3xl"></div>
         <div class="absolute -right-32 top-1/2 h-96 w-96 rounded-full bg-[#6D28D9]/15 blur-3xl"></div>
