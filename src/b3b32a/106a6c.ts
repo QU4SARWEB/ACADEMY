@@ -141,7 +141,7 @@ export function renderHome(session?: any): string {
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
           </div>
           <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-center">
-            <div class="hud relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
+            <div class="hud reveal relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
               <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" />
               <div class="absolute inset-0 flex items-center justify-center">
                 <button class="flex flex-col items-center gap-2 text-white/90 transition hover:scale-105" aria-label="Ver briefing">
@@ -152,11 +152,11 @@ export function renderHome(session?: any): string {
               <span class="absolute bottom-3 left-4 text-[11px] text-zinc-400">QU4SAR · Método de entrenamiento</span>
             </div>
             <div>
-              <blockquote class="border-l-2 border-[#8B5CF6] pl-5 text-lg text-zinc-200 leading-relaxed">
+              <blockquote class="reveal border-l-2 border-[#8B5CF6] pl-5 text-lg text-zinc-200 leading-relaxed" style="--i:1">
                 «La diferencia real no era pegar más balas. Era tomar mejores decisiones.»
               </blockquote>
-              <p class="mt-3 text-xs text-zinc-500">Coaches QU4SAR · Footage de partidas oficiales</p>
-              <a href="#/" data-scroll="precios" class="btn btn-ghost mt-6">Empieza 1 a 1 →</a>
+              <p class="reveal mt-3 text-xs text-zinc-500" style="--i:2">Coaches QU4SAR · Footage de partidas oficiales</p>
+              <a href="#/" data-scroll="precios" class="reveal btn btn-ghost mt-6" style="--i:3">Empieza 1 a 1 →</a>
             </div>
           </div>
         </section>
@@ -252,7 +252,7 @@ export function renderHome(session?: any): string {
           </div>
 
           <!-- Mini comparador -->
-          <div class="compare reveal mt-10" style="--i:2">
+          <div class="compare mt-10">
             <div class="compare__head">
               <span>Beneficio</span>
               <span>Gratis</span>
@@ -269,7 +269,7 @@ export function renderHome(session?: any): string {
               { label: 'Comunidad exclusiva', free: false, paid: true },
               { label: 'Certificado oficial', free: false, paid: true },
             ].map((r, i) => `
-              <div class="compare__row">
+              <div class="compare__row reveal" style="--i:${i}">
                 <span>${escapeHtml(r.label)}</span>
                 <span class="${r.free ? 'yes' : 'no'}">${r.free ? '✓' : '—'}</span>
                 <span class="yes ${r.paid ? 'paid' : 'no'}">${r.paid ? '✓' : '—'}</span>
@@ -314,9 +314,9 @@ export function renderHome(session?: any): string {
                 <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Unirse al Discord →</a>
               </div>
             </div>
-            <ul class="community__perks reveal" style="--i:1">
-              ${['#anuncios y #reglas', '#general, #clips y #sugerencias', '#guías y #eventos', '#busco-equipo', '#tickets para soporte', 'Salas de voz para clases y coordinación'].map(c => `
-                <li class="community__perk"><span class="dot"></span>${escapeHtml(c)}</li>`).join('')}
+            <ul class="community__perks">
+              ${['#anuncios y #reglas', '#general, #clips y #sugerencias', '#guías y #eventos', '#busco-equipo', '#tickets para soporte', 'Salas de voz para clases y coordinación'].map((c, i) => `
+                <li class="community__perk reveal" style="--i:${i}"><span class="dot"></span>${escapeHtml(c)}</li>`).join('')}
             </ul>
           </div>
         </section>
@@ -345,11 +345,11 @@ export function renderHome(session?: any): string {
             </div>
           </div>
 
-          <div class="platform-ticker reveal" style="--i:1">
+          <div class="platform-ticker">
             <span class="t-label">Cubre ambas plataformas</span>
-            <span class="t-item active">${Icon('play', 14)} PC</span>
-            <span class="t-item">${Icon('smartphone', 14)} Mobile</span>
-            <span class="t-item">${Icon('trophy', 14)} Competitivo</span>
+            <span class="t-item reveal active" style="--i:0">${Icon('play', 14)} PC</span>
+            <span class="t-item reveal" style="--i:1">${Icon('smartphone', 14)} Mobile</span>
+            <span class="t-item reveal" style="--i:2">${Icon('trophy', 14)} Competitivo</span>
           </div>
         </section>
 
@@ -378,10 +378,10 @@ export function renderHome(session?: any): string {
 
         <!-- Outro -->
         <section class="outro mt-16 md:mt-20">
-          <h2>De cero a Pro. <em>Empezamos cuando quieras.</em></h2>
+          <h2 class="reveal">De cero a Pro. <em>Empezamos cuando quieras.</em></h2>
           <div class="outro__ctas">
-        <a href="#/" data-scroll="coaches" class="btn btn-primary">Ver coaches →</a>
-            <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Unirse al Discord</a>
+            <a href="#/" data-scroll="coaches" class="reveal btn btn-primary" style="--i:1">Ver coaches →</a>
+            <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="reveal btn btn-ghost" style="--i:2">Unirse al Discord</a>
           </div>
         </section>
 
