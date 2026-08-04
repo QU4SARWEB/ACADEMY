@@ -17,40 +17,49 @@ function embers(): string {
 
 function waves(): string {
   return `
-    <div class="relative z-10 h-24 md:h-32 -mb-[1px] overflow-hidden pointer-events-none">
+    <div class="relative z-10 h-28 md:h-36 -mb-[1px] overflow-hidden pointer-events-none">
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#4C1D95" opacity="0.2" d="M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z">
-          <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
-            M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z;
-            M0,40 C80,80 160,0 240,40 C320,80 400,0 480,40 C560,80 640,0 720,40 C800,80 880,0 960,40 V120 H0 Z;
-            M0,40 C80,0 160,80 240,40 C320,0 400,80 480,40 C560,0 640,80 720,40 C800,0 880,80 960,40 V120 H0 Z
+        <defs>
+          <linearGradient id="wv-g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4C1D95"/>
+            <stop offset="55%" stop-color="#2a0a44"/>
+            <stop offset="100%" stop-color="#0A0A0A"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
+        <path fill="url(#wv-g)" opacity="0.25" d="M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z">
+          <animate attributeName="d" dur="5s" repeatCount="indefinite" values="
+            M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z;
+            M0,36 C80,84 160,-8 240,36 C320,84 400,-8 480,36 C560,84 640,-8 720,36 C800,84 880,-8 960,36 V120 H0 Z;
+            M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z
           "/>
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#4C1D95" opacity="0.45" d="M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z">
-          <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
-            M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z;
-            M0,43 C80,83 160,3 240,43 C320,83 400,3 480,43 C560,83 640,3 720,43 C800,83 880,3 960,43 V120 H0 Z;
-            M0,43 C80,3 160,83 240,43 C320,3 400,83 480,43 C560,3 640,83 720,43 C800,3 880,83 960,43 V120 H0 Z
+        <path fill="url(#wv-g)" opacity="0.5" d="M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z">
+          <animate attributeName="d" dur="3.8s" repeatCount="indefinite" values="
+            M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z;
+            M0,40 C80,88 160,4 240,40 C320,88 400,-8 480,40 C560,92 640,4 720,40 C800,88 880,-4 960,40 V120 H0 Z;
+            M0,40 C80,4 160,88 240,40 C320,-8 400,88 480,40 C560,4 640,92 720,40 C800,-4 880,88 960,40 V120 H0 Z
           "/>
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#4C1D95" opacity="0.75" d="M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z">
-          <animate attributeName="d" dur="4.5s" repeatCount="indefinite" values="
-            M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z;
-            M0,47 C80,87 160,7 240,47 C320,87 400,7 480,47 C560,87 640,7 720,47 C800,87 880,7 960,47 V120 H0 Z;
-            M0,47 C80,7 160,87 240,47 C320,7 400,87 480,47 C560,7 640,87 720,47 C800,7 880,87 960,47 V120 H0 Z
+        <path fill="url(#wv-g)" opacity="0.78" d="M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z">
+          <animate attributeName="d" dur="2.6s" repeatCount="indefinite" values="
+            M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z;
+            M0,46 C80,92 160,8 240,46 C320,94 400,6 480,46 C560,92 640,8 720,46 C800,90 880,4 960,46 V120 H0 Z;
+            M0,46 C80,8 160,92 240,46 C320,6 400,94 480,46 C560,8 640,92 720,46 C800,4 880,90 960,46 V120 H0 Z
           "/>
         </path>
       </svg>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
-        <path fill="#4C1D95" opacity="1" d="M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z">
-          <animate attributeName="d" dur="3s" repeatCount="indefinite" values="
-            M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z;
-            M0,50 C80,90 160,10 240,50 C320,90 400,10 480,50 C560,90 640,10 720,50 C800,90 880,10 960,50 V120 H0 Z;
-            M0,50 C80,10 160,90 240,50 C320,10 400,90 480,50 C560,10 640,90 720,50 C800,10 880,90 960,50 V120 H0 Z
+        <path fill="url(#wv-g)" opacity="1" d="M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z">
+          <animate attributeName="d" dur="1.8s" repeatCount="indefinite" values="
+            M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z;
+            M0,52 C80,96 160,12 240,52 C320,98 400,10 480,52 C560,96 640,12 720,52 C800,94 880,8 960,52 V120 H0 Z;
+            M0,52 C80,12 160,96 240,52 C320,10 400,98 480,52 C560,12 640,96 720,52 C800,8 880,94 960,52 V120 H0 Z
           "/>
         </path>
       </svg>
