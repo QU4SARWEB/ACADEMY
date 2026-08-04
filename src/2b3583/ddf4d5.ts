@@ -162,6 +162,15 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
           </select>
         </div>
         <div>
+          <label class="block text-xs font-medium text-zinc-400">Plataforma</label>
+          <select name="platform"
+            class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+            <option value="pc" ${(profile.platform ?? 'pc') === 'pc' ? 'selected' : ''}>PC</option>
+            <option value="mobile" ${profile.platform === 'mobile' ? 'selected' : ''}>Mobile</option>
+          </select>
+          <p class="mt-1 text-xs text-zinc-500">¿Dónde juegas Valorant?</p>
+        </div>
+        <div>
           <label class="block text-xs font-medium text-zinc-400">Email institucional</label>
           <input name="institutionalEmail" value="${escapeHtml(profile.institutional_email ?? '')}" placeholder="nombre@qu4sar.com"
             class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#8B5CF6]" />
@@ -432,6 +441,7 @@ export function getProfileFormData(form: HTMLFormElement) {
     country: (fd.get('country') as string) || null,
     region: (fd.get('region') as string) || null,
     in_game_role: (fd.get('inGameRole') as string) || null,
+    platform: (fd.get('platform') as string) || 'pc',
     institutional_email: (fd.get('institutionalEmail') as string) || null,
     role_color: (fd.get('roleColor') as string) || '#8B5CF6',
     mouse_dpi: fd.get('mouseDpi') ? Number(fd.get('mouseDpi')) : null,

@@ -52,6 +52,7 @@ export async function signUp(
   role: string,
   rank = 'Unranked',
   referral = '',
+  platform = 'pc',
 ): Promise<{ error?: string; success?: boolean }> {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
@@ -68,6 +69,7 @@ export async function signUp(
     full_name: fullName,
     role,
     rank,
+    platform,
     is_active: true,
   }, { onConflict: 'id' })
 

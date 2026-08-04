@@ -30,6 +30,7 @@ export interface Profile {
   role_color: string | null
   share_slug: string | null
   in_game_role: string | null
+  platform: string | null
   skills: any | null
   quote: string | null
   custom_bg_url: string | null

@@ -98,6 +98,15 @@ export function renderRegister(): string {
             </select>
           </div>
 
+          <div>
+            <label for="platform" class="mb-1 block text-xs font-medium text-zinc-400">Plataforma</label>
+            <select id="platform" name="platform" required
+              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]">
+              <option value="pc">PC</option>
+              <option value="mobile">Mobile</option>
+            </select>
+          </div>
+
           <p id="register-error" class="hidden text-xs text-red-400"></p>
 
           <button type="submit" id="register-submit"
@@ -188,11 +197,12 @@ export function mountRegister(): void {
     const password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
     const role = formData.get('role') as string
+    const platform = formData.get('platform') as string
     const rank = rankHidden.value
 
     const referral = (formData.get('referral') as string || '').toUpperCase().trim()
 
-    const result = await signUp(email, password, fullName, role, rank, referral)
+    const result = await signUp(email, password, fullName, role, rank, referral, platform)
 
     if (result.error) {
       errorEl.textContent = result.error

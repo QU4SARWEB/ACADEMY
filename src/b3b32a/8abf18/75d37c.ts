@@ -29,7 +29,7 @@ async function loadStudentData() {
   if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
 
   const [{ data: students }, { data: courses }] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, created_at').eq('role', 'student').order('full_name'),
+    supabase.from('profiles').select('id, full_name, email, avatar_url, riot_id, social_discord, rank, scholarship, is_active, platform, created_at').eq('role', 'student').order('full_name'),
     coursesQuery,
   ])
 
@@ -156,13 +156,14 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
             <th class="py-3 px-4 font-medium">Email</th>
             <th class="py-3 px-4 font-medium">Cursos</th>
             <th class="py-3 px-4 font-medium">Estado</th>
+            <th class="py-3 px-4 font-medium">Plataforma</th>
             <th class="py-3 px-4 font-medium">Rol</th>
             <th class="py-3 px-4 font-medium text-right">Acci\u00f3n</th>
           </tr>
         </thead>
         <tbody id="students-tbody">
           ${(students ?? []).length === 0
-            ? '<tr><td colspan="7" class="py-8 text-center text-sm text-zinc-500">No hay estudiantes.</td></tr>'
+            ? '<tr><td colspan="8" class="py-8 text-center text-sm text-zinc-500">No hay estudiantes.</td></tr>'
             : (students ?? []).map((s: any) => {
                 const enrollment = enrollmentMap.get(s.id) || { count: 0, anyActive: false, courses: [] }
                 const displayName = [s.riot_id || s.full_name, s.social_discord].filter(Boolean).join(' | ') || 'Desconocido'
@@ -184,6 +185,9 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
                     <td class="py-3 px-4">${s.is_active
                       ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>Activo</span>'
                       : '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400"><span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Inactivo</span>'}</td>
+                    <td class="py-3 px-4">${s.platform === 'mobile'
+                      ? '<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2.5 py-0.5 text-xs text-[#C4B5FD]">${Icon(\'smartphone\', 12)} Mobile</span>'
+                      : '<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-400">${Icon(\'play\', 12)} PC</span>'}</td>
                     <td class="py-3 px-4 text-xs text-zinc-500">Estudiante</td>
                     <td class="py-3 px-4 text-right">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
                   </tr>`

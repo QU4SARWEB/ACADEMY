@@ -37,6 +37,17 @@ export function DashboardLayout(contentHtml: string): string {
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
       <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8" tabindex="-1">
+        <div class="mx-auto mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 px-4 py-3 text-sm">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-[#C4B5FD]">${Icon('smartphone', 18)}</span>
+          <p class="min-w-0 flex-1 text-zinc-300">
+            <span class="font-semibold text-white">Valorant Mobile ya está integrado.</span>
+            <span class="text-zinc-400"> Ahora también entrenas desde tu celular.</span>
+          </p>
+          <button id="change-platform-btn"
+            class="rounded-lg border border-[#8B5CF6]/40 bg-[#8B5CF6]/15 px-3 py-1.5 text-xs font-medium text-[#C4B5FD] transition hover:bg-[#8B5CF6]/25">
+            Cambiar plataforma
+          </button>
+        </div>
         ${contentHtml}
       </main>
     </div>`
@@ -185,6 +196,13 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 export function initSidebar(): void {
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await signOut()
+  })
+
+  // Cambiar plataforma -> lleva al perfil donde se edita
+  document.getElementById('change-platform-btn')?.addEventListener('click', () => {
+    const profile = store.get<Profile>('profile')
+    const prefix = profile?.role === 'coach' ? 'coaches' : 'students'
+    router.navigate(`/${prefix}/profile`)
   })
 
   // Coach panel toggle

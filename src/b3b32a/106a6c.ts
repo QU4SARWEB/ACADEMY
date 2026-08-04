@@ -404,7 +404,7 @@ export async function mountHome(): Promise<void> {
         const initial = name.charAt(0).toUpperCase()
         const presentation = co.presentation_image || co.avatar_url
         return `
-          <a href="#/register" class="roster-card reveal in" style="--i:${i % 3}">
+          <a href="#/" data-scroll="precios" class="roster-card reveal in" style="--i:${i % 3}">
             <div class="roster-card__poster">
               ${presentation
                 ? `<img src="${escapeHtml(presentation)}" alt="${escapeHtml(name)}" class="poster-art" />`
@@ -419,7 +419,7 @@ export async function mountHome(): Promise<void> {
               <span class="roster-card__creds">QU4SAR Gaming Academy</span>
               <p class="roster-card__tag">${escapeHtml(co.quote || 'Coach certificado listo para ayudarte a subir de rango con un plan a tu medida.')}</p>
               <div class="roster-card__meta"><span>Coach</span><span>${escapeHtml(co.rank || '—')}</span></div>
-              <span class="roster-card__cta">Entrenar con él →</span>
+              <span class="roster-card__cta">Ver sus cursos →</span>
             </div>
           </a>`
       }).join('')
