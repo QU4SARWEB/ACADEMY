@@ -16,8 +16,26 @@ function embers(): string {
 }
 
 function waves(): string {
+  const bubblePos = [
+    { left: 6, size: 8, dur: 4, delay: 0, bx: 14 },
+    { left: 18, size: 5, dur: 5.5, delay: 1, bx: -18 },
+    { left: 28, size: 10, dur: 4.5, delay: 0.5, bx: 22 },
+    { left: 39, size: 6, dur: 6, delay: 2, bx: -12 },
+    { left: 47, size: 4, dur: 5, delay: 0.3, bx: 16 },
+    { left: 55, size: 9, dur: 4.8, delay: 1.5, bx: -20 },
+    { left: 64, size: 5, dur: 5.7, delay: 0.8, bx: 10 },
+    { left: 72, size: 7, dur: 4.3, delay: 2.4, bx: -16 },
+    { left: 80, size: 11, dur: 5.2, delay: 1, bx: 18 },
+    { left: 90, size: 5, dur: 6.2, delay: 2.8, bx: -10 },
+    { left: 96, size: 7, dur: 4.9, delay: 0.6, bx: 12 },
+  ]
   return `
     <div class="relative z-10 h-28 md:h-36 -mb-[1px] overflow-hidden pointer-events-none">
+      <div class="bubbles">
+        ${bubblePos.map(b => `
+          <span class="bubble" style="left:${b.left}%;width:${b.size}px;height:${b.size}px;--bx:${b.bx}px;animation-duration:${b.dur}s;animation-delay:${b.delay}s"></span>
+        `).join('')}
+      </div>
       <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 960 120">
         <path fill="#3b0a5e" opacity="0.25" d="M0,36 C80,-8 160,84 240,36 C320,-8 400,84 480,36 C560,-8 640,84 720,36 C800,-8 880,84 960,36 V120 H0 Z">
           <animate attributeName="d" dur="5s" repeatCount="indefinite" values="
@@ -216,6 +234,28 @@ export function renderHome(session?: any): string {
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
+            <article class="offer-card offer-card--pro reveal" style="--i:2">
+              <span class="offer-card__badge offer-card__badge--pro">Experto</span>
+              <span class="offer-card__badge--tertiary">Máximo nivel</span>
+              <h3 class="offer-card__title">Plan Pro</h3>
+              <div class="offer-card__price"><span class="offer-card__amount amount-pro">$20</span><span class="offer-card__unit">USD · por mes</span></div>
+              <p class="offer-card__save">Todo lo de $15, más beneficios exclusivos</p>
+              <p class="offer-card__blurb">El entrenamiento más completo de QU4SAR: prioridad con coaches, más sesiones en vivo y seguimiento individualizado para que llegues a tu máximo potencial.</p>
+              <ul class="offer-card__list">
+                ${[
+                  'Todo lo del plan Cursos completos, incluido',
+                  'Clases en vivo adicionales cada semana',
+                  'Prioridad para reservar sesiones con tu coach',
+                  'Análisis VOD personalizado mensual',
+                  'Plan de entrenamiento individualizado',
+                  'Acceso anticipado a torneos y eventos',
+                  'Insignia PRO y reconocimiento en la comunidad',
+                  'Soporte prioritario en Discord',
+                ].map(f => `
+                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+              </ul>
+              <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full" style="border-color:#C4B5FD;color:#C4B5FD">Subir a Pro →</a></div>
+            </article>
           </div>
 
           <!-- Mini comparador -->
@@ -224,21 +264,27 @@ export function renderHome(session?: any): string {
               <span>Beneficio</span>
               <span>Gratis</span>
               <span>Cursos <em>$15</em></span>
+              <span>Pro <em>$20</em></span>
             </div>
             ${[
-              { label: 'Evaluación de nivel inicial', free: true, paid: true },
-              { label: 'Examen teórico y práctico', free: true, paid: true },
-              { label: 'Plan de estudios por rango', free: false, paid: true },
-              { label: 'Clases grabadas y material', free: false, paid: true },
-              { label: 'Seguimiento con coaches', free: false, paid: true },
-              { label: 'Scrims y torneos', free: false, paid: true },
-              { label: 'Comunidad exclusiva', free: false, paid: true },
-              { label: 'Certificado oficial', free: false, paid: true },
+              { label: 'Evaluación de nivel inicial', free: true, paid: true, pro: true },
+              { label: 'Examen teórico y práctico', free: true, paid: true, pro: true },
+              { label: 'Plan de estudios por rango', free: false, paid: true, pro: true },
+              { label: 'Clases grabadas y material', free: false, paid: true, pro: true },
+              { label: 'Seguimiento con coaches', free: false, paid: true, pro: true },
+              { label: 'Scrims y torneos', free: false, paid: true, pro: true },
+              { label: 'Comunidad exclusiva', free: false, paid: true, pro: true },
+              { label: 'Clases en vivo adicionales', free: false, paid: false, pro: true },
+              { label: 'Análisis VOD personalizado', free: false, paid: false, pro: true },
+              { label: 'Prioridad con tu coach', free: false, paid: false, pro: true },
+              { label: 'Plan individualizado', free: false, paid: false, pro: true },
+              { label: 'Certificado oficial', free: false, paid: true, pro: true },
             ].map((r, i) => `
               <div class="compare__row">
                 <span>${escapeHtml(r.label)}</span>
                 <span class="${r.free ? 'yes' : 'no'}">${r.free ? '✓' : '—'}</span>
-                <span class="yes paid">${r.paid ? '✓' : '—'}</span>
+                <span class="yes ${r.paid ? 'paid' : 'no'}">${r.paid ? '✓' : '—'}</span>
+                <span class="yes ${r.pro ? 'pro' : 'no'}">${r.pro ? '✓' : '—'}</span>
               </div>
             `).join('')}
           </div>

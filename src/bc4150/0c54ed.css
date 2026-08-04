@@ -340,6 +340,28 @@ button:focus-visible, a:focus-visible {
   100% { transform: translateY(-105vh) translateX(var(--ex, 0px)); opacity: 0; }
 }
 
+/* --- Burbujas que suben de las olas --- */
+.bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bubble {
+  position: absolute;
+  bottom: 10%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.5), rgba(139, 92, 246, 0.25) 55%, rgba(139, 92, 246, 0));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  animation: bubble-rise linear infinite;
+}
+@keyframes bubble-rise {
+  0% { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
+  8% { opacity: 0.9; }
+  55% { opacity: 0.55; }
+  100% { transform: translateY(-340px) translateX(var(--bx, 0px)) scale(1.25); opacity: 0; }
+}
+
 /* --- Tarjetas con entrada escalonada --- */
 .reveal {
   opacity: 0;
@@ -486,7 +508,7 @@ button:focus-visible, a:focus-visible {
 /* --- Offers / precios --- */
 .offer-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
   align-items: stretch;
 }
@@ -508,6 +530,33 @@ button:focus-visible, a:focus-visible {
   border-color: rgba(139, 92, 246, 0.55);
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.14), #0d0d11 40%);
   box-shadow: 0 12px 40px rgba(139, 92, 246, 0.18);
+}
+.offer-card--pro {
+  border-color: rgba(196, 181, 253, 0.5);
+  background: linear-gradient(180deg, rgba(196, 181, 253, 0.12), #0d0d11 40%);
+  box-shadow: 0 12px 40px rgba(196, 181, 253, 0.14);
+}
+.offer-card--pro:hover { border-color: rgba(196, 181, 253, 0.7); }
+.offer-card__badge--pro {
+  background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+}
+.offer-card__badge--tertiary {
+  position: absolute;
+  top: 1.9rem;
+  right: 1.25rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f0abfc;
+  border: 1px solid rgba(240, 171, 252, 0.4);
+  border-radius: 6px;
+  padding: 3px 10px;
+  background: rgba(240, 171, 252, 0.08);
+}
+.offer-card__amount.amount-pro {
+  color: #f0abfc;
+  text-shadow: 0 0 22px rgba(240, 171, 252, 0.5);
 }
 .offer-card__badge {
   position: absolute;
@@ -624,7 +673,7 @@ button:focus-visible, a:focus-visible {
 .compare__head,
 .compare__row {
   display: grid;
-  grid-template-columns: 1.6fr 0.7fr 1.2fr;
+  grid-template-columns: 1.6fr 0.55fr 1fr 1fr;
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 1.1rem;
@@ -647,6 +696,7 @@ button:focus-visible, a:focus-visible {
 .compare__row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
 .compare__row .yes { color: #34d399; font-weight: 700; }
 .compare__row .yes.paid { color: #c4b5fd; }
+.compare__row .yes.pro { color: #f0abfc; font-weight: 700; }
 .compare__row .no { color: #52525b; }
 
 /* --- Features --- */
@@ -1309,5 +1359,5 @@ button:focus-visible, a:focus-visible {
   .news-banner__img { width: 90px; height: 90px; }
   .nav-b__right .btn { display: none; }
   .compare__head,
-  .compare__row { grid-template-columns: 1.4fr 0.5fr 1fr; padding: 0.6rem 0.85rem; font-size: 0.78rem; }
+  .compare__row { grid-template-columns: 1.3fr 0.45fr 0.8fr 0.8fr; padding: 0.6rem 0.7rem; font-size: 0.72rem; }
 }
