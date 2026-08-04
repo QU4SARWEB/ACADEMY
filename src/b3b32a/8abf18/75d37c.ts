@@ -186,8 +186,8 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
                       ? '<span class="inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>Activo</span>'
                       : '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400"><span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Inactivo</span>'}</td>
                     <td class="py-3 px-4">${s.platform === 'mobile'
-                      ? '<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2.5 py-0.5 text-xs text-[#C4B5FD]">${Icon(\'smartphone\', 12)} Mobile</span>'
-                      : '<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-400">${Icon(\'play\', 12)} PC</span>'}</td>
+                      ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2.5 py-0.5 text-xs text-[#C4B5FD]">${Icon('smartphone', 12)} Mobile</span>`
+                      : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-400">${Icon('play', 12)} PC</span>`}</td>
                     <td class="py-3 px-4 text-xs text-zinc-500">Estudiante</td>
                     <td class="py-3 px-4 text-right">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
                   </tr>`
