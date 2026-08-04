@@ -89,8 +89,8 @@ function hero(session: any): string {
         <span class="text-2xl font-light text-zinc-300 md:text-4xl">Gaming Academy</span>
       </h1>
       <p class="mt-5 max-w-xl text-sm text-zinc-300 leading-relaxed md:text-base reveal" style="--i:2">
-        La academia de esports que transforma tu pasión en rendimiento competitivo.
-        Entrena con coaches profesionales y lleva tu juego al siguiente nivel.
+        <span class="typewriter" data-typewriter="La academia de esports que transforma tu pasión en rendimiento competitivo. Entrena con coaches profesionales y lleva tu juego al siguiente nivel."></span>
+        <span class="typewriter-caret" aria-hidden="true">|</span>
       </p>
       <p class="mt-3 text-xs text-zinc-500 tracking-wide reveal" style="--i:3">Todos los ranks · ES / EN · Online</p>
       <div class="mt-8 flex flex-col gap-4 sm:flex-row reveal" style="--i:4">
@@ -393,6 +393,28 @@ export function renderHome(session?: any): string {
 
 export async function mountHome(): Promise<void> {
   mountPublicNav()
+
+  // Efecto de máquina de escribir en el hero
+  const tw = document.querySelector<HTMLElement>('.typewriter')
+  if (tw) {
+    const text = tw.dataset.typewriter || ''
+    let i = 0
+    const tick = () => {
+      if (i <= text.length) {
+        tw.textContent = text.slice(0, i)
+        i++
+        setTimeout(tick, 28)
+      } else {
+        // Pausa y reinicia para efecto continuo
+        setTimeout(() => {
+          i = 0
+          tw.textContent = ''
+          setTimeout(tick, 400)
+        }, 4000)
+      }
+    }
+    setTimeout(tick, 600)
+  }
 
   // Cerrar notificación flotante
   document.querySelector('.alert-toast__close')?.addEventListener('click', () => {

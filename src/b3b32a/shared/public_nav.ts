@@ -178,13 +178,14 @@ export function mountPublicNav(): void {
     window.addEventListener('scroll', onScroll, { passive: true })
   }
 
-  // Reveal on scroll
+  // Reveal on scroll: aparece al entrar, desaparece al salir
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           entry.target.classList.add('in')
-          io.unobserve(entry.target)
+        } else {
+          entry.target.classList.remove('in')
         }
       }
     }, { threshold: 0.12 })
