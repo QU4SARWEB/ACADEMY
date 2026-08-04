@@ -135,7 +135,7 @@ export function renderHome(session?: any): string {
 
       <div class="relative z-10 pt-8 md:pt-12" style="background:linear-gradient(180deg,#3b0a5e 0%,#1e0b2e 25%,#0A0A0A 65%)">
         <!-- Briefing -->
-        <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
+        <section class="mx-auto mt-10 md:mt-14 max-w-5xl px-6">
            <div class="flex flex-col gap-2 mb-10 reveal">
             <span class="lbl">El briefing</span>
             <h2 class="s-title">Por qué estás <em>estancado.</em></h2>
@@ -385,7 +385,7 @@ export function renderHome(session?: any): string {
           </div>
         </section>
 
-        <section class="public-stats mx-auto mt-10 max-w-5xl px-6 reveal" style="--i:0">
+        <section class="public-stats mx-auto mt-8 mb-8 md:mb-10 max-w-5xl px-6 reveal" style="--i:0">
           <div id="public-stats" class="stats-bar">
             <div class="stat">
               <div class="stat__num" data-stat-value="visits">—</div>
