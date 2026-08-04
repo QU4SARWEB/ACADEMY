@@ -64,6 +64,7 @@ function hero(session: any): string {
 }
 
 export function renderHome(session?: any): string {
+  const mobileAlertSeen = localStorage.getItem('qu4sar-mobile-alert-seen') === '1'
   return `
      <div class="public-page relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <style>@keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }</style>
@@ -78,20 +79,21 @@ export function renderHome(session?: any): string {
       ${renderDiscordBanner()}
       ${renderPublicNavbar(session, { active: 'home' })}
 
-      <!-- Notificación flotante: Valorant Mobile -->
-      <div class="alert-toast fixed right-4 top-36 z-[70] w-[300px]">
+       ${!mobileAlertSeen ? `
+       <!-- Notificación flotante: Valorant Mobile -->
+       <div class="alert-toast fixed right-4 top-36 z-[70] w-[300px]">
         <div class="alert-toast__box rounded-2xl border border-[#8B5CF6]/35 bg-[#141019]/95 p-4 shadow-2xl shadow-[#8B5CF6]/20 backdrop-blur-md">
           <div class="flex items-start gap-3">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-[#C4B5FD]">${Icon('smartphone', 18)}</span>
             <div class="min-w-0 flex-1">
               <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400">Alerta</p>
               <p class="mt-1 text-sm leading-snug text-zinc-200">Valorant Mobile ya está integrado a QU4SAR.</p>
-              <a href="#/" data-scroll="precios" class="mt-2 inline-block text-xs font-medium text-[#8B5CF6] hover:text-[#C4B5FD] transition">Únete ahora →</a>
-            </div>
-            <button class="alert-toast__close shrink-0 text-zinc-500 transition hover:text-white" aria-label="Cerrar">${Icon('x', 16)}</button>
-          </div>
-        </div>
-      </div>
+               <a href="#/" data-scroll="precios" class="mt-2 inline-block text-xs font-medium text-[#8B5CF6] hover:text-[#C4B5FD] transition">Únete ahora →</a>
+             </div>
+             <button class="alert-toast__close shrink-0 text-zinc-500 transition hover:text-white" aria-label="Cerrar">${Icon('x', 16)}</button>
+           </div>
+         </div>
+       </div>` : ''}
 
       ${hero(session)}
 
@@ -375,6 +377,7 @@ export function renderHome(session?: any): string {
 export async function mountHome(): Promise<void> {
   mountPublicNav()
   void loadPublicStats()
+  if (document.querySelector('.alert-toast')) localStorage.setItem('qu4sar-mobile-alert-seen', '1')
 
   // Efecto de máquina de escribir en el hero
   const tw = document.querySelector<HTMLElement>('.typewriter')

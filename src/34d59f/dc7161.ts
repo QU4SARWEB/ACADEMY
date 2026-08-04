@@ -16,12 +16,15 @@ export function DashboardLayout(contentHtml: string): string {
   const accent = (profile as any)?.role_color || '#8B5CF6'
   const bgUrl = (profile as any)?.custom_bg_url || ''
   const mobileWelcomeKey = profile?.id ? `qu4sar-mobile-welcome:${profile.id}` : ''
+  const platformNoticeKey = profile?.id ? `qu4sar-platform-notice-seen:${profile.id}` : ''
   const isMobilePlatform = profile?.platform === 'mobile'
   const mobileWelcomeDismissed = isMobilePlatform && !!mobileWelcomeKey && localStorage.getItem(mobileWelcomeKey) === '1'
   if (isMobilePlatform && !mobileWelcomeDismissed && mobileWelcomeKey) {
     localStorage.setItem(mobileWelcomeKey, '1')
   }
-  const showPlatformNotice = !isMobilePlatform || !mobileWelcomeDismissed
+  const platformNoticeSeen = !!platformNoticeKey && localStorage.getItem(platformNoticeKey) === '1'
+  const showPlatformNotice = !platformNoticeSeen && !(isMobilePlatform && mobileWelcomeDismissed)
+  if (showPlatformNotice && platformNoticeKey) localStorage.setItem(platformNoticeKey, '1')
 
   // Inject CSS variables for accent color + custom bg
   const style = `
@@ -57,6 +60,11 @@ export function DashboardLayout(contentHtml: string): string {
             Pasar a Mobile
           </button>` : ''}
         </div>` : ''}
+        <div id="device-notifications-banner" class="mx-auto mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 px-4 py-3 text-sm">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/15 text-[#C4B5FD]">${Icon('bell', 18)}</span>
+          <p data-notification-copy class="min-w-0 flex-1 text-zinc-400">Activa los avisos para recibir tareas, horarios, cursos y pagos directamente en tu dispositivo.</p>
+          <button id="enable-device-notifications" type="button" class="rounded-lg border border-[#8B5CF6]/35 bg-[#8B5CF6]/10 px-3 py-2 text-xs font-medium text-[#C4B5FD] transition hover:bg-[#8B5CF6]/20">Activar avisos</button>
+        </div>
         ${contentHtml}
       </main>
     </div>`

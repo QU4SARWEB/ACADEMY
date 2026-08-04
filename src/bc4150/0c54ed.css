@@ -2478,6 +2478,12 @@ textarea {
   }
 }
 
+@media (max-width: 767px) {
+  .discord-banner {
+    display: none;
+  }
+}
+
 /* ============ One stellar field for the whole landing ============ */
 
 .stellar-field {

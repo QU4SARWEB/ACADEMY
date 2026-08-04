@@ -5,6 +5,7 @@ import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
 import { initAutoSave } from '@/4725dc/forms/DraftManager'
+import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
 
 import '@/bc4150/0c54ed.css'
 
@@ -93,11 +94,11 @@ router.on('/p/:slug', async () => {
 const REALTIME_TABLES: Record<string, string[]> = {
   coaches: [
     'courses', 'enrollments', 'schedules',
-    'teams', 'profiles', 'payments',
+    'teams', 'profiles', 'payments', 'tasks', 'exams',
   ],
   students: [
     'courses', 'enrollments', 'schedules', 'payments', 'profiles',
-    'teams', 'team_members',
+    'teams', 'team_members', 'tasks', 'exams',
   ],
 
 }
@@ -117,6 +118,34 @@ function reloadSoon(path: string): void {
   ;(window as any)[key] = true
   setTimeout(() => { (window as any)[key] = false }, 3000)
   setTimeout(() => location.reload(), 100)
+}
+
+function notifyRealtime(table: string, payload: any, path: string): void {
+  if (table === 'profiles' || payload?.eventType === 'DELETE') return
+  const role = store.get<any>('profile')?.role
+  const isCoach = role === 'coach'
+  const destinations: Record<string, string> = {
+    courses: isCoach ? '#/coaches/courses' : '#/students/courses',
+    tasks: isCoach ? '#/coaches/tasks' : '#/students/tasks',
+    exams: isCoach ? '#/coaches/exams' : '#/students/exams',
+    schedules: isCoach ? '#/coaches/schedules' : '#/students/schedule',
+    payments: '#/payments',
+    teams: isCoach ? '#/coaches/teams' : '#/students/team',
+    team_members: '#/students/team',
+    enrollments: isCoach ? '#/coaches/students' : '#/students/courses',
+  }
+  const messages: Record<string, string> = {
+    courses: 'Hay una actualización en tus cursos.',
+    tasks: 'Tienes una actualización en tus tareas.',
+    exams: 'Hay una novedad en tus exámenes.',
+    schedules: 'Tu horario tiene una nueva actualización.',
+    payments: 'Tu estado de pagos tiene una actualización.',
+    teams: 'Tu equipo tiene una nueva actualización.',
+    team_members: 'Tu equipo tiene una nueva actualización.',
+    enrollments: 'Tu inscripción tiene una nueva actualización.',
+  }
+  const body = messages[table]
+  if (body) void notifyDevice('QU4SAR Academy', body, destinations[table] || path)
 }
 
 // Dashboard render helper
@@ -199,6 +228,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       app.innerHTML = DashboardLayout(renderFn())
       initToastContainer()
       initSidebar()
+      await initDeviceNotifications()
       if (initFn) await initFn()
 
       // Auto-save drafts for all forms
@@ -212,9 +242,12 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
           }
           const ch = supabase.channel(`rt-${path.replace(/[^a-z0-9]/g, '-')}`)
           const tables = REALTIME_TABLES[store.get<any>('profile')?.role || 'coach'] || REALTIME_TABLES.coaches
-          for (const table of tables) {
-            ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => { reloadSoon(path) })
-          }
+            for (const table of tables) {
+              ch.on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
+                notifyRealtime(table, payload, path)
+                reloadSoon(path)
+              })
+            }
           ch.subscribe()
           ;(window as any).__rtChannel = ch
         } catch (e) {
