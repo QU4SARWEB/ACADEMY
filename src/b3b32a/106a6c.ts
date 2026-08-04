@@ -114,6 +114,16 @@ export function renderHome(session?: any): string {
       ${renderDiscordBanner()}
       ${renderPublicNavbar(session, { active: 'home' })}
 
+      <!-- Aviso global: Valorant Mobile -->
+      <div class="relative z-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-[#8B5CF6]/20 bg-[#8B5CF6]/10 px-4 py-2.5 text-center text-sm">
+        <span class="flex items-center gap-2 text-[#C4B5FD]">
+          ${Icon('smartphone', 15)}
+          <span class="font-semibold text-white">Nueva noticia:</span>
+          <span>Valorant Mobile ya está integrado a QU4SAR.</span>
+        </span>
+        <a href="#/" data-scroll="precios" class="font-medium text-[#8B5CF6] hover:text-[#C4B5FD] transition">Únete ahora →</a>
+      </div>
+
       ${hero(session)}
 
       ${waves()}
