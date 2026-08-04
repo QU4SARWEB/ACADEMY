@@ -446,7 +446,7 @@ export async function mountHome(): Promise<void> {
         const initial = name.charAt(0).toUpperCase()
         const presentation = co.presentation_image || co.avatar_url
         return `
-          <a href="#/" data-scroll="precios" class="roster-card reveal in" style="--i:${i % 3}">
+          <a href="#/" data-scroll="precios" class="roster-card reveal" style="--i:${i % 3}">
             <div class="roster-card__poster">
               ${presentation
                 ? `<img src="${escapeHtml(presentation)}" alt="${escapeHtml(name)}" class="poster-art" />`
@@ -465,6 +465,21 @@ export async function mountHome(): Promise<void> {
             </div>
           </a>`
       }).join('')
+      // Observar las tarjetas recién creadas para el reveal en scroll
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in')
+            } else {
+              entry.target.classList.remove('in')
+            }
+          }
+        }, { threshold: 0.2 })
+        cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => io.observe(el))
+      } else {
+        cgrid.querySelectorAll<HTMLElement>('.reveal').forEach(el => el.classList.add('in'))
+      }
     }
   }
 }
