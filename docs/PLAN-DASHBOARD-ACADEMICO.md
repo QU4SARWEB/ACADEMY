@@ -326,7 +326,7 @@ Antes de crear nuevas tablas se verificaran las tablas de mensajes existentes y 
 
 ## Proximo paso
 
-Crear el mapa de rutas y el contrato del shell global. Despues se implementara el layout compartido sin modificar todavia las consultas de cada modulo.
+Cerrar pruebas de permisos y recorridos moviles del dashboard. Despues iniciaremos el cliente de PC usando los mismos contratos de autenticacion, cursos, mensajes y notificaciones.
 
 ## Estado de implementacion
 
@@ -347,3 +347,39 @@ Implementado en la primera iteracion posterior al backup:
 Pendiente inmediato:
 
 - Completar pruebas de permisos y recorridos moviles.
+
+## Fases de la aplicacion de PC
+
+### PC-0: contrato compartido
+
+- Reutilizar Supabase Auth, perfiles, roles y permisos.
+- Definir rutas y payloads compartidos con la web.
+- Mantener una sola fuente de verdad para cursos, tareas, notas, mensajes y pagos.
+
+### PC-1: shell de escritorio
+
+- Ventana principal con sidebar, topbar y centro de actividad.
+- Navegacion por cursos y conversaciones.
+- Persistencia de sesion y preferencias visuales.
+- Estados offline, reconexion y errores de red.
+
+### PC-2: experiencia academica
+
+- Cursos, modulos, materiales, tareas y examenes.
+- Drag and drop de archivos.
+- Vista de progreso y calendario.
+- Mensajeria directa, por curso y equipo.
+
+### PC-3: notificaciones y presencia
+
+- Avisos de escritorio.
+- Sonido configurable.
+- Eventos realtime.
+- Estado en linea y ultima actividad.
+
+### PC-4: calidad y distribucion
+
+- Instalador y actualizaciones.
+- Logs de errores sin datos sensibles.
+- Pruebas de permisos y sesiones expiradas.
+- Pruebas en Windows y distintas resoluciones.
