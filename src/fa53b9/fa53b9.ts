@@ -139,7 +139,7 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   const previewRole = sessionStorage.getItem('previewRole')
   if (previewRole) {
     const previewPrefix = ROLE_PREFIX[previewRole]
-    if (previewPrefix && !hash.startsWith(`/${previewPrefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
+    if (previewPrefix && !hash.startsWith(`/${previewPrefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && hash !== '/') {
       location.hash = `/${previewPrefix}/dashboard`
       return false
     }
@@ -147,7 +147,7 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   }
 
   const prefix = ROLE_PREFIX[currentProfile.role]
-  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && hash !== '/') {
+  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
     return false
   }

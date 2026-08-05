@@ -62,6 +62,14 @@ export async function initDeviceNotifications(): Promise<void> {
     await registerServiceWorker()
   }
 
+  document.getElementById('topbar-notification-btn')?.addEventListener('click', () => {
+    if (Notification.permission !== 'granted') {
+      document.getElementById(NOTIFICATION_BUTTON_ID)?.click()
+    } else {
+      updateBanner('Los avisos del dispositivo ya están activos.')
+    }
+  })
+
   document.getElementById(NOTIFICATION_BUTTON_ID)?.addEventListener('click', async () => {
     if (Notification.permission === 'denied') {
       updateBanner('Los avisos están bloqueados en el navegador. Actívalos desde la configuración del sitio.')

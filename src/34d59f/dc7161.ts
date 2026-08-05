@@ -5,6 +5,7 @@ import { supabase } from '@/304244'
 import type { Profile } from '@/d14a80'
 import { signOut } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
+import { fontStack, readUiPreferences } from '@/4725dc/ui_preferences'
 
 export function DashboardLayout(contentHtml: string): string {
   const profile = store.get<Profile>('profile')
@@ -15,6 +16,8 @@ export function DashboardLayout(contentHtml: string): string {
   const prefix = role === 'coach' ? 'coaches' : 'students'
   const accent = (profile as any)?.role_color || '#8B5CF6'
   const bgUrl = (profile as any)?.custom_bg_url || ''
+  const uiPreferences = readUiPreferences(profile?.id)
+  const pageContext = dashboardContext(role)
   const mobileWelcomeKey = profile?.id ? `qu4sar-mobile-welcome:${profile.id}` : ''
   const platformNoticeKey = profile?.id ? `qu4sar-platform-notice-seen:${profile.id}` : ''
   const isMobilePlatform = profile?.platform === 'mobile'
@@ -29,7 +32,10 @@ export function DashboardLayout(contentHtml: string): string {
   // Inject CSS variables for accent color + custom bg
   const style = `
     <style id="theme-vars">
-      :root { --accent: ${accent}; --accent-rgb: ${hexToRgb(accent)}; --accent-bg: ${accent}20; }
+       :root { --accent: ${accent}; --accent-rgb: ${hexToRgb(accent)}; --accent-bg: ${accent}20; --ui-font: ${fontStack(uiPreferences.font)}; --ui-secondary: ${uiPreferences.secondary}; --ui-density: ${uiPreferences.density === 'compact' ? '0.88' : '1'}; --ui-radius: ${uiPreferences.radius === 'sharp' ? '0.45rem' : '1rem'}; --ui-glow: ${uiPreferences.glow === 'bright' ? '0.18' : '0.07'}; }
+       body:has(#main-content), #main-content, #sidebar { font-family: var(--ui-font); }
+       body:has(#main-content) { --ui-motion: ${uiPreferences.reduceMotion ? 'reduce' : 'full'}; }
+       ${uiPreferences.reduceMotion ? '#main-content *, #sidebar * { animation: none !important; transition: none !important; }' : ''}
       ${bgUrl ? `
         body, #app, .min-h-screen { background: url(${bgUrl}) center/cover fixed !important; }
         #sidebar { background: rgba(10,10,10,0.92) !important; backdrop-filter: blur(12px) !important; }
@@ -47,6 +53,35 @@ export function DashboardLayout(contentHtml: string): string {
     <div class="flex min-h-screen">
       ${Sidebar(role, prefix, profile)}
       <main id="main-content" class="flex-1 overflow-auto p-4 md:p-6 lg:p-8" tabindex="-1">
+        <header class="dashboard-topbar">
+          <div class="dashboard-topbar__context">
+            <span class="dashboard-topbar__eyebrow">QU4SAR ACADEMY / ${escapeHtml(pageContext.area)}</span>
+            <h1>${escapeHtml(pageContext.title)}</h1>
+            <p>${escapeHtml(pageContext.subtitle)}</p>
+          </div>
+          <div class="dashboard-topbar__actions">
+            <time class="dashboard-topbar__date">${escapeHtml(pageContext.date)}</time>
+            <button id="topbar-notification-btn" type="button" class="dashboard-topbar__icon" aria-label="Activar notificaciones" title="Activar notificaciones">
+              ${Icon('bell', 17)}
+              <span id="notification-unread-count" class="notification-unread-count hidden">0</span>
+            </button>
+            <a href="#/settings" class="dashboard-topbar__profile" aria-label="Abrir configuración">
+              <span>${escapeHtml((profile?.display_name || profile?.full_name || 'U').charAt(0).toUpperCase())}</span>
+            </a>
+          </div>
+        </header>
+        <aside id="notification-center" class="notification-center" aria-hidden="true">
+          <div class="notification-center__head">
+            <div>
+              <span class="dashboard-topbar__eyebrow">Actividad</span>
+              <h2>Notificaciones</h2>
+            </div>
+            <button id="notification-mark-all" type="button">Marcar todo leído</button>
+          </div>
+          <div id="notification-center-list" class="notification-center__list">
+            <div class="notification-center__empty"><p>Cargando avisos...</p></div>
+          </div>
+        </aside>
         ${showPlatformNotice ? `
         <div id="platform-notice" data-platform-welcome="${isMobilePlatform ? 'true' : 'false'}" class="mx-auto mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 px-4 py-3 text-sm">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B5CF6]/20 text-[#C4B5FD]">${Icon('smartphone', 18)}</span>
@@ -77,6 +112,37 @@ function hexToRgb(hex: string): string {
   return `${r},${g},${b}`
 }
 
+function dashboardContext(role: string): { area: string; title: string; subtitle: string; date: string } {
+  const path = location.hash.slice(1).split('?')[0] || '/'
+  const labels: Record<string, string> = {
+    '/coaches/dashboard': 'Panel de control',
+    '/students/dashboard': 'Mi campus',
+    '/coaches/students': 'Estudiantes',
+    '/coaches/courses': 'Cursos',
+    '/coaches/tasks': 'Tareas',
+    '/coaches/schedules': 'Horarios',
+    '/coaches/exams': 'Exámenes',
+    '/coaches/attendance': 'Asistencia',
+    '/coaches/grades': 'Notas',
+    '/students/courses': 'Mis cursos',
+    '/students/tasks': 'Tareas',
+    '/students/schedule': 'Horario',
+    '/students/exams': 'Exámenes',
+    '/students/grades': 'Mis notas',
+    '/payments': 'Pagos',
+    '/members': 'Miembros',
+    '/settings': 'Configuración',
+  }
+  const title = labels[path] || (role === 'coach' ? 'Panel de coach' : 'Campus académico')
+  const date = new Intl.DateTimeFormat('es-PE', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date())
+  return {
+    area: role === 'coach' ? 'COACH' : 'ALUMNO',
+    title,
+    subtitle: role === 'coach' ? 'Controla el entrenamiento y la actividad de tu academia.' : 'Organiza tu entrenamiento y sigue tu progreso.',
+    date: date.charAt(0).toUpperCase() + date.slice(1),
+  }
+}
+
 function Sidebar(role: string, prefix: string, profile: Profile | undefined): string {
   const previewRole = sessionStorage.getItem('previewRole') || ''
   const effectiveRole = previewRole || role
@@ -93,7 +159,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
     [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent)],
     [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent), item(`/${prefix}/exams`, 'scrollText', 'Ex\u00e1menes', isStudent)],
-    [item('/members', 'users', 'Miembros'), item(`/${prefix}/team`, 'users', 'Equipo', isStudent)],
+    [item('/members', 'users', 'Miembros'), item('/chat', 'mail', 'Mensajes'), item(`/${prefix}/team`, 'users', 'Equipo', isStudent)],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item(`/${prefix}/grades`, 'scrollText', 'Notas', isStudent)],
   ]
 
@@ -102,7 +168,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
     [item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
     [item('/coaches/exams', 'scrollText', 'Ex\u00e1menes'), item('/coaches/practical', 'target', 'Ex\u00e1menes Pr\u00e1ctico'), item('/coaches/attendance', 'clipboardList', 'Asistencia'), item('/coaches/grades', 'scrollText', 'Notas')],
-    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros')],
+    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros'), item('/chat', 'mail', 'Mensajes')],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 

@@ -6,6 +6,7 @@ import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
 import { initAutoSave } from '@/4725dc/forms/DraftManager'
 import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
+import { initNotificationCenter } from '@/4725dc/notification_center'
 
 import '@/bc4150/0c54ed.css'
 
@@ -54,6 +55,7 @@ import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
 
 import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
 import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
+import { renderChat, initChat } from '@/b3b32a/chat'
 
 router.setBeforeNavigate(async (path) => authGuard(path))
 
@@ -229,6 +231,7 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
       initToastContainer()
       initSidebar()
       await initDeviceNotifications()
+      await initNotificationCenter()
       if (initFn) await initFn()
 
       // Auto-save drafts for all forms
@@ -309,6 +312,7 @@ dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
 dash('/payments', () => renderPayments(), initPayments)
 dash('/settings', () => renderSettings(), initSettings)
 dash('/members', () => renderMembers(), initMembers)
+dash('/chat', () => renderChat(), initChat)
 
 // 404
 router.fallbackRoute(async () => {

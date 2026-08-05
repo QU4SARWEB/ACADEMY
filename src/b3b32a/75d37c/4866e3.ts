@@ -32,6 +32,32 @@ export async function initStudentDashboard(): Promise<void> {
 
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
+    let courseTasks: any[] = []
+    let schedules: any[] = []
+    let submissions: any[] = []
+    if (courseIds.length > 0) {
+      const [{ data: taskData }, { data: scheduleData }] = await Promise.all([
+        supabase.from('course_tasks').select('id, title, due_date, course_id').in('course_id', courseIds).order('due_date', { ascending: true }).limit(20),
+        supabase.from('schedules').select('id, title, schedule_date, start_time, course_id').in('course_id', courseIds).order('schedule_date').order('start_time').limit(20),
+      ])
+      courseTasks = taskData ?? []
+      schedules = scheduleData ?? []
+      const taskIds = courseTasks.map((task: any) => task.id).filter(Boolean)
+      if (taskIds.length > 0) {
+        const { data: submissionData } = await supabase
+          .from('task_submissions')
+          .select('task_id')
+          .eq('student_id', session.user.id)
+          .in('task_id', taskIds)
+        submissions = submissionData ?? []
+      }
+    }
+
+    const submittedTaskIds = new Set(submissions.map((submission: any) => submission.task_id))
+    const pendingTasks = courseTasks.filter((task: any) => !submittedTaskIds.has(task.id))
+    const nextTask = pendingTasks[0]
+    const nextSchedule = schedules[0]
+
     let payStatusHtml = ''
     // Sistema mensual: renovación día 2, corte día 29
     const nowDate = new Date()
@@ -59,7 +85,12 @@ export async function initStudentDashboard(): Promise<void> {
       }
     }
 
-    const courseProgress = (enrollments ?? []).map((e: any) => ({ ...e, progress: 0, totalModules: 0 }))
+    const courseProgress = (enrollments ?? []).map((e: any) => {
+      const courseTaskList = courseTasks.filter((task: any) => task.course_id === e.course_id)
+      const completedTasks = courseTaskList.filter((task: any) => submittedTaskIds.has(task.id)).length
+      const progress = courseTaskList.length > 0 ? Math.round((completedTasks / courseTaskList.length) * 100) : 0
+      return { ...e, progress, completedTasks, totalTasks: courseTaskList.length }
+    })
 
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
 
@@ -74,6 +105,28 @@ export async function initStudentDashboard(): Promise<void> {
       </div>
 
       ${payStatusHtml}
+
+      <!-- Siguiente accion -->
+      <div class="student-focus-grid mb-8">
+        <a href="#/students/tasks" class="student-focus-card student-focus-card--primary">
+          <span class="student-focus-card__icon">${Icon('clipboardList', 19)}</span>
+          <span class="student-focus-card__body">
+            <small>Siguiente accion</small>
+            <strong>${escapeHtml(nextTask?.title || 'Revisa tus tareas')}</strong>
+            <em>${nextTask?.due_date ? `Entrega: ${escapeHtml(formatDate(nextTask.due_date))}` : 'Mantente al dia con tu entrenamiento'}</em>
+          </span>
+          ${Icon('arrowRight', 17)}
+        </a>
+        <a href="#/students/schedule" class="student-focus-card">
+          <span class="student-focus-card__icon">${Icon('calendar', 19)}</span>
+          <span class="student-focus-card__body">
+            <small>Proxima actividad</small>
+            <strong>${escapeHtml(nextSchedule?.title || 'Mira tu horario')}</strong>
+            <em>${nextSchedule?.schedule_date ? `${escapeHtml(formatDate(nextSchedule.schedule_date))}${nextSchedule.start_time ? ` · ${escapeHtml(nextSchedule.start_time.slice(0, 5))}` : ''}` : 'No hay clases próximas'}</em>
+          </span>
+          ${Icon('arrowRight', 17)}
+        </a>
+      </div>
 
       <!-- KPIs -->
       <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -105,8 +158,8 @@ export async function initStudentDashboard(): Promise<void> {
               <span style="color:#22C55E">${Icon('trophy', 20)}</span>
             </div>
             <div>
-              <p class="kpi-value">${(courseProgress ?? []).filter((e: any) => (e as any).progress >= 100).length}</p>
-              <p class="kpi-label">Cursos completados</p>
+             <p class="kpi-value">${pendingTasks.length}</p>
+             <p class="kpi-label">Tareas pendientes</p>
             </div>
           </div>
         </div>
@@ -135,7 +188,7 @@ export async function initStudentDashboard(): Promise<void> {
                 <div class="h-2.5 rounded-full bg-zinc-800 overflow-hidden">
                   <div class="h-full rounded-full transition-all duration-700" style="width:${e.progress}%;background:linear-gradient(90deg,#8B5CF6,#7C3AED)"></div>
                 </div>
-                <p class="mt-1.5 text-xs text-zinc-600">Módulo ${e.current_module || 1} de ${e.totalModules || '—'}</p>
+                 <p class="mt-1.5 text-xs text-zinc-600">Actividades ${e.completedTasks} de ${e.totalTasks || '—'}</p>
               </div>
             `).join('')
             }
@@ -154,6 +207,7 @@ export async function initStudentDashboard(): Promise<void> {
               { href: '#/students/exams', icon: 'scrollText', label: 'Exámenes', color: '#F59E0B' },
               { href: '#/students/grades', icon: 'trophy', label: 'Mis notas', color: '#22C55E' },
               { href: '#/students/schedule', icon: 'calendar', label: 'Horario', color: '#3B82F6' },
+              { href: '#/chat', icon: 'mail', label: 'Mensajes', color: '#F0ABFC' },
               { href: '#/payments', icon: 'dollarSign', label: 'Pagos', color: '#EC4899' },
             ].map((q, i) => `
               <a href="${q.href}" class="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 transition hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5" style="--i:${i}">

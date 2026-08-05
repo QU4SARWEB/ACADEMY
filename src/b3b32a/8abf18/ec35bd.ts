@@ -35,6 +35,22 @@ export function mountCoachCourseDetail(): void {
         .eq('course_id', id)
         .eq('status', 'active')
 
+      const { data: modules } = await supabase
+        .from('course_modules')
+        .select('id, title, description, display_order, is_published')
+        .eq('course_id', id)
+        .order('display_order')
+      const moduleIds = (modules ?? []).map((module: any) => module.id)
+      const { data: materials } = moduleIds.length > 0
+        ? await supabase.from('course_materials').select('id, module_id, title, description, material_type, resource_url, display_order, is_published').in('module_id', moduleIds).order('display_order')
+        : { data: [] as any[] }
+      const materialsByModule = new Map<string, any[]>()
+      for (const material of materials ?? []) {
+        const rows = materialsByModule.get(material.module_id) || []
+        rows.push(material)
+        materialsByModule.set(material.module_id, rows)
+      }
+
       const html = `
         ${Breadcrumb([
           { label: 'Cursos', href: '#/coaches/courses' },
@@ -57,6 +73,44 @@ export function mountCoachCourseDetail(): void {
 
         ${(course as any).description ? `<div class="glass mb-6 rounded-xl p-4 text-sm text-zinc-300">${escBr((course as any).description)}</div>` : ''}
 
+        <section class="card coach-content-manager mb-8">
+          <div class="course-detail-panel__head">
+            <div><span class="kicker">Constructor de curso</span><h2>Contenido y materiales</h2></div>
+            <span class="course-content-count">${modules?.length || 0} módulos</span>
+          </div>
+          <form id="new-module-form" class="coach-content-create-form">
+            <input name="title" required placeholder="Nombre del nuevo módulo" />
+            <input name="description" placeholder="Descripción breve (opcional)" />
+            <button type="submit" class="btn btn-primary">${Icon('plus', 14)} Crear módulo</button>
+          </form>
+          <div class="coach-module-list">
+            ${(modules ?? []).length === 0 ? '<p class="course-detail-empty">Aún no hay módulos. Crea el primero para comenzar la ruta.</p>' : (modules ?? []).map((module: any, index: number) => `
+              <article class="coach-module-editor" data-module-id="${escapeHtml(module.id)}">
+                <div class="coach-module-editor__head">
+                  <div><span class="course-module__number">${String(index + 1).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.description || 'Sin descripción')}</p></div></div>
+                  <div class="coach-module-editor__actions">
+                    <span class="course-publish-status ${module.is_published ? 'published' : ''}">${module.is_published ? 'Publicado' : 'Borrador'}</span>
+                    <button type="button" class="delete-module-btn" data-module-id="${escapeHtml(module.id)}" aria-label="Eliminar módulo">${Icon('trash', 14)}</button>
+                  </div>
+                </div>
+                <div class="coach-material-list">
+                  ${(materialsByModule.get(module.id) || []).map((material: any) => `
+                    <div class="coach-material-row ${material.is_published ? '' : 'draft'}">
+                      <span class="course-material__icon">${Icon(material.material_type === 'video' ? 'video' : material.material_type === 'document' ? 'fileText' : material.material_type === 'link' ? 'externalLink' : 'bookOpen', 15)}</span>
+                      <span><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || material.resource_url || material.material_type)}</small></span>
+                      <button type="button" class="delete-material-btn" data-material-id="${escapeHtml(material.id)}" aria-label="Eliminar material">${Icon('trash', 13)}</button>
+                    </div>`).join('') || '<p class="course-detail-empty">Sin materiales todavía.</p>'}
+                </div>
+                <form class="coach-material-form" data-module-id="${escapeHtml(module.id)}">
+                  <input name="title" required placeholder="Nuevo material" />
+                  <select name="material_type"><option value="video">Video</option><option value="document">Documento</option><option value="link">Enlace</option><option value="text">Texto</option></select>
+                  <input name="resource_url" placeholder="URL del recurso (opcional)" />
+                  <button type="submit" aria-label="Agregar material">${Icon('plus', 15)}</button>
+                </form>
+              </article>`).join('')}
+          </div>
+        </section>
+
         <div>
           <h2 class="mb-4 font-heading text-lg font-bold text-white">Estudiantes inscritos (${(enrollments ?? []).length})</h2>
           <div class="space-y-2">
@@ -77,6 +131,64 @@ export function mountCoachCourseDetail(): void {
         `
       const pc = document.getElementById('page-content')
       if (pc) pc.innerHTML = html
+
+      document.getElementById('new-module-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        const form = event.currentTarget as HTMLFormElement
+        const formData = new FormData(form)
+        const { error } = await supabase.from('course_modules').insert({
+          course_id: id,
+          title: String(formData.get('title') || '').trim(),
+          description: String(formData.get('description') || '').trim() || null,
+          display_order: (modules?.length || 0) + 1,
+          is_published: true,
+        })
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Módulo creado')
+        mountCoachCourseDetail()
+      })
+
+      document.querySelectorAll<HTMLFormElement>('.coach-material-form').forEach(form => {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault()
+          const moduleId = form.dataset.moduleId
+          if (!moduleId) return
+          const formData = new FormData(form)
+          const { error } = await supabase.from('course_materials').insert({
+            module_id: moduleId,
+            title: String(formData.get('title') || '').trim(),
+            material_type: String(formData.get('material_type') || 'link'),
+            resource_url: String(formData.get('resource_url') || '').trim() || null,
+            display_order: (materialsByModule.get(moduleId)?.length || 0) + 1,
+            is_published: true,
+          })
+          if (error) { toast('error', error.message); return }
+          toast('success', 'Material agregado')
+          mountCoachCourseDetail()
+        })
+      })
+
+      document.querySelectorAll<HTMLElement>('.delete-module-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const moduleId = button.dataset.moduleId
+          if (!moduleId || !(await confirmDialog('¿Eliminar este módulo y sus materiales?'))) return
+          const { error } = await supabase.from('course_modules').delete().eq('id', moduleId)
+          if (error) { toast('error', error.message); return }
+          toast('success', 'Módulo eliminado')
+          mountCoachCourseDetail()
+        })
+      })
+
+      document.querySelectorAll<HTMLElement>('.delete-material-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const materialId = button.dataset.materialId
+          if (!materialId || !(await confirmDialog('¿Eliminar este material?'))) return
+          const { error } = await supabase.from('course_materials').delete().eq('id', materialId)
+          if (error) { toast('error', error.message); return }
+          toast('success', 'Material eliminado')
+          mountCoachCourseDetail()
+        })
+      })
 
       document.getElementById('delete-course-btn')?.addEventListener('click', async () => {
         if (!(await confirmDialog('¿Eliminar este curso? Se eliminarán todos los módulos, materiales, evaluaciones y datos asociados.'))) return

@@ -327,3 +327,23 @@ Antes de crear nuevas tablas se verificaran las tablas de mensajes existentes y 
 ## Proximo paso
 
 Crear el mapa de rutas y el contrato del shell global. Despues se implementara el layout compartido sin modificar todavia las consultas de cada modulo.
+
+## Estado de implementacion
+
+Implementado en la primera iteracion posterior al backup:
+
+- Shell global con topbar contextual, fecha, perfil y acceso a avisos.
+- Centro de notificaciones persistentes con lectura, rutas y realtime.
+- Notificaciones de dispositivo con permiso explicito, sonido y service worker.
+- Eventos persistentes para tareas, horarios, pagos y mensajes.
+- Ruta `/chat` para conversaciones directas realtime.
+- RLS para conversaciones, participantes, mensajes y notificaciones.
+- Inicio del alumno con siguiente tarea y proxima actividad reales.
+- Accesos rapidos a Mensajes desde dashboards.
+- Detalle de curso con modulos, materiales y progreso por material.
+- Editor de contenido para coaches: crear/eliminar modulos y materiales.
+- Mensajeria directa, por curso y por equipo con participantes y realtime.
+
+Pendiente inmediato:
+
+- Completar pruebas de permisos y recorridos moviles.

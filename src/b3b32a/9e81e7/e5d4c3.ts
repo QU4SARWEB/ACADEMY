@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
+import { readUiPreferences, saveUiPreferences, type UiPreferences } from '@/4725dc/ui_preferences'
 
 const PRESET_COLORS = ['#8B5CF6','#6D28D9','#EC4899','#EF4444','#F59E0B','#10B981','#3B82F6','#06B6D4','#14B8A6','#F97316']
 
@@ -19,12 +20,63 @@ export async function initSettings(): Promise<void> {
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
     const accent = (profile as any)?.role_color || '#8B5CF6'
     const bgUrl = (profile as any)?.custom_bg_url || ''
+    const ui = readUiPreferences(session.user.id)
 
     const html = `
       <div class="max-w-xl mx-auto">
         <div class="mb-6">
           <span class="kicker">Tu experiencia</span>
           <h1 class="font-heading text-2xl font-bold text-white">${Icon('settings', 22)} Personalizar</h1>
+        </div>
+
+        <div class="glass rounded-xl p-6 mb-6">
+          <h2 class="mb-2 font-heading text-base font-bold text-white">Estilo de interfaz</h2>
+          <p class="mb-4 text-sm text-zinc-500">Personaliza cómo se siente tu campus sin cambiar tus datos académicos.</p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="text-xs font-medium text-zinc-400">Tipografía
+              <select id="ui-font" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <option value="inter" ${ui.font === 'inter' ? 'selected' : ''}>Inter · equilibrada</option>
+                <option value="jakarta" ${ui.font === 'jakarta' ? 'selected' : ''}>Plus Jakarta · editorial</option>
+                <option value="space" ${ui.font === 'space' ? 'selected' : ''}>Space Grotesk · espacial</option>
+                <option value="manrope" ${ui.font === 'manrope' ? 'selected' : ''}>Manrope · limpia</option>
+                <option value="dm" ${ui.font === 'dm' ? 'selected' : ''}>DM Sans · amigable</option>
+                <option value="rajdhani" ${ui.font === 'rajdhani' ? 'selected' : ''}>Rajdhani · esports</option>
+                <option value="plex" ${ui.font === 'plex' ? 'selected' : ''}>IBM Plex Mono · técnica</option>
+                <option value="jetbrains" ${ui.font === 'jetbrains' ? 'selected' : ''}>JetBrains Mono · código</option>
+                <option value="orbitron" ${ui.font === 'orbitron' ? 'selected' : ''}>Orbitron · sci-fi</option>
+                <option value="system" ${ui.font === 'system' ? 'selected' : ''}>Sistema · nativa</option>
+                <option value="mono" ${ui.font === 'mono' ? 'selected' : ''}>Mono · técnica</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-zinc-400">Brillo de interfaz
+              <select id="ui-glow" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <option value="soft" ${ui.glow === 'soft' ? 'selected' : ''}>Sutil</option>
+                <option value="bright" ${ui.glow === 'bright' ? 'selected' : ''}>Intenso</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-zinc-400">Densidad
+              <select id="ui-density" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <option value="comfortable" ${ui.density === 'comfortable' ? 'selected' : ''}>Cómoda</option>
+                <option value="compact" ${ui.density === 'compact' ? 'selected' : ''}>Compacta</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-zinc-400">Radio de tarjetas
+              <select id="ui-radius" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <option value="soft" ${ui.radius === 'soft' ? 'selected' : ''}>Redondeado</option>
+                <option value="sharp" ${ui.radius === 'sharp' ? 'selected' : ''}>Preciso</option>
+              </select>
+            </label>
+            <label class="text-xs font-medium text-zinc-400">Color secundario
+              <span class="mt-1 flex items-center gap-2 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5">
+                <input id="ui-secondary" type="color" value="${ui.secondary}" class="h-7 w-8 cursor-pointer rounded border-0 bg-transparent" />
+                <span id="ui-secondary-value" class="font-mono text-xs text-zinc-400">${ui.secondary}</span>
+              </span>
+            </label>
+          </div>
+          <label class="mt-4 flex items-center gap-2 text-xs text-zinc-400">
+            <input id="ui-reduce-motion" type="checkbox" ${ui.reduceMotion ? 'checked' : ''} class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" />
+            Reducir animaciones y movimiento
+          </label>
         </div>
 
         <div class="glass rounded-xl p-6 mb-6">
@@ -95,6 +147,15 @@ export async function initSettings(): Promise<void> {
 }
 
 function initSettingsEvents(userId: string): void {
+  const applyUiPreview = () => {
+    const secondary = (document.getElementById('ui-secondary') as HTMLInputElement | null)?.value || '#6D28D9'
+    document.documentElement.style.setProperty('--ui-secondary', secondary)
+    const secondaryValue = document.getElementById('ui-secondary-value')
+    if (secondaryValue) secondaryValue.textContent = secondary
+  }
+
+  document.getElementById('ui-secondary')?.addEventListener('input', applyUiPreview)
+
   // Color presets
   document.querySelectorAll('.preset-color').forEach(b => {
     b.addEventListener('click', () => {
@@ -157,6 +218,14 @@ function initSettingsEvents(userId: string): void {
       if (bgErr) { errEl.textContent = bgErr; errEl.classList.remove('hidden'); return }
       bgUrl = bgUrlResult ?? null
     }
+    const font = (document.getElementById('ui-font') as HTMLSelectElement | null)?.value as UiPreferences['font'] || 'inter'
+    const density = (document.getElementById('ui-density') as HTMLSelectElement | null)?.value as UiPreferences['density'] || 'comfortable'
+    const radius = (document.getElementById('ui-radius') as HTMLSelectElement | null)?.value as UiPreferences['radius'] || 'soft'
+    const secondary = (document.getElementById('ui-secondary') as HTMLInputElement | null)?.value || '#6D28D9'
+    const glow = (document.getElementById('ui-glow') as HTMLSelectElement | null)?.value as UiPreferences['glow'] || 'soft'
+    const reduceMotion = (document.getElementById('ui-reduce-motion') as HTMLInputElement | null)?.checked || false
+    saveUiPreferences(userId, { font, density, radius, secondary, glow, reduceMotion })
+
     const update: any = { role_color: color }
     if (bgUrl) update.custom_bg_url = bgUrl
     const { error } = await supabase.from('profiles').update(update).eq('id', userId)
