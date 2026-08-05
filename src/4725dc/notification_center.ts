@@ -46,7 +46,7 @@ export async function initNotificationCenter(): Promise<void> {
       return
     }
     list.innerHTML = notifications.map(notification => `
-      <a href="${escapeHtml(notification.route || '#/')}" class="notification-center__item${notification.read_at ? '' : ' unread'}" data-notification-id="${escapeHtml(notification.id)}" style="--notification-accent:${safeColor(notification.accent_color)}">
+      <a href="${escapeHtml(normalizeRoute(notification.route))}" class="notification-center__item${notification.read_at ? '' : ' unread'}" data-notification-id="${escapeHtml(notification.id)}" style="--notification-accent:${safeColor(notification.accent_color)}">
         <span class="notification-center__dot"></span>
         ${notification.image_url ? `<img class="notification-center__image" src="${escapeHtml(notification.image_url)}" alt="" loading="lazy" />` : ''}
         <span class="notification-center__item-body">
@@ -110,6 +110,12 @@ function formatNotificationDate(value: string): string {
 
 function safeColor(value: string | null | undefined): string {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : '#8B5CF6'
+}
+
+function normalizeRoute(value: string | null | undefined): string {
+  if (!value) return '#/'
+  if (value.startsWith('#')) return value
+  return `#${value.startsWith('/') ? value : `/${value}`}`
 }
 
 async function openNotificationComposer(onSent: () => Promise<void>, userId: string): Promise<void> {

@@ -4,7 +4,7 @@ import { supabase } from '@/304244'
 import { getProfile } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 
-const DISCORD_URL = 'https://discord.gg/wbFm5BVWW'
+const DISCORD_URL = 'https://discord.gg/jmP2wJVf4N'
 const SOCIALS = {
   youtube: 'https://www.youtube.com/@QU4SAR_ACADEMY',
   twitch: 'https://www.twitch.tv/qu4sar_academy',

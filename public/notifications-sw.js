@@ -1,6 +1,7 @@
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = event.notification.data?.url || './'
+  const rawTarget = event.notification.data?.url || '#/'
+  const target = rawTarget.startsWith('#') ? rawTarget : `#${rawTarget.startsWith('/') ? rawTarget : `/${rawTarget}`}`
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const existing = clients.find((client) => 'focus' in client)

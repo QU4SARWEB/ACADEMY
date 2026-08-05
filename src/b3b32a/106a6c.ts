@@ -3,7 +3,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { renderDiscordBanner, renderPublicNavbar, renderPublicFooter, mountPublicNav } from '@/b3b32a/shared/public_nav'
 
-const DISCORD_URL = 'https://discord.gg/wbFm5BVWW'
+const DISCORD_URL = 'https://discord.gg/jmP2wJVf4N'
 
 function embers(): string {
   const positions = [2, 7, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 95]
