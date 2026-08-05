@@ -70,13 +70,17 @@ export function DashboardLayout(contentHtml: string): string {
             </a>
           </div>
         </header>
+        ${courseContextNav(role)}
         <aside id="notification-center" class="notification-center" aria-hidden="true">
           <div class="notification-center__head">
             <div>
               <span class="dashboard-topbar__eyebrow">Actividad</span>
               <h2>Notificaciones</h2>
             </div>
-            <button id="notification-mark-all" type="button">Marcar todo leído</button>
+            <div class="notification-center__head-actions">
+              ${role === 'coach' ? '<button id="notification-compose-btn" type="button">Enviar aviso</button>' : ''}
+              <button id="notification-mark-all" type="button">Marcar todo leído</button>
+            </div>
           </div>
           <div id="notification-center-list" class="notification-center__list">
             <div class="notification-center__empty"><p>Cargando avisos...</p></div>
@@ -143,6 +147,44 @@ function dashboardContext(role: string): { area: string; title: string; subtitle
   }
 }
 
+function courseContextNav(role: string): string {
+  const path = location.hash.slice(1).split('?')[0] || '/'
+  const queryCourseId = new URLSearchParams(location.hash.split('?')[1] || '').get('course') || ''
+  const detailMatch = path.match(new RegExp(`^/${role === 'coach' ? 'coaches' : 'students'}/courses/([^/]+)$`))
+  const courseId = queryCourseId || detailMatch?.[1] || ''
+  if (!courseId) return ''
+  const coach = role === 'coach'
+  const prefix = coach ? 'coaches' : 'students'
+  const items = coach
+    ? [
+        ['Contenido', `#/${prefix}/courses/${courseId}`],
+        ['Tareas', `#/${prefix}/tasks?course=${courseId}`],
+        ['Horarios', `#/${prefix}/schedules?course=${courseId}`],
+        ['Exámenes', `#/${prefix}/exams?course=${courseId}`],
+        ['Asistencia', `#/${prefix}/attendance?course=${courseId}`],
+        ['Notas', `#/${prefix}/grades?course=${courseId}`],
+        ['Mensajes', `#/chat?course=${courseId}`],
+        ['Miembros', `#/${prefix}/students?course=${courseId}`],
+      ]
+    : [
+        ['Contenido', `#/${prefix}/courses/${courseId}`],
+        ['Calendario', `#/${prefix}/schedule?course=${courseId}`],
+        ['Tareas', `#/${prefix}/tasks?course=${courseId}`],
+        ['Exámenes', `#/${prefix}/exams?course=${courseId}`],
+        ['Notas', `#/${prefix}/grades?course=${courseId}`],
+        ['Mensajes', `#/chat?course=${courseId}`],
+        ['Miembros', `#/members?course=${courseId}`],
+      ]
+  const current = location.hash.slice(1).split('?')[0]
+  return `
+    <nav class="course-context-nav" aria-label="Navegación del curso">
+      <a class="course-context-nav__back" href="#/${prefix}/courses">${Icon('arrowLeft', 14)} Cursos</a>
+      <div class="course-context-nav__items">
+        ${items.map(([label, href]) => `<a class="${current === href.slice(1).split('?')[0] ? 'active' : ''}" href="${href}">${escapeHtml(label)}</a>`).join('')}
+      </div>
+    </nav>`
+}
+
 function Sidebar(role: string, prefix: string, profile: Profile | undefined): string {
   const previewRole = sessionStorage.getItem('previewRole') || ''
   const effectiveRole = previewRole || role
@@ -157,18 +199,14 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
   const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item(`/${prefix}/schedule`, 'calendar', 'Horario', isStudent)],
-    [item(`/${prefix}/tasks`, 'clipboardList', 'Tareas', isStudent), item(`/${prefix}/exams`, 'scrollText', 'Ex\u00e1menes', isStudent)],
-    [item('/members', 'users', 'Miembros'), item('/chat', 'mail', 'Mensajes'), item(`/${prefix}/team`, 'users', 'Equipo', isStudent)],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item(`/${prefix}/grades`, 'scrollText', 'Notas', isStudent)],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos')],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
-    [item('/coaches/enroll', 'plus', 'Inscribir'), item('/coaches/tasks', 'clipboardList', 'Tareas'), item('/coaches/schedules', 'calendar', 'Horarios')],
-    [item('/coaches/exams', 'scrollText', 'Ex\u00e1menes'), item('/coaches/practical', 'target', 'Ex\u00e1menes Pr\u00e1ctico'), item('/coaches/attendance', 'clipboardList', 'Asistencia'), item('/coaches/grades', 'scrollText', 'Notas')],
-    [item('/coaches/teams', 'users', 'Equipos'), item('/members', 'users', 'Miembros'), item('/chat', 'mail', 'Mensajes')],
+    [item('/coaches/enroll', 'plus', 'Inscribir')],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 
@@ -178,17 +216,21 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
     ? rawGroups.map(g => g.filter(i => i.href === '/payments')).filter(g => g.length > 0)
     : rawGroups
   const currentHash = location.hash.slice(1)
+  const courseQueryId = new URLSearchParams(location.hash.split('?')[1] || '').get('course') || ''
+  const courseDetailMatch = currentHash.match(new RegExp(`^/${prefix}/courses/([^/]+)$`))
+  const courseContextId = courseQueryId || courseDetailMatch?.[1] || ''
+  const courseContextActive = !!courseContextId
 
   let itemsHtml = ''
   // Etiquetas de grupo alineadas al contenido de cada sección
-  const coachGroupLabels = ['Resumen', 'Academia', 'Entrenamiento', 'Evaluación', 'Comunidad', 'Cuenta']
-  const studentGroupLabels = ['Resumen', 'Academia', 'Entrenamiento', 'Comunidad', 'Cuenta']
+  const coachGroupLabels = ['Resumen', 'Academia', 'Admisiones', 'Cuenta']
+  const studentGroupLabels = ['Resumen', 'Academia', 'Cuenta']
   const groupLabels = isCoach ? coachGroupLabels : studentGroupLabels
   for (let gi = 0; gi < groups.length; gi++) {
     if (gi > 0) itemsHtml += `<div class="sb-section-label mt-2 mb-1 px-3 pt-3" style="color:${accent}">${groupLabels[gi] || ''}</div>`
     for (const it of groups[gi]) {
       const href = it.href!
-      const isActive = currentHash === href || currentHash.startsWith(href + '/')
+      const isActive = currentHash === href || currentHash.startsWith(href + '/') || (courseContextActive && href === `/${prefix}/courses`)
       const active = isActive
         ? 'active text-white'
         : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-white'
@@ -207,7 +249,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   for (let gi = 0; gi < groups.length; gi++) {
     const group = groups[gi]
     const label = groupLabels[gi] || 'Menu'
-    const hasActiveItem = group.some(it => currentHash === it.href || currentHash.startsWith(`${it.href}/`))
+    const hasActiveItem = group.some(it => currentHash === it.href || currentHash.startsWith(`${it.href}/`) || (courseContextActive && it.href === `/${prefix}/courses`))
     const activeClass = hasActiveItem ? ' active' : ''
     const firstIcon = group[0]?.icon || 'layoutDashboard'
     mobileBottomTabsHtml += `
@@ -220,7 +262,7 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
         <div class="sb-mobile-panel-items">
           ${group.map(it => {
             const href = it.href!
-            const isActive = currentHash === href || currentHash.startsWith(href + '/')
+            const isActive = currentHash === href || currentHash.startsWith(href + '/') || (courseContextActive && href === `/${prefix}/courses`)
             return `
               <a href="#${escapeHtml(href)}" class="sb-mobile-nav-item${isActive ? ' active' : ''}">
                 ${Icon(it.icon!, 17)}

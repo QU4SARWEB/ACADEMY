@@ -28,6 +28,7 @@ export function mountCoachCourseDetail(): void {
         document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Curso no encontrado</p>'
         return
       }
+      sessionStorage.setItem(`qu4sar-course-context:${id}`, (course as any).name)
 
       const { data: enrollments } = await supabase
         .from('enrollments')

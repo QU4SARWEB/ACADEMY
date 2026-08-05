@@ -17,6 +17,7 @@ let currentMonth = new Date()
 
 export async function initCoachSchedules(): Promise<void> {
   try {
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
     const [{ data: schedules }, { data: allCourses }] = await Promise.all([
       supabase.from('schedules').select('*').order('start_time'),
       supabase.from('courses').select('id, name, description, duration_months, price, display_order, is_active').eq('is_active', true).order('display_order'),
@@ -28,7 +29,9 @@ export async function initCoachSchedules(): Promise<void> {
     if (assignedIds.length > 0) {
       courses = courses.filter((c: any) => assignedIds.includes(c.id))
     }
+    if (courseFilter) courses = courses.filter((c: any) => c.id === courseFilter)
     allCoursesCache = courses
+    allSchedulesCache = courseFilter ? allSchedulesCache.filter((schedule: any) => schedule.course_id === courseFilter) : allSchedulesCache
     renderScheduleTable()
   } catch (err) {
     console.error('Error loading schedules:', err)

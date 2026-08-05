@@ -35,13 +35,16 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
     const courseMap = new Map<string, string>()
     for (const c of courses ?? []) courseMap.set(c.id, c.name)
 
-    const { data: tasks } = await supabase
+    const { data: taskData } = await supabase
       .from('course_tasks')
       .select('*')
       .in('course_id', idFilter)
       .order('week_number', { ascending: true })
 
-    if (!tasks || tasks.length === 0) {
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
+    const tasks = courseFilter ? (taskData ?? []).filter((task: any) => task.course_id === courseFilter) : (taskData ?? [])
+
+    if (tasks.length === 0) {
       container.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay tareas disponibles.</p></div>'
       return
     }

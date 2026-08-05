@@ -42,14 +42,16 @@ export async function initCoachExams(): Promise<void> {
     const courseIds = (courses ?? []).map((c: any) => c.id)
     const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
 
-    const { data: exams } = await supabase
+    const { data: examData } = await supabase
       .from('exams')
       .select('id, course_id, title, description, week_number, is_final, published, created_at')
       .in('course_id', idFilter)
       .not('title', 'ilike', '%practico%')
       .order('created_at', { ascending: false })
 
-    const examIds = (exams ?? []).map((e: any) => e.id)
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
+    const exams = courseFilter ? (examData ?? []).filter((exam: any) => exam.course_id === courseFilter) : (examData ?? [])
+    const examIds = exams.map((e: any) => e.id)
     const examFilter = examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000']
 
     const [{ data: questions }, { data: results }] = await Promise.all([

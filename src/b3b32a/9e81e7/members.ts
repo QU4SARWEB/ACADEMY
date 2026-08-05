@@ -18,6 +18,12 @@ export async function initMembers(): Promise<void> {
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle()
       if (prof?.role === 'coach') isCoach = true
     }
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
+    let courseMemberIds: string[] = []
+    if (courseFilter) {
+      const { data: courseEnrollments } = await supabase.from('enrollments').select('profile_id').eq('course_id', courseFilter).eq('status', 'active')
+      courseMemberIds = [...new Set((courseEnrollments ?? []).map((row: any) => row.profile_id).filter(Boolean))]
+    }
 
     // Fetch public profiles (for non-coaches) + all profiles
     let combined: any[] = []
@@ -48,11 +54,12 @@ export async function initMembers(): Promise<void> {
       })
     }
 
-    const { data: allProfiles } = await supabase
+    let allProfilesQuery = supabase
       .from('profiles')
       .select('id, full_name, avatar_url, banner_url, role, display_name, share_slug, riot_id, social_discord')
       .in('role', ['student', 'player', 'coach'])
-      .order('full_name')
+    if (courseFilter && courseMemberIds.length > 0) allProfilesQuery = allProfilesQuery.in('id', courseMemberIds)
+    const { data: allProfiles } = await allProfilesQuery.order('full_name')
 
     const existingIds = new Set(combined.map((m: any) => m.profId))
     for (const prof of allProfiles ?? []) {
@@ -68,6 +75,8 @@ export async function initMembers(): Promise<void> {
         })
       }
     }
+
+    if (courseFilter) combined = combined.filter((member: any) => courseMemberIds.includes(member.profId))
 
     const total = combined.length
 

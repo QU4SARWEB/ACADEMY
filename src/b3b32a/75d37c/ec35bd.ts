@@ -28,6 +28,7 @@ export async function initStudentCourseDetail(): Promise<void> {
       document.getElementById('page-content')!.innerHTML = '<p class="text-zinc-500">Curso no encontrado.</p>'
       return
     }
+    sessionStorage.setItem(`qu4sar-course-context:${id}`, course.name)
 
     let paymentStatus: string | null = null
     let paidAt: string | null = null

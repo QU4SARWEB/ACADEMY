@@ -27,7 +27,7 @@ export async function initStudentExamList(): Promise<void> {
       return
     }
 
-    const { data: exams } = await supabase
+    const { data: examData } = await supabase
       .from('exams')
       .select('*')
       .in('course_id', courseIds)
@@ -35,7 +35,10 @@ export async function initStudentExamList(): Promise<void> {
       .not('title', 'ilike', '%practico%')
       .order('created_at', { ascending: true })
 
-    if (!exams || exams.length === 0) {
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
+    const exams = courseFilter ? (examData ?? []).filter((exam: any) => exam.course_id === courseFilter) : (examData ?? [])
+
+    if (exams.length === 0) {
       document.getElementById('page-content')!.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No hay exámenes disponibles.</p></div>'
       return
     }

@@ -90,6 +90,29 @@ export async function initCoachDashboard(): Promise<void> {
     )
     const expiringCount = expiringPayments.length
 
+    let pendingReviewsCount = 0
+    let pendingExamsCount = 0
+    let upcomingSchedulesCount = 0
+    if (assignedIds.length > 0) {
+      const { data: coachTasks } = await supabase.from('course_tasks').select('id').in('course_id', assignedIds)
+      const taskIds = (coachTasks ?? []).map((task: any) => task.id).filter(Boolean)
+      if (taskIds.length > 0) {
+        const { count } = await supabase.from('task_submissions').select('id', { count: 'exact', head: true }).in('task_id', taskIds).is('score', 'null')
+        pendingReviewsCount = count ?? 0
+      }
+
+      const { data: coachExams } = await supabase.from('exams').select('id').in('course_id', assignedIds).eq('published', true)
+      const examIds = (coachExams ?? []).map((exam: any) => exam.id).filter(Boolean)
+      if (examIds.length > 0) {
+        const { count } = await supabase.from('exam_results').select('id', { count: 'exact', head: true }).in('exam_id', examIds).in('status', ['pending', 'review', 'in_review'])
+        pendingExamsCount = count ?? 0
+      }
+
+      const today = new Date().toISOString().slice(0, 10)
+      const { count } = await supabase.from('schedules').select('id', { count: 'exact', head: true }).in('course_id', assignedIds).gte('schedule_date', today)
+      upcomingSchedulesCount = count ?? 0
+    }
+
     const kpiCards = [
       { icon: 'users', label: 'Alumnos activos', value: String(studentsCount ?? 0), color: '#8B5CF6' },
 
@@ -112,6 +135,29 @@ export async function initCoachDashboard(): Promise<void> {
         </div>
         <a href="#/coaches/enroll" class="btn btn-primary self-start md:self-auto">
           ${Icon('plus', 16)} Inscribir alumno
+        </a>
+      </div>
+
+      <div class="coach-attention-grid mb-8">
+        <a href="#/coaches/tasks" class="coach-attention-card coach-attention-card--urgent">
+          <span class="coach-attention-card__icon">${Icon('clipboardList', 18)}</span>
+          <span><small>Revisión pendiente</small><strong>${pendingReviewsCount}</strong><em>entregas por calificar</em></span>
+          ${Icon('arrowRight', 16)}
+        </a>
+        <a href="#/coaches/exams" class="coach-attention-card">
+          <span class="coach-attention-card__icon">${Icon('scrollText', 18)}</span>
+          <span><small>Evaluación</small><strong>${pendingExamsCount}</strong><em>exámenes por revisar</em></span>
+          ${Icon('arrowRight', 16)}
+        </a>
+        <a href="#/coaches/schedules" class="coach-attention-card">
+          <span class="coach-attention-card__icon">${Icon('calendar', 18)}</span>
+          <span><small>Agenda</small><strong>${upcomingSchedulesCount}</strong><em>actividades próximas</em></span>
+          ${Icon('arrowRight', 16)}
+        </a>
+        <a href="#/payments" class="coach-attention-card">
+          <span class="coach-attention-card__icon">${Icon('dollarSign', 18)}</span>
+          <span><small>Seguimiento</small><strong>${expiringCount}</strong><em>pagos por vencer</em></span>
+          ${Icon('arrowRight', 16)}
         </a>
       </div>
 

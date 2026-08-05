@@ -17,13 +17,15 @@ export async function initStudentSchedule(): Promise<void> {
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
 
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
     const enrolledCourseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
+    const scheduleCourseIds = courseFilter ? enrolledCourseIds.filter(id => id === courseFilter) : enrolledCourseIds
     let schedules: any[] = []
-    if (enrolledCourseIds.length > 0) {
+    if (scheduleCourseIds.length > 0) {
       const { data } = await supabase
         .from('schedules')
         .select('*')
-        .in('course_id', enrolledCourseIds)
+        .in('course_id', scheduleCourseIds)
         .order('schedule_date')
         .order('start_time')
       schedules = data ?? []

@@ -343,10 +343,46 @@ Implementado en la primera iteracion posterior al backup:
 - Detalle de curso con modulos, materiales y progreso por material.
 - Editor de contenido para coaches: crear/eliminar modulos y materiales.
 - Mensajeria directa, por curso y por equipo con participantes y realtime.
+- Campañas de notificaciones para coaches por audiencia global, curso o plataforma.
+- Avisos con titulo, cuerpo, color, imagen, accion y ruta personalizada.
 
 Pendiente inmediato:
 
 - Completar pruebas de permisos y recorridos moviles.
+
+## Fases de profesionalizacion
+
+### PROF-1: verdad de datos
+
+- Eliminar metricas provisionales y calculos de demostracion.
+- Mostrar progreso real por actividades, tareas, examenes y asistencia.
+- Sustituir historiales locales por actividad persistente cuando corresponda.
+
+### PROF-2: centro de atencion del coach
+
+- Entregas sin calificar.
+- Examenes pendientes de revision.
+- Alumnos con actividad o pagos que requieren seguimiento.
+- Proximas clases y acciones directas.
+
+### PROF-3: curso como espacio de trabajo
+
+- Navegacion contextual en todas las zonas del curso.
+- Modulos y materiales con estados claros.
+- Tareas, examenes, notas, asistencia y mensajes filtrados por curso.
+
+### PROF-4: comunicacion avanzada
+
+- Mensajes directos, por curso y por equipo.
+- Adjuntos, presencia, respuestas y filtros.
+- Notificaciones agrupadas y preferencias por tipo.
+
+### PROF-5: calidad de producto
+
+- Pruebas por rol y RLS.
+- Pruebas de refresh, sesiones expiradas y reconexion realtime.
+- Accesibilidad de teclado y lectores de pantalla.
+- Auditoria de rendimiento y responsive en resoluciones reales.
 
 ## Fases de la aplicacion de PC
 

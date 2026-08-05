@@ -26,13 +26,15 @@ export async function initCoachTasks(): Promise<void> {
     const courseIds = (courses ?? []).map((c: any) => c.id)
     const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
 
-    const { data: tasks } = await supabase
+    const { data: taskData } = await supabase
       .from('course_tasks')
       .select('id, course_id, title, description, week_number, due_date, created_at, file_url')
       .in('course_id', idFilter)
       .order('created_at', { ascending: false })
 
-    const taskIds = (tasks ?? []).map((t: any) => t.id)
+    const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
+    const tasks = courseFilter ? (taskData ?? []).filter((task: any) => task.course_id === courseFilter) : (taskData ?? [])
+    const taskIds = tasks.map((t: any) => t.id)
     const taskFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
 
     const { data: submissions } = await supabase

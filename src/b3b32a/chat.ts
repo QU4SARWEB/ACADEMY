@@ -17,6 +17,10 @@ export async function initChat(): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return
   const userId = session.user.id
+  const courseContextId = new URLSearchParams(location.hash.split('?')[1] || '').get('course') || ''
+  const courseContextName = courseContextId
+    ? (await supabase.from('courses').select('name').eq('id', courseContextId).maybeSingle()).data?.name || ''
+    : ''
 
   if (activeChatChannel) {
     supabase.removeChannel(activeChatChannel)
@@ -36,6 +40,9 @@ export async function initChat(): Promise<void> {
     ? await supabase.from('conversations').select('id, kind, title, updated_at, created_by').in('id', conversationIds).order('updated_at', { ascending: false })
     : { data: [] as any[] }
   let conversations: ChatConversation[] = conversationData ?? []
+  if (courseContextId && courseContextName) {
+    conversations = conversations.filter(conversation => conversation.kind === 'course' && conversation.title === courseContextName)
+  }
 
   const participantData = conversationIds.length > 0
     ? (await supabase.from('conversation_participants').select('conversation_id, profile_id').in('conversation_id', conversationIds)).data ?? []
@@ -79,7 +86,7 @@ export async function initChat(): Promise<void> {
       <div>
         <span class="section-head__eyebrow">Comunicación académica</span>
         <h1>Mensajes</h1>
-        <p>Habla con tu coach y mantén tu entrenamiento en movimiento.</p>
+        <p>${courseContextName ? `Conversación del curso: ${escapeHtml(courseContextName)}` : 'Habla con tu coach y mantén tu entrenamiento en movimiento.'}</p>
       </div>
       <button id="chat-new-btn" class="dashboard-chat__new">${Icon('plus', 16)} Nueva conversación</button>
     </div>
@@ -96,7 +103,7 @@ export async function initChat(): Promise<void> {
         <p>Elige una conversación directa o un espacio académico.</p>
         <select id="chat-kind" class="dashboard-chat__select">
           <option value="direct">Persona</option>
-          <option value="course">Curso</option>
+          <option value="course" ${courseContextId ? 'selected' : ''}>Curso</option>
           <option value="team">Equipo</option>
         </select>
         <select id="chat-recipient" class="dashboard-chat__select">
@@ -105,7 +112,7 @@ export async function initChat(): Promise<void> {
         </select>
         <select id="chat-context" class="dashboard-chat__select hidden">
           <option value="">Seleccionar contexto</option>
-          ${courseOptions.map((course: any) => `<option data-context-kind="course" value="${escapeHtml(course.id)}">${escapeHtml(course.name || 'Curso')}</option>`).join('')}
+          ${courseOptions.map((course: any) => `<option data-context-kind="course" value="${escapeHtml(course.id)}" ${course.id === courseContextId ? 'selected' : ''}>${escapeHtml(course.name || 'Curso')}</option>`).join('')}
           ${teamOptions.map((team: any) => `<option data-context-kind="team" value="${escapeHtml(team.id)}">${escapeHtml(team.name || 'Equipo')}</option>`).join('')}
         </select>
         <button id="chat-create-btn" type="button" class="btn btn-primary w-full">Abrir conversación</button>
