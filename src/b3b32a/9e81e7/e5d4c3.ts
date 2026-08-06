@@ -5,6 +5,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { readUiPreferences, saveUiPreferences, type UiPreferences } from '@/4725dc/ui_preferences'
+import { updatePassword } from '@/fa53b9/fa53b9'
 
 const PRESET_COLORS = ['#8B5CF6','#6D28D9','#EC4899','#EF4444','#F59E0B','#10B981','#3B82F6','#06B6D4','#14B8A6','#F97316']
 
@@ -111,6 +112,24 @@ export async function initSettings(): Promise<void> {
         </div>
 
         <div class="glass rounded-xl p-6 mb-6">
+          <h2 class="mb-2 flex items-center gap-2 font-heading text-base font-bold text-white">${Icon('keyRound', 17)} Seguridad de la cuenta</h2>
+          <p class="mb-4 text-sm text-zinc-500">Cambia tu contraseña desde cualquier dispositivo. Se aplica también en la app de PC.</p>
+          <form id="change-password-form" class="space-y-3">
+            <label class="block text-xs font-medium text-zinc-400">Nueva contraseña
+              <input id="new-password" type="password" minlength="6" required autocomplete="new-password" placeholder="Mínimo 6 caracteres" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+            </label>
+            <label class="block text-xs font-medium text-zinc-400">Confirmar contraseña
+              <input id="confirm-password" type="password" minlength="6" required autocomplete="new-password" placeholder="Repite la contraseña" class="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+            </label>
+            <p id="password-change-error" class="hidden text-xs text-red-400"></p>
+            <p id="password-change-success" class="hidden text-xs text-emerald-400"></p>
+            <button id="change-password-submit" type="submit" class="btn-glow flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7C3AED] disabled:opacity-50">
+              ${Icon('keyRound', 14)} Cambiar contraseña
+            </button>
+          </form>
+        </div>
+
+        <div class="glass rounded-xl p-6 mb-6">
           <h2 class="mb-4 font-heading text-base font-bold text-white">Vista previa</h2>
           <p class="mb-4 text-sm text-zinc-500">Así se verán los principales elementos con tu configuración actual.</p>
           <div class="space-y-3">
@@ -199,6 +218,43 @@ function initSettingsEvents(userId: string): void {
     await supabase.from('profiles').update({ custom_bg_url: null }).eq('id', userId)
     toast('success', 'Fondo eliminado')
     setTimeout(() => location.reload(), 300)
+  })
+
+  document.getElementById('change-password-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    const form = event.currentTarget as HTMLFormElement
+    const submit = document.getElementById('change-password-submit') as HTMLButtonElement
+    const error = document.getElementById('password-change-error')!
+    const success = document.getElementById('password-change-success')!
+    const password = (document.getElementById('new-password') as HTMLInputElement).value
+    const confirmation = (document.getElementById('confirm-password') as HTMLInputElement).value
+
+    error.classList.add('hidden')
+    success.classList.add('hidden')
+    if (password.length < 6) {
+      error.textContent = 'La contraseña debe tener al menos 6 caracteres.'
+      error.classList.remove('hidden')
+      return
+    }
+    if (password !== confirmation) {
+      error.textContent = 'Las contraseñas no coinciden.'
+      error.classList.remove('hidden')
+      return
+    }
+
+    submit.disabled = true
+    submit.innerHTML = `${Icon('rotate', 14)} Actualizando...`
+    const result = await updatePassword(password)
+    submit.disabled = false
+    submit.innerHTML = `${Icon('keyRound', 14)} Cambiar contraseña`
+    if (result.error) {
+      error.textContent = result.error
+      error.classList.remove('hidden')
+      return
+    }
+    success.textContent = 'Contraseña actualizada correctamente.'
+    success.classList.remove('hidden')
+    form.reset()
   })
 
   // Save

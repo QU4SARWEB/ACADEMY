@@ -3,6 +3,7 @@ import { router } from '@/f3395c'
 import { toast } from '@/4725dc/4f2900'
 import { supabase } from '@/304244'
 import { renderDiscordBanner, renderPublicNavbar, mountPublicNav } from '@/b3b32a/shared/public_nav'
+import { Icon } from '@/2b3583/bd2119'
 
 function authShell(body: string): string {
   return `
@@ -26,7 +27,7 @@ export function renderResetPassword(): string {
     return authShell(`
        <div class="glass relative w-full max-w-sm rounded-xl p-8 public-enter public-enter--card">
         <div class="mb-6 text-center">
-          <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
+           <span class="flex justify-center text-[#8B5CF6]">${Icon('keyRound', 30)}</span>
           <h1 class="mt-2 font-heading text-lg font-bold text-white">Nueva contraseña</h1>
         </div>
         <form id="update-password-form" class="space-y-4">
@@ -48,7 +49,7 @@ export function renderResetPassword(): string {
   return authShell(`
        <div class="glass relative w-full max-w-sm rounded-xl p-8 public-enter public-enter--card">
         <div class="mb-6 text-center">
-          <span class="font-heading text-3xl font-bold text-[#8B5CF6]">Q</span>
+           <span class="flex justify-center text-[#8B5CF6]">${Icon('mail', 30)}</span>
           <h1 class="mt-2 font-heading text-lg font-bold text-white">Recuperar contraseña</h1>
           <p class="mt-1 text-sm text-zinc-500">Te enviaremos un enlace a tu correo</p>
         </div>
