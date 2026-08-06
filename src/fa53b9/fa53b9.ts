@@ -6,6 +6,7 @@ const ROLE_PREFIX: Record<string, string> = {
   coach: 'coaches',
   student: 'students',
 }
+const WEB_APP_URL = import.meta.env.VITE_WEB_APP_URL || 'https://academy-psi-lemon.vercel.app'
 
 export function isDesktopApp(): boolean {
   return Boolean((window as any).__TAURI_INTERNALS__)
@@ -104,7 +105,7 @@ export async function signOut(): Promise<void> {
 
 export async function resetPassword(email: string): Promise<{ error?: string; success?: boolean }> {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${import.meta.env.VITE_WEB_APP_URL || window.location.origin}/#/reset-password`,
+    redirectTo: `${WEB_APP_URL}/#/reset-password`,
   })
   if (error) return { error: error.message }
   return { success: true }
