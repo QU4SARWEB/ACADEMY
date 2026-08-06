@@ -7,6 +7,10 @@ const ROLE_PREFIX: Record<string, string> = {
   student: 'students',
 }
 
+export function isDesktopApp(): boolean {
+  return Boolean((window as any).__TAURI_INTERNALS__)
+}
+
 export async function getSession() {
   const { data } = await supabase.auth.getSession()
   return data.session
@@ -95,7 +99,7 @@ export async function signOut(): Promise<void> {
   try { await supabase.auth.signOut() } catch {}
   store.set<Profile | null>('profile', null)
   store.set('session', null)
-  location.hash = '/'
+  location.hash = isDesktopApp() ? '/login' : '/'
 }
 
 export async function resetPassword(email: string): Promise<{ error?: string; success?: boolean }> {

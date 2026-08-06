@@ -1,6 +1,6 @@
 import { supabase } from '@/304244'
 import { router } from '@/f3395c'
-import { authGuard, getProfile } from '@/fa53b9/fa53b9'
+import { authGuard, getProfile, isDesktopApp } from '@/fa53b9/fa53b9'
 import { initToastContainer } from '@/4725dc/4f2900'
 import { FullPageSpinner } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
@@ -62,12 +62,30 @@ router.setBeforeNavigate(async (path) => authGuard(path))
 // Public routes
 router.on('/', async () => {
   const { data: { session } } = await supabase.auth.getSession()
+  if (isDesktopApp()) {
+    if (!session) {
+      location.hash = '/login'
+      return
+    }
+    const profile = await getProfile()
+    location.hash = profile?.role === 'coach' ? '/coaches/dashboard' : '/students/dashboard'
+    return
+  }
   document.getElementById('app')!.innerHTML = renderHome(session)
   mountHome()
 })
 
 router.on('/about', async () => {
   const { data: { session } } = await supabase.auth.getSession()
+  if (isDesktopApp()) {
+    if (!session) {
+      location.hash = '/login'
+      return
+    }
+    const profile = await getProfile()
+    location.hash = profile?.role === 'coach' ? '/coaches/dashboard' : '/students/dashboard'
+    return
+  }
   document.getElementById('app')!.innerHTML = renderAbout(session)
   mountAbout()
 })
@@ -88,6 +106,16 @@ router.on('/reset-password', async () => {
 })
 
 router.on('/p/:slug', async () => {
+  if (isDesktopApp()) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      location.hash = '/login'
+      return
+    }
+    const profile = await getProfile()
+    location.hash = profile?.role === 'coach' ? '/coaches/dashboard' : '/students/dashboard'
+    return
+  }
   document.getElementById('app')!.innerHTML = renderPublicProfile()
   initPublicProfile()
 })
