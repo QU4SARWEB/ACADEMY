@@ -21,6 +21,7 @@ export function DashboardLayout(contentHtml: string): string {
   const mobileWelcomeKey = profile?.id ? `qu4sar-mobile-welcome:${profile.id}` : ''
   const platformNoticeKey = profile?.id ? `qu4sar-platform-notice-seen:${profile.id}` : ''
   const isMobilePlatform = profile?.platform === 'mobile'
+  const isTauri = Boolean((window as any).__TAURI_INTERNALS__)
   const mobileWelcomeDismissed = isMobilePlatform && !!mobileWelcomeKey && localStorage.getItem(mobileWelcomeKey) === '1'
   if (isMobilePlatform && !mobileWelcomeDismissed && mobileWelcomeKey) {
     localStorage.setItem(mobileWelcomeKey, '1')
@@ -61,6 +62,7 @@ export function DashboardLayout(contentHtml: string): string {
           </div>
           <div class="dashboard-topbar__actions">
             <time class="dashboard-topbar__date">${escapeHtml(pageContext.date)}</time>
+            ${isTauri ? `<button id="desktop-update-btn" type="button" class="dashboard-topbar__icon" aria-label="Buscar actualización" title="Buscar actualización">${Icon('download', 17)}</button>` : ''}
             <button id="topbar-notification-btn" type="button" class="dashboard-topbar__icon" aria-label="Activar notificaciones" title="Activar notificaciones">
               ${Icon('bell', 17)}
               <span id="notification-unread-count" class="notification-unread-count hidden">0</span>
@@ -363,6 +365,21 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 export function initSidebar(): void {
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await signOut()
+  })
+
+  document.getElementById('desktop-update-btn')?.addEventListener('click', async () => {
+    const button = document.getElementById('desktop-update-btn') as HTMLButtonElement | null
+    if (!button) return
+    button.disabled = true
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater')
+      const update = await check()
+      alert(update ? `Nueva versión disponible: ${update.version}` : 'Ya tienes la versión más reciente.')
+    } catch {
+      alert('No se pudo comprobar la actualización.')
+    } finally {
+      button.disabled = false
+    }
   })
 
   document.getElementById('change-platform-btn')?.addEventListener('click', async () => {
