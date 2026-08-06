@@ -135,6 +135,7 @@ function dashboardContext(role: string): { area: string; title: string; subtitle
     '/students/schedule': 'Horario',
     '/students/exams': 'Exámenes',
     '/students/grades': 'Mis notas',
+    '/calls': 'Llamadas',
     '/payments': 'Pagos',
     '/members': 'Miembros',
     '/settings': 'Configuración',
@@ -199,16 +200,16 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
   type NavItem = { href?: string; icon?: string; label?: string; show?: boolean }
   function item(href: string, icon: string, label: string, show = true): NavItem { return { href, icon, label, show } }
 
-  const navGroups: NavItem[][] = [
+const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos')],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item('/calls', 'video', 'Llamadas')],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
-    [item('/coaches/enroll', 'plus', 'Inscribir')],
+    [item('/coaches/enroll', 'plus', 'Inscribir'), item('/calls', 'video', 'Llamadas')],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 

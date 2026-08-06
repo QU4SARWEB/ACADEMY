@@ -723,7 +723,7 @@ async function openExamResultsModal(examId: string): Promise<void> {
 
   const { data: enrollments } = await supabase
     .from('enrollments')
-    .select('profile_id, profiles!inner(full_name, email, avatar_url, riot_id)')
+    .select('profile_id, profiles!inner(full_name, email, avatar_url, riot_id, platform)')
     .eq('course_id', exam.course_id)
     .eq('status', 'active')
 
@@ -757,10 +757,13 @@ async function openExamResultsModal(examId: string): Promise<void> {
   }
 
   const rows = (enrollments ?? []).length === 0
-    ? '<tr><td colspan="4" class="py-8 text-center text-sm text-zinc-500">No hay estudiantes inscritos.</td></tr>'
+    ? '<tr><td colspan="5" class="py-8 text-center text-sm text-zinc-500">No hay estudiantes inscritos.</td></tr>'
     : (enrollments ?? []).map((e: any) => {
         const studentId = e.profile_id
         const name = e.profiles?.full_name || e.profiles?.riot_id || 'Desconocido'
+        const platformBadge = e.profiles?.platform === 'mobile'
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
         const result = resultsByStudent[studentId]
         let status: string
         let score: string
@@ -786,6 +789,7 @@ async function openExamResultsModal(examId: string): Promise<void> {
         return `
         <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30 cursor-pointer student-result-row" data-student-id="${escapeHtml(studentId)}" data-exam-id="${escapeHtml(examId)}">
           <td class="py-3 px-3 text-sm text-white">${escapeHtml(name)}</td>
+          <td class="py-3 px-3">${platformBadge}</td>
           <td class="py-3 px-3">${status}</td>
           <td class="py-3 px-3 text-sm text-zinc-300">${score}</td>
         </tr>`
@@ -802,6 +806,7 @@ async function openExamResultsModal(examId: string): Promise<void> {
         <thead>
           <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
             <th class="py-2.5 px-3 font-medium">Estudiante</th>
+            <th class="py-2.5 px-3 font-medium">Plataforma</th>
             <th class="py-2.5 px-3 font-medium">Estado</th>
             <th class="py-2.5 px-3 font-medium">Nota</th>
           </tr>

@@ -78,6 +78,8 @@ export async function initNotificationCenter(): Promise<void> {
     loaded = true
   }
 
+  await loadNotifications()
+
   button.addEventListener('click', async () => {
     const open = panel.classList.toggle('open')
     panel.setAttribute('aria-hidden', String(!open))

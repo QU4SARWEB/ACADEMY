@@ -63,7 +63,7 @@ export async function initCoachEnroll(): Promise<void> {
     // Get all active students
     const { data: sRes } = await supabase
       .from('profiles')
-      .select('id, full_name, display_name, email, avatar_url, riot_id, social_discord')
+      .select('id, full_name, display_name, email, avatar_url, riot_id, social_discord, platform')
       .in('role', ['student', 'player'])
       .eq('is_active', true)
       .order('full_name')
@@ -159,6 +159,9 @@ export async function initCoachEnroll(): Promise<void> {
     function renderTableRows(students: any[]): string {
       return students.map((s: any) => {
       const initial = (s.full_name || '?').charAt(0).toUpperCase()
+      const platformBadge = s.platform === 'mobile'
+        ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+        : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
       return `
       <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
         <td class="py-3 px-4"><input type="checkbox" class="enroll-student-cb h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
@@ -173,6 +176,7 @@ export async function initCoachEnroll(): Promise<void> {
           </div>
         </td>
         <td class="py-3 px-4 text-xs text-zinc-400 hidden md:table-cell">${escapeHtml(s.email || '')}</td>
+        <td class="py-3 px-4">${platformBadge}</td>
         <td class="py-3 px-4">
           <div class="flex flex-wrap gap-1">
             ${allCourses.map((c: any) => {
@@ -235,6 +239,7 @@ export async function initCoachEnroll(): Promise<void> {
                   <th class="py-3 px-4 font-medium w-10"></th>
                   <th class="py-3 px-4 font-medium">Nombre</th>
                   <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
+                  <th class="py-3 px-4 font-medium">Plataforma</th>
                   <th class="py-3 px-4 font-medium">Cursos</th>
                   <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
                 </tr>
@@ -255,6 +260,7 @@ export async function initCoachEnroll(): Promise<void> {
                   <th class="py-3 px-4 font-medium w-10"></th>
                   <th class="py-3 px-4 font-medium">Nombre</th>
                   <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
+                  <th class="py-3 px-4 font-medium">Plataforma</th>
                   <th class="py-3 px-4 font-medium">Cursos</th>
                   <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
                 </tr>

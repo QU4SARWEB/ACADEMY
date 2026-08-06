@@ -45,6 +45,9 @@ export async function initCoachPractical(): Promise<void> {
       const result = ex?.resultsMap?.get(s.id)
       const graded = result?.status === 'graded'
       const score = result?.total_score ?? ''
+      const platformBadge = s.platform === 'mobile'
+        ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+        : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
       return `
       <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30" data-course-id="${escapeHtml(courseId)}">
         <td class="py-3 px-4">
@@ -54,6 +57,7 @@ export async function initCoachPractical(): Promise<void> {
           </div>
         </td>
         <td class="py-3 px-4 text-xs text-zinc-400">${escapeHtml(s.email || '')}</td>
+        <td class="py-3 px-4">${platformBadge}</td>
         <td class="py-3 px-4">${ex ? (graded ? Icon('checkCircle', 16) : Icon('clock', 16)) : Icon('x', 16)}</td>
         <td class="py-3 px-4">
           <div class="flex items-center gap-2">
@@ -92,7 +96,7 @@ export async function initCoachPractical(): Promise<void> {
 
       const { data: students } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, email, platform')
         .in('id', studentIds)
         .order('full_name')
 
@@ -125,6 +129,7 @@ export async function initCoachPractical(): Promise<void> {
                 <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                   <th class="py-3 px-4 font-medium">Alumno</th>
                   <th class="py-3 px-4 font-medium">Email</th>
+                  <th class="py-3 px-4 font-medium">Plataforma</th>
                   <th class="py-3 px-4 font-medium">Te\u00f3rico</th>
                   <th class="py-3 px-4 font-medium">Nota Pr\u00e1ctica (0-20)</th>
                 </tr>

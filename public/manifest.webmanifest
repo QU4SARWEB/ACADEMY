@@ -1,0 +1,25 @@
+{
+  "name": "QU4SAR Academy",
+  "short_name": "QU4SAR",
+  "description": "Plataforma académica y de entrenamiento de QU4SAR Academy.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#8B5CF6",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "./qu4sar.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./qu4sar.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}

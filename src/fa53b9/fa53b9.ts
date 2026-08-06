@@ -17,18 +17,29 @@ export async function getSession() {
   return data.session
 }
 
-export async function getProfile(): Promise<Profile | null> {
-  const session = await getSession()
-  if (!session?.user?.id) return null
+export type ProfileLoad = { profile: Profile | null; error: boolean }
 
-  const { data } = await supabase
+export async function loadProfile(): Promise<ProfileLoad> {
+  const session = await getSession()
+  if (!session?.user?.id) return { profile: null, error: false }
+
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .maybeSingle()
 
+  if (error) {
+    return { profile: null, error: true }
+  }
+
   store.set('profile', data)
-  return data
+  return { profile: data as Profile | null, error: false }
+}
+
+export async function getProfile(): Promise<Profile | null> {
+  const { profile } = await loadProfile()
+  return profile
 }
 
 export async function signIn(email: string, password: string): Promise<{ error?: string; redirect?: string }> {
@@ -131,9 +142,16 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   let currentProfile: Profile | null = profile ?? null
 
   if (!currentProfile) {
-    currentProfile = await getProfile()
+    const result = await loadProfile()
+    currentProfile = result.profile
+    if (!currentProfile && result.error) {
+      // Fallo transitorio (deploy, red): conservar la sesión y reintentar
+      // en el siguiente intento. No hacemos signOut() ni borramos el token.
+      return false
+    }
   }
 
+  // Perfil realmente inexistente (cuenta eliminada): la sesión ya no es válida.
   if (!currentProfile) {
     await supabase.auth.signOut()
     location.hash = '/login'
@@ -144,7 +162,7 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   const previewRole = sessionStorage.getItem('previewRole')
   if (previewRole) {
     const previewPrefix = ROLE_PREFIX[previewRole]
-    if (previewPrefix && !hash.startsWith(`/${previewPrefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && hash !== '/') {
+    if (previewPrefix && !hash.startsWith(`/${previewPrefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && !hash.startsWith('/calls') && hash !== '/') {
       location.hash = `/${previewPrefix}/dashboard`
       return false
     }
@@ -152,7 +170,7 @@ export async function authGuard(destPath?: string): Promise<boolean> {
   }
 
   const prefix = ROLE_PREFIX[currentProfile.role]
-  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && hash !== '/') {
+  if (prefix && !hash.startsWith(`/${prefix}`) && !hash.startsWith('/payments') && !hash.startsWith('/settings') && !hash.startsWith('/support') && !hash.startsWith('/chat') && !hash.startsWith('/calls') && hash !== '/') {
     location.hash = `/${prefix}/dashboard`
     return false
   }

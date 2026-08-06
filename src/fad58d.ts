@@ -7,6 +7,7 @@ import { store } from '@/9ed39e/8cd892'
 import { initAutoSave } from '@/4725dc/forms/DraftManager'
 import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
 import { initNotificationCenter } from '@/4725dc/notification_center'
+import { initUiGlobals } from '@/4725dc/ui_kit'
 
 import '@/bc4150/0c54ed.css'
 
@@ -56,6 +57,7 @@ import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
 import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
 import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
 import { renderChat, initChat } from '@/b3b32a/chat'
+import { renderCalls, initCalls } from '@/b3b32a/calls'
 
 router.setBeforeNavigate(async (path) => authGuard(path))
 
@@ -124,11 +126,11 @@ router.on('/p/:slug', async () => {
 const REALTIME_TABLES: Record<string, string[]> = {
   coaches: [
     'courses', 'enrollments', 'schedules',
-    'teams', 'profiles', 'payments', 'tasks', 'exams',
+    'teams', 'profiles', 'payments', 'tasks', 'exams', 'call_rooms', 'call_sessions', 'call_room_participants',
   ],
   students: [
     'courses', 'enrollments', 'schedules', 'payments', 'profiles',
-    'teams', 'team_members', 'tasks', 'exams',
+    'teams', 'team_members', 'tasks', 'exams', 'call_rooms', 'call_sessions', 'call_room_participants',
   ],
 
 }
@@ -140,14 +142,22 @@ function shouldAutoRefresh(path: string): boolean {
   return true
 }
 
-// Debounced reload to avoid rapid re-fetches
+// Debounced reload of the current route (soft re-render, no full page reload)
 function reloadSoon(path: string): void {
   if ((window as any).__blockReload) return
   const key = `_rt_${path}`
   if ((window as any)[key]) return
   ;(window as any)[key] = true
   setTimeout(() => { (window as any)[key] = false }, 3000)
-  setTimeout(() => location.reload(), 100)
+  setTimeout(() => {
+    const current = (location.hash.slice(1).split('?')[0]) || '/'
+    if (current !== path) return
+    try {
+      void router.resolve()
+    } catch {
+      location.reload()
+    }
+  }, 120)
 }
 
 function notifyRealtime(table: string, payload: any, path: string): void {
@@ -158,8 +168,10 @@ function notifyRealtime(table: string, payload: any, path: string): void {
     courses: isCoach ? '#/coaches/courses' : '#/students/courses',
     tasks: isCoach ? '#/coaches/tasks' : '#/students/tasks',
     exams: isCoach ? '#/coaches/exams' : '#/students/exams',
-    schedules: isCoach ? '#/coaches/schedules' : '#/students/schedule',
+schedules: isCoach ? '#/coaches/schedules' : '#/students/schedule',
     payments: '#/payments',
+    call_rooms: '#/calls',
+    call_sessions: '#/calls',
     teams: isCoach ? '#/coaches/teams' : '#/students/team',
     team_members: '#/students/team',
     enrollments: isCoach ? '#/coaches/students' : '#/students/courses',
@@ -168,8 +180,10 @@ function notifyRealtime(table: string, payload: any, path: string): void {
     courses: 'Hay una actualización en tus cursos.',
     tasks: 'Tienes una actualización en tus tareas.',
     exams: 'Hay una novedad en tus exámenes.',
-    schedules: 'Tu horario tiene una nueva actualización.',
+schedules: 'Tu horario tiene una nueva actualización.',
     payments: 'Tu estado de pagos tiene una actualización.',
+    call_rooms: 'Hay una nueva llamada agendada.',
+    call_sessions: 'Hay una nueva llamada agendada.',
     teams: 'Tu equipo tiene una nueva actualización.',
     team_members: 'Tu equipo tiene una nueva actualización.',
     enrollments: 'Tu inscripción tiene una nueva actualización.',
@@ -341,15 +355,23 @@ dash('/payments', () => renderPayments(), initPayments)
 dash('/settings', () => renderSettings(), initSettings)
 dash('/members', () => renderMembers(), initMembers)
 dash('/chat', () => renderChat(), initChat)
+dash('/calls', () => renderCalls(), initCalls)
 
 // 404
 router.fallbackRoute(async () => {
+  const hash = location.hash
+  if (/type=recovery|access_token|refresh_token/.test(hash)) {
+    const bare = hash.replace(/^#?\/?/, '')
+    location.hash = `#/reset-password#${bare}`
+    return
+  }
   document.getElementById('app')!.innerHTML = renderNotFound()
 })
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
   initToastContainer()
+  initUiGlobals()
   router.start()
 
   supabase.auth.getSession().then(({ data: { session } }) => {

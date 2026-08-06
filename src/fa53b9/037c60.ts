@@ -5,6 +5,12 @@ import { supabase } from '@/304244'
 import { renderDiscordBanner, renderPublicNavbar, mountPublicNav } from '@/b3b32a/shared/public_nav'
 import { Icon } from '@/2b3583/bd2119'
 
+const INITIAL_HASH = typeof location !== 'undefined' ? location.hash : ''
+
+export function isRecoveryHash(): boolean {
+  return location.hash.includes('type=recovery') || INITIAL_HASH.includes('type=recovery')
+}
+
 function authShell(body: string): string {
   return `
      <div class="public-page relative min-h-screen bg-[#0A0A0A]">
@@ -21,7 +27,7 @@ function authShell(body: string): string {
 
 export function renderResetPassword(): string {
   const hash = location.hash
-  const isRecovery = hash.includes('type=recovery')
+  const isRecovery = isRecoveryHash()
 
   if (isRecovery) {
     return authShell(`
@@ -76,7 +82,7 @@ export function renderResetPassword(): string {
 export function mountResetPassword(): void {
   mountPublicNav()
   const hash = location.hash
-  const isRecovery = hash.includes('type=recovery')
+  const isRecovery = isRecoveryHash()
 
   if (isRecovery) {
     const form = document.getElementById('update-password-form') as HTMLFormElement | null

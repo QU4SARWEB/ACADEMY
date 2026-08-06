@@ -223,7 +223,7 @@ async function bindAttendanceModalEvents(scheduleId: string): Promise<void> {
 
   const [{ data: schedule }, { data: enrolls }, { data: existingAttendance }] = await Promise.all([
     supabase.from('schedules').select('*').eq('id', scheduleId).maybeSingle(),
-    supabase.from('enrollments').select('profile_id, profiles!inner(full_name)').eq('course_id', courseId).eq('status', 'active').order('created_at', { ascending: false }),
+    supabase.from('enrollments').select('profile_id, profiles!inner(full_name, platform)').eq('course_id', courseId).eq('status', 'active').order('created_at', { ascending: false }),
     supabase.from('attendance').select('*').eq('schedule_id', scheduleId),
   ])
 
@@ -241,7 +241,7 @@ async function bindAttendanceModalEvents(scheduleId: string): Promise<void> {
   headerEl.innerHTML = `<strong class="text-white">${escapeHtml(schedule.title || '')}</strong> &middot; ${escapeHtml(schedDate)} &middot; ${escapeHtml(schedTime)}`
 
   const rows = (enrolls ?? []).length === 0
-    ? '<tr><td colspan="2" class="py-6 text-center text-zinc-500">No hay alumnos inscritos en este curso.</td></tr>'
+    ? '<tr><td colspan="3" class="py-6 text-center text-zinc-500">No hay alumnos inscritos en este curso.</td></tr>'
     : (enrolls ?? []).map((e: any) => {
         const sid = e.profile_id
         const currentStatus = attMap.get(sid) || 'present'
@@ -258,9 +258,13 @@ async function bindAttendanceModalEvents(scheduleId: string): Promise<void> {
             ${Icon(st.icon, 12)}
             <span>${st.label}</span>
           </label>`).join('')
+        const platformBadge = e.profiles?.platform === 'mobile'
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
         return `
         <tr class="border-b border-zinc-800/50" data-student="${escapeHtml(sid)}">
           <td class="py-2.5 pr-3 text-sm text-white">${escapeHtml(e.profiles?.full_name || 'Desconocido')}</td>
+          <td class="py-2.5 pr-3">${platformBadge}</td>
           <td class="py-2.5"><div class="flex flex-wrap gap-1">${radios}</div></td>
         </tr>`
       }).join('')
@@ -271,6 +275,7 @@ async function bindAttendanceModalEvents(scheduleId: string): Promise<void> {
         <thead>
           <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
             <th class="py-2 pr-3">Alumno</th>
+            <th class="py-2 pr-3">Plataforma</th>
             <th class="py-2">Estado</th>
           </tr>
         </thead>

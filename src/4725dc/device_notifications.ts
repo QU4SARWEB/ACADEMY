@@ -13,7 +13,7 @@ async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null
   if (!('serviceWorker' in navigator)) return null
   if (!serviceWorkerRegistration) {
     serviceWorkerRegistration = navigator.serviceWorker
-      .register('./notifications-sw.js')
+      .register('./sw.js')
       .catch(() => null)
   }
   return serviceWorkerRegistration

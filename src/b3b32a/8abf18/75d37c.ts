@@ -7,6 +7,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { initBulkActions } from '@/2b3583/bulk_actions'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
+import { Pagination, exportExcel, currentPageSize } from '@/4725dc/ui_kit'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -122,10 +123,15 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
   }).join('')
 
   return `
-    <div class="mb-6">
-      <span class="kicker">Gestión de alumnos</span>
-      <h1 class="font-heading text-2xl font-bold text-white">Estudiantes</h1>
-      <p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <span class="kicker">Gestión de alumnos</span>
+        <h1 class="font-heading text-2xl font-bold text-white">Estudiantes</h1>
+        <p class="mt-1 text-sm text-zinc-500">${(students ?? []).length} estudiantes</p>
+      </div>
+      <button id="export-students-csv" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-[#8B5CF6]/50 hover:text-white">
+        ${Icon('download', 13)} Exportar Excel
+      </button>
     </div>
 
     <div id="bulk-action-bar" class="hidden mb-4 flex items-center gap-2 rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-2.5">
@@ -198,31 +204,18 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
           }
         </tbody>
       </table>
+      <div id="student-pager" class="hidden"></div>
     </div>`
 }
 
-function initSearchFilter(container: HTMLElement, allRows: NodeListOf<HTMLTableRowElement>): void {
-  const searchInput = container.querySelector<HTMLInputElement>('#student-search')!
-  const noResults = container.querySelector<HTMLElement>('#no-results')!
-  searchInput?.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase().trim()
-    let visible = 0
-    allRows.forEach(row => {
-      const text = (row as HTMLElement).dataset.search || ''
-      const match = !q || text.includes(q)
-      ;(row as HTMLElement).dataset.searchHidden = match ? '' : '1'
-      const courseHidden = (row as HTMLElement).dataset.courseHidden === '1'
-      row.classList.toggle('hidden', !match || courseHidden)
-      if (match && !courseHidden) visible++
-    })
-    noResults.classList.toggle('hidden', visible > 0 || !q)
-  })
+function initSearchFilter(container: HTMLElement, apply: (q: string) => void): void {
+  const searchInput = container.querySelector<HTMLInputElement>('#student-search')
+  searchInput?.addEventListener('input', () => apply(searchInput.value))
 }
 
-function initCourseFilters(container: HTMLElement, allRows: NodeListOf<HTMLTableRowElement>): void {
+function initCourseFilters(container: HTMLElement, apply: (excluded: Set<string>) => void): void {
   container.querySelectorAll('.course-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const courseId = (btn as HTMLElement).dataset.courseId
       const active = (btn as HTMLElement).dataset.active === '1'
       ;(btn as HTMLElement).dataset.active = active ? '0' : '1'
 
@@ -244,21 +237,7 @@ function initCourseFilters(container: HTMLElement, allRows: NodeListOf<HTMLTable
           excludedCourses.add((b as HTMLElement).dataset.courseId || '')
         }
       })
-
-      const searchInput = container.querySelector<HTMLInputElement>('#student-search')
-      const q = (searchInput?.value || '').toLowerCase().trim()
-      const noResults = container.querySelector<HTMLElement>('#no-results')
-      let visible = 0
-      allRows.forEach(row => {
-        const rowCourseIds = ((row as HTMLElement).dataset.courseIds || '').split(',').filter(Boolean)
-        const isExcluded = rowCourseIds.length > 0 && rowCourseIds.every((id: string) => excludedCourses.has(id))
-        ;(row as HTMLElement).dataset.courseHidden = isExcluded ? '1' : ''
-        const searchHidden = (row as HTMLElement).dataset.searchHidden === '1'
-        const hidden = isExcluded || (!q || ((row as HTMLElement).dataset.search || '').includes(q)) ? false : true
-        row.classList.toggle('hidden', isExcluded || searchHidden)
-        if (!isExcluded && !searchHidden) visible++
-      })
-      if (noResults) noResults.classList.toggle('hidden', visible > 0 || !q)
+      apply(excludedCourses)
     })
   })
 }
@@ -312,10 +291,65 @@ export function mountCoachStudents(): void {
       document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', enrollModalHtml)
 
       const container = document.getElementById('page-content')!
-      const allRows = container.querySelectorAll<HTMLTableRowElement>('#students-tbody tr')
+      const allRows = Array.from(container.querySelectorAll<HTMLTableRowElement>('#students-tbody tr'))
+      const tbody = document.getElementById('students-tbody') as HTMLElement
+      const pagerEl = document.getElementById('student-pager') as HTMLElement
+      const noResultsEl = document.getElementById('no-results') as HTMLElement
 
-      initSearchFilter(container, allRows)
-      initCourseFilters(container, allRows)
+      let currentQuery = ''
+      let excludedCourses = new Set<string>()
+      let currentPage = 1
+      let pageSize = currentPageSize()
+
+      const visibleRows = () => allRows.filter(r => (r as HTMLElement).dataset.filtered !== '1')
+
+      function renderPage(): void {
+        const visible = visibleRows()
+        const totalPages = Math.max(1, Math.ceil(visible.length / pageSize))
+        if (currentPage > totalPages) currentPage = totalPages
+        const start = (currentPage - 1) * pageSize
+        const slice = visible.slice(start, start + pageSize)
+        allRows.forEach(row => row.classList.add('hidden'))
+        slice.forEach(row => row.classList.remove('hidden'))
+        noResultsEl.classList.toggle('hidden', visible.length > 0)
+        pagerEl.innerHTML = Pagination({ page: currentPage, pageSize, totalItems: visible.length })
+        pagerEl.classList.toggle('hidden', visible.length <= pageSize)
+      }
+
+      function applyFilters(): void {
+        allRows.forEach(row => {
+          const rowCourseIds = ((row as HTMLElement).dataset.courseIds || '').split(',').filter(Boolean)
+          const isExcluded = rowCourseIds.length > 0 && rowCourseIds.every((id: string) => excludedCourses.has(id))
+          const text = ((row as HTMLElement).dataset.search || '').toLowerCase()
+          const searchMatch = !currentQuery || text.includes(currentQuery)
+          ;(row as HTMLElement).dataset.filtered = isExcluded || !searchMatch ? '1' : ''
+        })
+        currentPage = 1
+        renderPage()
+      }
+
+      container.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-pager-page]')
+        if (!btn) return
+        const totalPages = Math.max(1, Math.ceil(visibleRows().length / pageSize))
+        const pageNum = Math.min(Math.max(1, Number(btn.dataset.pagerPage || '1')), totalPages)
+        currentPage = pageNum
+        renderPage()
+      })
+
+      initSearchFilter(container, (q) => { currentQuery = q.toLowerCase().trim(); applyFilters() })
+      initCourseFilters(container, (excluded) => { excludedCourses = excluded; applyFilters() })
+      renderPage()
+
+      // Export Excel (respeta búsqueda/filtros visibles en la página)
+      document.getElementById('export-students-csv')?.addEventListener('click', () => {
+        const rows = visibleRows().map(row => {
+          const cells = Array.from(row.querySelectorAll('td')).map(td => (td as HTMLElement).innerText.trim())
+          return [cells[1] || '', cells[2] || '', cells[3] || '', cells[4] || '', cells[5] || '']
+        })
+        exportExcel(`estudiantes-${new Date().toISOString().slice(0, 10)}.xls`, 'Estudiantes', ['Nombre', 'Email', 'Cursos', 'Estado', 'Plataforma'], rows)
+      })
+
       initSingleActions(container, () => mountCoachStudents())
       initBulkActions(container, { role: 'student', afterAction: () => mountCoachStudents() })
 

@@ -371,20 +371,26 @@ async function openTaskSubmissionsModal(taskId: string): Promise<void> {
   // Fetch student names separately
   const studentIds = [...new Set((subs ?? []).map((s: any) => s.student_id))]
   const { data: studentProfiles } = studentIds.length > 0
-    ? await supabase.from('profiles').select('id, full_name').in('id', studentIds)
+    ? await supabase.from('profiles').select('id, full_name, platform').in('id', studentIds)
     : { data: [] }
   const nameMap = new Map((studentProfiles ?? []).map((p: any) => [p.id, p.full_name]))
+  const platformMap = new Map((studentProfiles ?? []).map((p: any) => [p.id, p.platform]))
 
   const rows = !subs || subs.length === 0
-    ? '<tr><td colspan="6" class="py-8 text-center text-sm text-zinc-500">No hay entregas para esta tarea.</td></tr>'
+    ? '<tr><td colspan="7" class="py-8 text-center text-sm text-zinc-500">No hay entregas para esta tarea.</td></tr>'
     : subs.map((s: any) => {
         const files: string[] = (s.files as string[]) || []
         const links: string[] = (s.links as string[]) || []
         const graded = s.graded
         const studentName = nameMap.get(s.student_id) || 'Desconocido'
+        const isMobile = platformMap.get(s.student_id) === 'mobile'
+        const platformBadge = isMobile
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
         return `
         <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30" data-submission-id="${escapeHtml(s.id)}">
           <td class="py-3 px-3 text-sm text-white">${escapeHtml(studentName)}</td>
+          <td class="py-3 px-3">${platformBadge}</td>
           <td class="py-3 px-3 text-xs text-zinc-400 max-w-[200px]">${s.message ? escapeHtml(s.message).slice(0, 100) : '<span class="text-zinc-600">—</span>'}</td>
           <td class="py-3 px-3">
             ${files.length > 0 ? files.map(f => `<a href="${escapeHtml(f)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA] mr-1">${Icon('download', 10)} Archivo</a>`).join('') : '<span class="text-xs text-zinc-600">—</span>'}
@@ -416,6 +422,7 @@ async function openTaskSubmissionsModal(taskId: string): Promise<void> {
         <thead>
           <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
             <th class="py-2.5 px-3 font-medium">Alumno</th>
+            <th class="py-2.5 px-3 font-medium">Plataforma</th>
             <th class="py-2.5 px-3 font-medium">Mensaje</th>
             <th class="py-2.5 px-3 font-medium">Archivos</th>
             <th class="py-2.5 px-3 font-medium">Links</th>

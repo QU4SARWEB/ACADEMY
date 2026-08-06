@@ -9,18 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&family=Orbitron:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <meta name="description" content="QU4SAR Gaming Academy" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="./qu4sar.svg" />
   </head>
   <body>
     <div id="app"></div>
     <div id="modal-root"></div>
-    <script>
-      if (window.location.hostname.toLowerCase() === 'qu4sarweb.github.io' && window.location.pathname.toLowerCase().startsWith('/academy')) {
-        const target = new URL('https://qu4sar.vercel.app/')
-        target.search = window.location.search
-        target.hash = window.location.hash
-        window.location.replace(target.href)
-      }
-    </script>
-    <script type="module" src="/src/fad58d.ts"></script>
+<script type="module" src="/src/fad58d.ts"></script>
   </body>
 </html>

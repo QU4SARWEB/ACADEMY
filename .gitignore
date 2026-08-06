@@ -44,4 +44,8 @@ yarn-error.log*
 supa_audit.mjs
 backup_*.sql  
 
+# editor
+.vscode/
+.idea/
+
 docs/supabaseapikeys.md

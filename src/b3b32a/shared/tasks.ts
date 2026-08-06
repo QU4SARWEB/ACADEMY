@@ -2,6 +2,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { Spinner } from '@/4725dc/a14fa2'
 import { formatDate } from '@/2b3583/6b239c'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
@@ -364,10 +365,10 @@ function bindTaskEvents(containerId: string, studentId: string, role: 'student' 
 
   // Retry task buttons
   document.querySelectorAll('.retry-task-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const el = btn as HTMLElement
       const taskId = el.dataset.taskId
-      if (!taskId || !confirm('¿Reenviar tarea? Se eliminará tu calificación anterior.')) return
+      if (!taskId || !(await confirmDialog('¿Reenviar tarea? Se eliminará tu calificación anterior.', 'Reenviar'))) return
       supabase.from('task_submissions').delete().eq('task_id', taskId).eq('student_id', studentId)
       loadAndRenderTasks(containerId, studentId, role)
     })

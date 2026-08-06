@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 
 export function renderStudentExamList(): string {
@@ -344,7 +345,7 @@ function renderReadOnlyExam(
       const examId = exam.id
       const uid = (await supabase.auth.getSession()).data.session?.user?.id
       if (!uid || !examId) return
-      if (!confirm('¿Estás seguro de reintentar el examen? Tu nota anterior se eliminará.')) return
+      if (!(await confirmDialog('¿Estás seguro de reintentar el examen? Tu nota anterior se eliminará.', 'Reintentar'))) return
       await supabase.from('exam_answers').delete().eq('exam_id', examId).eq('student_id', uid)
       await supabase.from('exam_results').delete().eq('exam_id', examId).eq('student_id', uid)
       toast('success', 'Puedes volver a rendir el examen')
@@ -456,8 +457,8 @@ function renderInteractiveExam(
 
     document.getElementById('prev-btn')?.addEventListener('click', () => { currentIndex--; renderQuestion() })
     document.getElementById('next-btn')?.addEventListener('click', () => { currentIndex++; renderQuestion() })
-    document.getElementById('submit-exam-btn')?.addEventListener('click', () => {
-      if (confirm('¿Estás seguro de que deseas finalizar el examen?')) {
+    document.getElementById('submit-exam-btn')?.addEventListener('click', async () => {
+      if (await confirmDialog('¿Estás seguro de que deseas finalizar el examen?', 'Finalizar')) {
         submitExam(exam, questions, result, localAnswers, userId, container)
       }
     })

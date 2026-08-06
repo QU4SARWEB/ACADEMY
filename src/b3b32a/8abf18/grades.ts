@@ -35,7 +35,7 @@ export async function initCoachGrades(): Promise<void> {
 
     const { data: enrolls } = await supabase
       .from('enrollments')
-      .select('id, profile_id, course_id, profiles(full_name)')
+      .select('id, profile_id, course_id, profiles(full_name, platform)')
       .in('course_id', idFilter)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -83,6 +83,9 @@ export async function initCoachGrades(): Promise<void> {
 
       const rows = enrollments.map((e: any) => {
         const studentName = e.profiles?.full_name || 'Desconocido'
+        const platformBadge = e.profiles?.platform === 'mobile'
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
         const cells = schedules.map((s: any) => {
           const g = gradesMap.get(s.id + '_' + e.profile_id)
           const theory = g?.theory_score ?? null
@@ -101,6 +104,7 @@ export async function initCoachGrades(): Promise<void> {
 
         return `<tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
           <td class="py-2.5 px-3 text-sm text-white whitespace-nowrap">${escapeHtml(studentName)}</td>
+          <td class="py-2.5 px-3">${platformBadge}</td>
           ${cells}
           <td class="py-2.5 px-3 text-center text-sm ${avgColor}">${avg}</td>
         </tr>`
@@ -117,6 +121,7 @@ export async function initCoachGrades(): Promise<void> {
             <thead>
               <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                 <th class="py-2.5 px-3 font-medium sticky left-0 bg-[#111] z-10 min-w-[160px]">Alumno</th>
+                <th class="py-2.5 px-3 font-medium">Plataforma</th>
                 ${headerCells}
                 <th class="py-2.5 px-3 font-medium text-center min-w-[60px]">Promedio</th>
               </tr>

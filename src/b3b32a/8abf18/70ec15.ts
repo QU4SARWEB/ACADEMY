@@ -337,7 +337,7 @@ async function bindGradesModalEvents(scheduleId: string): Promise<void> {
 
   const { data: enrolls } = await supabase
     .from('enrollments')
-    .select('profile_id, profiles!inner(full_name)')
+    .select('profile_id, profiles!inner(full_name, platform)')
     .eq('course_id', courseId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -351,16 +351,20 @@ async function bindGradesModalEvents(scheduleId: string): Promise<void> {
   for (const g of existingGrades ?? []) gradeMap.set(g.student_id, g)
 
   const rows = (enrolls ?? []).length === 0
-    ? '<tr><td colspan="4" class="py-6 text-center text-zinc-500">No hay alumnos inscritos en este curso.</td></tr>'
+    ? '<tr><td colspan="5" class="py-6 text-center text-zinc-500">No hay alumnos inscritos en este curso.</td></tr>'
     : (enrolls ?? []).map((e: any) => {
         const sid = e.profile_id
         const existing = gradeMap.get(sid)
         const theory = existing?.theory_score ?? ''
         const practice = existing?.practice_score ?? ''
         const total = existing ? (parseFloat(existing.theory_score) + parseFloat(existing.practice_score)).toFixed(1) : '—'
+        const platformBadge = e.profiles?.platform === 'mobile'
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
         return `
         <tr class="border-b border-zinc-800/50">
           <td class="py-2.5 pr-3 text-sm text-white">${escapeHtml(e.profiles?.full_name || 'Desconocido')}</td>
+          <td class="py-2.5 pr-3">${platformBadge}</td>
           <td class="py-2.5 pr-3"><input type="number" class="grade-theory w-16 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-xs text-white text-center outline-none focus:border-[#8B5CF6]" step="0.1" min="0" max="5" value="${theory}" data-student="${escapeHtml(sid)}" /></td>
           <td class="py-2.5 pr-3"><input type="number" class="grade-practice w-16 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-xs text-white text-center outline-none focus:border-[#8B5CF6]" step="0.1" min="0" max="15" value="${practice}" data-student="${escapeHtml(sid)}" /></td>
           <td class="py-2.5 text-sm text-center grade-total ${existing ? 'text-zinc-300' : 'text-zinc-600'}">${total}</td>
@@ -373,6 +377,7 @@ async function bindGradesModalEvents(scheduleId: string): Promise<void> {
         <thead>
           <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
             <th class="py-2 pr-3">Alumno</th>
+            <th class="py-2 pr-3">Plataforma</th>
             <th class="py-2 pr-3">Teor\u00eda (0-5)</th>
             <th class="py-2 pr-3">Pr\u00e1ctica (0-15)</th>
             <th class="py-2 text-center">Total (0-20)</th>

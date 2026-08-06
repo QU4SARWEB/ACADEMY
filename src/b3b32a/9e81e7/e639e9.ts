@@ -10,6 +10,7 @@ import { renderFileDropzone, initFileDropzone } from '@/4725dc/forms/FileDropzon
 import type { Profile } from '@/d14a80'
 import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
+import { SearchInput, bindSearchInput, exportExcel } from '@/4725dc/ui_kit'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
@@ -165,7 +166,12 @@ async function renderStudentPayments(userId: string): Promise<void> {
       </div>` : ''}
 
     <div class="space-y-3">
-      <h2 class="font-heading text-lg font-bold text-white">Historial de pagos</h2>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-heading text-lg font-bold text-white">Historial de pagos</h2>
+        <div class="w-full max-w-xs">
+          ${SearchInput({ id: 'pay-search', placeholder: 'Buscar pago o estado...' })}
+        </div>
+      </div>
       ${(() => {
         const visiblePayments = (payments ?? []).filter((p: any) => p.enrollment_id && activeEnrollIds.has(p.enrollment_id))
         return visiblePayments.length === 0
@@ -204,6 +210,15 @@ async function renderStudentPayments(userId: string): Promise<void> {
       })()}
     </div>`
   document.getElementById('page-content')!.innerHTML = html
+
+  bindSearchInput(document.getElementById('page-content')!, 'pay-search', (q) => {
+    document.querySelectorAll('.payment-item').forEach(item => {
+      const el = item as HTMLElement
+      const text = el.innerText.toLowerCase()
+      const match = !q || text.includes(q)
+      el.classList.toggle('hidden', !match)
+    })
+  })
 
   const receiptModalHtml = `
     <div id="receipt-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60" role="dialog" aria-modal="true" aria-label="Subir comprobante">
@@ -405,7 +420,7 @@ async function renderCoachPayments(): Promise<void> {
   const courseIds = (courses ?? []).map((c: any) => c.id)
   const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
 
-  const { data: enrolls } = await supabase.from('enrollments').select('id, profile_id, course_id, status, profiles!inner(full_name, email, avatar_url, role)').in('course_id', idFilter)
+  const { data: enrolls } = await supabase.from('enrollments').select('id, profile_id, course_id, status, profiles!inner(full_name, email, avatar_url, role, platform)').in('course_id', idFilter)
   const enrollIds = (enrolls ?? []).map((e: any) => e.id)
   const enrollIdFilter = enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000']
 
@@ -449,6 +464,9 @@ async function renderCoachPayments(): Promise<void> {
       const prof = e.profiles || {}
       const pay = coursePays[e.id]
       const status = pay?.status || (isFree ? 'free' : 'none')
+      const platformBadge = prof.platform === 'mobile'
+        ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+        : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
 
       let daysLeft = ''
       const daysTo = (targetTs: number, empty: string) => {
@@ -492,6 +510,7 @@ async function renderCoachPayments(): Promise<void> {
             </div>
           </td>
           <td class="py-2.5 px-3 text-xs text-zinc-500 hidden md:table-cell">${escapeHtml(prof.email || '')}</td>
+          <td class="py-2.5 px-3">${platformBadge}</td>
           <td class="py-2.5 px-3">${badge}</td>
           <td class="py-2.5 px-3 text-right">
             ${!isFree && pay ? `
@@ -534,6 +553,7 @@ async function renderCoachPayments(): Promise<void> {
               <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                 <th class="py-2.5 px-3 font-medium">Estudiante</th>
                 <th class="py-2.5 px-3 font-medium hidden md:table-cell">Email</th>
+                <th class="py-2.5 px-3 font-medium">Plataforma</th>
                 <th class="py-2.5 px-3 font-medium">Estado</th>
                 <th class="py-2.5 px-3 font-medium text-right">Acci\u00f3n</th>
               </tr>
@@ -545,9 +565,14 @@ async function renderCoachPayments(): Promise<void> {
   }).join('')
 
   document.getElementById('page-content')!.innerHTML = `
-    <div class="mb-6">
-      <span class="kicker">Administración de pagos</span>
-      <h1 class="font-heading text-2xl font-bold text-white">Gesti\u00f3n de Pagos</h1>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <span class="kicker">Administración de pagos</span>
+        <h1 class="font-heading text-2xl font-bold text-white">Gesti\u00f3n de Pagos</h1>
+      </div>
+      <button id="export-payments-csv" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-[#8B5CF6]/50 hover:text-white">
+        ${Icon('download', 13)} Exportar Excel
+      </button>
     </div>
     <div id="pay-save-bar" class="mb-4 hidden flex items-center justify-between rounded-lg border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-4 py-3">
       <span id="pay-changes-count" class="text-sm text-zinc-300">0 cambios pendientes</span>
@@ -641,6 +666,22 @@ async function renderCoachPayments(): Promise<void> {
         : `${Icon('checkCircle', 14)} <span>${escapeHtml((btn as HTMLElement).dataset.courseName || '')}</span> <span class="text-zinc-500">${(btn as HTMLElement).dataset.courseCount || ''}</span>`
       applyPayFilters()
     })
+  })
+
+  // Export payments Excel
+  document.getElementById('export-payments-csv')?.addEventListener('click', () => {
+    const statusLabel: Record<string, string> = { free: 'Gratis', pending: 'Pendiente', paid: 'Pagado', scholarship: 'Beca', expired: 'Vencido' }
+    const rowsData = (enrolls ?? []).map((e: any) => {
+      const prof = e.profiles || {}
+      const pay = payByCourseEnroll[e.course_id]?.[e.id]
+      return [
+        prof.full_name || 'Desconocido',
+        prof.email || '',
+        prof.platform === 'mobile' ? 'Mobile' : 'PC',
+        statusLabel[pay?.status] ?? 'Sin pago',
+      ]
+    })
+    exportExcel(`pagos-${new Date().toISOString().slice(0, 10)}.xls`, 'Pagos', ['Estudiante', 'Email', 'Plataforma', 'Estado'], rowsData)
   })
 
   // Save/Discard bar for pending payment changes
