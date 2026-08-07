@@ -2,6 +2,7 @@ import { supabase } from '@/304244'
 import { Spinner } from '@/4725dc/a14fa2'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
+import { rankImage } from '@/2b3583/ranks'
 import domtoimage from 'dom-to-image-more'
 
 const ACADEMY_RANKS = [
@@ -284,7 +285,7 @@ function renderProfileCard(
           <div class="flex flex-wrap gap-2">
             ${profile.in_game_role ? `<span class="rounded-full px-3 py-0.5 text-xs" style="border:1px solid rgba(${accentRgb},0.2);background:rgba(${accentRgb},0.1);color:${accent}">${escapeHtml(profile.in_game_role)}</span>` : ''}
             ${profile.region ? `<span class="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-0.5 text-xs text-zinc-400">${escapeHtml(profile.region)}</span>` : ''}
-            ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${escapeHtml(profile.rank)}</span>` : ''}
+            ${profile.rank ? `<span class="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-0.5 text-xs text-yellow-400">${rankImage(profile.rank) ? `<img src="${escapeHtml(rankImage(profile.rank))}" alt="" width="16" height="16" class="mr-1 inline-block align-middle rank-badge" decoding="async" />` : ''}${escapeHtml(profile.rank)}</span>` : ''}
           </div>
           <div class="mt-3 flex flex-wrap justify-start gap-x-4 gap-y-1 text-xs text-zinc-500">
             ${profile.riot_id ? `<span class="flex items-center gap-1">${Icon('target', 12)} ${escapeHtml(profile.riot_id)}</span>` : ''}

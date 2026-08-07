@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
+import { rankBadge } from '@/2b3583/ranks'
 
 export function renderStudentDashboard(): string {
   return `<div id="page-content">
@@ -25,7 +26,7 @@ export async function initStudentDashboard(): Promise<void> {
         .maybeSingle(),
       supabase
         .from('enrollments')
-        .select('*, courses(name, id)')
+        .select('*, courses(name, id, min_rank)')
         .eq('profile_id', session.user.id)
         .eq('status', 'active')
         .order('enrolled_at', { ascending: false }),
@@ -184,7 +185,7 @@ export async function initStudentDashboard(): Promise<void> {
               <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4">
                 <div class="flex items-center justify-between mb-2">
                   <div class="min-w-0">
-                    <h3 class="truncate font-medium text-white">${escapeHtml(e.courses?.name || 'Curso')}</h3>
+                    <h3 class="flex items-center gap-2 truncate font-medium text-white">${e.courses?.min_rank ? rankBadge(e.courses.min_rank, 16) : ''}${escapeHtml(e.courses?.name || 'Curso')}</h3>
                     <p class="text-xs text-zinc-500">${escapeHtml(e.seasons?.name || 'Programa de entrenamiento')}</p>
                   </div>
                   <span class="ml-2 shrink-0 text-sm font-bold" style="color:${(e as any).progress >= 100 ? '#22C55E' : '#8B5CF6'}">${e.progress}%</span>

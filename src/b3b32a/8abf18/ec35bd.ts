@@ -7,6 +7,7 @@ import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 import { uploadFile } from '@/2b3583/76ee3d'
+import { rankBadge } from '@/2b3583/ranks'
 
 export function renderCoachCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -58,12 +59,12 @@ const html = `
           { label: 'Cursos', href: '#/coaches/courses' },
           { label: (course as any).name || 'Detalle' },
         ])}
-        ${(course as any).cover_url ? `<img src="${escapeHtml((course as any).cover_url)}" alt="" class="course-detail-page__cover mb-4" loading="lazy" decoding="async" />` : ''}
-        <div class="flex items-center justify-between">
+${(course as any).cover_url ? `<img src="${escapeHtml((course as any).cover_url)}" alt="" class="course-detail-page__cover mb-4" loading="lazy" decoding="async" />` : ''}
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-6">
             <div>
               <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml((course as any).name)}</h1>
               <p class="mt-1 text-sm text-zinc-500">
-                ${(course as any).duration_months} meses · Rango mínimo: ${escapeHtml((course as any).min_rank)}${(course as any).price && (course as any).price > 0 ? ` · $${(course as any).price}/mes` : ' · Gratis'}
+                ${(course as any).duration_months} meses · Rango mínimo: ${rankBadge((course as any).min_rank, 18)} ${escapeHtml((course as any).min_rank)}${(course as any).price && (course as any).price > 0 ? ` · $${(course as any).price}/mes` : ' · Gratis'}
               </p>
             </div>
             <div class="flex gap-2">
@@ -71,7 +72,6 @@ const html = `
                 class="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">${Icon('edit', 14)} Editar</a>
               <button id="delete-course-btn" class="rounded-lg border border-red-700 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/30">${Icon('trash', 14)}</button>
             </div>
-          </div>
         </div>
 
         ${(course as any).description ? `<div class="glass mb-6 rounded-xl p-4 text-sm text-zinc-300">${escBr((course as any).description)}</div>` : ''}
@@ -97,9 +97,11 @@ const html = `
                   </div>
                 </div>
                 <div class="coach-material-list">
-                  ${(materialsByModule.get(module.id) || []).map((material: any) => `
+${(materialsByModule.get(module.id) || []).map((material: any) => `
 <div class="coach-material-row ${material.is_published ? '' : 'draft'}">
-                      <span class="course-material__icon">${Icon(material.material_type === 'video' ? 'video' : material.material_type === 'document' ? 'fileText' : material.material_type === 'link' ? 'externalLink' : 'bookOpen', 15)}</span>
+                      ${material.material_type === 'image' && material.resource_url
+                        ? `<img src="${escapeHtml(material.resource_url)}" alt="${escapeHtml(material.title)}" class="coach-material-thumb" loading="lazy" decoding="async" />`
+                        : `<span class="course-material__icon">${Icon(material.material_type === 'video' ? 'video' : material.material_type === 'document' ? 'fileText' : material.material_type === 'link' ? 'externalLink' : material.material_type === 'image' ? 'image' : 'bookOpen', 15)}</span>`}
                       <span class="min-w-0 flex-1"><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || (material.resource_url ? material.resource_url.split('/').pop() : material.material_type))}</small></span>
                       ${material.resource_url ? `<a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="text-zinc-500 transition hover:text-[#8B5CF6]" title="Abrir recurso">${Icon('externalLink', 13)}</a>` : ''}
                       <button type="button" class="delete-material-btn" data-material-id="${escapeHtml(material.id)}" aria-label="Eliminar material">${Icon('trash', 13)}</button>
@@ -107,7 +109,7 @@ const html = `
                 </div>
                 <form class="coach-material-form" data-module-id="${escapeHtml(module.id)}">
                   <input name="title" required placeholder="Nuevo material" />
-                  <select name="material_type"><option value="video">Video</option><option value="document">Documento</option><option value="link">Enlace</option><option value="text">Texto</option></select>
+                  <select name="material_type"><option value="video">Video</option><option value="document">Documento</option><option value="image">Imagen</option><option value="link">Enlace</option><option value="text">Texto</option></select>
                   <input name="resource_url" placeholder="URL del recurso (opcional)" data-toggle-field />
                   <label class="coach-material-file" title="Subir archivo">
                     <input type="file" name="material_file" accept="application/pdf,image/*,video/*,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" hidden />
@@ -175,7 +177,7 @@ document.querySelectorAll<HTMLFormElement>('.coach-material-form').forEach(form 
               const isVideo = file.type.startsWith('video/')
               const isImage = file.type.startsWith('image/')
               const isPdf = file.type === 'application/pdf' || ext === 'pdf'
-              materialType = isVideo ? 'video' : (isImage || isPdf || ext === 'zip' || ext === 'doc' || ext === 'docx' || ext === 'ppt' || ext === 'pptx' || ext === 'xls' || ext === 'xlsx') ? 'document' : materialType
+              materialType = isVideo ? 'video' : (isImage ? 'image' : (isPdf || ext === 'zip' || ext === 'doc' || ext === 'docx' || ext === 'ppt' || ext === 'pptx' || ext === 'xls' || ext === 'xlsx') ? 'document' : materialType)
               const path = `courses/${encodeURIComponent(id)}/materials/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, '-')}`
               const { url, error: upErr } = await uploadFile('attachments', path, file)
               if (upErr) { toast('error', upErr); return }

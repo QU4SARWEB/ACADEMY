@@ -161,3 +161,62 @@ propio de cada usuario.
 - `[x]` Selects desplegables corregidos y más rápido el build (code-splitting vendors).
 - `[x]` Builds `tsc` + `vite` verificados sin errores.
 - `[ ]` Explicar lo de PWA y confirmar con el usuario.
+
+---
+
+## 8. Material "Imagen", mensajería completa y rangos visuales — `[x]`
+
+### Bloque de curso con opción de imagen
+- El select de "Nuevo material" en el constructor de curso ahora incluye **Imagen**,
+  y al subir un archivo de imagen el `material_type` se guarda como `image`.
+- En la lista de materiales del coach se muestra una miniatura de la imagen, y en la
+  vista del estudiante se renderiza como tarjeta imagen (grilla con thumb).
+- DB: `course_materials.material_type` admite `image` (migración aplicada).
+
+| Archivo | Cambio |
+|---|---|
+| `src/b3b32a/8abf18/ec35bd.ts` | Select + detección `image` + miniatura en el constructor |
+| `src/b3b32a/75d37c/ec35bd.ts` | Render imagen material en contenido del curso |
+| `src/bc4150/0c54ed.css` | `.course-material--image`, `.course-material__img`, thumb |
+
+**Mensajería en equipo y curso + "Coaches" + grupos + borrado**
+
+- Ya se soportaba crear conversaciones de **Curso** y **Equipo**; ahora se añade
+  accesibilidad desde el menú y **grupos personalizados** (nombre + integrantes).
+- El menú lateral (estudiante y coach) incluye **Mensajes**. Los alumnos además ven
+  una opción **Coaches** con todas las tarjetas de coaches y botón "Enviar mensaje".
+- Borrado: cada mensaje propio tiene papelera; cada conversación/grupo tiene botón
+  de eliminar (borra el hilo si eres el creador, o te quita de él si eres miembro).
+- DB: política DELETE para `chat_messages` (propios), `conversations` (creador) y
+  `conversation_participants` (salir); `conversations.kind` acepta `'group'`.
+
+| Archivo | Cambio |
+|---|---|
+| `src/b3b32a/chat.ts` | Grupos, `?with=` (abrir directo con coach), eliminar mensajes y conversaciones |
+| `src/b3b32a/75d37c/coaches.ts` | Nueva página Coaches (lista + enviar mensaje) |
+| `src/34d59f/dc7161.ts` | Menú: Mensajes (ambos roles) y Coaches (estudiante) |
+| `src/fad58d.ts` | Ruta `#/students/coaches` |
+| `supabase/migrations/20260808_estructure` | `ranks_groups_chat.sql`: constraints + políticas DELETE |
+
+**Rango en imágenes (dashboard, público y perfil)**
+
+- Las imágenes de rango de Valorant (Iron→Radiante) que el usuario integró a
+  `public/` ahora se muestran con badges: donde aparecen los cursos (dashboard,
+  detalle, tabla del coach, modal de cursos del coach, tarjetas de estudiante),
+  elegidas en la flecha pública del modal de cursos y en los perfiles.
+- Nueva función `rankImage()/rankBadge()` en `src/2b3583/ranks.ts` mapea nombre de
+  rango (ES/EN, con división) a la imagen correspondiente.
+
+**Disposición**
+
+- Perfil: las dos columnas `w-[600px]` fijas se cambian a `grid lg:grid-cols-2`,
+  responsivo en móvil.
+- Detalle de curso del coach: se quitó un `</div>` extra que desalineaba el encabezado.
+
+---
+
+## Estado
+- `[x]` Export a Excel, llamadas Meet, realtime, plataforma, uploads, selects, perf.
+- `[x]` Material de bloque con imagen, mensajería con grupos/borrado, Coaches, rangos visuales, disposición corregida.
+- `[x]` Build `tsc` + `vite` verificados sin errores.
+- `[ ]` Explicar lo de PWA y confirmar con el usuario.

@@ -45,6 +45,7 @@ import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/grades'
 import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
 import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
 import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
+import { renderStudentCoaches, initStudentCoaches } from '@/b3b32a/75d37c/coaches'
 import { renderStudentProfile, initStudentProfile } from '@/b3b32a/75d37c/7d9748'
 import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
 import { renderStudentTeam, initStudentTeam } from '@/b3b32a/75d37c/f89442'
@@ -343,6 +344,7 @@ dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
 dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
 dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
 dash('/students/team', () => renderStudentTeam(), initStudentTeam)
+dash('/students/coaches', () => renderStudentCoaches(), initStudentCoaches)
 dash('/students/exams', () => renderStudentExamList(), initStudentExamList)
 dash('/students/exams/:id', () => renderStudentExamDetail(), initStudentExamDetail)
 dash('/students/grades', () => renderStudentGrades(), initStudentGrades)

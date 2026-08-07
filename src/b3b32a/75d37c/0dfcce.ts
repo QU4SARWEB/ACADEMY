@@ -4,6 +4,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { autoEnrollComplementaria } from '@/2b3583/course_utils'
+import { rankBadge } from '@/2b3583/ranks'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -51,6 +52,7 @@ export async function initStudentCourses(): Promise<void> {
       const cName = course.name || course.courses?.name || ''
       const dur = course.duration_months || course.courses?.duration_months || 0
       const cover = course.cover_url || course.courses?.cover_url || ''
+      const rank = course.min_rank || course.courses?.min_rank || ''
       return `<div class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group">
         ${cover ? `<img src="${escapeHtml(cover)}" alt="" class="mb-4 h-32 w-full rounded-lg border border-zinc-800 object-cover" loading="lazy" decoding="async" />` : ''}
         <div class="flex items-center gap-3 mb-4">
@@ -59,7 +61,7 @@ export async function initStudentCourses(): Promise<void> {
           </div>
           <div class="min-w-0 flex-1">
             <h3 class="font-medium text-white truncate">${escapeHtml(cName)}</h3>
-            <p class="text-xs text-zinc-500">${dur === 0.5 ? '15 d\u00edas' : dur + ' meses'}</p>
+            <p class="text-xs text-zinc-500 flex items-center gap-1.5">${rank ? `${rankBadge(rank, 15)} ${escapeHtml(rank)} · ` : ''}${dur === 0.5 ? '15 d\u00edas' : dur + ' meses'}</p>
           </div>
         </div>
         ${desc ? `<p class="text-xs text-zinc-400 line-clamp-2 mb-3 flex-1">${escBr(desc)}</p>` : '<div class="flex-1"></div>'}

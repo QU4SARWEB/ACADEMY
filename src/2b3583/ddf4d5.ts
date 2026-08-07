@@ -1,4 +1,5 @@
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { rankImage } from '@/2b3583/ranks'
 
 const RANK_LIST = [
   { name: 'Unranked', hasDivision: false },
@@ -24,11 +25,11 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
   const pubSlug = pubProfile?.slug ?? slugify(profile.display_name ?? profile.full_name ?? '')
   const publicUrl = pubSlug ? `${window.location.origin}${window.location.pathname}#/p/${pubSlug}` : ''
   return `
-    <div class="flex gap-6 items-start">
-    <div class="w-[600px] shrink-0">
+    <div class="grid gap-6 lg:grid-cols-2 items-start">
+    <div class="w-full min-w-0">
     <div class="glass rounded-xl p-6 space-y-6">
       <!-- Box 1: Perfil -->
-      <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center gap-4">
         <div class="group relative">
           <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-3xl font-bold text-[#8B5CF6]">
             ${profile.avatar_url
@@ -74,6 +75,8 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
         <div>
           <label class="block text-xs font-medium text-zinc-400">Rango Valorant</label>
           <div class="flex items-center gap-2">
+            <img id="pf-rank-badge" src="${rankImage(profile.rank)}" alt=""
+              class="h-11 w-11 shrink-0 rounded-full object-cover ${rankImage(profile.rank) ? '' : 'hidden'}" width="44" height="44" decoding="async" />
             <select id="pf-rank-name"
               class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
               ${RANK_LIST.map(r => `<option value="${r.name}">${r.name}</option>`).join('')}
@@ -216,7 +219,7 @@ export function renderProfileForm(profile: any, pubProfile?: any): string {
     </div>
 
     </div>
-    <div class="w-[600px] shrink-0">
+    <div class="w-full min-w-0">
     <div class="glass rounded-xl p-6 space-y-6">
       <h3 class="text-sm font-semibold text-white flex items-center gap-2" style="border-bottom:1px solid rgba(139,92,246,0.06);padding-bottom:10px;margin-bottom:16px">
         Redes sociales
@@ -353,6 +356,7 @@ export function initRankSelector(currentRank?: string | null): void {
   const rrContainer = document.getElementById('pf-rank-rr-container')!
   const rrInput = document.getElementById('pf-rank-rr') as HTMLInputElement
   const hidden = document.getElementById('pf-rank-hidden') as HTMLInputElement
+  const badge = document.getElementById('pf-rank-badge') as HTMLImageElement | null
   if (!nameSelect || !hidden) return
 
   // Map old English rank names to Spanish
@@ -377,6 +381,10 @@ export function initRankSelector(currentRank?: string | null): void {
   function update() {
     const rankName = nameSelect.value
     const rank = RANK_LIST.find(r => r.name === rankName)
+    const rankSrc = rankImage(rankName)
+    if (badge) {
+      if (rankSrc) { badge.src = rankSrc; badge.classList.remove('hidden') } else { badge.classList.add('hidden'); badge.src = '' }
+    }
     divPicker.classList.add('hidden')
     rrContainer.classList.add('hidden')
     divContainer.classList.remove('border-[#8B5CF6]')

@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
+import { rankBadge } from '@/2b3583/ranks'
 
 export function renderCoachCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -41,6 +42,7 @@ export function mountCoachCourses(): void {
           </div>
         </td>
         <td class="py-3 px-4 text-sm text-zinc-400">${c.duration_months === 0.5 ? '15 d\u00edas' : c.duration_months ? c.duration_months + ' meses' : '—'}</td>
+        <td class="py-3 px-4 text-sm text-zinc-400">${c.min_rank ? `<span class="inline-flex items-center gap-1.5">${rankBadge(c.min_rank, 16)} ${escapeHtml(c.min_rank)}</span>` : '—'}</td>
         <td class="py-3 px-4 text-sm text-zinc-400">${total}</td>
         <td class="py-3 px-4 text-sm">${isFree ? '<span class="text-green-400">Gratis</span>' : '<span class="text-zinc-300">$' + c.price + '</span>'}</td>
         <td class="py-3 px-4 text-sm">${c.is_active ? '<span class="text-green-400">Activo</span>' : '<span class="text-zinc-500">Inactivo</span>'}</td>
@@ -70,6 +72,7 @@ export function mountCoachCourses(): void {
             <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
               <th class="py-3 px-4 font-medium">Nombre</th>
               <th class="py-3 px-4 font-medium">Duraci\u00f3n</th>
+              <th class="py-3 px-4 font-medium">Rango</th>
               <th class="py-3 px-4 font-medium">Inscritos</th>
               <th class="py-3 px-4 font-medium">Precio</th>
               <th class="py-3 px-4 font-medium">Estado</th>

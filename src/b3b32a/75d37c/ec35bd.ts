@@ -5,6 +5,7 @@ import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 import { formatDate } from '@/2b3583/6b239c'
+import { rankBadge } from '@/2b3583/ranks'
 
 export function renderStudentCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -128,13 +129,20 @@ export async function initStudentCourseDetail(): Promise<void> {
       rows.push(material)
       materialByModule.set(material.module_id, rows)
     }
-    const materialIcon: Record<string, string> = { video: 'video', document: 'fileText', link: 'externalLink', text: 'bookOpen' }
+const materialIcon: Record<string, string> = { video: 'video', document: 'fileText', link: 'externalLink', text: 'bookOpen', image: 'image' }
     const contentRows = (modules ?? []).map((module: any) => `
       <div class="course-module">
         <div class="course-module__head"><span>${String(module.display_order).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3>${module.description ? `<p>${escapeHtml(module.description)}</p>` : ''}</div></div>
         <div class="course-module__materials">
           ${(materialByModule.get(module.id) || []).map((material: any) => {
             const completed = completedMaterialIds.has(material.id)
+            if (material.material_type === 'image' && material.resource_url) {
+              return `<a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="course-material course-material--image${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
+                <img src="${escapeHtml(material.resource_url)}" alt="${escapeHtml(material.title)}" class="course-material__img" loading="lazy" decoding="async" />
+                <span><strong>${escapeHtml(material.title)}</strong>${material.description ? `<small>${escapeHtml(material.description)}</small>` : ''}</span>
+                <span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span>
+              </a>`
+            }
             const tag = material.resource_url ? 'a' : 'button'
             const href = material.resource_url ? ` href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener"` : ' type="button"'
             return `<${tag}${href} class="course-material${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
@@ -154,7 +162,7 @@ const html = `
           <div>
             <span class="kicker">Ruta de entrenamiento</span>
             <h1>${escapeHtml(course.name)}</h1>
-            <p>${course.duration_months} meses · Rango mínimo: ${escapeHtml(course.min_rank)}${course.price && course.price > 0 ? ` · $${course.price}/mes` : ' · Gratis'}</p>
+            <p>${course.duration_months} meses · Rango mínimo: ${rankBadge(course.min_rank, 18)} ${escapeHtml(course.min_rank)}${course.price && course.price > 0 ? ` · $${course.price}/mes` : ' · Gratis'}</p>
             ${course.description ? `<div class="course-detail-hero__description">${escBr(course.description)}</div>` : ''}
           </div>
           <div class="course-detail-hero__progress"><strong>${progress}%</strong><span>actividad completada</span><div><i style="width:${progress}%"></i></div></div>

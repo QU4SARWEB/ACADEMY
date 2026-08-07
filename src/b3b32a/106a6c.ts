@@ -1,6 +1,7 @@
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import { rankBadge } from '@/2b3583/ranks'
 import { renderDiscordBanner, renderPublicNavbar, renderPublicFooter, mountPublicNav } from '@/b3b32a/shared/public_nav'
 
 const DISCORD_URL = 'https://discord.gg/jmP2wJVf4N'
@@ -550,8 +551,8 @@ async function showCoachCoursesModal(coachId: string, coachName: string): Promis
         <div class="public-course-item__content">
           <h3>${escapeHtml(course.name || 'Curso QU4SAR')}</h3>
           <p>${escapeHtml(course.description || 'Entrenamiento estructurado para avanzar con un plan claro.')}</p>
-          <div class="public-course-item__meta">
-            <span>${escapeHtml(course.min_rank || 'Todos los rangos')}</span>
+<div class="public-course-item__meta">
+            <span>${rankBadge(course.min_rank, 16)} ${escapeHtml(course.min_rank || 'Todos los rangos')}</span>
             <span>${escapeHtml(duration)}</span>
             <strong>${escapeHtml(price)}</strong>
           </div>

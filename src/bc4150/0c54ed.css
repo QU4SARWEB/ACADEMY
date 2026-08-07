@@ -5523,3 +5523,89 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 1rem;
 }
+/* Rank badges (imagenes de rango Valorant) */
+.rank-badge {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 999px;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.35));
+}
+
+/* Lista de materiales del coach: miniatura cuando es imagen */
+.coach-material-thumb {
+  width: 3.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Material imagen en la vista del estudiante */
+.course-material--image {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+.course-material__img {
+  width: 9rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Mensajeria: botones de borrado y campos de grupo */
+.dashboard-chat__thread-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.dashboard-chat__delete-conv {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f87171;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dashboard-chat__delete-conv:hover { background: rgba(248, 113, 113, 0.15); }
+.dashboard-chat__message-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.dashboard-chat__delete-msg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.dashboard-chat__message:hover .dashboard-chat__delete-msg { opacity: 1; }
+.dashboard-chat__delete-msg:hover { color: #f87171; }
+.dashboard-chat__group-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.dashboard-chat__group-fields.hidden { display: none; }
+.dashboard-chat__group-name { width: 100%; }
+.dashboard-chat__group-members { width: 100%; min-height: 7.5rem; }
+.dashboard-chat__group-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
