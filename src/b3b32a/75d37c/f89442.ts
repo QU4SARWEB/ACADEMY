@@ -57,6 +57,17 @@ export async function initStudentTeam(): Promise<void> {
 
     const memberIds = (members ?? []).map((m: any) => m.profile_id)
 
+    const memberProfileSlug: Record<string, string> = {}
+    if (memberIds.length > 0) {
+      const { data: pubSlugs } = await supabase
+        .from('public_profiles')
+        .select('profile_id, slug')
+        .in('profile_id', memberIds)
+      for (const p of pubSlugs ?? []) {
+        if (p.profile_id && p.slug && !memberProfileSlug[p.profile_id]) memberProfileSlug[p.profile_id] = p.slug
+      }
+    }
+
     const paymentMap = new Map<string, string>()
     if (memberIds.length > 0) {
       const { data: payments } = await supabase
@@ -150,6 +161,9 @@ export async function initStudentTeam(): Promise<void> {
                 '        </p>',
                 '      </div>',
                 (paymentMap.has(m.profile_id) ? paymentBadge(paymentMap.get(m.profile_id)!) : ''),
+                memberProfileSlug[m.profile_id]
+                  ? '<a href="#/p/' + escapeHtml(memberProfileSlug[m.profile_id]) + '" title="Ver perfil público" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition hover:border-[#8B5CF6]/50 hover:text-[#8B5CF6]">' + Icon('eye', 15) + '</a>'
+                  : '',
                 '    </div>',
               ].join('')
             }).join(''),

@@ -39,6 +39,17 @@ async function loadStudentData() {
   const studentIds = (students ?? []).map((s: any) => s.id)
   const freeCourseIds = new Set((courses ?? []).filter((c: any) => !c.price || c.price <= 0).map((c: any) => c.id))
 
+  let studentProfileSlug: Record<string, string> = {}
+  if (studentIds.length > 0) {
+    const { data: pubSlugs } = await supabase
+      .from('public_profiles')
+      .select('profile_id, slug')
+      .in('profile_id', studentIds)
+    for (const p of pubSlugs ?? []) {
+      if (p.profile_id && p.slug && !studentProfileSlug[p.profile_id]) studentProfileSlug[p.profile_id] = p.slug
+    }
+  }
+
   let enrollmentsQuery = supabase.from('enrollments').select('id, profile_id, status, course_id, courses!inner(name)')
   if (studentIds.length > 0) enrollmentsQuery = enrollmentsQuery.in('profile_id', studentIds)
   if (assignedIds.length > 0) enrollmentsQuery = enrollmentsQuery.in('course_id', assignedIds)
@@ -106,10 +117,10 @@ async function loadStudentData() {
 
   const studentCourseIds = getStudentCourseIds(enrollments ?? [])
 
-  return { students: filteredStudents, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds }
+  return { students: filteredStudents, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds, studentProfileSlug }
 }
 
-function renderStudentTable(students: any[], courses: any[], paidCountPerProfile: Record<string, number>, scholarCountPerProfile: Record<string, number>, enrollCountPerProfile: Record<string, number>, enrollmentMap: Map<string, { count: number; anyActive: boolean; courses: string[] }>, courseStudentCount: Record<string, number>, courseStudentIds: Record<string, Set<string>>, studentCourseIds: Record<string, string[]>): string {
+function renderStudentTable(students: any[], courses: any[], paidCountPerProfile: Record<string, number>, scholarCountPerProfile: Record<string, number>, enrollCountPerProfile: Record<string, number>, enrollmentMap: Map<string, { count: number; anyActive: boolean; courses: string[] }>, courseStudentCount: Record<string, number>, courseStudentIds: Record<string, Set<string>>, studentCourseIds: Record<string, string[]>, studentProfileSlug: Record<string, string>): string {
   const filterHtml = (courses ?? []).map((c: any) => {
     const total = courseStudentCount[c.id] || 0
     return `
@@ -198,7 +209,9 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
                       ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2.5 py-0.5 text-xs text-[#C4B5FD]">${Icon('smartphone', 12)} Mobile</span>`
                       : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-400">${Icon('play', 12)} PC</span>`}</td>
                     <td class="py-3 px-4 text-xs text-zinc-500">Estudiante</td>
-                    <td class="py-3 px-4 text-right">${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
+                    <td class="py-3 px-4 text-right">${studentProfileSlug[s.id]
+                      ? `<a href="#/p/${escapeHtml(studentProfileSlug[s.id])}" title="Ver perfil público" class="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-[10px] text-zinc-300 transition hover:border-[#8B5CF6]/50 hover:text-[#8B5CF6]">${Icon('eye', 10)} Perfil</a>&nbsp;`
+                      : ''}${!s.is_active ? '<button class="hard-delete-student rounded border border-red-700 px-2 py-1 text-[10px] text-red-400 hover:bg-red-900/30 transition" data-id="' + s.id + '" data-name="' + escapeHtml(displayName) + '">' + Icon('trash', 10) + ' Eliminar</button>' : ''}</td>
                   </tr>`
               }).join('')
           }
@@ -262,9 +275,9 @@ function initSingleActions(container: HTMLElement, reloadFn: () => void): void {
 export function mountCoachStudents(): void {
   ;(async () => {
     try {
-      const { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds } = await loadStudentData()
+      const { students, courses, paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds, studentProfileSlug } = await loadStudentData()
 
-      const mainHtml = renderStudentTable(students ?? [], courses ?? [], paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds)
+      const mainHtml = renderStudentTable(students ?? [], courses ?? [], paidCountPerProfile, scholarCountPerProfile, enrollCountPerProfile, enrollmentMap, courseStudentCount, courseStudentIds, studentCourseIds, studentProfileSlug)
 
       const enrollModalHtml = `
         <div id="enroll-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60">

@@ -325,8 +325,9 @@ export async function initCoachDashboard(): Promise<void> {
             { href: '#/coaches/courses', icon: 'bookOpen', label: 'Cursos' },
             { href: '#/coaches/schedules', icon: 'calendar', label: 'Horarios' },
             { href: '#/coaches/exams', icon: 'scrollText', label: 'Exámenes' },
-            { href: '#/coaches/grades', icon: 'clipboardList', label: 'Notas' },
+{ href: '#/coaches/grades', icon: 'clipboardList', label: 'Notas' },
             { href: '#/coaches/tasks', icon: 'clipboardList', label: 'Tareas' },
+            { href: '#/members', icon: 'share2', label: 'Comunidad' },
           ].map((q, i) => `
             <a href="${q.href}" class="card flex flex-col items-center gap-2 p-4 text-center transition hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5" style="--i:${i}">
               <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6]">${Icon(q.icon, 18)}</span>

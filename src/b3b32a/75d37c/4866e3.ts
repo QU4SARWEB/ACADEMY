@@ -213,6 +213,8 @@ export async function initStudentDashboard(): Promise<void> {
               { href: '#/students/grades', icon: 'trophy', label: 'Mis notas', color: '#22C55E' },
               { href: '#/students/schedule', icon: 'calendar', label: 'Horario', color: '#3B82F6' },
               { href: '#/payments', icon: 'dollarSign', label: 'Pagos', color: '#EC4899' },
+              { href: '#/members', icon: 'users', label: 'Comunidad', color: '#A855F7' },
+              { href: '#/students/team', icon: 'shield', label: 'Mi equipo', color: '#06B6D4' },
             ].map((q, i) => `
               <a href="${q.href}" class="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 transition hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5" style="--i:${i}">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style="background:${q.color}20;color:${q.color}">${Icon(q.icon, 18)}</span>
