@@ -126,69 +126,82 @@ export async function initCoachDashboard(): Promise<void> {
     // Analítica: inscripciones por semana / mes / año
     let inscWeekTotal = 0, inscMonthTotal = 0, inscYearTotal = 0
     let weekChart = '', monthChart = '', yearChart = ''
+    let inscMonthStartLabel = '', inscYearStartLabel = '', inscYearEndLabel = ''
     try {
-      const startOfWindow = new Date()
-      startOfWindow.setMonth(startOfWindow.getMonth() - 11)
-      startOfWindow.setDate(1)
-      startOfWindow.setHours(0, 0, 0, 0)
+      const today = new Date()
+      const year = today.getFullYear()
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const ym = `${year}-${pad(today.getMonth() + 1)}`
+      const startOfYear = new Date(year, 0, 1)
+
       const { data: signupCandidates } = await supabase
         .from('profiles')
         .select('created_at')
         .in('role', ['student', 'player'])
-        .gte('created_at', startOfWindow.toISOString())
+        .gte('created_at', startOfYear.toISOString())
       const list = signupCandidates ?? []
 
-      const dayKey = (d: Date) => d.toISOString().slice(0, 10)
-      const weekDays: Date[] = []
-      const monthDays: Date[] = []
-      for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); weekDays.push(d) }
-      for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); monthDays.push(d) }
+      const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
+      // Semana: últimos 7 días con su día de la semana
+      const weekDays: Date[] = []
+      for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); weekDays.push(d) }
       const weekBuckets: Record<string, number> = {}
-      const monthBuckets: Record<string, number> = {}
       weekDays.forEach(d => { weekBuckets[dayKey(d)] = 0 })
-      monthDays.forEach(d => { monthBuckets[dayKey(d)] = 0 })
-      const yearKeys: string[] = []
+
+      // Mes: días exactos del mes de calendario actual (1..hoy)
+      const currentMonthLastDay = today.getDate()
+      const monthDays: Date[] = []
+      const monthBuckets: Record<string, number> = {}
+      for (let dd = 1; dd <= currentMonthLastDay; dd++) {
+        const d = new Date(year, today.getMonth(), dd)
+        monthDays.push(d)
+        monthBuckets[dayKey(d)] = 0
+      }
+
+      // Año: meses exactos del año de calendario actual (Ene..hoy)
+      const yearMonths: string[] = []
       const yearBuckets: Record<string, number> = {}
-      for (let m = 11; m >= 0; m--) {
-        const d = new Date()
-        d.setDate(1); d.setMonth(d.getMonth() - m)
-        const key = d.toISOString().slice(0, 7)
-        yearKeys.push(key); yearBuckets[key] = 0
+      for (let m = 0; m <= today.getMonth(); m++) {
+        const key = `${year}-${pad(m + 1)}`
+        yearMonths.push(key)
+        yearBuckets[key] = 0
       }
 
       const firstWeekDay = dayKey(weekDays[0])
-      const firstMonthDay = dayKey(monthDays[0])
       for (const e of list) {
         const c = e.created_at || ''
         if (!c) continue
         const day = c.slice(0, 10)
         if (day >= firstWeekDay) inscWeekTotal++
-        if (day >= firstMonthDay) inscMonthTotal++
-        inscYearTotal++
+        if (c.slice(0, 7) === ym) inscMonthTotal++
+        if (c.slice(0, 4) === String(year)) inscYearTotal++
         if (weekBuckets[day] !== undefined) weekBuckets[day]++
         if (monthBuckets[day] !== undefined) monthBuckets[day]++
         const mk = c.slice(0, 7)
         if (yearBuckets[mk] !== undefined) yearBuckets[mk]++
       }
 
-      const chartHtml = (cells: { label: string; value: number }[]): string => {
+      const chartHtml = (cells: { label: string; value: number }[], titleFn?: (c: { label: string; value: number }, i: number) => string): string => {
         const max = Math.max(1, ...cells.map(c => c.value))
         return `<div class="flex h-36 items-end gap-1.5 mb-2">
-          ${cells.map(c => `
-            <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${escapeHtml(c.label)}: ${c.value}">
-              <span class="mb-1 text-[10px] text-zinc-500">${c.value > 0 ? c.value : ''}</span>
-              <div class="w-full rounded-t-md" style="height:${Math.max(4, Math.round((c.value / max) * 120))}px;background:linear-gradient(180deg,#22C55E,#16A34A);opacity:${c.value > 0 ? 1 : 0.12}"></div>
-            </div>`).join('')}
+          ${cells.map((ch, i) => {
+            const title = titleFn ? titleFn(ch, i) : `${ch.label}: ${ch.value}`
+            return `
+            <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${escapeHtml(title)}">
+              <span class="mb-1 text-[10px] text-zinc-500">${ch.value > 0 ? ch.value : ''}</span>
+              <div class="w-full rounded-t-md" style="height:${Math.max(4, Math.round((ch.value / max) * 120))}px;background:linear-gradient(180deg,#22C55E,#16A34A);opacity:${ch.value > 0 ? 1 : 0.12}"></div>
+            </div>`}).join('')}
         </div>`
       }
-      const short = (d: Date) => d.toISOString().slice(5, 10).split('-').reverse().join('/')
       const weekdayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-      const weekLabels = weekDays.map(d => weekdayNames[d.getDay()])
-      weekChart = chartHtml(weekDays.map((d, i) => ({ label: weekLabels[i], value: weekBuckets[dayKey(d)] })))
-      monthChart = chartHtml(monthDays.map(d => ({ label: short(d), value: monthBuckets[dayKey(d)] })))
+      weekChart = chartHtml(weekDays.map(d => ({ label: weekdayNames[d.getDay()], value: weekBuckets[dayKey(d)] })), (ch, i) => `${dayKey(weekDays[i])}: ${ch.value}`)
+      monthChart = chartHtml(monthDays.map(d => ({ label: String(d.getDate()), value: monthBuckets[dayKey(d)] })), (ch, i) => `${dayKey(monthDays[i])}: ${ch.value}`)
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-      yearChart = chartHtml(yearKeys.map(k => ({ label: monthNames[parseInt(k.slice(5, 7), 10) - 1], value: yearBuckets[k] || 0 })))
+      yearChart = chartHtml(yearMonths.map(k => ({ label: monthNames[parseInt(k.slice(5, 7), 10) - 1], value: yearBuckets[k] || 0 })), (ch, i) => `${yearMonths[i]}-01: ${ch.value}`)
+      inscMonthStartLabel = `1 ${monthNames[today.getMonth()]}`
+      inscYearStartLabel = `Ene ${year}`
+      inscYearEndLabel = `${monthNames[today.getMonth()]} ${year}`
     } catch (e) {
       console.warn('Enrollment series unavailable:', e)
     }
@@ -273,11 +286,11 @@ export async function initCoachDashboard(): Promise<void> {
             </div>
             <div data-w="month" class="insc-panel hidden">
               ${monthChart}
-              <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 30 días</span><span>Hoy</span></div>
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>${inscMonthStartLabel}</span><span>Hoy</span></div>
             </div>
             <div data-w="year" class="insc-panel hidden">
               ${yearChart}
-              <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 12 meses</span><span>${new Date().getFullYear()}</span></div>
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>${inscYearStartLabel}</span><span>${inscYearEndLabel}</span></div>
             </div>
           </div>
           ${inscYearTotal === 0 ? EmptyState({ icon: 'users', title: 'Sin inscripciones este año', hint: 'Cuando los alumnos se inscriban verás el resumen aquí.' }) : ''}
