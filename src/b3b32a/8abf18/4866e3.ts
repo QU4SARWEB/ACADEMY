@@ -127,11 +127,16 @@ export async function initCoachDashboard(): Promise<void> {
     let inscWeekTotal = 0, inscMonthTotal = 0, inscYearTotal = 0
     let weekChart = '', monthChart = '', yearChart = ''
     try {
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1)
-      let encQ = supabase.from('enrollments').select('created_at').gte('created_at', startOfYear.toISOString())
-      if (assignedIds.length > 0) encQ = encQ.in('course_id', assignedIds)
-      const { data: yearEnrolls } = await encQ
-      const list = yearEnrolls ?? []
+      const startOfWindow = new Date()
+      startOfWindow.setMonth(startOfWindow.getMonth() - 11)
+      startOfWindow.setDate(1)
+      startOfWindow.setHours(0, 0, 0, 0)
+      const { data: signupCandidates } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .in('role', ['student', 'player'])
+        .gte('created_at', startOfWindow.toISOString())
+      const list = signupCandidates ?? []
 
       const dayKey = (d: Date) => d.toISOString().slice(0, 10)
       const weekDays: Date[] = []
