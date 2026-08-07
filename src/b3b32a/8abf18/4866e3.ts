@@ -126,7 +126,7 @@ export async function initCoachDashboard(): Promise<void> {
     // Analítica: inscripciones por semana / mes / año
     let inscWeekTotal = 0, inscMonthTotal = 0, inscYearTotal = 0
     let weekChart = '', monthChart = '', yearChart = ''
-    let inscMonthStartLabel = '', inscYearStartLabel = '', inscYearEndLabel = ''
+    let inscMonthStartLabel = '', inscMonthEndLabel = '', inscYearStartLabel = '', inscYearEndLabel = ''
     try {
       const today = new Date()
       const year = today.getFullYear()
@@ -149,20 +149,20 @@ export async function initCoachDashboard(): Promise<void> {
       const weekBuckets: Record<string, number> = {}
       weekDays.forEach(d => { weekBuckets[dayKey(d)] = 0 })
 
-      // Mes: días exactos del mes de calendario actual (1..hoy)
-      const currentMonthLastDay = today.getDate()
+      // Mes: días exactos del mes de calendario completo (1..30/31/28 según el mes)
+      const daysInMonth = new Date(year, today.getMonth() + 1, 0).getDate()
       const monthDays: Date[] = []
       const monthBuckets: Record<string, number> = {}
-      for (let dd = 1; dd <= currentMonthLastDay; dd++) {
+      for (let dd = 1; dd <= daysInMonth; dd++) {
         const d = new Date(year, today.getMonth(), dd)
         monthDays.push(d)
         monthBuckets[dayKey(d)] = 0
       }
 
-      // Año: meses exactos del año de calendario actual (Ene..hoy)
+      // Año: los 12 meses del año de calendario (Ene..Dic)
       const yearMonths: string[] = []
       const yearBuckets: Record<string, number> = {}
-      for (let m = 0; m <= today.getMonth(); m++) {
+      for (let m = 0; m < 12; m++) {
         const key = `${year}-${pad(m + 1)}`
         yearMonths.push(key)
         yearBuckets[key] = 0
@@ -200,8 +200,9 @@ export async function initCoachDashboard(): Promise<void> {
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
       yearChart = chartHtml(yearMonths.map(k => ({ label: monthNames[parseInt(k.slice(5, 7), 10) - 1], value: yearBuckets[k] || 0 })), (ch, i) => `${yearMonths[i]}-01: ${ch.value}`)
       inscMonthStartLabel = `1 ${monthNames[today.getMonth()]}`
+      inscMonthEndLabel = `${daysInMonth} ${monthNames[today.getMonth()]}`
       inscYearStartLabel = `Ene ${year}`
-      inscYearEndLabel = `${monthNames[today.getMonth()]} ${year}`
+      inscYearEndLabel = `Dic ${year}`
     } catch (e) {
       console.warn('Enrollment series unavailable:', e)
     }
@@ -284,9 +285,9 @@ export async function initCoachDashboard(): Promise<void> {
               ${weekChart}
               <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 7 días</span><span>Hoy</span></div>
             </div>
-            <div data-w="month" class="insc-panel hidden">
+<div data-w="month" class="insc-panel hidden">
               ${monthChart}
-              <div class="flex justify-between text-[10px] text-zinc-600"><span>${inscMonthStartLabel}</span><span>Hoy</span></div>
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>${inscMonthStartLabel}</span><span>${inscMonthEndLabel}</span></div>
             </div>
             <div data-w="year" class="insc-panel hidden">
               ${yearChart}
