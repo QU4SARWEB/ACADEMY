@@ -1,4 +1,4 @@
-const CACHE = 'qu4sar-shell-v1'
+const CACHE = 'qu4sar-shell-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

@@ -45,7 +45,7 @@ function hero(session: any): string {
       ${embers()}
       <div class="stellar-core animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
-        <img src="qu4sar.ico" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" decoding="async" />
+        <img src="qu4sar.svg" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" decoding="async" />
       </div>
       <span class="lbl reveal">Academia de Esports</span>
       <h1 class="font-heading text-4xl font-extrabold leading-tight text-white md:text-7xl reveal" style="--i:1">
@@ -69,7 +69,7 @@ export function renderHome(session?: any): string {
   return `
      <div class="public-page relative min-h-screen overflow-hidden bg-[#0A0A0A]">
       <style>@keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }</style>
-      <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.png") center/cover no-repeat fixed; z-index:-2'></div>
+      <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.jpg") center/cover no-repeat fixed; z-index:-2'></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.35); z-index:-1"></div>
       <div class="pointer-events-none fixed inset-0" style="z-index:-1">
         <div class="absolute -left-32 top-1/4 h-72 w-72 rounded-full bg-[#8B5CF6]/15 blur-3xl"></div>
@@ -109,7 +109,7 @@ export function renderHome(session?: any): string {
           </div>
           <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-center">
             <div class="hud reveal relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
-              <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" loading="lazy" decoding="async" />
+              <img src="qu4sarfondoPublico.jpg" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" loading="lazy" decoding="async" />
               <div class="absolute inset-0 flex items-center justify-center">
                 <button class="flex flex-col items-center gap-2 text-white/90 transition hover:scale-105" aria-label="Ver briefing">
                   <span class="flex h-16 w-16 items-center justify-center rounded-full border border-[#8B5CF6]/60 bg-[#8B5CF6]/30 backdrop-blur-md">${Icon('play', 26)}</span>

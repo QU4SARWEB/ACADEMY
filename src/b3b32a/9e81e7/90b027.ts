@@ -215,7 +215,7 @@ function renderProfileCard(
 </div>
 <div class="public-page public-profile min-h-screen bg-[#0A0A0A]" id="profile-page" style="opacity:0;transition:opacity .4s">
   <header class="nav-b">
-    <a href="#/" class="mark brand-logo"><img src="qu4sar.ico" alt="QU4SAR" width="32" height="32" /><span>QU<span class="q">4</span>SAR</span></a>
+    <a href="#/" class="mark brand-logo"><img src="qu4sar.svg" alt="QU4SAR" width="32" height="32" /><span>QU<span class="q">4</span>SAR</span></a>
     <nav class="flex items-center gap-4">
       <a href="#/" class="text-sm text-zinc-400 transition-colors hover:text-white">Inicio</a>
       <button id="download-btn" class="flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-white">${Icon('download', 14)} PNG</button>

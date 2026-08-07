@@ -19,46 +19,8 @@ import { renderAbout, mountAbout } from '@/b3b32a/9e81e7/about'
 import { renderPublicProfile, initPublicProfile } from '@/b3b32a/9e81e7/90b027'
 import { renderNotFound } from '@/b3b32a/9e81e7/803f10'
 
-import { renderCoachDashboard, initCoachDashboard } from '@/b3b32a/8abf18/4866e3'
-import { renderCoachCourses, mountCoachCourses } from '@/b3b32a/8abf18/0dfcce'
-import { renderCoachCourseDetail, mountCoachCourseDetail } from '@/b3b32a/8abf18/ec35bd'
-import { renderCoachNewCourse, initCoachNewCourse } from '@/b3b32a/8abf18/d74f85'
-import { renderCoachProfile, initCoachProfile } from '@/b3b32a/8abf18/7d9748'
-import { renderCoachStudents, mountCoachStudents } from '@/b3b32a/8abf18/75d37c'
-import { renderCoachSchedules, initCoachSchedules } from '@/b3b32a/8abf18/70ec15'
-import { renderCoachStudentDetail, mountCoachStudentDetail } from '@/b3b32a/8abf18/b60dbf'
-import { renderCoachTeams, initCoachTeams } from '@/b3b32a/8abf18/8fd6f4'
-import { renderCoachCodes, initCoachCodes } from '@/b3b32a/8abf18/codes'
-import { renderCoachAssignments, initCoachAssignments } from '@/b3b32a/8abf18/assignments'
-import { renderCoachGrades, initCoachGrades } from '@/b3b32a/8abf18/grades'
-import { renderCoachTasks, initCoachTasks } from '@/b3b32a/8abf18/tasks'
-import { renderCoachEnroll, initCoachEnroll } from '@/b3b32a/8abf18/enroll'
-import { renderStudentTasks, initStudentTasks } from '@/b3b32a/75d37c/tasks'
-
-import { renderCoachExams, initCoachExams } from '@/b3b32a/8abf18/exams'
-import { renderStudentExamList, initStudentExamList, renderStudentExamDetail, initStudentExamDetail } from '@/b3b32a/75d37c/exams'
-import { renderCoachAttendance, initCoachAttendance } from '@/b3b32a/8abf18/attendance'
-import { renderCoachPractical, initCoachPractical } from '@/b3b32a/8abf18/practical'
-import { renderStudentGrades, initStudentGrades } from '@/b3b32a/75d37c/grades'
-
-
-import { renderCoachEditCourse, initCoachEditCourse } from '@/b3b32a/8abf18/e2b7c4'
-import { renderStudentDashboard, initStudentDashboard } from '@/b3b32a/75d37c/4866e3'
-import { renderStudentCourses, initStudentCourses } from '@/b3b32a/75d37c/0dfcce'
-import { renderStudentCoaches, initStudentCoaches } from '@/b3b32a/75d37c/coaches'
-import { renderStudentProfile, initStudentProfile } from '@/b3b32a/75d37c/7d9748'
-import { renderStudentSchedule, initStudentSchedule } from '@/b3b32a/75d37c/799855'
-import { renderStudentTeam, initStudentTeam } from '@/b3b32a/75d37c/f89442'
-import { renderStudentCourseDetail, initStudentCourseDetail } from '@/b3b32a/75d37c/ec35bd'
-
-
-
-import { renderPayments, initPayments } from '@/b3b32a/9e81e7/e639e9'
-
-import { renderSettings, initSettings } from '@/b3b32a/9e81e7/e5d4c3'
-import { renderMembers, initMembers } from '@/b3b32a/9e81e7/members'
-import { renderChat, initChat } from '@/b3b32a/chat'
-import { renderCalls, initCalls } from '@/b3b32a/calls'
+// Los dashboards se cargan de forma perezosa (code-split) para que la web
+// pública no descargue el código de la plataforma. Ver dashLazy() más abajo.
 
 router.setBeforeNavigate(async (path) => authGuard(path))
 
@@ -193,8 +155,27 @@ schedules: 'Tu horario tiene una nueva actualización.',
   if (body) void notifyDevice('QU4SAR Academy', body, destinations[table] || path)
 }
 
-// Dashboard render helper
-function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void>) | (() => void)): void {
+// Dashboard render helper with lazy loading
+type DashRender = () => string
+type DashInit = (() => Promise<void>) | (() => void)
+type DashLoader = () => Promise<{ render: DashRender; init?: DashInit }>
+
+// Helper: resolves a dynamic import module and returns render/init from named exports
+function dashLazy<T extends Record<string, any>>(
+  spec: () => Promise<T>,
+  renderKey: string,
+  initKey?: string
+): DashLoader {
+  return async () => {
+    const mod = await spec()
+    return {
+      render: mod[renderKey] as DashRender,
+      init: initKey ? (mod[initKey] as DashInit) : undefined,
+    }
+  }
+}
+
+function dash(path: string, loader: DashLoader): void {
   router.on(path, async () => {
     const app = document.getElementById('app')!
     app.innerHTML = FullPageSpinner()
@@ -270,6 +251,9 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
         return
       }
       const { DashboardLayout, initSidebar } = await import('@/34d59f/dc7161')
+      const mod = await loader()
+      const renderFn = mod.render
+      const initFn = mod.init
       app.innerHTML = DashboardLayout(renderFn())
       initToastContainer()
       initSidebar()
@@ -311,53 +295,53 @@ function dash(path: string, renderFn: () => string, initFn?: (() => Promise<void
 }
 
 // Coach routes
-dash('/coaches/dashboard', () => renderCoachDashboard(), initCoachDashboard)
-dash('/coaches/courses', () => renderCoachCourses(), mountCoachCourses)
-dash('/coaches/courses/new', () => renderCoachNewCourse(), initCoachNewCourse)
-dash('/coaches/courses/:id', () => renderCoachCourseDetail(), mountCoachCourseDetail)
-dash('/coaches/courses/:id/edit', () => renderCoachEditCourse(), initCoachEditCourse)
+dash('/coaches/dashboard', dashLazy(() => import('@/b3b32a/8abf18/4866e3'), 'renderCoachDashboard', 'initCoachDashboard'))
+dash('/coaches/courses', dashLazy(() => import('@/b3b32a/8abf18/0dfcce'), 'renderCoachCourses', 'mountCoachCourses'))
+dash('/coaches/courses/new', dashLazy(() => import('@/b3b32a/8abf18/d74f85'), 'renderCoachNewCourse', 'initCoachNewCourse'))
+dash('/coaches/courses/:id', dashLazy(() => import('@/b3b32a/8abf18/ec35bd'), 'renderCoachCourseDetail', 'mountCoachCourseDetail'))
+dash('/coaches/courses/:id/edit', dashLazy(() => import('@/b3b32a/8abf18/e2b7c4'), 'renderCoachEditCourse', 'initCoachEditCourse'))
 
-dash('/coaches/profile', () => renderCoachProfile(), initCoachProfile)
-dash('/coaches/students', () => renderCoachStudents(), mountCoachStudents)
-dash('/coaches/students/:id', () => renderCoachStudentDetail(), mountCoachStudentDetail)
+dash('/coaches/profile', dashLazy(() => import('@/b3b32a/8abf18/7d9748'), 'renderCoachProfile', 'initCoachProfile'))
+dash('/coaches/students', dashLazy(() => import('@/b3b32a/8abf18/75d37c'), 'renderCoachStudents', 'mountCoachStudents'))
+dash('/coaches/students/:id', dashLazy(() => import('@/b3b32a/8abf18/b60dbf'), 'renderCoachStudentDetail', 'mountCoachStudentDetail'))
 
-dash('/coaches/schedules', () => renderCoachSchedules(), initCoachSchedules)
-dash('/coaches/teams', () => renderCoachTeams(), initCoachTeams)
-dash('/coaches/codes', () => renderCoachCodes(), initCoachCodes)
-dash('/coaches/assignments', () => renderCoachAssignments(), initCoachAssignments)
-dash('/coaches/grades', () => renderCoachGrades(), initCoachGrades)
-dash('/coaches/tasks', () => renderCoachTasks(), initCoachTasks)
-dash('/coaches/enroll', () => renderCoachEnroll(), initCoachEnroll)
-dash('/coaches/exams', () => renderCoachExams(), initCoachExams)
-dash('/coaches/exams/:id', () => renderCoachExams(), initCoachExams)
-dash('/coaches/attendance', () => renderCoachAttendance(), initCoachAttendance)
-dash('/coaches/practical', () => renderCoachPractical(), initCoachPractical)
+dash('/coaches/schedules', dashLazy(() => import('@/b3b32a/8abf18/70ec15'), 'renderCoachSchedules', 'initCoachSchedules'))
+dash('/coaches/teams', dashLazy(() => import('@/b3b32a/8abf18/8fd6f4'), 'renderCoachTeams', 'initCoachTeams'))
+dash('/coaches/codes', dashLazy(() => import('@/b3b32a/8abf18/codes'), 'renderCoachCodes', 'initCoachCodes'))
+dash('/coaches/assignments', dashLazy(() => import('@/b3b32a/8abf18/assignments'), 'renderCoachAssignments', 'initCoachAssignments'))
+dash('/coaches/grades', dashLazy(() => import('@/b3b32a/8abf18/grades'), 'renderCoachGrades', 'initCoachGrades'))
+dash('/coaches/tasks', dashLazy(() => import('@/b3b32a/8abf18/tasks'), 'renderCoachTasks', 'initCoachTasks'))
+dash('/coaches/enroll', dashLazy(() => import('@/b3b32a/8abf18/enroll'), 'renderCoachEnroll', 'initCoachEnroll'))
+dash('/coaches/exams', dashLazy(() => import('@/b3b32a/8abf18/exams'), 'renderCoachExams', 'initCoachExams'))
+dash('/coaches/exams/:id', dashLazy(() => import('@/b3b32a/8abf18/exams'), 'renderCoachExams', 'initCoachExams'))
+dash('/coaches/attendance', dashLazy(() => import('@/b3b32a/8abf18/attendance'), 'renderCoachAttendance', 'initCoachAttendance'))
+dash('/coaches/practical', dashLazy(() => import('@/b3b32a/8abf18/practical'), 'renderCoachPractical', 'initCoachPractical'))
 
 
 
 
 // Student routes
-dash('/students/dashboard', () => renderStudentDashboard(), initStudentDashboard)
-dash('/students/profile', () => renderStudentProfile(), initStudentProfile)
-dash('/students/courses', () => renderStudentCourses(), initStudentCourses)
-dash('/students/tasks', () => renderStudentTasks(), initStudentTasks)
-dash('/students/courses/:id', () => renderStudentCourseDetail(), initStudentCourseDetail)
-dash('/students/schedule', () => renderStudentSchedule(), initStudentSchedule)
-dash('/students/team', () => renderStudentTeam(), initStudentTeam)
-dash('/students/coaches', () => renderStudentCoaches(), initStudentCoaches)
-dash('/students/exams', () => renderStudentExamList(), initStudentExamList)
-dash('/students/exams/:id', () => renderStudentExamDetail(), initStudentExamDetail)
-dash('/students/grades', () => renderStudentGrades(), initStudentGrades)
+dash('/students/dashboard', dashLazy(() => import('@/b3b32a/75d37c/4866e3'), 'renderStudentDashboard', 'initStudentDashboard'))
+dash('/students/profile', dashLazy(() => import('@/b3b32a/75d37c/7d9748'), 'renderStudentProfile', 'initStudentProfile'))
+dash('/students/courses', dashLazy(() => import('@/b3b32a/75d37c/0dfcce'), 'renderStudentCourses', 'initStudentCourses'))
+dash('/students/tasks', dashLazy(() => import('@/b3b32a/75d37c/tasks'), 'renderStudentTasks', 'initStudentTasks'))
+dash('/students/courses/:id', dashLazy(() => import('@/b3b32a/75d37c/ec35bd'), 'renderStudentCourseDetail', 'initStudentCourseDetail'))
+dash('/students/schedule', dashLazy(() => import('@/b3b32a/75d37c/799855'), 'renderStudentSchedule', 'initStudentSchedule'))
+dash('/students/team', dashLazy(() => import('@/b3b32a/75d37c/f89442'), 'renderStudentTeam', 'initStudentTeam'))
+dash('/students/coaches', dashLazy(() => import('@/b3b32a/75d37c/coaches'), 'renderStudentCoaches', 'initStudentCoaches'))
+dash('/students/exams', dashLazy(() => import('@/b3b32a/75d37c/exams'), 'renderStudentExamList', 'initStudentExamList'))
+dash('/students/exams/:id', dashLazy(() => import('@/b3b32a/75d37c/exams'), 'renderStudentExamDetail', 'initStudentExamDetail'))
+dash('/students/grades', dashLazy(() => import('@/b3b32a/75d37c/grades'), 'renderStudentGrades', 'initStudentGrades'))
 // Player routes
 
 
 
 // Shared routes
-dash('/payments', () => renderPayments(), initPayments)
-dash('/settings', () => renderSettings(), initSettings)
-dash('/members', () => renderMembers(), initMembers)
-dash('/chat', () => renderChat(), initChat)
-dash('/calls', () => renderCalls(), initCalls)
+dash('/payments', dashLazy(() => import('@/b3b32a/9e81e7/e639e9'), 'renderPayments', 'initPayments'))
+dash('/settings', dashLazy(() => import('@/b3b32a/9e81e7/e5d4c3'), 'renderSettings', 'initSettings'))
+dash('/members', dashLazy(() => import('@/b3b32a/9e81e7/members'), 'renderMembers', 'initMembers'))
+dash('/chat', dashLazy(() => import('@/b3b32a/chat'), 'renderChat', 'initChat'))
+dash('/calls', dashLazy(() => import('@/b3b32a/calls'), 'renderCalls', 'initCalls'))
 
 // 404
 router.fallbackRoute(async () => {

@@ -203,14 +203,14 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
     [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item('/calls', 'video', 'Llamadas')],
-    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/chat', 'mail', 'Mensajes'), item('/students/coaches', 'users', 'Coaches')],
+    [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/students/coaches', 'users', 'Coaches')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
     [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
     [item('/coaches/enroll', 'plus', 'Inscribir'), item('/calls', 'video', 'Llamadas')],
-    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones'), item('/chat', 'mail', 'Mensajes')],
+    [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
 
   const isExpired = !!(window as any).__isExpired
@@ -282,7 +282,7 @@ const navGroups: NavItem[][] = [
   return `
     <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden flex flex-col">
       <a href="#/" class="sb-brand mb-4 flex items-center gap-2.5">
-        <img src="qu4sar.ico" alt="QU4SAR" class="h-8 w-8" />
+        <img src="qu4sar.svg" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-base font-bold" style="background:linear-gradient(90deg,#fff,${accent});-webkit-background-clip:text;background-clip:text;color:transparent">QU<span>4</span>SAR</span>
         <span class="ml-auto text-[9px] font-bold tracking-widest uppercase" style="color:${accent}">Academy</span>
       </a>
