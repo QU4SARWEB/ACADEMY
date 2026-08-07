@@ -734,6 +734,7 @@ async function renderCoachPayments(): Promise<void> {
     saveBtn.innerHTML = `${Icon('save', 12)} Guardar cambios`
     if (fail > 0) toast('warning', `${ok} guardados, ${fail} errores`)
     else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
+    await renderCoachPayments()
   })
 
   document.getElementById('pay-discard-btn')?.addEventListener('click', () => {
