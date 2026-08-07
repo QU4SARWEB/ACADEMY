@@ -55,7 +55,7 @@ export async function initStudentCourseDetail(): Promise<void> {
       supabase.from('exams').select('id, title, week_number, published').eq('course_id', id).eq('published', true).order('week_number', { ascending: true }),
       supabase.from('schedules').select('id, title, schedule_date, start_time, end_time').eq('course_id', id).order('schedule_date').order('start_time').limit(5),
     ])
-    const { data: modules } = await supabase.from('course_modules').select('id, title, description, display_order').eq('course_id', id).eq('is_published', true).order('display_order')
+    const { data: modules } = await supabase.from('course_modules').select('id, title, description, display_order, cover_url').eq('course_id', id).eq('is_published', true).order('display_order')
     const moduleIds = (modules ?? []).map((module: any) => module.id).filter(Boolean)
     const { data: materials } = moduleIds.length > 0
       ? await supabase.from('course_materials').select('id, module_id, title, description, material_type, resource_url, display_order').in('module_id', moduleIds).eq('is_published', true).order('display_order')
@@ -130,26 +130,53 @@ export async function initStudentCourseDetail(): Promise<void> {
       materialByModule.set(material.module_id, rows)
     }
 const materialIcon: Record<string, string> = { video: 'video', document: 'fileText', link: 'externalLink', text: 'bookOpen', image: 'image' }
+    const materialLabels: Record<string, string> = { video: 'Video', document: 'Documento', image: 'Imagen', link: 'Enlace', text: 'Texto' }
+    const materialFileName = (res: string | null | undefined): string => {
+      const clean = String(res || '').split('?')[0].split('/').pop() || ''
+      return clean.replace(/^\d{13}-/, '') || ''
+    }
+    const materialDownloadUrl = (res: string | null | undefined): string => {
+      const base = String(res || '').split('?')[0]
+      return base ? `${base}?download=1` : ''
+    }
     const contentRows = (modules ?? []).map((module: any) => `
-      <div class="course-module">
+      <div class="course-module"${module.cover_url ? ` style="padding-top:0"` : ''}>
+        ${module.cover_url ? `<img src="${escapeHtml(module.cover_url)}" alt="Portada: ${escapeHtml(module.title)}" class="course-module__cover" loading="lazy" decoding="async" />` : ''}
         <div class="course-module__head"><span>${String(module.display_order).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3>${module.description ? `<p>${escapeHtml(module.description)}</p>` : ''}</div></div>
         <div class="course-module__materials">
           ${(materialByModule.get(module.id) || []).map((material: any) => {
             const completed = completedMaterialIds.has(material.id)
+            const label = material.description || materialLabels[material.material_type] || materialFileName(material.resource_url) || 'Material de estudio'
             if (material.material_type === 'image' && material.resource_url) {
-              return `<a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="course-material course-material--image${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
-                <img src="${escapeHtml(material.resource_url)}" alt="${escapeHtml(material.title)}" class="course-material__img" loading="lazy" decoding="async" />
-                <span><strong>${escapeHtml(material.title)}</strong>${material.description ? `<small>${escapeHtml(material.description)}</small>` : ''}</span>
-                <span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span>
-              </a>`
+              return `<div class="course-material course-material--image${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
+                <a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="course-material__link course-material__link--img" aria-label="Abrir ${escapeHtml(material.title)}">
+                  <img src="${escapeHtml(material.resource_url)}" alt="${escapeHtml(material.title)}" class="course-material__img" loading="lazy" decoding="async" />
+                </a>
+                <span class="course-material__span"><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(label)}</small></span>
+                <span class="course-material__actions">
+                  ${materialDownloadUrl(material.resource_url) ? `<a href="${escapeHtml(materialDownloadUrl(material.resource_url))}" title="Descargar" class="course-material__dl" rel="noopener">${Icon('download', 14)}</a>` : ''}
+                  <span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span>
+                </span>
+              </div>`
             }
-            const tag = material.resource_url ? 'a' : 'button'
-            const href = material.resource_url ? ` href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener"` : ' type="button"'
-            return `<${tag}${href} class="course-material${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
+            const downloadIsInnerAnchor = material.resource_url ? `${materialDownloadUrl(material.resource_url) ? `${escapeHtml(materialDownloadUrl(material.resource_url))}` : ''}` : ''
+            if (material.resource_url) {
+              return `<div class="course-material${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
+                <a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="course-material__link" tabindex="-1">
+                  <span class="course-material__icon">${Icon(materialIcon[material.material_type] || 'fileText', 15)}</span>
+                  <span><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(label || 'Material de estudio')}</small></span>
+                </a>
+                <span class="course-material__actions">
+                  ${downloadIsInnerAnchor ? `<a href="${escapeHtml(downloadIsInnerAnchor)}" title="Descargar" class="course-material__dl" rel="noopener">${Icon('download', 14)}</a>` : ''}
+                  <span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span>
+                </span>
+              </div>`
+            }
+            return `<button type="button" class="course-material${completed ? ' completed' : ''}" data-material-id="${escapeHtml(material.id)}">
               <span class="course-material__icon">${Icon(materialIcon[material.material_type] || 'fileText', 15)}</span>
-              <span><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || material.material_type || 'Material de estudio')}</small></span>
-              <span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span>
-            </${tag}>`
+              <span><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(label || 'Material de estudio')}</small></span>
+              <span class="course-material__actions"><span class="course-material__check">${Icon(completed ? 'checkCircle' : 'chevronRight', 15)}</span></span>
+            </button>`
           }).join('') || '<p class="course-detail-empty">Contenido en preparación.</p>'}
         </div>
       </div>`).join('')

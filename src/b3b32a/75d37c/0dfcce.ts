@@ -121,7 +121,7 @@ export async function initStudentCourses(): Promise<void> {
         const { data: enrollment, error: enrError } = await supabase.from('enrollments').upsert({
           profile_id: session.user.id, course_id: courseId, type: 'student', status: 'active',
         }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select().maybeSingle()
-        if (enrError) { toast('error', 'Error al inscribirse: ' + enrError.message); if (btn) { btn.disabled = false; btn.innerHTML = `${Icon('plus', 14)} Inscribirme` }; return }
+        if (enrError) { console.error('Enroll error:', enrError); toast('error', 'No pudimos inscribirte. Inténtalo de nuevo.'); if (btn) { btn.disabled = false; btn.innerHTML = `${Icon('plus', 14)} Inscribirme` }; return }
         if (enrollment?.id) {
           const { data: prevEnrolls } = await supabase.from('enrollments').select('final_grade, promoted').eq('profile_id', session.user.id).eq('course_id', courseId).neq('id', enrollment.id)
           const alreadyPassed = (prevEnrolls ?? []).some((x: any) => x.final_grade !== null && x.final_grade >= 14 && x.promoted)

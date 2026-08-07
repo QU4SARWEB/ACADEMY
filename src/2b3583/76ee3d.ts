@@ -45,6 +45,19 @@ export async function uploadCourseCover(
   return uploadFile('attachments', getCourseCoverPath(courseId, file.name), file)
 }
 
+export function getModuleCoverPath(courseId: string, moduleId: string, fileName: string): string {
+  const ext = fileName.split('.').pop() || 'png'
+  return `courses/${courseId}/modules/${moduleId}/cover.${ext}`
+}
+
+export async function uploadModuleCover(
+  courseId: string,
+  moduleId: string,
+  file: File
+): Promise<{ url?: string; error?: string }> {
+  return uploadFile('attachments', getModuleCoverPath(courseId, moduleId, file.name), file)
+}
+
 export function getFilePath(userId: string, prefix: string, fileName: string): string {
   const ext = fileName.split('.').pop() || 'bin'
   const ts = Date.now()

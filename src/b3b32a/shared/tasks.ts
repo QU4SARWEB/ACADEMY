@@ -348,7 +348,8 @@ function bindTaskEvents(containerId: string, studentId: string, role: 'student' 
           for (const file of Array.from(fileInput.files)) {
             const { url, error } = await uploadFileFromInput('uploads', studentId, `tasks/${taskId}`, file)
             if (error) {
-              toast('error', `Error al subir archivo: ${error}`)
+              console.error('Upload error:', error)
+              toast('error', 'No se pudo subir el archivo. Inténtalo de nuevo.')
               continue
             }
             if (url) fileUrls.push(url)

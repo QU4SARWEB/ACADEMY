@@ -45,7 +45,7 @@ function hero(session: any): string {
       ${embers()}
       <div class="stellar-core animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
-        <img src="qu4sar.svg" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" decoding="async" />
+        <img src="QU4SARreducido.png" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" decoding="async" />
       </div>
       <span class="lbl reveal">Academia de Esports</span>
       <h1 class="font-heading text-4xl font-extrabold leading-tight text-white md:text-7xl reveal" style="--i:1">
@@ -57,6 +57,12 @@ function hero(session: any): string {
         <span class="typewriter-caret" aria-hidden="true">|</span>
       </p>
       <p class="mt-3 text-xs text-zinc-500 tracking-wide reveal" style="--i:3">Todos los ranks · ES / EN · Online</p>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2 reveal" style="--i:3.5">
+        ${['Hierro', 'Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Ascendente', 'Inmortal', 'Radiante'].map(r => `
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-300">
+            ${rankBadge(r, 16)} ${escapeHtml(r)}
+          </span>`).join('')}
+      </div>
       <div class="mt-8 flex flex-col gap-4 sm:flex-row reveal" style="--i:4">
             <a href="#/" data-scroll="coaches" class="btn btn-primary">Ver coaches →</a>
         <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Únete al Discord</a>
@@ -454,7 +460,7 @@ export async function mountHome(): Promise<void> {
             <div class="roster-card__body">
               <span class="roster-card__creds">QU4SAR Gaming Academy</span>
               <p class="roster-card__tag">${escapeHtml(co.quote || 'Coach certificado listo para ayudarte a subir de rango con un plan a tu medida.')}</p>
-              <div class="roster-card__meta"><span>Coach</span><span>${escapeHtml(co.rank || '—')}</span></div>
+              <div class="roster-card__meta"><span>Coach</span><span class="inline-flex items-center gap-1.5">${co.rank ? `${rankBadge(co.rank, 16)} ${escapeHtml(co.rank)}` : '—'}</span></div>
               <span class="roster-card__cta" data-coach-courses data-coach-id="${escapeHtml(co.id)}" data-coach-name="${escapeHtml(name)}">Ver sus cursos →</span>
             </div>
           </a>`

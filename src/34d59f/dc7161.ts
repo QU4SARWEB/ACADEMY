@@ -282,7 +282,7 @@ const navGroups: NavItem[][] = [
   return `
     <aside id="sidebar" class="sticky top-0 h-screen w-64 shrink-0 overflow-hidden flex flex-col">
       <a href="#/" class="sb-brand mb-4 flex items-center gap-2.5">
-        <img src="qu4sar.svg" alt="QU4SAR" class="h-8 w-8" />
+        <img src="QU4SARreducido.png" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-base font-bold" style="background:linear-gradient(90deg,#fff,${accent});-webkit-background-clip:text;background-clip:text;color:transparent">QU<span>4</span>SAR</span>
         <span class="ml-auto text-[9px] font-bold tracking-widest uppercase" style="color:${accent}">Academy</span>
       </a>

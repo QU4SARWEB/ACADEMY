@@ -92,7 +92,7 @@ export async function notifyDevice(title: string, body: string, url = '#/'): Pro
   if (!supported() || Notification.permission !== 'granted') return
 
   const registration = await registerServiceWorker()
-  const icon = new URL('qu4sar.svg', document.baseURI).toString()
+  const icon = new URL('qu4sar.ico', document.baseURI).toString()
   const options: NotificationOptions = {
     body,
     icon,

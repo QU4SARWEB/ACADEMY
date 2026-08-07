@@ -1,0 +1,1 @@
+ALTER TABLE public.course_modules ADD COLUMN IF NOT EXISTS cover_url TEXT;

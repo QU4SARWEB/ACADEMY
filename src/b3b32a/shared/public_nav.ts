@@ -38,7 +38,7 @@ export function renderPublicNavbar(session?: any, opts: { active?: string; links
   return `
     <nav class="nav-b public-enter public-enter--nav">
       <a class="mark brand-logo" href="#/">
-        <img src="qu4sar.svg" alt="QU4SAR" width="32" height="32" />
+        <img src="QU4SARreducido.png" alt="QU4SAR" width="32" height="32" />
         <span>QU<span class="q">4</span>SAR</span>
       </a>
       <ul class="nav-b__links">
@@ -61,7 +61,7 @@ export function renderPublicNavbar(session?: any, opts: { active?: string; links
     <div class="nav-drawer" aria-hidden="true">
       <button class="nav-drawer__close" aria-label="Cerrar menú">${Icon('x', 22)}</button>
       <div class="flex items-center gap-2 mt-2 mb-6">
-        <img src="qu4sar.svg" alt="QU4SAR" class="h-8 w-8" />
+        <img src="QU4SARreducido.png" alt="QU4SAR" class="h-8 w-8" />
         <span class="font-heading text-lg font-bold text-white">QU<span class="text-[#8B5CF6]">4</span>SAR</span>
       </div>
       <a href="#/">Inicio</a>
@@ -79,7 +79,7 @@ export function renderPublicFooter(): string {
       <div class="foot-b__inner">
         <div class="brand-col">
           <a class="mark" href="#/">
-            <img src="qu4sar.svg" alt="QU4SAR" class="h-7 w-7" />
+            <img src="QU4SARreducido.png" alt="QU4SAR" class="h-7 w-7" />
             <span>QU<span class="q">4</span>SAR</span>
           </a>
           <p class="brand-tagline">Gaming Academy. Formamos la próxima generación de talento competitivo en esports.</p>

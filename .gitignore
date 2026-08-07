@@ -49,3 +49,4 @@ backup_*.sql
 .idea/
 
 docs/supabaseapikeys.md
+dev.log

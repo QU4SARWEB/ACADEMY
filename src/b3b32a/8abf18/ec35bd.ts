@@ -6,7 +6,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
-import { uploadFile } from '@/2b3583/76ee3d'
+import { uploadFile, uploadModuleCover } from '@/2b3583/76ee3d'
 import { rankBadge } from '@/2b3583/ranks'
 
 export function renderCoachCourseDetail(): string {
@@ -38,9 +38,9 @@ export function mountCoachCourseDetail(): void {
         .eq('course_id', id)
         .eq('status', 'active')
 
-      const { data: modules } = await supabase
+const { data: modules } = await supabase
         .from('course_modules')
-        .select('id, title, description, display_order, is_published')
+        .select('id, title, description, display_order, is_published, cover_url')
         .eq('course_id', id)
         .order('display_order')
       const moduleIds = (modules ?? []).map((module: any) => module.id)
@@ -92,17 +92,22 @@ ${(course as any).cover_url ? `<img src="${escapeHtml((course as any).cover_url)
                 <div class="coach-module-editor__head">
                   <div><span class="course-module__number">${String(index + 1).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.description || 'Sin descripción')}</p></div></div>
                   <div class="coach-module-editor__actions">
+                    <label class="coach-module-cover-btn" title="${module.cover_url ? 'Cambiar portada' : 'Subir portada'}">
+                      <input type="file" name="module_cover" accept="image/*" hidden class="module-cover-input" data-module-id="${escapeHtml(module.id)}" />
+                      ${Icon('image', 13)} ${module.cover_url ? 'Portada' : 'Portada'}
+                    </label>
                     <span class="course-publish-status ${module.is_published ? 'published' : ''}">${module.is_published ? 'Publicado' : 'Borrador'}</span>
                     <button type="button" class="delete-module-btn" data-module-id="${escapeHtml(module.id)}" aria-label="Eliminar módulo">${Icon('trash', 14)}</button>
                   </div>
                 </div>
+                ${module.cover_url ? `<img src="${escapeHtml(module.cover_url)}" alt="" class="coach-module-cover" loading="lazy" decoding="async" />` : ''}
                 <div class="coach-material-list">
 ${(materialsByModule.get(module.id) || []).map((material: any) => `
 <div class="coach-material-row ${material.is_published ? '' : 'draft'}">
                       ${material.material_type === 'image' && material.resource_url
                         ? `<img src="${escapeHtml(material.resource_url)}" alt="${escapeHtml(material.title)}" class="coach-material-thumb" loading="lazy" decoding="async" />`
                         : `<span class="course-material__icon">${Icon(material.material_type === 'video' ? 'video' : material.material_type === 'document' ? 'fileText' : material.material_type === 'link' ? 'externalLink' : material.material_type === 'image' ? 'image' : 'bookOpen', 15)}</span>`}
-                      <span class="min-w-0 flex-1"><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || (material.resource_url ? material.resource_url.split('/').pop() : material.material_type))}</small></span>
+                      <span class="min-w-0 flex-1"><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || material.resource_url.split('?')[0].split('/').pop()?.replace(/^\d{13}-/, '') || material.material_type)}</small></span>
                       ${material.resource_url ? `<a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="text-zinc-500 transition hover:text-[#8B5CF6]" title="Abrir recurso">${Icon('externalLink', 13)}</a>` : ''}
                       <button type="button" class="delete-material-btn" data-material-id="${escapeHtml(material.id)}" aria-label="Eliminar material">${Icon('trash', 13)}</button>
 </div>`).join('') || '<p class="course-detail-empty">Sin materiales todavía.</p>'}
@@ -211,6 +216,20 @@ document.querySelectorAll<HTMLFormElement>('.coach-material-form').forEach(form 
           const { error } = await supabase.from('course_modules').delete().eq('id', moduleId)
           if (error) { toast('error', error.message); return }
           toast('success', 'Módulo eliminado')
+          mountCoachCourseDetail()
+        })
+      })
+
+      document.querySelectorAll<HTMLInputElement>('.module-cover-input').forEach(input => {
+        input.addEventListener('change', async () => {
+          const moduleId = input.dataset.moduleId
+          const file = input.files?.[0]
+          if (!moduleId || !file) return
+          const { url, error } = await uploadModuleCover(id, moduleId, file)
+          if (error || !url) { toast('error', 'No se pudo subir la portada'); return }
+          const { error: upErr } = await supabase.from('course_modules').update({ cover_url: url }).eq('id', moduleId)
+          if (upErr) { toast('error', upErr.message); return }
+          toast('success', 'Portada actualizada')
           mountCoachCourseDetail()
         })
       })
