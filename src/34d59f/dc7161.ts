@@ -202,13 +202,13 @@ function Sidebar(role: string, prefix: string, profile: Profile | undefined): st
 
 const navGroups: NavItem[][] = [
     [item(`/${prefix}/dashboard`, 'layoutDashboard', 'Dashboard')],
-    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item('/calls', 'video', 'Llamadas')],
+    [item(`/${prefix}/courses`, 'bookOpen', 'Cursos'), item('/calls', 'video', 'Llamadas'), item('/members', 'users', 'Comunidad')],
     [item(`/${prefix}/profile`, 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/students/coaches', 'users', 'Coaches')],
   ]
 
   const coachGroups: NavItem[][] = [
     [item('/coaches/dashboard', 'layoutDashboard', 'Dashboard')],
-    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos')],
+    [item('/coaches/students', 'users', 'Estudiantes'), item('/coaches/courses', 'bookOpen', 'Cursos'), item('/members', 'users', 'Comunidad')],
     [item('/coaches/enroll', 'plus', 'Inscribir'), item('/calls', 'video', 'Llamadas')],
     [item('/coaches/profile', 'user', 'Perfil'), item('/payments', 'dollarSign', 'Pagos'), item('/coaches/codes', 'fileText', 'C\u00f3digos'), item('/coaches/assignments', 'users', 'Asignaciones')],
   ]
