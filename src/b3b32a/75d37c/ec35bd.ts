@@ -140,9 +140,13 @@ const materialIcon: Record<string, string> = { video: 'video', document: 'fileTe
       return base ? `${base}?download=1` : ''
     }
     const contentRows = (modules ?? []).map((module: any) => `
-      <div class="course-module"${module.cover_url ? ` style="padding-top:0"` : ''}>
-        ${module.cover_url ? `<img src="${escapeHtml(module.cover_url)}" alt="Portada: ${escapeHtml(module.title)}" class="course-module__cover" loading="lazy" decoding="async" />` : ''}
-        <div class="course-module__head"><span>${String(module.display_order).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3>${module.description ? `<p>${escapeHtml(module.description)}</p>` : ''}</div></div>
+      <div class="course-module">
+        <div class="course-module__head">
+          ${module.cover_url
+            ? `<img src="${escapeHtml(module.cover_url)}" alt="${escapeHtml(module.title)}" class="course-module__thumb" loading="lazy" decoding="async" />`
+            : `<span>${String(module.display_order).padStart(2, '0')}</span>`}
+          <div><h3>${escapeHtml(module.title)}</h3>${module.description ? `<p>${escapeHtml(module.description)}</p>` : ''}</div>
+        </div>
         <div class="course-module__materials">
           ${(materialByModule.get(module.id) || []).map((material: any) => {
             const completed = completedMaterialIds.has(material.id)

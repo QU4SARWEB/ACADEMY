@@ -90,17 +90,21 @@ ${(course as any).cover_url ? `<img src="${escapeHtml((course as any).cover_url)
             ${(modules ?? []).length === 0 ? '<p class="course-detail-empty">Aún no hay módulos. Crea el primero para comenzar la ruta.</p>' : (modules ?? []).map((module: any, index: number) => `
               <article class="coach-module-editor" data-module-id="${escapeHtml(module.id)}">
                 <div class="coach-module-editor__head">
-                  <div><span class="course-module__number">${String(index + 1).padStart(2, '0')}</span><div><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.description || 'Sin descripción')}</p></div></div>
+                  <div class="coach-module-editor__title">
+                    ${module.cover_url
+                      ? `<img src="${escapeHtml(module.cover_url)}" alt="" class="coach-module-thumb" loading="lazy" decoding="async" />`
+                      : `<span class="course-module__number">${String(index + 1).padStart(2, '0')}</span>`}
+                    <div><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.description || 'Sin descripción')}</p></div>
+                  </div>
                   <div class="coach-module-editor__actions">
-                    <label class="coach-module-cover-btn" title="${module.cover_url ? 'Cambiar portada' : 'Subir portada'}">
+                    <label class="coach-module-cover-btn" title="${module.cover_url ? 'Cambiar imagen' : 'Subir imagen'}">
                       <input type="file" name="module_cover" accept="image/*" hidden class="module-cover-input" data-module-id="${escapeHtml(module.id)}" />
-                      ${Icon('image', 13)} ${module.cover_url ? 'Portada' : 'Portada'}
+                      ${Icon('image', 13)} ${module.cover_url ? 'Cambiar' : 'Imagen'}
                     </label>
                     <span class="course-publish-status ${module.is_published ? 'published' : ''}">${module.is_published ? 'Publicado' : 'Borrador'}</span>
                     <button type="button" class="delete-module-btn" data-module-id="${escapeHtml(module.id)}" aria-label="Eliminar módulo">${Icon('trash', 14)}</button>
                   </div>
                 </div>
-                ${module.cover_url ? `<img src="${escapeHtml(module.cover_url)}" alt="" class="coach-module-cover" loading="lazy" decoding="async" />` : ''}
                 <div class="coach-material-list">
 ${(materialsByModule.get(module.id) || []).map((material: any) => `
 <div class="coach-material-row ${material.is_published ? '' : 'draft'}">
