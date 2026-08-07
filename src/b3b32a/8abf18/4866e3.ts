@@ -123,41 +123,37 @@ export async function initCoachDashboard(): Promise<void> {
       { icon: 'dollarSign', label: 'Pagos por vencer', value: String(expiringCount), color: '#F59E0B' },
     ]
 
-    // Analítica: pagos pagados por día (últimos 14 días)
-    const paidSeries: { label: string; value: number; ratio: number }[] = []
-    let paidMonthTotal = 0
+    // Analítica: inscripciones por día (últimos 14 días)
+    const enrollmentSeries: { label: string; value: number; ratio: number }[] = []
+    let enrollmentMonthTotal = 0
     try {
       const since = new Date()
       since.setDate(since.getDate() - 13)
       since.setHours(0, 0, 0, 0)
-      let payQ = supabase.from('payments').select('paid_at, amount').eq('status', 'paid').gte('paid_at', since.toISOString())
-      if (assignedEnrollIds) {
-        const filt = assignedEnrollIds.length > 0 ? assignedEnrollIds : ['00000000-0000-0000-0000-000000000000']
-        payQ = payQ.in('enrollment_id', filt)
-      }
-      const { data: paidPays } = await payQ
+      let encQ = supabase.from('enrollments').select('created_at').gte('created_at', since.toISOString())
+      if (assignedIds.length > 0) encQ = encQ.in('course_id', assignedIds)
+      const { data: enrollmentsSeriesData } = await encQ
       const buckets: Record<string, number> = {}
       for (let i = 0; i < 14; i++) {
         const d = new Date()
         d.setDate(d.getDate() - (13 - i))
         buckets[d.toISOString().slice(0, 10)] = 0
       }
-      for (const p of paidPays ?? []) {
-        const day = (p.paid_at || '').slice(0, 10)
+      for (const e of enrollmentsSeriesData ?? []) {
+        const day = (e.created_at || '').slice(0, 10)
         if (day && buckets[day] !== undefined) buckets[day]++
-        const amt = Number(p.amount) || 0
-        const m = (p.paid_at || '').slice(0, 7)
+        const m = (e.created_at || '').slice(0, 7)
         const nowM = new Date().toISOString().slice(0, 7)
-        if (m === nowM) paidMonthTotal += amt
+        if (m === nowM) enrollmentMonthTotal++
       }
       const max = Math.max(1, ...Object.values(buckets))
-      paidSeries.push(...Object.entries(buckets).map(([day, value]) => ({
+      enrollmentSeries.push(...Object.entries(buckets).map(([day, value]) => ({
         label: day.slice(5).split('-').reverse().join('/'),
         value,
         ratio: value / max,
       })))
     } catch (e) {
-      console.warn('Analytic series unavailable:', e)
+      console.warn('Enrollment series unavailable:', e)
     }
 
 
@@ -223,24 +219,24 @@ export async function initCoachDashboard(): Promise<void> {
         <div class="card p-5">
           <div class="mb-4 flex items-center gap-2">
             <h2 class="font-heading text-base font-bold text-white flex items-center gap-2">
-              ${Icon('lineChart', 16)} Pagos pagados · últimos 14 días
+              ${Icon('users', 16)} Inscripciones · últimos 14 días
             </h2>
-            <span class="badge bg-green-500/15 text-green-400 border border-green-500/30">${paidSeries.reduce((acc, b) => acc + b.value, 0)}</span>
+            <span class="badge bg-green-500/15 text-green-400 border border-green-500/30">${enrollmentSeries.reduce((acc, b) => acc + b.value, 0)}</span>
           </div>
-          ${paidSeries.length > 0 ? `
+          ${enrollmentSeries.length > 0 ? `
           <div class="flex h-36 items-end gap-1.5 mb-2">
-            ${paidSeries.map(b => `
+            ${enrollmentSeries.map(b => `
               <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${escapeHtml(b.label)}: ${b.value}">
                 <span class="mb-1 text-[10px] text-zinc-500">${b.value > 0 ? b.value : ''}</span>
                 <div class="w-full rounded-t-md" style="height:${Math.max(4, Math.round(b.ratio * 120))}px;background:linear-gradient(180deg,#22C55E,#16A34A);opacity:${b.value > 0 ? 1 : 0.12}"></div>
               </div>`).join('')}
           </div>
           <div class="flex justify-between text-[10px] text-zinc-600">
-            <span>${escapeHtml(paidSeries[0]?.label || '')}</span>
+            <span>${escapeHtml(enrollmentSeries[0]?.label || '')}</span>
             <span>Hoy</span>
           </div>
-          <p class="mt-3 text-xs text-zinc-500">Ingresos cobrados este mes: <span class="font-semibold text-green-400">$${paidMonthTotal.toFixed(2)}</span></p>
-          ` : EmptyState({ icon: 'dollarSign', title: 'Sin pagos en los últimos 14 días', hint: 'Cuando los alumnos paguen verás el resumen aquí.' })}
+          <p class="mt-3 text-xs text-zinc-500">Inscripciones este mes: <span class="font-semibold text-green-400">${enrollmentMonthTotal}</span></p>
+          ` : EmptyState({ icon: 'users', title: 'Sin inscripciones en los últimos 14 días', hint: 'Cuando los alumnos se inscriban verás el resumen aquí.' })}
         </div>
 
         <!-- Pagos pendientes -->
