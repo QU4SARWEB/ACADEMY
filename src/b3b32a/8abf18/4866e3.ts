@@ -178,8 +178,9 @@ export async function initCoachDashboard(): Promise<void> {
         </div>`
       }
       const short = (d: Date) => d.toISOString().slice(5, 10).split('-').reverse().join('/')
-      inscWeekTotal > 0 || Object.values(weekBuckets).join('')
-      weekChart = chartHtml(weekDays.map(d => ({ label: short(d), value: weekBuckets[dayKey(d)] })))
+      const weekdayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+      const weekLabels = weekDays.map(d => weekdayNames[d.getDay()])
+      weekChart = chartHtml(weekDays.map((d, i) => ({ label: weekLabels[i], value: weekBuckets[dayKey(d)] })))
       monthChart = chartHtml(monthDays.map(d => ({ label: short(d), value: monthBuckets[dayKey(d)] })))
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
       yearChart = chartHtml(yearKeys.map(k => ({ label: monthNames[parseInt(k.slice(5, 7), 10) - 1], value: yearBuckets[k] || 0 })))
