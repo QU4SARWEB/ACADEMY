@@ -90,15 +90,6 @@ export function renderRegister(): string {
           </div>
 
           <div>
-            <label for="role" class="mb-1 block text-xs font-medium text-zinc-400">Rol</label>
-            <select id="role" name="role" required
-              class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]">
-              <option value="student">Estudiante</option>
-              <option value="player">Jugador competitivo</option>
-            </select>
-          </div>
-
-          <div>
             <label for="platform" class="mb-1 block text-xs font-medium text-zinc-400">Plataforma</label>
             <select id="platform" name="platform" required
               class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6] focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)]">
@@ -196,7 +187,7 @@ export function mountRegister(): void {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
-    const role = formData.get('role') as string
+    const role = 'student'
     const platform = formData.get('platform') as string
     const rank = rankHidden.value
 
