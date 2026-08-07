@@ -123,35 +123,66 @@ export async function initCoachDashboard(): Promise<void> {
       { icon: 'dollarSign', label: 'Pagos por vencer', value: String(expiringCount), color: '#F59E0B' },
     ]
 
-    // Analítica: inscripciones por día (últimos 14 días)
-    const enrollmentSeries: { label: string; value: number; ratio: number }[] = []
-    let enrollmentMonthTotal = 0
+    // Analítica: inscripciones por semana / mes / año
+    let inscWeekTotal = 0, inscMonthTotal = 0, inscYearTotal = 0
+    let weekChart = '', monthChart = '', yearChart = ''
     try {
-      const since = new Date()
-      since.setDate(since.getDate() - 13)
-      since.setHours(0, 0, 0, 0)
-      let encQ = supabase.from('enrollments').select('created_at').gte('created_at', since.toISOString())
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1)
+      let encQ = supabase.from('enrollments').select('created_at').gte('created_at', startOfYear.toISOString())
       if (assignedIds.length > 0) encQ = encQ.in('course_id', assignedIds)
-      const { data: enrollmentsSeriesData } = await encQ
-      const buckets: Record<string, number> = {}
-      for (let i = 0; i < 14; i++) {
+      const { data: yearEnrolls } = await encQ
+      const list = yearEnrolls ?? []
+
+      const dayKey = (d: Date) => d.toISOString().slice(0, 10)
+      const weekDays: Date[] = []
+      const monthDays: Date[] = []
+      for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); weekDays.push(d) }
+      for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); monthDays.push(d) }
+
+      const weekBuckets: Record<string, number> = {}
+      const monthBuckets: Record<string, number> = {}
+      weekDays.forEach(d => { weekBuckets[dayKey(d)] = 0 })
+      monthDays.forEach(d => { monthBuckets[dayKey(d)] = 0 })
+      const yearKeys: string[] = []
+      const yearBuckets: Record<string, number> = {}
+      for (let m = 11; m >= 0; m--) {
         const d = new Date()
-        d.setDate(d.getDate() - (13 - i))
-        buckets[d.toISOString().slice(0, 10)] = 0
+        d.setDate(1); d.setMonth(d.getMonth() - m)
+        const key = d.toISOString().slice(0, 7)
+        yearKeys.push(key); yearBuckets[key] = 0
       }
-      for (const e of enrollmentsSeriesData ?? []) {
-        const day = (e.created_at || '').slice(0, 10)
-        if (day && buckets[day] !== undefined) buckets[day]++
-        const m = (e.created_at || '').slice(0, 7)
-        const nowM = new Date().toISOString().slice(0, 7)
-        if (m === nowM) enrollmentMonthTotal++
+
+      const firstWeekDay = dayKey(weekDays[0])
+      const firstMonthDay = dayKey(monthDays[0])
+      for (const e of list) {
+        const c = e.created_at || ''
+        if (!c) continue
+        const day = c.slice(0, 10)
+        if (day >= firstWeekDay) inscWeekTotal++
+        if (day >= firstMonthDay) inscMonthTotal++
+        inscYearTotal++
+        if (weekBuckets[day] !== undefined) weekBuckets[day]++
+        if (monthBuckets[day] !== undefined) monthBuckets[day]++
+        const mk = c.slice(0, 7)
+        if (yearBuckets[mk] !== undefined) yearBuckets[mk]++
       }
-      const max = Math.max(1, ...Object.values(buckets))
-      enrollmentSeries.push(...Object.entries(buckets).map(([day, value]) => ({
-        label: day.slice(5).split('-').reverse().join('/'),
-        value,
-        ratio: value / max,
-      })))
+
+      const chartHtml = (cells: { label: string; value: number }[]): string => {
+        const max = Math.max(1, ...cells.map(c => c.value))
+        return `<div class="flex h-36 items-end gap-1.5 mb-2">
+          ${cells.map(c => `
+            <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${escapeHtml(c.label)}: ${c.value}">
+              <span class="mb-1 text-[10px] text-zinc-500">${c.value > 0 ? c.value : ''}</span>
+              <div class="w-full rounded-t-md" style="height:${Math.max(4, Math.round((c.value / max) * 120))}px;background:linear-gradient(180deg,#22C55E,#16A34A);opacity:${c.value > 0 ? 1 : 0.12}"></div>
+            </div>`).join('')}
+        </div>`
+      }
+      const short = (d: Date) => d.toISOString().slice(5, 10).split('-').reverse().join('/')
+      inscWeekTotal > 0 || Object.values(weekBuckets).join('')
+      weekChart = chartHtml(weekDays.map(d => ({ label: short(d), value: weekBuckets[dayKey(d)] })))
+      monthChart = chartHtml(monthDays.map(d => ({ label: short(d), value: monthBuckets[dayKey(d)] })))
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+      yearChart = chartHtml(yearKeys.map(k => ({ label: monthNames[parseInt(k.slice(5, 7), 10) - 1], value: yearBuckets[k] || 0 })))
     } catch (e) {
       console.warn('Enrollment series unavailable:', e)
     }
@@ -215,28 +246,50 @@ export async function initCoachDashboard(): Promise<void> {
 
       <div class="grid gap-6 lg:grid-cols-2">
 
-        <!-- Analítica semanal -->
+        <!-- Analítica de inscripciones -->
         <div class="card p-5">
-          <div class="mb-4 flex items-center gap-2">
+          <div class="mb-3 flex items-center gap-2">
             <h2 class="font-heading text-base font-bold text-white flex items-center gap-2">
-              ${Icon('users', 16)} Inscripciones · últimos 14 días
+              ${Icon('users', 16)} Inscripciones
             </h2>
-            <span class="badge bg-green-500/15 text-green-400 border border-green-500/30">${enrollmentSeries.reduce((acc, b) => acc + b.value, 0)}</span>
+            <div id="insc-seg" class="ml-auto flex shrink-0 items-center gap-1 rounded-lg border border-zinc-700/60 bg-zinc-900/40 p-1">
+              <button type="button" data-w="week" class="insc-seg-btn rounded-md px-2.5 py-1 text-[11px] font-medium text-white transition"
+                style="background:#8B5CF6;color:#fff">Semana</button>
+              <button type="button" data-w="month" class="insc-seg-btn rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition hover:text-white">Mes</button>
+              <button type="button" data-w="year" class="insc-seg-btn rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition hover:text-white">Año</button>
+            </div>
           </div>
-          ${enrollmentSeries.length > 0 ? `
-          <div class="flex h-36 items-end gap-1.5 mb-2">
-            ${enrollmentSeries.map(b => `
-              <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${escapeHtml(b.label)}: ${b.value}">
-                <span class="mb-1 text-[10px] text-zinc-500">${b.value > 0 ? b.value : ''}</span>
-                <div class="w-full rounded-t-md" style="height:${Math.max(4, Math.round(b.ratio * 120))}px;background:linear-gradient(180deg,#22C55E,#16A34A);opacity:${b.value > 0 ? 1 : 0.12}"></div>
-              </div>`).join('')}
+
+          <div id="insc-chart" class="${inscYearTotal === 0 ? 'hidden' : ''}">
+            <div data-w="week" class="insc-panel">
+              ${weekChart}
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 7 días</span><span>Hoy</span></div>
+            </div>
+            <div data-w="month" class="insc-panel hidden">
+              ${monthChart}
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 30 días</span><span>Hoy</span></div>
+            </div>
+            <div data-w="year" class="insc-panel hidden">
+              ${yearChart}
+              <div class="flex justify-between text-[10px] text-zinc-600"><span>Últimos 12 meses</span><span>${new Date().getFullYear()}</span></div>
+            </div>
           </div>
-          <div class="flex justify-between text-[10px] text-zinc-600">
-            <span>${escapeHtml(enrollmentSeries[0]?.label || '')}</span>
-            <span>Hoy</span>
+          ${inscYearTotal === 0 ? EmptyState({ icon: 'users', title: 'Sin inscripciones este año', hint: 'Cuando los alumnos se inscriban verás el resumen aquí.' }) : ''}
+
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <div class="rounded-lg border border-zinc-700/40 bg-zinc-900/30 px-3 py-2 text-center">
+              <p class="text-lg font-bold text-white">${inscWeekTotal}</p>
+              <p class="text-[10px] uppercase tracking-wider text-zinc-500">Esta semana</p>
+            </div>
+            <div class="rounded-lg border border-zinc-700/40 bg-zinc-900/30 px-3 py-2 text-center">
+              <p class="text-lg font-bold text-white">${inscMonthTotal}</p>
+              <p class="text-[10px] uppercase tracking-wider text-zinc-500">Este mes</p>
+            </div>
+            <div class="rounded-lg border border-zinc-700/40 bg-zinc-900/30 px-3 py-2 text-center">
+              <p class="text-lg font-bold text-white">${inscYearTotal}</p>
+              <p class="text-[10px] uppercase tracking-wider text-zinc-500">Este año</p>
+            </div>
           </div>
-          <p class="mt-3 text-xs text-zinc-500">Inscripciones este mes: <span class="font-semibold text-green-400">${enrollmentMonthTotal}</span></p>
-          ` : EmptyState({ icon: 'users', title: 'Sin inscripciones en los últimos 14 días', hint: 'Cuando los alumnos se inscriban verás el resumen aquí.' })}
         </div>
 
         <!-- Pagos pendientes -->
@@ -335,6 +388,25 @@ export async function initCoachDashboard(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
+    const inscSeg = document.getElementById('insc-seg')
+    inscSeg?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-w]')
+      if (!btn) return
+      const w = btn.dataset.w
+      inscSeg.querySelectorAll('[data-w]').forEach(b => {
+        const el = b as HTMLElement
+        if (el.dataset.w === w) {
+          el.style.background = '#8B5CF6'
+          el.style.color = '#fff'
+        } else {
+          el.style.background = 'transparent'
+          el.style.color = '#a1a1aa'
+        }
+      })
+      document.querySelectorAll('#insc-chart .insc-panel').forEach(p => {
+        p.classList.toggle('hidden', (p as HTMLElement).dataset.w !== w)
+      })
+    })
 
   } catch (err) {
     console.error('Error loading coach dashboard:', err)
