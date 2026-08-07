@@ -6,6 +6,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
+import { uploadFile } from '@/2b3583/76ee3d'
 
 export function renderCoachCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -52,11 +53,12 @@ export function mountCoachCourseDetail(): void {
         materialsByModule.set(material.module_id, rows)
       }
 
-      const html = `
+const html = `
         ${Breadcrumb([
           { label: 'Cursos', href: '#/coaches/courses' },
           { label: (course as any).name || 'Detalle' },
         ])}
+        ${(course as any).cover_url ? `<img src="${escapeHtml((course as any).cover_url)}" alt="" class="course-detail-page__cover mb-4" loading="lazy" decoding="async" />` : ''}
         <div class="flex items-center justify-between">
             <div>
               <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml((course as any).name)}</h1>
@@ -96,16 +98,21 @@ export function mountCoachCourseDetail(): void {
                 </div>
                 <div class="coach-material-list">
                   ${(materialsByModule.get(module.id) || []).map((material: any) => `
-                    <div class="coach-material-row ${material.is_published ? '' : 'draft'}">
+<div class="coach-material-row ${material.is_published ? '' : 'draft'}">
                       <span class="course-material__icon">${Icon(material.material_type === 'video' ? 'video' : material.material_type === 'document' ? 'fileText' : material.material_type === 'link' ? 'externalLink' : 'bookOpen', 15)}</span>
-                      <span><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || material.resource_url || material.material_type)}</small></span>
+                      <span class="min-w-0 flex-1"><strong>${escapeHtml(material.title)}</strong><small>${escapeHtml(material.description || (material.resource_url ? material.resource_url.split('/').pop() : material.material_type))}</small></span>
+                      ${material.resource_url ? `<a href="${escapeHtml(material.resource_url)}" target="_blank" rel="noopener" class="text-zinc-500 transition hover:text-[#8B5CF6]" title="Abrir recurso">${Icon('externalLink', 13)}</a>` : ''}
                       <button type="button" class="delete-material-btn" data-material-id="${escapeHtml(material.id)}" aria-label="Eliminar material">${Icon('trash', 13)}</button>
-                    </div>`).join('') || '<p class="course-detail-empty">Sin materiales todavía.</p>'}
+</div>`).join('') || '<p class="course-detail-empty">Sin materiales todavía.</p>'}
                 </div>
                 <form class="coach-material-form" data-module-id="${escapeHtml(module.id)}">
                   <input name="title" required placeholder="Nuevo material" />
                   <select name="material_type"><option value="video">Video</option><option value="document">Documento</option><option value="link">Enlace</option><option value="text">Texto</option></select>
-                  <input name="resource_url" placeholder="URL del recurso (opcional)" />
+                  <input name="resource_url" placeholder="URL del recurso (opcional)" data-toggle-field />
+                  <label class="coach-material-file" title="Subir archivo">
+                    <input type="file" name="material_file" accept="application/pdf,image/*,video/*,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" hidden />
+                    <span>${Icon('paperclip', 15)} Archivo</span>
+                  </label>
                   <button type="submit" aria-label="Agregar material">${Icon('plus', 15)}</button>
                 </form>
               </article>`).join('')}
@@ -149,23 +156,49 @@ export function mountCoachCourseDetail(): void {
         mountCoachCourseDetail()
       })
 
-      document.querySelectorAll<HTMLFormElement>('.coach-material-form').forEach(form => {
+document.querySelectorAll<HTMLFormElement>('.coach-material-form').forEach(form => {
         form.addEventListener('submit', async (event) => {
           event.preventDefault()
           const moduleId = form.dataset.moduleId
           if (!moduleId) return
           const formData = new FormData(form)
-          const { error } = await supabase.from('course_materials').insert({
-            module_id: moduleId,
-            title: String(formData.get('title') || '').trim(),
-            material_type: String(formData.get('material_type') || 'link'),
-            resource_url: String(formData.get('resource_url') || '').trim() || null,
-            display_order: (materialsByModule.get(moduleId)?.length || 0) + 1,
-            is_published: true,
-          })
-          if (error) { toast('error', error.message); return }
-          toast('success', 'Material agregado')
-          mountCoachCourseDetail()
+          const title = String(formData.get('title') || '').trim()
+          if (!title) { toast('error', 'Escribe un título para el material'); return }
+          const file = (form.querySelector('input[type="file"]') as HTMLInputElement)?.files?.[0]
+          let resourceUrl: string | null = null
+          let materialType = String(formData.get('material_type') || 'link')
+          const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>' }
+          try {
+            if (file) {
+              const ext = (file.name.split('.').pop() || '').toLowerCase()
+              const isVideo = file.type.startsWith('video/')
+              const isImage = file.type.startsWith('image/')
+              const isPdf = file.type === 'application/pdf' || ext === 'pdf'
+              materialType = isVideo ? 'video' : (isImage || isPdf || ext === 'zip' || ext === 'doc' || ext === 'docx' || ext === 'ppt' || ext === 'pptx' || ext === 'xls' || ext === 'xlsx') ? 'document' : materialType
+              const path = `courses/${encodeURIComponent(id)}/materials/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, '-')}`
+              const { url, error: upErr } = await uploadFile('attachments', path, file)
+              if (upErr) { toast('error', upErr); return }
+              resourceUrl = url || null
+            } else {
+              const manualUrl = String(formData.get('resource_url') || '').trim()
+              if (manualUrl) resourceUrl = manualUrl
+            }
+            const { error } = await supabase.from('course_materials').insert({
+              module_id: moduleId,
+              title,
+              material_type: materialType,
+              resource_url: resourceUrl,
+              description: file ? (String(formData.get('resource_url') || '').trim() || null) : null,
+              display_order: (materialsByModule.get(moduleId)?.length || 0) + 1,
+              is_published: true,
+            })
+            if (error) { toast('error', error.message); return }
+            toast('success', file ? 'Archivo subido y agregado' : 'Material agregado')
+            mountCoachCourseDetail()
+          } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = Icon('plus', 15) }
+          }
         })
       })
 

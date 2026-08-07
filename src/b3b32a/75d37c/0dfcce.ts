@@ -27,7 +27,7 @@ export async function initStudentCourses(): Promise<void> {
 
     const { data: enrollments } = await supabase
       .from('enrollments')
-      .select('*, courses(name, slug, description, display_order, duration_months)')
+      .select('*, courses(name, slug, description, display_order, duration_months, cover_url)')
       .eq('profile_id', session.user.id)
       .eq('status', 'active')
       .order('enrolled_at', { ascending: false })
@@ -42,15 +42,17 @@ export async function initStudentCourses(): Promise<void> {
     const hasPaidAny = (payments ?? []).some((p: any) => p.status === 'paid' || p.status === 'scholarship')
 
     const available = enrolledCourseIds.length > 0
-      ? await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.map((id: any) => `"${id}"`).join(',')})`).order('name')
-      : await supabase.from('courses').select('id, name, description, duration_months, min_rank').eq('is_active', true).order('name')
+      ? await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.map((id: any) => `"${id}"`).join(',')})`).order('name')
+      : await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).order('name')
     let coursesData = (available.data ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
 
     function courseCard(course: any, extra: string, footer: string): string {
       const desc = course.description || course.courses?.description || ''
       const cName = course.name || course.courses?.name || ''
       const dur = course.duration_months || course.courses?.duration_months || 0
+      const cover = course.cover_url || course.courses?.cover_url || ''
       return `<div class="glass rounded-xl p-5 flex flex-col transition hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/5 group">
+        ${cover ? `<img src="${escapeHtml(cover)}" alt="" class="mb-4 h-32 w-full rounded-lg border border-zinc-800 object-cover" loading="lazy" decoding="async" />` : ''}
         <div class="flex items-center gap-3 mb-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
             ${Icon('bookOpen', 24)}

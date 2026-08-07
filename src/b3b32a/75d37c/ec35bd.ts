@@ -146,8 +146,9 @@ export async function initStudentCourseDetail(): Promise<void> {
         </div>
       </div>`).join('')
 
-    const html = `
+const html = `
       <div class="course-detail-page">
+        ${course.cover_url ? `<img src="${escapeHtml(course.cover_url)}" alt="" class="course-detail-page__cover" loading="lazy" decoding="async" />` : ''}
         ${Breadcrumb([{ label: 'Cursos', href: '#/students/courses' }, { label: course.name }])}
         <section class="course-detail-hero">
           <div>

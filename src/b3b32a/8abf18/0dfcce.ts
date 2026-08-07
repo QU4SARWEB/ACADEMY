@@ -33,7 +33,12 @@ export function mountCoachCourses(): void {
       return `
       <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
         <td class="py-3 px-4">
-          <a href="#/coaches/courses/${escapeHtml(c.id)}" class="text-sm font-medium text-white hover:text-[#8B5CF6] transition">${escapeHtml(c.name)}</a>
+          <div class="flex items-center gap-3">
+            ${c.cover_url
+              ? `<img src="${escapeHtml(c.cover_url)}" alt="" class="h-10 w-14 shrink-0 rounded-md border border-zinc-800 object-cover" loading="lazy" decoding="async" />`
+              : `<span class="flex h-10 w-14 shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-600">${Icon('bookOpen', 16)}</span>`}
+            <a href="#/coaches/courses/${escapeHtml(c.id)}" class="text-sm font-medium text-white hover:text-[#8B5CF6] transition">${escapeHtml(c.name)}</a>
+          </div>
         </td>
         <td class="py-3 px-4 text-sm text-zinc-400">${c.duration_months === 0.5 ? '15 d\u00edas' : c.duration_months ? c.duration_months + ' meses' : '—'}</td>
         <td class="py-3 px-4 text-sm text-zinc-400">${total}</td>

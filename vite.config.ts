@@ -14,4 +14,19 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase') || id.includes('supabase-js') || id.includes('@supabase/functions')) return 'vendor-supabase'
+            if (id.includes('lucide')) return 'vendor-icons'
+            if (id.includes('@coldwired') || id.includes('svelte') || id.includes('zod')) return 'vendor-core'
+            return 'vendor'
+          }
+        },
+      },
+    },
+  },
 })

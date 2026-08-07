@@ -105,10 +105,59 @@ el meta-tag en `index.html`. Pendiente probarlo en producción.
 
 ---
 
+## 6. Uploads: portadas, materiales, chat y subida desde el dispositivo — `[x]`
+
+Pedido del usuario: "faltan funciones y buckets para subir imágenes en varias
+zonas y poder subir desde el dispositivo".
+
+### Buckets (ya existentes y en uso)
+`avatars`, `banners`, `attachments`, `receipts`, `uploads`, `chat`,
+`task-files`, `coaches`. El bucket `chat` y `task-files` no tenían políticas
+completas de storage: migración nueva añade INSERT/SELECT/DELETE y update
+propio de cada usuario.
+
+| Archivo | Cambio |
+|---|---|
+| `supabase/migrations/20260807000001_uploads_features.sql` | `courses.cover_url`, `chat_messages.attachment_*`, políticas storage de `task-files` y `chat` |
+| `src/2b3583/76ee3d.ts` | `getCourseCoverPath` + `uploadCourseCover`, helper de rutas |
+| `src/4725dc/forms/FileDropzone.ts` | Dropzone con cámara en móvil (`capture`), botón "Tomar foto", preview con miniatura y drag & drop |
+| `src/b3b32a/8abf18/ec35bd.ts` | Constructor de curso: subir archivo de material (bucket `attachments`) |
+| `src/b3b32a/chat.ts` | Composer con adjunto (imagen/video/PDF/zip) en bucket `chat`, rende del attach en la burbuja |
+| `src/b3b32a/8abf18/d74f85.ts` | Nuevo curso: elegir imagen de portada |
+| `src/b3b32a/8abf18/e2b7c4.ts` | Editar curso: cambiar/quitar portada |
+| `src/b3b32a/8abf18/0dfcce.ts` | Tabla de cursos del coach: miniatura de portada |
+| `src/b3b32a/75d37c/0dfcce.ts` | Mis cursos + disponibles: tarjetas con portada |
+| `src/b3b32a/75d37c/ec35bd.ts`, `8abf18/ec35bd.ts` | Detalle del curso: portada en cabecera |
+| `src/b3b32a/shared/tasks.ts` | Entrega de tareas: botón "Tomar foto / escanear" (capture) + adjuntos |
+
+### Subida desde el dispositivo
+- Inputs `file` de todo el portal aceptan cámara del celular (`capture`) en las
+  dropzones (`FileDropzone`) y en la entrega de tareas ("Tomar foto / escanear").
+- Drag & drop en escritorio ya funcionaba en dropzones y ahora con preview y
+  validación de tamaño.
+
+---
+
+## 7. Selects desplegables oscuros y rendimiento — `[x]`
+
+- Estilos globales de `select` (fondo oscuro, flecha SVG propia, color texto
+  claro) agregados al final de `src/bc4150/0c54ed.css` → ya no se ven "blanco
+  horrible". Aplica a dashboards y web pública.
+- Carga perezosa (`loading="lazy" decoding="async"`) en imágenes pesadas de la
+  web pública (qu4sarfondoPublico/Vmobile).
+- `initCoachDashboard` y `initStudentDashboard`: queries en `Promise.all`.
+- `vite.config.ts`: `manualChunks` separa `vendor-supabase`, `vendor-icons`,
+  `vendor-core` y `vendor` → el bundle principal pasó de ~792 kB a ~534 kB
+  (gzip 195→128 kB) y los vendor se cachean por separado.
+
+---
+
 ## Estado
 - `[x]` Export a Excel en `ui_kit.ts` + botones estudiantes/pagos.
 - `[x]` Llamadas → Google Meet (enlace por sala) + menú visible + BD aplicada.
 - `[x]` Realtime suave en `fad58d.ts`.
 - `[x]` Columna Plataforma en todas las tablas de alumnos (coach: Excel, asistencia, tareas, inscripciones, exámenes, notas, prácticos, pagos).
+- `[x]` Uploads: portada de cursos, material de cursos, adjuntos de chat, subir desde el dispositivo (dropzone cámara + tareas).
+- `[x]` Selects desplegables corregidos y más rápido el build (code-splitting vendors).
 - `[x]` Builds `tsc` + `vite` verificados sin errores.
 - `[ ]` Explicar lo de PWA y confirmar con el usuario.

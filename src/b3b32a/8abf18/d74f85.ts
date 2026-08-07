@@ -4,6 +4,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { Icon } from '@/2b3583/bd2119'
 import { toast } from '@/4725dc/4f2900'
 import { router } from '@/f3395c'
+import { uploadCourseCover } from '@/2b3583/76ee3d'
 
 const RANK_OPTIONS = ['Hierro', 'Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Ascendente', 'Inmortal', 'Radiante']
 
@@ -94,6 +95,19 @@ export async function initCoachNewCourse(): Promise<void> {
               </div>
             </div>
           </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-zinc-400">Imagen de portada</label>
+            <div class="flex items-center gap-4">
+              <img id="cover-preview" class="hidden h-20 w-32 rounded-lg border border-zinc-700 object-cover" alt="Vista previa de portada" />
+              <div class="flex items-center gap-2">
+                <label class="cursor-pointer rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800">
+                  ${Icon('image', 14)} Elegir imagen
+                  <input type="file" name="coverFile" id="field-cover" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+                </label>
+                <button type="button" id="cover-clear" class="hidden text-xs text-red-400 hover:text-red-300">Quitar</button>
+              </div>
+            </div>
+          </div>
           <label class="flex items-center gap-2 text-sm text-zinc-300">
             <input type="checkbox" name="isActive" checked
               class="rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] focus:ring-[#8B5CF6]" />
@@ -121,6 +135,27 @@ export async function initCoachNewCourse(): Promise<void> {
       priceInput.disabled = this.checked
       priceInput.value = this.checked ? '0' : '15'
       priceInput.classList.toggle('opacity-50', this.checked)
+    })
+
+    // Cover image preview
+    const coverInput = document.getElementById('field-cover') as HTMLInputElement
+    const coverPreview = document.getElementById('cover-preview') as HTMLImageElement
+    const coverClear = document.getElementById('cover-clear') as HTMLButtonElement
+    let coverFile: File | null = null
+    coverInput?.addEventListener('change', () => {
+      const file = coverInput.files?.[0] ?? null
+      coverFile = file
+      if (!file) { coverPreview.classList.add('hidden'); coverClear.classList.add('hidden'); coverPreview.src = ''; return }
+      coverPreview.src = URL.createObjectURL(file)
+      coverPreview.classList.remove('hidden')
+      coverClear.classList.remove('hidden')
+    })
+    coverClear?.addEventListener('click', () => {
+      coverFile = null
+      coverInput.value = ''
+      coverPreview.classList.add('hidden')
+      coverClear.classList.add('hidden')
+      coverPreview.src = ''
     })
 
     // Template selection
@@ -162,6 +197,15 @@ export async function initCoachNewCourse(): Promise<void> {
         document.getElementById('form-error')!.textContent = error.message
         document.getElementById('form-error')!.classList.remove('hidden')
         return
+      }
+
+      if (coverFile && course?.id) {
+        const { url, error: upErr } = await uploadCourseCover(course.id, coverFile)
+        if (url) {
+          await supabase.from('courses').update({ cover_url: url }).eq('id', course.id)
+        } else if (upErr) {
+          toast('error', 'Curso creado, pero falló la portada: ' + upErr)
+        }
       }
 
       toast('success', 'Curso creado correctamente')

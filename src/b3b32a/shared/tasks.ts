@@ -192,8 +192,11 @@ function renderSubmissionForm(task: any, studentId: string): string {
       <div>
         <label class="text-xs text-zinc-500 mb-1 block">Archivos</label>
         <div class="flex items-center gap-3">
-          <input type="file" class="task-file-input text-xs text-zinc-400 file:mr-2 file:rounded-lg file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1.5 file:text-xs file:text-white hover:file:bg-[#7C3AED]" multiple />
+          <input type="file" class="task-file-input text-xs text-zinc-400 file:mr-2 file:rounded-lg file:border-0 file:bg-[#8B5CF6] file:px-3 file:py-1.5 file:text-xs file:text-white hover:file:bg-[#7C3AED]" multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" />
           <span class="task-file-names text-xs text-zinc-600"></span>
+        </div>
+        <div class="mt-2">
+          <button type="button" class="task-capture-btn flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:text-white hover:border-zinc-500 transition">${Icon('camera', 13)} Tomar foto / escanear</button>
         </div>
         <div class="task-file-list flex flex-wrap gap-2 mt-2"></div>
       </div>
@@ -259,8 +262,32 @@ function bindTaskEvents(containerId: string, studentId: string, role: 'student' 
       }
       nameEl.textContent = `${files.length} archivo${files.length > 1 ? 's' : ''} seleccionado${files.length > 1 ? 's' : ''}`
       listEl.innerHTML = files.map(f =>
-        `<span class="flex items-center gap-1 rounded bg-zinc-800/60 px-2 py-1 text-[10px] text-zinc-400">${Icon('paperclip', 10)} ${escapeHtml(f.name)}</span>`
+        `<span class="flex items-center gap-1 rounded bg-zinc-800/60 px-2 py-1 text-[10px] text-zinc-400">${Icon(f.type.startsWith('image/') ? 'image' : 'paperclip', 10)} ${escapeHtml(f.name)}</span>`
       ).join('')
+    })
+  })
+
+  // Capturar desde la cámara del dispositivo
+  document.querySelectorAll('.task-capture-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const area = (btn as HTMLElement).closest('.task-submit-area') as HTMLElement
+      const fileInput = area?.querySelector('.task-file-input') as HTMLInputElement
+      if (!fileInput) return
+      const captureInput = document.createElement('input')
+      captureInput.type = 'file'
+      captureInput.accept = 'image/*'
+      captureInput.setAttribute('capture', 'environment')
+      captureInput.addEventListener('change', () => {
+        if (captureInput.files && captureInput.files.length > 0) {
+          const existing = Array.from(fileInput.files || [])
+          const merged = new DataTransfer()
+          existing.forEach(f => merged.items.add(f))
+          Array.from(captureInput.files).forEach(f => merged.items.add(f))
+          fileInput.files = merged.files
+          fileInput.dispatchEvent(new Event('change'))
+        }
+      })
+      captureInput.click()
     })
   })
 

@@ -33,6 +33,18 @@ export function getCoachImagePath(userId: string, fileName: string): string {
   return `${userId}/presentacion.${ext}`
 }
 
+export function getCourseCoverPath(courseId: string, fileName: string): string {
+  const ext = fileName.split('.').pop() || 'png'
+  return `courses/${courseId}/cover.${ext}`
+}
+
+export async function uploadCourseCover(
+  courseId: string,
+  file: File
+): Promise<{ url?: string; error?: string }> {
+  return uploadFile('attachments', getCourseCoverPath(courseId, file.name), file)
+}
+
 export function getFilePath(userId: string, prefix: string, fileName: string): string {
   const ext = fileName.split('.').pop() || 'bin'
   const ts = Date.now()

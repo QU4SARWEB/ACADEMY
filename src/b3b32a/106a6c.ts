@@ -44,7 +44,7 @@ function hero(session: any): string {
       ${embers()}
       <div class="stellar-core animate-float mb-6 relative">
         <div class="absolute inset-0 animate-pulse rounded-full bg-[#8B5CF6]/25 blur-2xl"></div>
-        <img src="qu4sar.ico" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" />
+        <img src="qu4sar.ico" alt="QU4SAR" class="relative h-20 w-20 md:h-24 md:w-24" decoding="async" />
       </div>
       <span class="lbl reveal">Academia de Esports</span>
       <h1 class="font-heading text-4xl font-extrabold leading-tight text-white md:text-7xl reveal" style="--i:1">
@@ -108,7 +108,7 @@ export function renderHome(session?: any): string {
           </div>
           <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-center">
             <div class="hud reveal relative overflow-hidden rounded-xl border border-white/10" style="min-height:300px;background:linear-gradient(150deg,rgba(139,92,246,0.25),#0a0a12 70%)">
-              <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" />
+              <img src="qu4sarfondoPublico.png" alt="Briefing QU4SAR" class="absolute inset-0 h-full w-full object-cover opacity-70" loading="lazy" decoding="async" />
               <div class="absolute inset-0 flex items-center justify-center">
                 <button class="flex flex-col items-center gap-2 text-white/90 transition hover:scale-105" aria-label="Ver briefing">
                   <span class="flex h-16 w-16 items-center justify-center rounded-full border border-[#8B5CF6]/60 bg-[#8B5CF6]/30 backdrop-blur-md">${Icon('play', 26)}</span>
@@ -290,7 +290,7 @@ export function renderHome(session?: any): string {
         <!-- Novedades: Valorant Mobile -->
         <section class="mx-auto mt-16 md:mt-20 max-w-5xl px-6">
           <div class="news-banner reveal">
-            <img src="Vmobile.jpg" alt="Valorant Mobile en QU4SAR" class="news-banner__img" />
+            <img src="Vmobile.jpg" alt="Valorant Mobile en QU4SAR" class="news-banner__img" loading="lazy" decoding="async" />
             <div class="min-w-0 flex-1 relative">
               <span class="news-banner__badge"><span class="pulse-dot"></span>Novedades</span>
               <h2 class="news-banner__title">Ahora integramos <em>Valorant Mobile.</em></h2>

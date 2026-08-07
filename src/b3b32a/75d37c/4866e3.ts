@@ -17,18 +17,23 @@ export async function initStudentDashboard(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, display_name')
-      .eq('id', session.user.id)
-      .maybeSingle()
-
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('*, courses(name, id)')
-      .eq('profile_id', session.user.id)
-      .eq('status', 'active')
-      .order('enrolled_at', { ascending: false })
+    const [profileResult, enrollmentsResult, paymentsResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('full_name, display_name')
+        .eq('id', session.user.id)
+        .maybeSingle(),
+      supabase
+        .from('enrollments')
+        .select('*, courses(name, id)')
+        .eq('profile_id', session.user.id)
+        .eq('status', 'active')
+        .order('enrolled_at', { ascending: false }),
+      supabase.from('payments').select('status, paid_at, created_at').eq('profile_id', session.user.id).order('created_at', { ascending: false }),
+    ])
+    const profile = profileResult.data
+    const enrollments = enrollmentsResult.data
+    const myPayments = paymentsResult.data
 
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
@@ -66,7 +71,6 @@ export async function initStudentDashboard(): Promise<void> {
     if (dayNow >= 2) nextPay = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 2)
     let nextCut = new Date(nowDate.getFullYear(), nowDate.getMonth(), 29)
     if (dayNow >= 29) nextCut = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 29)
-    const { data: myPayments } = await supabase.from('payments').select('status, paid_at, created_at').eq('profile_id', session.user.id).order('created_at', { ascending: false })
     const paidPay = (myPayments ?? []).find((p: any) => p.status === 'paid')
     const pendingPay = (myPayments ?? []).find((p: any) => p.status === 'pending')
     if (paidPay?.paid_at) {

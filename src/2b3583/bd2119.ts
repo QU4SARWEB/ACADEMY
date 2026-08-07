@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpen,
   Calendar,
+  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -125,6 +126,7 @@ const ICONS: Record<string, IconNode> = {
   lineChart: LineChart,
   refreshCw: RefreshCw,
   check: Check,
+  camera: Camera,
 }
 
 function escapeAttribute(value: string | number): string {

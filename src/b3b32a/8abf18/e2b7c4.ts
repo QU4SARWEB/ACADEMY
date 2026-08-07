@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
+import { uploadCourseCover } from '@/2b3583/76ee3d'
 
 const RANK_OPTIONS = ['Hierro', 'Bronce', 'Plata', 'Oro', 'Platino', 'Diamante', 'Ascendente', 'Inmortal', 'Radiante']
 
@@ -100,6 +101,20 @@ export async function initCoachEditCourse(): Promise<void> {
             </label>
           </div>
 
+          <div class="mb-4">
+            <label class="mb-1 block text-sm text-zinc-400">Imagen de portada</label>
+            <div class="flex items-center gap-4">
+              <img id="cover-preview" src="${escapeHtml(course.cover_url || '')}" class="h-20 w-32 rounded-lg border border-zinc-700 object-cover ${course.cover_url ? '' : 'hidden'}" alt="Portada del curso" />
+              <div class="flex items-center gap-2">
+                <label class="cursor-pointer rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800">
+                  ${Icon('image', 14)} ${course.cover_url ? 'Cambiar imagen' : 'Elegir imagen'}
+                  <input type="file" name="coverFile" id="field-cover" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+                </label>
+                ${course.cover_url ? '<button type="button" id="cover-clear" class="text-xs text-red-400 hover:text-red-300">Quitar</button>' : ''}
+              </div>
+            </div>
+          </div>
+
           <p id="form-error" class="mb-4 text-sm text-red-400 hidden"></p>
 
           <div class="flex gap-3">
@@ -131,6 +146,29 @@ export async function initCoachEditCourse(): Promise<void> {
       if (priceInput) { priceInput.disabled = true; priceInput.classList.add('opacity-50') }
     }
 
+    // Cover image preview
+    const coverInput = document.getElementById('field-cover') as HTMLInputElement
+    const coverPreview = document.getElementById('cover-preview') as HTMLImageElement
+    const coverClear = document.getElementById('cover-clear') as HTMLButtonElement
+    let coverFile: File | null = null
+    let removeCover = false
+    coverInput?.addEventListener('change', () => {
+      const file = coverInput.files?.[0] ?? null
+      coverFile = file
+      removeCover = false
+      if (!file) return
+      coverPreview.src = URL.createObjectURL(file)
+      coverPreview.classList.remove('hidden')
+      if (!coverClear) { /* botón Quitar aparece solo si ya había portada */ }
+    })
+    coverClear?.addEventListener('click', () => {
+      coverFile = null
+      removeCover = true
+      coverInput.value = ''
+      coverPreview.src = ''
+      coverPreview.classList.add('hidden')
+    })
+
     document.getElementById('edit-course-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const fd = new FormData(e.target as HTMLFormElement)
@@ -154,6 +192,17 @@ export async function initCoachEditCourse(): Promise<void> {
         errEl.textContent = error.message
         errEl.classList.remove('hidden')
         return
+      }
+
+      if (removeCover) {
+        await supabase.from('courses').update({ cover_url: null }).eq('id', id)
+      } else if (coverFile) {
+        const { url, error: upErr } = await uploadCourseCover(id, coverFile)
+        if (url) {
+          await supabase.from('courses').update({ cover_url: url }).eq('id', id)
+        } else if (upErr) {
+          toast('error', 'Cambios guardados, pero falló la portada: ' + upErr)
+        }
       }
 
       toast('success', 'Curso actualizado correctamente')

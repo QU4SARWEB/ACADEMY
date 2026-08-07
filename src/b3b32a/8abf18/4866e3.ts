@@ -21,13 +21,14 @@ export async function initCoachDashboard(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const assignedIds = await getAssignedCourseIds(session.user.id)
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .maybeSingle()
+    const [{ data: profile }, assignedIds] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle(),
+      getAssignedCourseIds(session.user.id),
+    ])
 
     // Nota: se desactivó delete_expired_users (borraba cuentas de alumnos
     // con pagos vencidos, incluidos alumnos activos). Con el sistema mensual
