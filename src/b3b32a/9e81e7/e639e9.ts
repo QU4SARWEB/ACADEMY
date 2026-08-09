@@ -11,6 +11,7 @@ import type { Profile } from '@/d14a80'
 import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/course_utils'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 import { SearchInput, bindSearchInput, exportExcel } from '@/4725dc/ui_kit'
+import { CURRENCIES, guessCurrencyCode, fetchRates, toUsd, getCachedRates } from '@/2b3583/fx'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
@@ -58,8 +59,9 @@ async function renderStudentPayments(userId: string): Promise<void> {
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
 
-  const { data: pendingPays } = await supabase.from('payments').select('id, created_at').eq('profile_id', userId).eq('status', 'pending')
+  const { data: pendingPays } = await supabase.from('payments').select('id, created_at, paid_usd').eq('profile_id', userId).eq('status', 'pending')
   for (const pp of pendingPays ?? []) {
+    if (Number(pp.paid_usd || 0) > 0) continue
     if (pp.created_at) {
       const created = new Date(pp.created_at)
       const isLastMonth = created.getMonth() !== currentMonth || created.getFullYear() !== currentYear
@@ -145,11 +147,31 @@ async function renderStudentPayments(userId: string): Promise<void> {
   const statusColors: Record<string, string> = { free: 'text-green-400', pending: 'text-yellow-400', paid: 'text-green-400', scholarship: 'text-blue-400', expired: 'text-red-400' }
   const statusLabels: Record<string, string> = { free: 'Gratis', pending: 'Debes', paid: 'Pagaste', scholarship: 'Cubierto por beca', expired: 'Vencido' }
 
+  const fmtUsd = (n: number) => `$${Math.max(0, n).toFixed(2)}`
+  const paymentOwed = (p: any) => {
+    const fee = Number(p.amount ?? 15)
+    const paidUsd = Number(p.paid_usd || 0)
+    return Math.max(0, fee - paidUsd)
+  }
+
+  const visiblePayments = (payments ?? []).filter((p: any) => p.enrollment_id && activeEnrollIds.has(p.enrollment_id))
+  const totalOwed = visiblePayments.reduce((acc: number, p: any) => {
+    if (p.status === 'paid' || p.status === 'scholarship' || p.status === 'free') return acc
+    return acc + paymentOwed(p)
+  }, 0)
+
   const html = `
     <div class="mb-6">
       <span class="kicker">Historial y facturación</span>
       <h1 class="font-heading text-2xl font-bold text-white">Pagos</h1>
       <p class="mt-1 text-sm text-zinc-500">Historial de pagos y facturación</p>
+    </div>
+
+    <div class="mb-6 rounded-xl border ${totalOwed > 0 ? 'border-amber-500/40 bg-amber-500/10' : 'border-green-500/30 bg-green-500/10'} p-4">
+      ${totalOwed > 0
+        ? `<p class="text-sm text-zinc-300">Tienes un saldo pendiente de <span class="font-bold text-amber-400">${fmtUsd(totalOwed)}</span></p>
+           <p class="mt-0.5 text-xs text-zinc-500">Cuando pagues el total, tu estado pasará a pagado.</p>`
+        : '<p class="text-sm text-green-400">Estás al día con tus pagos.</p>'}
     </div>
 
     ${(enrollments ?? []).length > 0 ? `
@@ -187,7 +209,12 @@ async function renderStudentPayments(userId: string): Promise<void> {
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
               : p.status === 'free'
                 ? `<span class="shrink-0 text-sm font-medium text-green-400">Gratuito</span>`
-                : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} $${p.amount ?? 15}</span>`
+                : Number(p.paid_usd) > 0 && paymentOwed(p) > 0.005
+                  ? `<div class="shrink-0 text-right">
+                      <span class="text-sm font-medium text-amber-400">Debiendo ${fmtUsd(paymentOwed(p))}</span>
+                      <span class="block text-xs text-zinc-500">Abonado ${fmtUsd(Number(p.paid_usd))} de ${fmtUsd(Number(p.amount ?? 15))}</span>
+                    </div>`
+                  : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} ${fmtUsd(Number(p.amount ?? 15))}</span>`
             }
           </div>
           ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${nextPayDayTs()}"></span>` : ''}
@@ -428,6 +455,8 @@ async function renderCoachPayments(): Promise<void> {
 
   let pendingChanges: { paymentId: string; profileId?: string; newStatus: string; oldStatus: string }[] = []
 
+  const fmtUsd = (n: number) => `$${Math.max(0, n).toFixed(2)}`
+
   const payByCourseEnroll: Record<string, Record<string, any>> = {}
   for (const p of payments ?? []) {
     const eid = p.enrollment_id
@@ -487,17 +516,24 @@ async function renderCoachPayments(): Promise<void> {
         daysLeft = ' <span class="text-red-400">· vencido</span>'
       }
 
+      const payUsd = Number(pay?.paid_usd || 0)
+      const feeUsd = Number(c.price || pay?.amount || 15)
+      const owedUsd = Math.max(0, feeUsd - payUsd)
+      const isPartial = pay && !isFree && pay.status !== 'paid' && pay.status !== 'scholarship' && payUsd > 0 && owedUsd > 0.005
+
       const badge = isFree
         ? '<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Gratuito</span>'
         : !pay
           ? '<span class="rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs text-zinc-600">Sin pago</span>'
           : pay.status === 'paid'
             ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado${daysLeft}</span>`
-            : pay.status === 'pending'
-              ? `<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente${daysLeft}</span>`
-              : pay.status === 'scholarship'
-                ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca${daysLeft}</span>`
-                : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido${daysLeft}</span>`
+            : isPartial
+              ? `<span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs text-amber-400">Debiendo ${fmtUsd(owedUsd)}${daysLeft}</span>`
+              : pay.status === 'pending'
+                ? `<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente${daysLeft}</span>`
+                : pay.status === 'scholarship'
+                  ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca${daysLeft}</span>`
+                  : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido${daysLeft}</span>`
 
       return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
@@ -514,13 +550,17 @@ async function renderCoachPayments(): Promise<void> {
           <td class="py-2.5 px-3">${badge}</td>
           <td class="py-2.5 px-3 text-right">
             ${!isFree && pay ? `
-              <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
-                data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
-                <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
-                <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
-                <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
-              </select>` : ''}
+              <div class="flex items-center justify-end gap-2">
+                <select class="pay-status-select rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1 text-xs text-white outline-none"
+                  data-payment-id="${escapeHtml(pay.id)}" data-profile-id="${escapeHtml(prof.id)}" data-old-status="${escapeHtml(pay.status)}" data-new-status="${escapeHtml(pay.status)}">
+                  <option value="pending" ${pay.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                  <option value="paid" ${pay.status === 'paid' ? 'selected' : ''}>Pagado</option>
+                  <option value="scholarship" ${pay.status === 'scholarship' ? 'selected' : ''}>Beca</option>
+                  <option value="expired" ${pay.status === 'expired' ? 'selected' : ''}>Vencido</option>
+                </select>
+                ${pay.status !== 'paid' && pay.status !== 'scholarship' ? `
+                <button class="pay-abono-btn flex items-center gap-1 text-xs text-[#8B5CF6] hover:underline" data-payment-id="${escapeHtml(pay.id)}" data-fee="${feeUsd}">${Icon('dollarSign', 11)} Abonar</button>` : ''}
+              </div>` : ''}
             ${!isFree && !pay ? `
               <button class="create-payment-btn text-xs text-[#8B5CF6] hover:underline" data-profile-id="${escapeHtml(prof.id)}" data-enrollment-id="${escapeHtml(e.id)}" data-role="${escapeHtml(prof.role || 'student')}">${Icon('plus', 12)} Crear pago</button>` : ''}
           </td>
@@ -674,14 +714,17 @@ async function renderCoachPayments(): Promise<void> {
     const rowsData = (enrolls ?? []).map((e: any) => {
       const prof = e.profiles || {}
       const pay = payByCourseEnroll[e.course_id]?.[e.id]
+      const payUsd = Number(pay?.paid_usd || 0)
+      const owed = pay && pay.status !== 'paid' ? Math.max(0, Number(pay.amount ?? 15) - payUsd) : 0
       return [
         prof.full_name || 'Desconocido',
         prof.email || '',
         prof.platform === 'mobile' ? 'Mobile' : 'PC',
         statusLabel[pay?.status] ?? 'Sin pago',
+        payUsd > 0 ? fmtUsd(owed) : (owed > 0 ? fmtUsd(owed) : ''),
       ]
     })
-    exportExcel(`pagos-${new Date().toISOString().slice(0, 10)}.xls`, 'Pagos', ['Estudiante', 'Email', 'Plataforma', 'Estado'], rowsData)
+    exportExcel(`pagos-${new Date().toISOString().slice(0, 10)}.xls`, 'Pagos', ['Estudiante', 'Email', 'Plataforma', 'Estado', 'Deuda USD'], rowsData)
   })
 
   // Save/Discard bar for pending payment changes
@@ -742,6 +785,136 @@ async function renderCoachPayments(): Promise<void> {
     renderCoachPayments()
   })
 
+  const abonoModalHtml = `
+    <div id="abono-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60" role="dialog" aria-modal="true" aria-label="Registrar abono">
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-xl p-6">
+          <h3 class="mb-1 font-heading text-lg font-bold text-white">Registrar abono</h3>
+          <p class="mb-4 text-xs text-zinc-500">El monto se convierte a dólares automáticamente para calcular lo que queda debiendo.</p>
+          <form id="abono-form">
+            <input type="hidden" name="paymentId">
+            <input type="hidden" name="fee">
+            <div class="mb-4">
+              <label for="abono-currency" class="mb-1 block text-xs font-medium text-zinc-400">Moneda en la que pagó</label>
+              <select id="abono-currency" name="currency"
+                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                ${CURRENCIES.map(c => `<option value="${c.code}">${escapeHtml(c.name)} (${c.code})</option>`).join('')}
+              </select>
+            </div>
+            <div class="mb-4">
+              <label for="abono-amount" class="mb-1 block text-xs font-medium text-zinc-400">Monto que pagó</label>
+              <input id="abono-amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"
+                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" required>
+            </div>
+            <p id="abono-preview" class="mb-4 rounded-lg bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">—</p>
+            <p id="abono-error" class="mb-3 hidden text-sm text-red-400"></p>
+            <div class="flex gap-3">
+              <button type="submit" id="abono-save-btn"
+                class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7C3AED]">Guardar abono</button>
+              <button type="button" id="abono-close-btn"
+                class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>`
+  document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', abonoModalHtml)
+
+  const abonoCurrencySel = document.getElementById('abono-currency') as HTMLSelectElement | null
+  if (abonoCurrencySel) abonoCurrencySel.value = guessCurrencyCode()
+
+  document.getElementById('abono-close-btn')?.addEventListener('click', () => {
+    document.getElementById('abono-modal')!.classList.add('hidden')
+  })
+
+  let fxRates: Record<string, number> | null = getCachedRates()
+  if (!fxRates) {
+    try { fxRates = await fetchRates() } catch { fxRates = null }
+  }
+
+  const updateAbonoPreview = () => {
+    const feeEl = document.getElementById('abono-form')?.querySelector<HTMLInputElement>('input[name="fee"]')
+    const fee = Number(feeEl?.value || 0)
+    const amount = Number((document.getElementById('abono-amount') as HTMLInputElement)?.value)
+    const currency = abonoCurrencySel?.value || 'USD'
+    const preview = document.getElementById('abono-preview')!
+    if (!amount || amount <= 0) { preview.innerHTML = '—'; return }
+    if (!fxRates) {
+      preview.innerHTML = '<span class="text-red-400">No se pudo obtener la tasa de cambio. Reintenta más tarde.</span>'
+      return
+    }
+    const usd = toUsd(amount, currency, fxRates)
+    if (usd === null) {
+      preview.innerHTML = `<span class="text-red-400">Sin tasa para ${escapeHtml(currency)}.</span>`
+      return
+    }
+    const curOpt = CURRENCIES.find(c => c.code === currency)
+    const sym = curOpt?.symbol || ''
+    const total = usd >= fee
+    preview.innerHTML = `
+      ≈ <span class="font-bold text-white">$${usd.toFixed(2)}</span> USD (${escapeHtml(curOpt?.name || currency)})
+      ${total
+        ? `<span class="block mt-1 text-green-400">Cubre la cuota de ${fmtUsd(fee)} — quedará Pagado.</span>`
+        : `<span class="block mt-1 text-amber-400">Quedará debiendo <span class="font-bold">${fmtUsd(fee - usd)}</span> de ${fmtUsd(fee)}.</span>`}`
+  }
+
+  document.getElementById('abono-amount')?.addEventListener('input', updateAbonoPreview)
+  abonoCurrencySel?.addEventListener('change', updateAbonoPreview)
+
+  document.getElementById('abono-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const fd = new FormData(e.target as HTMLFormElement)
+    const paymentId = fd.get('paymentId') as string
+    const fee = Number(fd.get('fee') || 0)
+    const currency = fd.get('currency') as string
+    const amount = Number(fd.get('amount') || 0)
+    const errEl = document.getElementById('abono-error')!
+    if (!paymentId || !amount || amount <= 0) {
+      errEl.textContent = 'Ingresa un monto válido.'
+      errEl.classList.remove('hidden')
+      return
+    }
+    if (!fxRates) {
+      errEl.textContent = 'No se pudo obtener la tasa de cambio. Intenta de nuevo.'
+      errEl.classList.remove('hidden')
+      return
+    }
+    const usd = toUsd(amount, currency, fxRates)
+    if (usd === null) {
+      errEl.textContent = `No hay tasa disponible para ${currency}.`
+      errEl.classList.remove('hidden')
+      return
+    }
+    const saveBtn = document.getElementById('abono-save-btn') as HTMLButtonElement
+    saveBtn.disabled = true
+    saveBtn.textContent = 'Guardando...'
+    const { data: existing } = await supabase.from('payments').select('paid_usd').eq('id', paymentId).maybeSingle()
+    const prevUsd = Number(existing?.paid_usd || 0)
+    const totalUsd = prevUsd + usd
+    const update: Record<string, any> = {
+      paid_amount: amount,
+      currency,
+      paid_usd: Math.min(fee, Math.round(totalUsd * 100) / 100),
+    }
+    if (totalUsd >= fee - 0.001) {
+      update.status = 'paid'
+      update.paid_at = new Date().toISOString()
+    } else {
+      update.paid_at = null
+    }
+    const { error } = await supabase.from('payments').update(update).eq('id', paymentId)
+    if (error) {
+      errEl.textContent = error.message
+      errEl.classList.remove('hidden')
+      saveBtn.disabled = false
+      saveBtn.textContent = 'Guardar abono'
+      return
+    }
+    toast(update.status === 'paid' ? 'success' : 'info', update.status === 'paid' ? 'Abono registrado — pago completo. Estado: Pagado' : 'Abono registrado')
+    document.getElementById('abono-modal')!.classList.add('hidden')
+    await renderCoachPayments()
+  })
+
   // Global modal event handler (delegated, survives DOM changes)
   if ((window as any).__payClickHandler) {
     document.removeEventListener('click', (window as any).__payClickHandler)
@@ -777,6 +950,22 @@ async function renderCoachPayments(): Promise<void> {
       }
       // Update save bar
       updateSaveBar()
+      return
+    }
+
+    // Abono (pago parcial) button
+    const abonoBtn = target.closest('.pay-abono-btn') as HTMLElement
+    if (abonoBtn) {
+      e.preventDefault()
+      const paymentId = abonoBtn.dataset.paymentId
+      const fee = abonoBtn.dataset.fee
+      if (!paymentId) return
+      const modal = document.getElementById('abono-modal')!
+      modal.querySelector<HTMLInputElement>('input[name="paymentId"]')!.value = paymentId
+      modal.querySelector<HTMLInputElement>('input[name="fee"]')!.value = fee || ''
+      ;(document.getElementById('abono-amount') as HTMLInputElement).value = ''
+      document.getElementById('abono-preview')!.innerHTML = '—'
+      modal.classList.remove('hidden')
       return
     }
 
