@@ -67,9 +67,18 @@ export async function initStudentGrades(): Promise<void> {
 
     const { data: allEnrolls } = await supabase
       .from('enrollments')
-      .select('profile_id, course_id')
+      .select('profile_id, course_id, final_grade')
       .in('course_id', idFilter)
       .eq('status', 'active')
+
+    const finalByCourse = new Map<string, number | null>()
+    for (const en of allEnrolls ?? []) {
+      if (en.final_grade != null) finalByCourse.set(en.course_id, parseFloat(en.final_grade))
+    }
+    const manualBySid = new Map<string, number | null>()
+    for (const en of allEnrolls ?? []) {
+      if (en.final_grade != null) manualBySid.set(en.profile_id, parseFloat(en.final_grade))
+    }
 
     const schedIdsByCourse = new Map<string, string[]>()
     for (const s of allSchedules ?? []) {
@@ -101,7 +110,10 @@ export async function initStudentGrades(): Promise<void> {
       const raw = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], uid)
       const comp = computeComponents(raw)
       const pendingRec = hasPendingRecovery(ref, allResults ?? [], allSubmissions ?? [], uid)
-      const finalGrade = weightedFinal(comp)
+      const computed = weightedFinal(comp)
+      const coachGrade = finalByCourse.get(courseId) ?? null
+      const isManual = coachGrade !== null && !isNaN(coachGrade)
+      const finalGrade = isManual ? coachGrade : computed
       const status = gradeStatus(finalGrade, minPass, pendingRec)
       const statusMetaItem = statusMeta[status]
 
@@ -170,6 +182,7 @@ export async function initStudentGrades(): Promise<void> {
           <p class="text-3xl font-bold ${colorCls}">${finalGrade.toFixed(1)}/20</p>
           <span class="mt-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMetaItem.cls}">${statusMetaItem.label}</span>
           <p class="mt-1 text-xs text-zinc-500">Mínimo para aprobar: ${minPass}/20</p>
+          ${isManual ? '<p class="mt-1 text-xs text-zinc-500">Asignada por tu coach</p>' : ''}
         </div>`
       }
 
@@ -179,7 +192,8 @@ export async function initStudentGrades(): Promise<void> {
         const finals: number[] = []
         for (const sid of courseStudents) {
           const r = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], sid)
-          const f = weightedFinal(computeComponents(r))
+          const manual = manualBySid.get(sid)
+          const f = manual !== null && manual !== undefined && !isNaN(manual) ? manual : weightedFinal(computeComponents(r))
           if (f !== null) finals.push(f)
         }
         const sorted = [...finals].sort((a, b) => b - a)
