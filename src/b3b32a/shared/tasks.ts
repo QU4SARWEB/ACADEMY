@@ -6,6 +6,7 @@ import { confirmDialog } from '@/4725dc/b9f3a2'
 import { Spinner } from '@/4725dc/a14fa2'
 import { formatDate } from '@/2b3583/6b239c'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
+import { openFileViewer } from '@/2b3583/file_viewer'
 
 const todayISO = () => {
   const d = new Date()
@@ -142,7 +143,7 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
               </div>
               ${task.description ? `<p class="mb-3 text-sm text-zinc-400">${escapeHtml(task.description)}</p>` : ''}
               ${task.file_url ? `<div class="mb-3">
-                <a href="https://docs.google.com/viewer?url=${encodeURIComponent(task.file_url)}&embedded=true" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-lg bg-[#8B5CF6]/15 px-3 py-1.5 text-xs font-medium text-[#8B5CF6] hover:bg-[#8B5CF6]/25 transition">${Icon('fileText', 14)} Ver formato de trabajo</a>
+                <button type="button" class="view-format-btn inline-flex items-center gap-1.5 rounded-lg bg-[#8B5CF6]/15 px-3 py-1.5 text-xs font-medium text-[#8B5CF6] hover:bg-[#8B5CF6]/25 transition" data-file-url="${escapeHtml(task.file_url)}">${Icon('fileText', 14)} Ver formato de trabajo</button>
               </div>` : ''}
               ${hasSubmitted
                 ? `<div>${renderSubmission(submitted)}
@@ -418,6 +419,15 @@ function bindTaskEvents(containerId: string, studentId: string, role: 'student' 
       if (!taskId || !(await confirmDialog('¿Reenviar tarea? Se eliminará tu calificación anterior.', 'Reenviar'))) return
       supabase.from('task_submissions').delete().eq('task_id', taskId).eq('student_id', studentId)
       loadAndRenderTasks(containerId, studentId, role)
+    })
+  })
+
+  // View task format file
+  document.querySelectorAll<HTMLElement>('.view-format-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = btn.dataset.fileUrl
+      if (!url) return
+      openFileViewer('Formato de trabajo', [url], 0)
     })
   })
 }
