@@ -42,7 +42,11 @@ export async function initCoachTasks(): Promise<void> {
       .order('created_at', { ascending: false })
 
     const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
-    const tasks = courseFilter ? (taskData ?? []).filter((task: any) => task.course_id === courseFilter) : (taskData ?? [])
+    const tasks = taskData ?? []
+    const activeCourseIds = new Set<string>()
+    for (const c of courses ?? []) {
+      if (!courseFilter || courseFilter === c.id) activeCourseIds.add(c.id)
+    }
     const taskIds = tasks.map((t: any) => t.id)
     const taskFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
 
@@ -61,11 +65,12 @@ export async function initCoachTasks(): Promise<void> {
 
     const filterHtml = (courses ?? []).map((c: any) => {
       const taskCount = (tasks ?? []).filter((t: any) => t.course_id === c.id).length
+      const isActive = activeCourseIds.has(c.id)
       return `
       <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none
-        bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
-        data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-active="1">
-        ${Icon('checkCircle', 14)}
+        ${isActive ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25' : 'bg-zinc-800/40 text-zinc-500 border border-dashed border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300'}"
+        data-course-id="${escapeHtml(c.id)}" data-course-name="${escapeHtml(c.name)}" data-course-count="${taskCount}" data-active="${isActive ? '1' : '0'}">
+        ${isActive ? Icon('checkCircle', 14) : Icon('plus', 12)}
         <span>${escapeHtml(c.name)}</span>
         <span class="text-zinc-500">${taskCount}</span>
       </button>`
@@ -95,8 +100,11 @@ export async function initCoachTasks(): Promise<void> {
           const course = courseMap.get(t.course_id)
           const subCount = (submissionsByTask[t.id] || []).length
           const gradedCount = (submissionsByTask[t.id] || []).filter((s: any) => s.graded).length
+          const overdue = isOverdue(t.due_date)
+          const hiddenCls = activeCourseIds.has(t.course_id) ? '' : 'hidden'
+          const cardBorder = overdue ? 'border-red-500/40 hover:border-red-500/60' : 'border-zinc-800 hover:border-zinc-700'
           return `
-          <div class="task-card rounded-xl border border-zinc-800 bg-[#111] p-5 hover:border-zinc-700 transition cursor-pointer"
+          <div class="task-card rounded-xl border ${cardBorder} bg-[#111] p-5 transition cursor-pointer ${hiddenCls}"
             data-task-id="${escapeHtml(t.id)}" data-course-id="${escapeHtml(t.course_id)}">
             <div class="flex items-start justify-between mb-3">
               <div>
@@ -111,7 +119,9 @@ export async function initCoachTasks(): Promise<void> {
             </div>
             ${t.description ? `<p class="text-xs text-zinc-400 mb-3 line-clamp-2">${escapeHtml(t.description)}</p>` : ''}
             <div class="flex items-center gap-4 text-xs text-zinc-500">
-              <span class="flex items-center gap-1">${Icon('calendar', 12)} Vence: ${fmtDate(t.due_date)}</span>
+              ${overdue
+                ? `<span class="flex items-center gap-1 font-medium text-red-400">${Icon('clock', 12)} Vencida · ${fmtDate(t.due_date)}</span>`
+                : `<span class="flex items-center gap-1">${Icon('calendar', 12)} Vence: ${fmtDate(t.due_date)}</span>`}
               <span class="flex items-center gap-1">${Icon('users', 12)} ${subCount} entrega${subCount !== 1 ? 's' : ''}</span>
               ${gradedCount > 0 ? `<span class="text-green-400">${gradedCount} calificada${gradedCount !== 1 ? 's' : ''}</span>` : ''}
               ${t.file_url ? `<a href="${escapeHtml(t.file_url)}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA]">${Icon('paperclip', 10)} Archivo</a>` : ''}
@@ -162,7 +172,7 @@ function initCourseFilters(): void {
   const activeFilters = new Set<string>()
   document.querySelectorAll('.course-filter-btn').forEach(btn => {
     const courseId = (btn as HTMLElement).dataset.courseId
-    if (courseId) activeFilters.add(courseId)
+    if ((btn as HTMLElement).dataset.active === '1' && courseId) activeFilters.add(courseId)
     btn.addEventListener('click', () => {
       const el = btn as HTMLElement
       const cid = el.dataset.courseId
@@ -357,6 +367,9 @@ function setupDeleteTaskButtons(): void {
 
 const viewerData: Record<string, { files: string[]; name: string }> = {}
 
+const todayISO = () => new Date().toISOString().slice(0, 10)
+const isOverdue = (d: string | null | undefined): boolean => !!d && d < todayISO()
+
 async function renderTaskReview(taskId: string, courseParam: string): Promise<void> {
   try {
     const back = `#/coaches/tasks${courseParam ? '?course=' + encodeURIComponent(courseParam) : ''}`
@@ -464,6 +477,7 @@ async function renderTaskReview(taskId: string, courseParam: string): Promise<vo
         <h1 class="font-heading text-2xl font-bold text-white mt-1">${escapeHtml(task.title || 'Tarea')}</h1>
         <p class="text-sm text-zinc-400 mt-1">${escapeHtml(courseName)} · Semana ${escapeHtml(String(task.week_number ?? ''))} · Vence: ${fmtDate(task.due_date)}</p>
         ${task.is_recovery ? `<span class="mt-2 inline-flex items-center gap-1 rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
+        ${isOverdue(task.due_date) ? `<span class="mt-2 ml-1 inline-flex items-center gap-1 rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">${Icon('clock', 10)} Vencida</span>` : ''}
       </div>
 
       <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
