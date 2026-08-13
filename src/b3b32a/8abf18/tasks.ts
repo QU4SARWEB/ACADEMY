@@ -632,9 +632,9 @@ function openSubmissionViewer(studentName: string, files: string[], startIndex: 
 
   viewer.addEventListener('click', (e) => {
     const t = e.target as HTMLElement
-    if (t.id === 'close-viewer') { viewer.remove(); return }
-    if (t.id === 'viewer-next') { nav(current + 1); return }
-    if (t.id === 'viewer-prev') { nav(current - 1); return }
+    if (t.closest('#close-viewer')) { viewer.remove(); return }
+    if (t.closest('#viewer-next')) { nav(current + 1); return }
+    if (t.closest('#viewer-prev')) { nav(current - 1); return }
     const thumb = t.closest<HTMLElement>('.viewer-thumb')
     if (thumb) { nav(parseInt(thumb.dataset.index || '0', 10)); return }
   })
