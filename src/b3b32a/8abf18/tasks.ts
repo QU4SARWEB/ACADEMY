@@ -284,13 +284,13 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
 
     const payload: any = {
       course_id: courseId,
-      coach_id: coachId,
       title,
       description: description || '',
       week_number: weekNumber,
       due_date: dueDate,
       is_recovery: isRecovery,
     }
+    if (!editId) payload.coach_id = coachId
     if (fileUrl) payload.file_url = fileUrl
 
     let error: any
