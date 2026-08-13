@@ -108,7 +108,8 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
           const courseName = courseMap.get(task.course_id) || 'Curso'
           const hasSubmitted = !!submitted
           const isGraded = hasSubmitted && submitted.score != null
-          const overdue = isOverdue(task.due_date)
+          const isPastDue = isOverdue(task.due_date)
+          const overdue = isPastDue && !hasSubmitted
 
           let badge = ''
           if (isGraded) {
@@ -116,20 +117,22 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
             const color = s >= 14 ? 'bg-green-500/20 text-green-400' : s >= 11 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
             badge = `<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${color} text-sm font-bold">${s}</div>`
           } else if (hasSubmitted) {
-            badge = `<span class="rounded bg-blue-500/20 px-2 py-1 text-[10px] text-blue-400 shrink-0">Entregado</span>`
+            badge = `<span class="rounded bg-[#8B5CF6]/15 px-2 py-1 text-[10px] text-[#A78BFA] shrink-0">Entregado</span>`
           }
 
           const cardDisplay = activeCourse && task.course_id !== activeCourse ? 'none' : ''
+          const cardAccent = overdue ? 'border-red-500/40' : hasSubmitted ? 'border-[#8B5CF6]/40' : ''
           return `
-            <div class="task-card glass rounded-xl p-5 ${overdue ? 'border-red-500/40' : ''}" data-course-id="${escapeHtml(task.course_id)}" style="display:${cardDisplay}">
+            <div class="task-card glass rounded-xl p-5 ${cardAccent}" data-course-id="${escapeHtml(task.course_id)}" style="display:${cardDisplay}">
               <div class="flex items-start justify-between gap-3 mb-3">
                 <div class="min-w-0 flex-1">
                   <h3 class="font-heading text-base font-bold ${overdue ? 'text-red-300' : 'text-white'}">${escapeHtml(task.title)}</h3>
                   <div class="flex flex-wrap gap-1.5 mt-1">
                     <span class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${escapeHtml(courseName)}</span>
                     <span class="rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">Sem ${task.week_number || '?'}</span>
-                    ${task.due_date ? `<span class="rounded px-2 py-0.5 text-[10px] ${overdue ? 'bg-red-500/15 text-red-400' : 'bg-zinc-800 text-zinc-400'}">${Icon('clock', 10)} ${fmtDate(task.due_date)}</span>` : ''}
+                    ${task.due_date ? `<span class="rounded px-2 py-0.5 text-[10px] ${overdue ? 'bg-red-500/15 text-red-400' : hasSubmitted ? 'bg-[#8B5CF6]/15 text-[#A78BFA]' : 'bg-zinc-800 text-zinc-400'}">${Icon('clock', 10)} ${fmtDate(task.due_date)}</span>` : ''}
                     ${overdue ? `<span class="rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">Vencida</span>` : ''}
+                    ${hasSubmitted ? `<span class="rounded bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] font-medium text-[#A78BFA]">Entregado</span>` : ''}
                   </div>
                 </div>
                 ${badge}
@@ -140,7 +143,7 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
               </div>` : ''}
               ${hasSubmitted
                 ? `<div>${renderSubmission(submitted)}
-                  ${isGraded && !overdue ? `<div class="mt-3 flex justify-end">
+                  ${isGraded && !isPastDue ? `<div class="mt-3 flex justify-end">
                     <button class="retry-task-btn text-xs flex items-center gap-1 text-amber-400 hover:text-amber-300 transition" data-task-id="${escapeHtml(task.id)}">${Icon('rotate', 12)} Reenviar</button>
                   </div>` : ''}</div>`
                 : overdue
