@@ -155,7 +155,7 @@ function bindTaskEvents(courses: any[], coachId: string): void {
   setupNewTaskButton(courses, coachId)
   setupTaskCardClicks()
   setupDeleteTaskButtons()
-  setupEditTaskButtons()
+  setupEditTaskButtons(courses)
 }
 
 function initCourseFilters(): void {
@@ -323,7 +323,7 @@ function setupTaskCardClicks(): void {
   })
 }
 
-function setupEditTaskButtons(): void {
+function setupEditTaskButtons(courses: any[]): void {
   document.querySelectorAll('.edit-task-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation()
@@ -334,10 +334,6 @@ function setupEditTaskButtons(): void {
       const container = document.getElementById('task-form-container')!
       container.classList.remove('hidden')
       container.scrollIntoView({ behavior: 'smooth' })
-      const courses: any[] = []
-      document.querySelectorAll('#task-create-form select[name="courseId"] option').forEach((opt: any) => {
-        if (opt.value) courses.push({ id: opt.value, name: opt.text })
-      })
       container.innerHTML = renderTaskCreateForm(courses, task)
       bindTaskFormEvents(container, '', taskId)
     })
