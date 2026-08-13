@@ -62,14 +62,13 @@ export async function initCoachDashboard(): Promise<void> {
     ])
 
 
-    // Payments about to expire (pending older than 4 days = within 3 days of 7-day expiry)
-    const EXPIRE_MS = 2 * 24 * 60 * 60 * 1000
+    // Payments about to expire (pending con expires_at dentro de 24h o ya vencidos)
     const SOON_MS = 24 * 60 * 60 * 1000
     const now = Date.now()
 
     let pendingPaymentsQuery = supabase
       .from('payments')
-      .select('id, created_at, amount, enrollment_id, profiles!inner(full_name, display_name, email, id)')
+      .select('id, created_at, amount, enrollment_id, due_at, expires_at, profiles!inner(full_name, display_name, email, id)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
     if (assignedEnrollIds) {
@@ -88,7 +87,7 @@ export async function initCoachDashboard(): Promise<void> {
     for (const e of pendEnrollData ?? []) courseByPendEnroll[e.id] = (e as any).courses?.name || ''
 
     const expiringPayments = (pendingPayments ?? []).filter((p: any) =>
-      p.created_at && (now - new Date(p.created_at).getTime()) > EXPIRE_MS - SOON_MS
+      p.expires_at && (new Date(p.expires_at).getTime() - now) <= SOON_MS
     )
     const expiringCount = expiringPayments.length
 
@@ -106,7 +105,7 @@ export async function initCoachDashboard(): Promise<void> {
       const { data: coachExams } = await supabase.from('exams').select('id').in('course_id', assignedIds).eq('published', true)
       const examIds = (coachExams ?? []).map((exam: any) => exam.id).filter(Boolean)
       if (examIds.length > 0) {
-        const { count } = await supabase.from('exam_results').select('id', { count: 'exact', head: true }).in('exam_id', examIds).in('status', ['pending', 'review', 'in_review'])
+        const { count } = await supabase.from('exam_results').select('id', { count: 'exact', head: true }).in('exam_id', examIds).in('status', ['pending', 'in_progress', 'reviewing'])
         pendingExamsCount = count ?? 0
       }
 
@@ -327,9 +326,7 @@ export async function initCoachDashboard(): Promise<void> {
               const prof = p.profiles || {}
               const name = prof.display_name || prof.full_name || prof.email || 'Desconocido'
               const courseName = courseByPendEnroll[p.enrollment_id] || ''
-              const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0
-              const expiresAt = createdAt + EXPIRE_MS
-              const remaining = expiresAt - now
+              const remaining = p.expires_at ? new Date(p.expires_at).getTime() - now : 0
               if (remaining <= 0) return ''
               const daysLeft = Math.floor(remaining / 86400000)
               const hoursLeft = Math.floor((remaining % 86400000) / 3600000)

@@ -28,7 +28,7 @@ export async function initCoachTasks(): Promise<void> {
 
     const { data: taskData } = await supabase
       .from('course_tasks')
-      .select('id, course_id, title, description, week_number, due_date, created_at, file_url')
+      .select('id, course_id, title, description, week_number, due_date, created_at, file_url, is_recovery')
       .in('course_id', idFilter)
       .order('created_at', { ascending: false })
 
@@ -95,6 +95,7 @@ export async function initCoachTasks(): Promise<void> {
                 <p class="text-xs text-zinc-500 mt-1">${escapeHtml(course?.name || 'Desconocido')} · Semana ${escapeHtml(String(t.week_number))}</p>
               </div>
               <div class="flex items-center gap-1">
+                ${t.is_recovery ? `<span class="rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
                 <button class="edit-task-btn text-zinc-400 hover:text-white transition" data-task-id="${escapeHtml(t.id)}" title="Editar tarea">${Icon('edit', 13)}</button>
                 <button class="delete-task-btn text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(t.id)}" title="Eliminar tarea">${Icon('trash', 14)}</button>
               </div>
@@ -219,6 +220,12 @@ function renderTaskCreateForm(courses: any[], editTask?: any): string {
             <label class="mb-1 block text-xs text-zinc-400">Fecha de entrega</label>
             <input type="date" name="dueDate" value="${editTask?.due_date || ''}" required class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
           </div>
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer h-full mt-6">
+              <input type="checkbox" name="isRecovery" ${editTask?.is_recovery ? 'checked' : ''} class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
+              <span class="text-sm text-zinc-400">${Icon('refreshCw', 14)} Recuperación</span>
+            </label>
+          </div>
           <div class="sm:col-span-2">
             <label class="mb-1 block text-xs text-zinc-400">Archivo adjunto (opcional)</label>
             <input type="file" name="taskFile" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-zinc-400 outline-none focus:border-[#8B5CF6] file:mr-2 file:rounded file:border-0 file:bg-[#8B5CF6]/20 file:px-2 file:py-1 file:text-xs file:text-[#8B5CF6]" />
@@ -244,6 +251,7 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
     const description = fd.get('description') as string
     const weekNumber = parseInt(fd.get('weekNumber') as string, 10)
     const dueDate = fd.get('dueDate') as string
+    const isRecovery = fd.get('isRecovery') === 'on'
 
     const errorEl = document.getElementById('task-form-error')!
     if (!courseId || !title || !weekNumber || !dueDate) {
@@ -272,6 +280,7 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
       description: description || '',
       week_number: weekNumber,
       due_date: dueDate,
+      is_recovery: isRecovery,
     }
     if (fileUrl) payload.file_url = fileUrl
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/304244'
+import { schedulePayDates } from '@/2b3583/paydates'
 
 const CLASE_GENERAL_ID = 'e7f7f24d-8c5a-4006-99cf-7a74907ff3b0'
 export const CLASE_COMPLEMENTARIA_ID = 'aea1376e-95d2-4dec-a4ef-07b2395e8f78'
@@ -49,6 +50,7 @@ export async function createEnrollmentWithPayment(
 
   const { error: payErr } = await supabase.from('payments').insert({
     profile_id: profileId, enrollment_id: newEnroll.id, type, status: payStatus, amount: coursePrice,
+    ...(payStatus !== 'free' ? schedulePayDates() : {}),
   })
 
   if (payErr) {

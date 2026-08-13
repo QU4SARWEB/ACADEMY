@@ -8,6 +8,7 @@ import { initAutoSave } from '@/4725dc/forms/DraftManager'
 import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
 import { initNotificationCenter } from '@/4725dc/notification_center'
 import { initUiGlobals } from '@/4725dc/ui_kit'
+import { dueTs, expiresTs } from '@/2b3583/paydates'
 
 import '@/bc4150/0c54ed.css'
 
@@ -197,39 +198,22 @@ function dash(path: string, loader: DashLoader): void {
       ])
       const profile = store.get<any>('profile')
 
-      // Sistema de pagos mensual: pago el día 2, la cuenta pasa a pending cada día 29
+      // Sistema de pagos con fechas explícitas: paid vence en due_at (renovación),
+      // pending sin pagar pasa a expired al llegar a expires_at (corte con gracia).
       if (profile && profile.role !== 'coach') {
-        const now = new Date()
-        const today = now.getDate()
-        const currentMonth = now.getMonth()
-        const currentYear = now.getFullYear()
-
-        // Cada 29 del mes: los pagos paid pasan a pending (deben renovar el día 2)
-        const { data: paidPays } = await supabase
+        const now = Date.now()
+        const { data: pays } = await supabase
           .from('payments')
-          .select('id, paid_at')
+          .select('id, status, paid_at, due_at, expires_at')
           .eq('profile_id', profile.id)
-          .eq('status', 'paid')
-        for (const pp of paidPays ?? []) {
-          const paidAt = pp.paid_at ? new Date(pp.paid_at) : null
-          const paidThisMonth = paidAt && paidAt.getMonth() === currentMonth && paidAt.getFullYear() === currentYear
-          if (today >= 29 && !paidThisMonth) {
-            await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', pp.id)
+        for (const p of pays ?? []) {
+          const due = dueTs(p)
+          const exp = expiresTs(p)
+          if (p.status === 'paid' && due !== null && now >= due) {
+            await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', p.id)
           }
-        }
-        // Auto-expire pending si pasa el día 5 sin pagar (venció el día 2)
-        const { data: pendingPays } = await supabase
-          .from('payments')
-          .select('id, created_at')
-          .eq('profile_id', profile.id)
-          .eq('status', 'pending')
-        for (const pp of pendingPays ?? []) {
-          if (pp.created_at) {
-            const created = new Date(pp.created_at)
-            const isLastMonth = created.getMonth() !== currentMonth || created.getFullYear() !== currentYear
-            if (today >= 5 && isLastMonth) {
-              await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
-            }
+          if (p.status === 'pending' && exp !== null && now >= exp) {
+            await supabase.from('payments').update({ status: 'expired' }).eq('id', p.id)
           }
         }
       }

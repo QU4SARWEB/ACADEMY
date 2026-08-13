@@ -15,14 +15,14 @@ const COURSE_TEMPLATES = [
     desc: 'Curso de nivel intermedio-bajo para jugadores Bronce+. Técnicas avanzadas, comunicación y trabajo en equipo.' },
   { name: 'Amateur', months: 1, modules: 5, minRank: 'Plata', order: 3,
     desc: 'Curso de nivel intermedio para jugadores Plata+. Estrategias, macrogestión y análisis de partidas.' },
-  { name: 'Competitor', months: 1, modules: 5, minRank: 'Oro', order: 4,
-    desc: 'Curso de nivel intermedio-alto para jugadores Oro+. Tácticas competitivas, roles especializados y draft.' },
-  { name: 'Elite', months: 1, modules: 5, minRank: 'Platino', order: 5,
-    desc: 'Curso de nivel avanzado para jugadores Platino+. Alto rendimiento, liderazgo y ejecución estratégica.' },
-  { name: 'Semi-Pro', months: 1, modules: 5, minRank: 'Diamante', order: 6,
-    desc: 'Curso de nivel semi-profesional para jugadores Diamante+. Preparación para escena competitiva profesional.' },
-  { name: 'Pro', months: 1, modules: 5, minRank: 'Ascendente', order: 7,
-    desc: 'Curso de nivel profesional para jugadores Ascendente+. Coaching de élite, análisis profundo y rendimiento máximo.' },
+  { name: 'Competitor', months: 1, modules: 5, minRank: 'Ascendente', order: 4,
+    desc: 'Curso de nivel intermedio-alto para jugadores Ascendente+. Tácticas competitivas, roles especializados y draft.' },
+  { name: 'Elite', months: 1, modules: 5, minRank: 'Inmortal', order: 5,
+    desc: 'Curso de nivel avanzado para jugadores Inmortal+. Alto rendimiento, liderazgo y ejecución estratégica.' },
+  { name: 'Semi-Pro', months: 1, modules: 5, minRank: 'Ascendente', order: 6,
+    desc: 'Curso de nivel semi-profesional para jugadores Ascendente+. Preparación para escena competitiva profesional.' },
+  { name: 'Pro', months: 1, modules: 5, minRank: 'Radiante', order: 7,
+    desc: 'Curso de nivel profesional para jugadores Radiante+. Coaching de élite, análisis profundo y rendimiento máximo.' },
 ]
 
 export function renderCoachNewCourse(): string {

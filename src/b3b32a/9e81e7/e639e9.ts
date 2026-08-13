@@ -12,25 +12,12 @@ import { autoEnrollGeneralCourses, autoEnrollComplementaria } from '@/2b3583/cou
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 import { SearchInput, bindSearchInput, exportExcel } from '@/4725dc/ui_kit'
 import { CURRENCIES, guessCurrencyCode, fetchRates, toUsd, getCachedRates } from '@/2b3583/fx'
+import { schedulePayDates, dueTs, expiresTs } from '@/2b3583/paydates'
 
 const PAYPAL_CLIENT_ID = 'ASjqwWQof0YKxBx4ZlQ03H4wQobDw3eytN-el650Yb3d0mjOcREb6FHHCEFd6UMd__jp_1yjBPPI76um'
 const PAYPAL_SANDBOX = false
 
-// Sistema mensual: renovación el día 2, corte de pago el día 29
-function nextPayDayTs(): number {
-  const now = new Date()
-  const d = now.getDate()
-  let target = new Date(now.getFullYear(), now.getMonth(), 2)
-  if (d >= 2) target = new Date(now.getFullYear(), now.getMonth() + 1, 2)
-  return target.getTime()
-}
-function nextCutDayTs(): number {
-  const now = new Date()
-  const d = now.getDate()
-  let target = new Date(now.getFullYear(), now.getMonth(), 29)
-  if (d >= 29) target = new Date(now.getFullYear(), now.getMonth() + 1, 29)
-  return target.getTime()
-}
+// Sistema mensual: renovación el día 2, corte con gracia hasta el día 5
 
 export function renderPayments(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -53,36 +40,41 @@ export async function initPayments(): Promise<void> {
 }
 
 async function renderStudentPayments(userId: string): Promise<void> {
-  // Sistema mensual: pago el día 2, paid pasa a pending cada día 29
-  const now = new Date()
-  const today = now.getDate()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
+  const now = Date.now()
 
-  const { data: pendingPays } = await supabase.from('payments').select('id, created_at, paid_usd').eq('profile_id', userId).eq('status', 'pending')
-  for (const pp of pendingPays ?? []) {
-    if (Number(pp.paid_usd || 0) > 0) continue
-    if (pp.created_at) {
-      const created = new Date(pp.created_at)
-      const isLastMonth = created.getMonth() !== currentMonth || created.getFullYear() !== currentYear
-      if (today >= 5 && isLastMonth) {
-        await supabase.from('payments').update({ status: 'expired' }).eq('id', pp.id)
-      }
-    }
-  }
-  const { data: paidPays } = await supabase.from('payments').select('id, paid_at').eq('profile_id', userId).eq('status', 'paid')
-  for (const pp of paidPays ?? []) {
-    const paidAt = pp.paid_at ? new Date(pp.paid_at) : null
-    const paidThisMonth = paidAt && paidAt.getMonth() === currentMonth && paidAt.getFullYear() === currentYear
-    if (today >= 29 && !paidThisMonth) {
-      await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', pp.id)
-    }
-  }
   let { data: payments } = await supabase
     .from('payments')
     .select('*')
     .eq('profile_id', userId)
     .order('created_at', { ascending: false })
+
+  // Estado derivado de fechas explícitas (due_at/expires_at):
+  //  - paid vence en due_at -> pasa a pending (debe renovar).
+  //  - pending sin pagar al llegar a expires_at -> expired.
+  let changed = false
+  for (const p of payments ?? []) {
+    const due = dueTs(p)
+    const exp = expiresTs(p)
+    if (p.status === 'paid' && due !== null && now >= due) {
+      changed = true
+      await supabase.from('payments').update({ status: 'pending', paid_at: null }).eq('id', p.id)
+      p.status = 'pending'
+      p.paid_at = null
+    }
+    if (p.status === 'pending' && exp !== null && now >= exp) {
+      changed = true
+      await supabase.from('payments').update({ status: 'expired' }).eq('id', p.id)
+      p.status = 'expired'
+    }
+  }
+  if (changed) {
+    const { data: refreshed } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('profile_id', userId)
+      .order('created_at', { ascending: false })
+    if (refreshed) payments = refreshed
+  }
 
   const { data: allEnrolls } = await supabase
     .from('enrollments')
@@ -127,6 +119,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
         type: e.type || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: priceMap[e.course_id] ?? 15,
+        ...schedulePayDates(),
       })
       if (insErr && insErr.code === '23505') {
       } else if (insErr) {
@@ -203,7 +196,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-white">${escapeHtml(courseByEnroll[p.enrollment_id] || 'Pago')}</p>
-              ${p.paid_at ? `<p class="text-xs text-zinc-500">Pagado: ${formatDate(p.paid_at)}<span class="text-zinc-600"> · </span><span class="paid-countdown" data-expires="${nextCutDayTs()}"></span></p>` : ''}
+              ${p.paid_at ? `<p class="text-xs text-zinc-500">Pagado: ${formatDate(p.paid_at)}<span class="text-zinc-600"> · </span><span class="paid-countdown" data-expires="${dueTs(p)}"></span></p>` : ''}
             </div>
             ${p.status === 'scholarship'
               ? `<span class="shrink-0 text-sm font-medium text-blue-400">${statusLabels.scholarship}</span>`
@@ -217,7 +210,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
                   : `<span class="shrink-0 text-sm font-medium ${statusColors[p.status] || 'text-zinc-500'}">${statusLabels[p.status] || escapeHtml(p.status)} ${fmtUsd(Number(p.amount ?? 15))}</span>`
             }
           </div>
-          ${p.status === 'pending' && p.created_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${nextPayDayTs()}"></span>` : ''}
+          ${p.status === 'pending' && p.due_at ? `<span class="payment-countdown block text-xs mt-1" data-expires="${dueTs(p)}"></span>` : ''}
           ${p.status === 'expired' ? `<span class="payment-countdown block text-xs mt-1 text-red-400">Vencido — paga para renovar tu suscripción</span>` : ''}
           ${p.status === 'pending' || p.status === 'expired' ? `
           <div class="flex flex-col gap-2">
@@ -354,7 +347,7 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
     })
     const data = await res.json()
     if (data?.verified) {
-      await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe' }).eq('id', paymentId)
+      await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe', ...schedulePayDates() }).eq('id', paymentId)
       const { data: payData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
       if (payData) { autoEnrollGeneralCourses(payData.profile_id, 'student'); autoEnrollComplementaria(payData.profile_id, 'student') }
       toast('success', 'Pago confirmado vía Stripe')
@@ -370,32 +363,34 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
 }
 
 function startPaymentCountdown(): void {
+  const fmt = (diff: number): string => {
+    const days = Math.floor(diff / 86400000)
+    const hours = Math.floor((diff % 86400000) / 3600000)
+    const mins = Math.floor((diff % 3600000) / 60000)
+    const secs = Math.floor((diff % 60000) / 1000)
+    let text = ''
+    if (days > 0) text += `${days}d `
+    text += `${hours}h ${mins}m`
+    if (days === 0) text += ` ${secs}s`
+    return text
+  }
   const tick = () => {
     const now = Date.now()
     document.querySelectorAll<HTMLElement>('.payment-countdown').forEach(el => {
       const expires = parseInt(el.dataset.expires || '0')
       if (!expires) return
       const diff = expires - now
-      if (diff <= 0) { el.textContent = 'Vencido'; el.className = 'payment-countdown block text-xs mt-1 text-red-400'; return }
-      const days = Math.floor(diff / 86400000)
-      const hours = Math.floor((diff % 86400000) / 3600000)
-      const mins = Math.floor((diff % 3600000) / 60000)
-      const secs = Math.floor((diff % 60000) / 1000)
-      let text = ''
-      if (days > 0) text += `${days}d `
-      text += `${hours}h ${mins}m`
-      if (days === 0) text += ` ${secs}s`
-      el.textContent = `Vence en: ${text}`
+      if (diff <= 0) { el.textContent = 'Vencido — paga ya'; el.className = 'payment-countdown block text-xs mt-1 text-red-400'; return }
+      el.textContent = `Vence en: ${fmt(diff)}`
       el.className = 'payment-countdown block text-xs mt-1' + (diff < 86400000 ? ' text-red-400' : diff < 172800000 ? ' text-yellow-400' : ' text-zinc-400')
     })
     document.querySelectorAll<HTMLElement>('.paid-countdown').forEach(el => {
-      const paidAt = parseInt(el.dataset.paidAt || '0')
-      if (!paidAt) return
-      const elapsed = now - paidAt
-      const remaining = Math.max(0, 30 - Math.floor(elapsed / 86400000))
-      if (remaining <= 0) { el.textContent = 'Vencido'; el.className = 'paid-countdown text-red-400'; return }
-      el.textContent = `${remaining}d restantes`
-      el.className = 'paid-countdown' + (remaining <= 3 ? ' text-red-400' : remaining <= 7 ? ' text-yellow-400' : ' text-zinc-500')
+      const expires = parseInt(el.dataset.expires || '0')
+      if (!expires) return
+      const diff = expires - now
+      if (diff <= 0) { el.textContent = 'Renovar ahora'; el.className = 'paid-countdown text-red-400'; return }
+      el.textContent = `Renueva en: ${fmt(diff)}`
+      el.className = 'paid-countdown' + (diff < 86400000 ? ' text-red-400' : diff < 172800000 ? ' text-yellow-400' : ' text-zinc-500')
     })
   }
   tick()
@@ -421,7 +416,7 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
       onApprove(data: any, actions: any) {
         return actions.order.capture().then(async (details: any) => {
           if (details.status === 'COMPLETED') {
-            const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal' }).eq('id', paymentId)
+            const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal', ...schedulePayDates() }).eq('id', paymentId)
             if (upErr) { console.error('Error updating payment:', upErr); toast('error', 'Pago realizado pero error al actualizar. Contacta al coach.'); return }
             const { data: ppData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
             if (ppData) { autoEnrollGeneralCourses(ppData.profile_id, 'student'); autoEnrollComplementaria(ppData.profile_id, 'student') }
@@ -498,20 +493,22 @@ async function renderCoachPayments(): Promise<void> {
         : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
 
       let daysLeft = ''
-      const daysTo = (targetTs: number, empty: string) => {
+      const daysTo = (targetTs: number | null, empty: string, overdue = ' <span class="text-red-400">· vencido</span>') => {
+        if (!targetTs) return ''
         const diff = targetTs - Date.now()
-        if (diff <= 0) return ` <span class="text-red-400">· vencido</span>`
+        if (diff <= 0) return overdue
         const d = Math.floor(diff / (24 * 60 * 60 * 1000))
         const h = Math.floor((diff % (24 * 60 * 60 * 1000)) / 3600000)
         return d > 0 ? ` <span>· ${d}d ${h}h</span>` : empty
       }
+      const due = pay ? dueTs(pay) : null
       if (pay?.status === 'paid') {
-        daysLeft = daysTo(nextCutDayTs(), ' <span class="text-red-400">· vence hoy</span>')
+        daysLeft = daysTo(due, ' <span class="text-red-400">· vence hoy</span>')
       } else if (pay?.status === 'scholarship') {
-        // Los becados se renuevan igual el día 2; mostramos hasta el corte (29)
-        daysLeft = daysTo(nextCutDayTs(), ' <span class="text-red-400">· vence hoy</span>')
+        // Los becados se renuevan igual el día 2; mostramos la fecha sin marcarlos vencidos
+        daysLeft = daysTo(due, '', '')
       } else if (pay?.status === 'pending') {
-        daysLeft = daysTo(nextPayDayTs(), ' <span class="text-red-400">· vencido</span>')
+        daysLeft = daysTo(due, ' <span class="text-red-400">· vencido</span>')
       } else if (pay?.status === 'expired') {
         daysLeft = ' <span class="text-red-400">· vencido</span>'
       }
@@ -535,6 +532,10 @@ async function renderCoachPayments(): Promise<void> {
                   ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca${daysLeft}</span>`
                   : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido${daysLeft}</span>`
 
+      const venceCell = pay?.due_at
+        ? `<span class="text-xs text-zinc-300">${formatDate(pay.due_at)}</span>`
+        : '<span class="text-xs text-zinc-600">—</span>'
+
       return `
         <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
           <td class="py-2.5 px-3">
@@ -548,6 +549,7 @@ async function renderCoachPayments(): Promise<void> {
           <td class="py-2.5 px-3 text-xs text-zinc-500 hidden md:table-cell">${escapeHtml(prof.email || '')}</td>
           <td class="py-2.5 px-3">${platformBadge}</td>
           <td class="py-2.5 px-3">${badge}</td>
+          <td class="py-2.5 px-3">${venceCell}</td>
           <td class="py-2.5 px-3 text-right">
             ${!isFree && pay ? `
               <div class="flex items-center justify-end gap-2">
@@ -595,6 +597,7 @@ async function renderCoachPayments(): Promise<void> {
                 <th class="py-2.5 px-3 font-medium hidden md:table-cell">Email</th>
                 <th class="py-2.5 px-3 font-medium">Plataforma</th>
                 <th class="py-2.5 px-3 font-medium">Estado</th>
+                <th class="py-2.5 px-3 font-medium">Vence</th>
                 <th class="py-2.5 px-3 font-medium text-right">Acci\u00f3n</th>
               </tr>
             </thead>
@@ -753,6 +756,7 @@ async function renderCoachPayments(): Promise<void> {
         status: c.newStatus,
         paid_at: c.newStatus === 'paid' ? new Date().toISOString() : null,
       }
+      if (c.newStatus === 'paid' || c.newStatus === 'pending') Object.assign(payUpdate, schedulePayDates())
       if (c.newStatus === 'pending') payUpdate.created_at = new Date().toISOString()
       const { error } = await supabase.from('payments').update(payUpdate).eq('id', c.paymentId)
       if (error) { fail++ } else {
@@ -899,6 +903,7 @@ async function renderCoachPayments(): Promise<void> {
     if (totalUsd >= fee - 0.001) {
       update.status = 'paid'
       update.paid_at = new Date().toISOString()
+      Object.assign(update, schedulePayDates())
     } else {
       update.paid_at = null
     }
@@ -987,7 +992,7 @@ async function renderCoachPayments(): Promise<void> {
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
       if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }
       const payStatus = payAmount === 0 ? 'free' : (profile?.scholarship ? 'scholarship' : 'pending')
-      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount })
+      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount, ...(payStatus !== 'free' ? schedulePayDates() : {}) })
       toast('success', 'Pago creado')
       renderCoachPayments()
       return

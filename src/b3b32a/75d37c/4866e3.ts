@@ -30,7 +30,7 @@ export async function initStudentDashboard(): Promise<void> {
         .eq('profile_id', session.user.id)
         .eq('status', 'active')
         .order('enrolled_at', { ascending: false }),
-      supabase.from('payments').select('status, paid_at, created_at').eq('profile_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('payments').select('status, paid_at, created_at, due_at, expires_at').eq('profile_id', session.user.id).order('created_at', { ascending: false }),
     ])
     const profile = profileResult.data
     const enrollments = enrollmentsResult.data
@@ -65,26 +65,21 @@ export async function initStudentDashboard(): Promise<void> {
     const nextSchedule = schedules[0]
 
     let payStatusHtml = ''
-    // Sistema mensual: renovación día 2, corte día 29
-    const nowDate = new Date()
-    const dayNow = nowDate.getDate()
-    let nextPay = new Date(nowDate.getFullYear(), nowDate.getMonth(), 2)
-    if (dayNow >= 2) nextPay = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 2)
-    let nextCut = new Date(nowDate.getFullYear(), nowDate.getMonth(), 29)
-    if (dayNow >= 29) nextCut = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 29)
+    // Sistema mensual con fechas explícitas: due_at = renovación (día 2), expires_at = corte (día 5)
+    const nowMs = Date.now()
     const paidPay = (myPayments ?? []).find((p: any) => p.status === 'paid')
     const pendingPay = (myPayments ?? []).find((p: any) => p.status === 'pending')
-    if (paidPay?.paid_at) {
-      const remaining = Math.max(0, Math.ceil((nextCut.getTime() - Date.now()) / 86400000))
+    if (paidPay?.due_at) {
+      const remaining = Math.max(0, Math.ceil((new Date(paidPay.due_at).getTime() - nowMs) / 86400000))
       payStatusHtml = remaining > 0
-        ? `<div class="rounded-xl border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-400 mb-6">Suscripción activa — ${remaining} día${remaining !== 1 ? 's' : ''} restantes (renueva el 2)</div>`
+        ? `<div class="rounded-xl border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-400 mb-6">Suscripción activa — ${remaining} día${remaining !== 1 ? 's' : ''} restantes (renueva el ${formatDate(paidPay.due_at, { day: 'numeric', month: 'short' })})</div>`
         : `<div class="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400 mb-6">Suscripción vencida — <a href="#/payments" class="underline hover:text-red-300">renueva aquí</a></div>`
-    } else if (pendingPay?.created_at) {
-      const diff = nextPay.getTime() - Date.now()
+    } else if (pendingPay?.due_at) {
+      const diff = new Date(pendingPay.due_at).getTime() - nowMs
       if (diff > 0) {
         const d = Math.floor(diff / 86400000)
         const h = Math.floor((diff % 86400000) / 3600000)
-        payStatusHtml = `<div class="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-400 mb-6">Pago pendiente — vence el 2 (en ${d}d ${h}h) — <a href="#/payments" class="underline hover:text-yellow-300">pagar ahora</a></div>`
+        payStatusHtml = `<div class="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-400 mb-6">Pago pendiente — vence el ${formatDate(pendingPay.due_at, { day: 'numeric', month: 'short' })} (en ${d}d ${h}h) — <a href="#/payments" class="underline hover:text-yellow-300">pagar ahora</a></div>`
       } else {
         payStatusHtml = `<div class="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400 mb-6">Pago vencido — <a href="#/payments" class="underline hover:text-red-300">regulariza aquí</a></div>`
       }

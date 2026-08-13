@@ -498,33 +498,33 @@ export function initSidebar(): void {
     const tick = async () => {
       const { data: pendingPays } = await supabase
         .from('payments')
-        .select('id')
+        .select('id, due_at')
         .eq('profile_id', session.user.id)
         .eq('status', 'pending')
-        .limit(1)
 
       if (!pendingPays?.length) {
         countdownEl.classList.add('hidden')
         return
       }
 
-      // Renovación mensual: se paga el día 2 de cada mes
-      const now = new Date()
-      let nextPay = new Date(now.getFullYear(), now.getMonth(), 2)
-      if (now.getDate() >= 2) {
-        nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 2)
-      }
-      const expiresAt = nextPay.getTime()
-      const diff = expiresAt - Date.now()
-
-      if (diff <= 0) {
+      const dueTsList = pendingPays
+        .map(p => p.due_at ? new Date(p.due_at).getTime() : null)
+        .filter((t): t is number => t !== null)
+      if (dueTsList.length === 0) {
         countdownEl.classList.add('hidden')
         return
       }
+      const expiresAt = Math.min(...dueTsList)
+      const diff = expiresAt - Date.now()
 
       countdownEl.classList.remove('hidden')
       const timeEl = document.getElementById('sidebar-countdown-time')
       if (!timeEl) return
+
+      if (diff <= 0) {
+        timeEl.textContent = '¡Vence! Paga ya'
+        return
+      }
 
       const days = Math.floor(diff / 86400000)
       const hours = Math.floor((diff % 86400000) / 3600000)

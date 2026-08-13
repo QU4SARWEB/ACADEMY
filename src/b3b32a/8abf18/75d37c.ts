@@ -8,6 +8,7 @@ import { confirmDialog } from '@/4725dc/b9f3a2'
 import { initBulkActions } from '@/2b3583/bulk_actions'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 import { Pagination, exportExcel, currentPageSize } from '@/4725dc/ui_kit'
+import { schedulePayDates } from '@/2b3583/paydates'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -404,6 +405,7 @@ export function mountCoachStudents(): void {
             const payStatus = amount === 0 ? 'free' : profile?.scholarship ? 'scholarship' : 'pending'
             const { error: pe } = await supabase.from('payments').insert({
               profile_id: pid, enrollment_id: enr.id, type: 'student', status: payStatus, amount,
+              ...(payStatus !== 'free' ? schedulePayDates() : {}),
             })
             if (pe) { console.error('Error creating payment:', pe); fail++; continue }
           }

@@ -44,7 +44,7 @@ export async function initCoachExams(): Promise<void> {
 
     const { data: examData } = await supabase
       .from('exams')
-      .select('id, course_id, title, description, week_number, is_final, published, created_at')
+      .select('id, course_id, title, description, week_number, is_final, is_recovery, published, created_at')
       .in('course_id', idFilter)
       .not('title', 'ilike', '%practico%')
       .order('created_at', { ascending: false })
@@ -132,6 +132,7 @@ export async function initCoachExams(): Promise<void> {
               </div>
               <div class="flex items-center gap-1.5 shrink-0 ml-2">
                 ${e.is_final ? `<span class="rounded bg-purple-500/20 px-2 py-0.5 text-[10px] font-medium text-purple-400">${Icon('trophy', 10)} Final</span>` : ''}
+                ${e.is_recovery ? `<span class="rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
                 <span class="rounded px-2 py-0.5 text-[10px] font-medium ${e.published ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">${e.published ? 'Publicado' : 'Borrador'}</span>
               </div>
             </div>
@@ -344,6 +345,12 @@ function renderExamCreateForm(courses: any[], editExam?: any, currentQuestions?:
               <span class="text-sm text-zinc-400">${Icon('trophy', 14)} Examen final</span>
             </label>
           </div>
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="isRecovery" ${editExam?.is_recovery ? 'checked' : ''} class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
+              <span class="text-sm text-zinc-400">${Icon('refreshCw', 14)} Recuperación</span>
+            </label>
+          </div>
           ${isEdit ? `<div class="sm:col-span-2">
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" name="published" ${editExam?.published ? 'checked' : ''} class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6] outline-none">
@@ -506,6 +513,7 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
     const description = fd.get('description') as string
     const weekNumber = parseInt(fd.get('weekNumber') as string, 10)
     const isFinal = fd.get('isFinal') === 'on'
+    const isRecovery = fd.get('isRecovery') === 'on'
     const published = fd.get('published') === 'on'
 
     const errorEl = document.getElementById('exam-form-error')!
@@ -533,7 +541,7 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
     submitBtn.textContent = 'Guardando...'
 
     let examId = editId
-    const payload: any = { course_id: courseId, title, description: description || '', week_number: weekNumber, is_final: isFinal }
+    const payload: any = { course_id: courseId, title, description: description || '', week_number: weekNumber, is_final: isFinal, is_recovery: isRecovery }
     if (editId) payload.published = published
 
     if (editId) {
@@ -562,11 +570,11 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
         const inserts = newQuestions.map((q, i) => ({
           exam_id: examId,
           type: q.type,
-          question_text: q.question_text,
+          question: q.question_text,
           options: q.options,
           correct_answer: q.correct_answer,
           points: q.points,
-          order: i + 1,
+          order_index: i + 1,
         }))
         const { error } = await supabase.from('exam_questions').insert(inserts)
         if (error) { toast('error', error.message); submitBtn.disabled = false; submitBtn.textContent = editId ? 'Guardar cambios' : 'Crear examen'; return }
@@ -577,7 +585,7 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
         for (const q of updatedQuestions) {
           await supabase.from('exam_questions').update({
             type: q.type,
-            question_text: q.question_text,
+            question: q.question_text,
             options: q.options,
             correct_answer: q.correct_answer,
             points: q.points,

@@ -32,7 +32,7 @@ export async function initStudentCourseDetail(): Promise<void> {
     sessionStorage.setItem(`qu4sar-course-context:${id}`, course.name)
 
     let paymentStatus: string | null = null
-    let paidAt: string | null = null
+    let dueAt: string | null = null
     const { data: enrollment } = await supabase
       .from('enrollments')
       .select('id')
@@ -43,11 +43,11 @@ export async function initStudentCourseDetail(): Promise<void> {
     if (enrollment) {
       const { data: payment } = await supabase
         .from('payments')
-        .select('status, amount, paid_at')
+        .select('status, amount, paid_at, due_at')
         .eq('enrollment_id', enrollment.id)
         .order('created_at', { ascending: false })
         .maybeSingle()
-      if (payment) { paymentStatus = payment.status; paidAt = payment.paid_at }
+      if (payment) { paymentStatus = payment.status; dueAt = payment.due_at }
     }
 
     const [{ data: tasks }, { data: exams }, { data: schedules }] = await Promise.all([
@@ -74,14 +74,13 @@ export async function initStudentCourseDetail(): Promise<void> {
     const completedTasks = (tasks ?? []).length - pendingTasks.length
     const progress = tasks && tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
     const { data: examResults } = exams && exams.length > 0
-      ? await supabase.from('exam_results').select('exam_id, status, score').eq('student_id', session.user.id).in('exam_id', exams.map((exam: any) => exam.id))
+      ? await supabase.from('exam_results').select('exam_id, status, total_score').eq('student_id', session.user.id).in('exam_id', exams.map((exam: any) => exam.id))
       : { data: [] as any[] }
     const resultMap = new Map((examResults ?? []).map((result: any) => [result.exam_id, result]))
 
     let paidDaysLeft = ''
-    if (paidAt) {
-      const elapsed = Date.now() - new Date(paidAt).getTime()
-      const remaining = Math.max(0, 30 - Math.floor(elapsed / 86400000))
+    if (dueAt) {
+      const remaining = Math.max(0, Math.ceil((new Date(dueAt).getTime() - Date.now()) / 86400000))
       paidDaysLeft = remaining > 0 ? ` — ${remaining} día${remaining !== 1 ? 's' : ''} restantes` : ' — vencida'
     }
 
@@ -120,7 +119,7 @@ export async function initStudentCourseDetail(): Promise<void> {
       return `<a href="#/students/exams" class="course-detail-row">
         <span class="course-detail-row__icon">${Icon('scrollText', 16)}</span>
         <span><strong>${escapeHtml(exam.title)}</strong><small>Semana ${exam.week_number || '—'}</small></span>
-        <span class="course-detail-row__status ${result?.status === 'graded' ? 'done' : ''}">${result?.status === 'graded' ? `${result.score ?? ''}/20` : 'Disponible'}</span>
+        <span class="course-detail-row__status ${result?.status === 'graded' ? 'done' : ''}">${result?.status === 'graded' ? `${result.total_score ?? ''}/20` : 'Disponible'}</span>
       </a>`
     }).join('')
     const materialByModule = new Map<string, any[]>()

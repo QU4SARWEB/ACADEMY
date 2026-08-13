@@ -4,7 +4,9 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml, escBr } from '@/2b3583/e0ebc3'
 import { autoEnrollComplementaria } from '@/2b3583/course_utils'
+import { schedulePayDates } from '@/2b3583/paydates'
 import { rankBadge } from '@/2b3583/ranks'
+import { meetsRank } from '@/2b3583/grades_utils'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -117,7 +119,7 @@ export async function initStudentCourses(): Promise<void> {
         const { data: prof } = await supabase.from('profiles').select('rank, scholarship, is_active, role').eq('id', session.user.id).maybeSingle()
         if (prof?.is_active === false) { toast('error', 'Cuenta desactivada'); return }
         const { data: course } = await supabase.from('courses').select('min_rank, name, price').eq('id', courseId).maybeSingle()
-        if (course?.min_rank && prof?.role !== 'coach' && prof?.rank !== course.min_rank) { toast('error', `Este curso requiere rango ${course.min_rank}`); return }
+        if (course?.min_rank && prof?.role !== 'coach' && !meetsRank(prof?.rank, course.min_rank)) { toast('error', `Este curso requiere rango ${course.min_rank} o superior`); return }
         const { data: enrollment, error: enrError } = await supabase.from('enrollments').upsert({
           profile_id: session.user.id, course_id: courseId, type: 'student', status: 'active',
         }, { onConflict: 'profile_id,course_id', ignoreDuplicates: true }).select().maybeSingle()
@@ -127,7 +129,8 @@ export async function initStudentCourses(): Promise<void> {
           const alreadyPassed = (prevEnrolls ?? []).some((x: any) => x.final_grade !== null && x.final_grade >= 14 && x.promoted)
           if (!alreadyPassed) {
             const payStatus = course?.price === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')
-            await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: payStatus, amount: course?.price ?? 15 })
+            const payDates = payStatus === 'pending' ? schedulePayDates() : {}
+            await supabase.from('payments').insert({ profile_id: session.user.id, enrollment_id: enrollment.id, type: 'student', status: payStatus, amount: course?.price ?? 15, ...payDates })
             if (payStatus === 'scholarship' && (course?.price ?? 15) > 0) autoEnrollComplementaria(session.user.id, 'student')
           }
         }

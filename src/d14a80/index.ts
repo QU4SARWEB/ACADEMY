@@ -125,6 +125,8 @@ export interface Payment {
   paid_at: string | null
   method: string | null
   receipt_url: string | null
+  due_at: string | null
+  expires_at: string | null
   created_at: string
   updated_at: string
 }

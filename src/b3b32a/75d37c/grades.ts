@@ -2,6 +2,16 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
+import {
+  meetsRank,
+  GRADE_WEIGHTS,
+  COMPONENT_LABELS,
+  buildRawScores,
+  hasPendingRecovery,
+  computeComponents,
+  weightedFinal,
+  gradeStatus,
+} from '@/2b3583/grades_utils'
 
 export function renderStudentGrades(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -15,7 +25,7 @@ export async function initStudentGrades(): Promise<void> {
 
     const [{ data: profile }, { data: enrollments }] = await Promise.all([
       supabase.from('profiles').select('rank').eq('id', uid).maybeSingle(),
-      supabase.from('enrollments').select('*, courses(name, min_rank)').eq('profile_id', uid).eq('status', 'active').order('enrolled_at', { ascending: false }),
+      supabase.from('enrollments').select('*, courses(name, min_rank, min_pass_grade)').eq('profile_id', uid).eq('status', 'active').order('enrolled_at', { ascending: false }),
     ])
 
     if (!enrollments || enrollments.length === 0) {
@@ -38,26 +48,28 @@ export async function initStudentGrades(): Promise<void> {
       .from('schedules')
       .select('id, course_id')
       .in('course_id', idFilter)
-
     const scheduleIds = (allSchedules ?? []).map((s: any) => s.id)
     const schedFilter = scheduleIds.length > 0 ? scheduleIds : ['00000000-0000-0000-0000-000000000000']
 
-    const [{ data: allClassGrades }, { data: allCourseTasks }, { data: allExamResults }, { data: allAttendance }] = await Promise.all([
-      supabase.from('class_grades').select('*').in('schedule_id', schedFilter).eq('student_id', uid),
-      supabase.from('course_tasks').select('id, course_id').in('course_id', idFilter),
-      supabase.from('exam_results').select('*').in('course_id', idFilter).eq('student_id', uid),
-      supabase.from('attendance').select('*').in('schedule_id', schedFilter).eq('student_id', uid),
+    const [{ data: allClassGrades }, { data: allTasks }, { data: allExams }] = await Promise.all([
+      supabase.from('class_grades').select('*').in('schedule_id', schedFilter),
+      supabase.from('course_tasks').select('id, course_id, is_recovery').in('course_id', idFilter),
+      supabase.from('exams').select('id, course_id, is_final, is_recovery').in('course_id', idFilter),
     ])
 
-    const taskIds = (allCourseTasks ?? []).map((t: any) => t.id)
+    const examIdFilter = (allExams ?? []).length > 0 ? (allExams as any[]).map((x: any) => x.id) : ['00000000-0000-0000-0000-000000000000']
+    const taskIds = (allTasks ?? []).map((t: any) => t.id)
     const taskIdFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
-    const { data: allSubmissions } = await supabase
-      .from('task_submissions')
-      .select('*')
-      .in('task_id', taskIdFilter)
-      .eq('student_id', uid)
+    const [{ data: allResults }, { data: allSubmissions }] = await Promise.all([
+      supabase.from('exam_results').select('exam_id, student_id, total_score, status').in('exam_id', examIdFilter),
+      supabase.from('task_submissions').select('*').in('task_id', taskIdFilter),
+    ])
 
-    const submissions = allSubmissions ?? []
+    const { data: allEnrolls } = await supabase
+      .from('enrollments')
+      .select('profile_id, course_id')
+      .in('course_id', idFilter)
+      .eq('status', 'active')
 
     const schedIdsByCourse = new Map<string, string[]>()
     for (const s of allSchedules ?? []) {
@@ -65,106 +77,127 @@ export async function initStudentGrades(): Promise<void> {
       schedIdsByCourse.get(s.course_id)!.push(s.id)
     }
 
-    const taskIdsByCourse = new Map<string, string[]>()
-    for (const t of allCourseTasks ?? []) {
-      if (!taskIdsByCourse.has(t.course_id)) taskIdsByCourse.set(t.course_id, [])
-      taskIdsByCourse.get(t.course_id)!.push(t.id)
+    const statusMeta: Record<string, { label: string; cls: string }> = {
+      approved: { label: 'Aprobado', cls: 'text-green-400 border-green-500/30 bg-green-500/10' },
+      recovery: { label: 'En recuperación', cls: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' },
+      failed: { label: 'Reprobado', cls: 'text-red-400 border-red-500/30 bg-red-500/10' },
+      none: { label: 'Sin notas aún', cls: 'text-zinc-400 border-zinc-700/50 bg-zinc-800/30' },
     }
 
     const coursesHtml = [...uniqueCourses.entries()].map(([courseId, course]) => {
       const minRank = course.min_rank || ''
-      const meetsRank = !minRank || studentRank === minRank
+      const okRank = meetsRank(studentRank, minRank)
+      const minPass = course.min_pass_grade ?? 14
+
+      const courseSchedIds = schedIdsByCourse.get(courseId) || []
+      const courseTasks = (allTasks ?? []).filter((t: any) => t.course_id === courseId)
+      const courseExams = (allExams ?? []).filter((x: any) => x.course_id === courseId)
+      const ref = {
+        scheduleIds: courseSchedIds,
+        tasks: courseTasks.map((t: any) => ({ id: t.id, is_recovery: !!t.is_recovery })),
+        exams: courseExams.map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
+      }
+
+      const raw = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], uid)
+      const comp = computeComponents(raw)
+      const pendingRec = hasPendingRecovery(ref, allResults ?? [], allSubmissions ?? [], uid)
+      const finalGrade = weightedFinal(comp)
+      const status = gradeStatus(finalGrade, minPass, pendingRec)
+      const statusMetaItem = statusMeta[status]
 
       const rankHtml = `
         <div class="flex items-center gap-3 mb-4 flex-wrap">
           <span class="text-sm text-zinc-400">Rango requerido: ${escapeHtml(minRank || 'Ninguno')}</span>
           <span class="text-sm text-zinc-400">·</span>
           <span class="text-sm text-zinc-400">Tu rango: ${escapeHtml(studentRank || 'Sin rango')}</span>
-          ${meetsRank
+          ${okRank
             ? `<span class="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-0.5 text-xs font-medium text-green-400">${Icon('checkCircle', 12)} Cumples el rango</span>`
             : `<span class="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-medium text-red-400">${Icon('xCircle', 12)} No cumples el rango</span>`
           }
         </div>`
 
-      const courseSchedIds = schedIdsByCourse.get(courseId) || []
-      const classGrades = (allClassGrades ?? []).filter((g: any) => courseSchedIds.includes(g.schedule_id))
-      const classScores = classGrades.map((g: any) => parseFloat(g.theory_score || '0') + parseFloat(g.practice_score || '0'))
-      const classAvg = classScores.length > 0 ? classScores.reduce((a: number, b: number) => a + b, 0) / classScores.length : null
-
-      const courseTaskIds = taskIdsByCourse.get(courseId) || []
-      const taskSubmissions = submissions.filter((s: any) => courseTaskIds.includes(s.task_id) && s.score != null)
-      const taskScores = taskSubmissions.map((s: any) => parseFloat(s.score))
-      const taskAvg = taskScores.length > 0 ? taskScores.reduce((a: number, b: number) => a + b, 0) / taskScores.length : null
-
-      const exams = (allExamResults ?? []).filter((e: any) => e.course_id === courseId && !e.is_final)
-      const examScores = exams.map((e: any) => parseFloat(e.score))
-      const examAvg = examScores.length > 0 ? examScores.reduce((a: number, b: number) => a + b, 0) / examScores.length : null
-
-      const finalExam = (allExamResults ?? []).find((e: any) => e.course_id === courseId && e.is_final)
-      const finalScore = finalExam ? parseFloat(finalExam.score) : null
-
-      const attendanceRecords = (allAttendance ?? []).filter((a: any) => courseSchedIds.includes(a.schedule_id))
-      const attendanceValues: number[] = []
-      for (const a of attendanceRecords) {
-        if (a.status === 'present') attendanceValues.push(20)
-        else if (a.status === 'late') attendanceValues.push(10)
-        else if (a.status === 'justified') attendanceValues.push(12)
-        else if (a.status === 'absent') attendanceValues.push(0)
-      }
-      const attendanceAvg = attendanceValues.length > 0 ? attendanceValues.reduce((a: number, b: number) => a + b, 0) / attendanceValues.length : null
-
-      const components = [
-        { icon: 'bookOpen', label: 'Clases', value: classAvg, weightLabel: '25%' },
-        { icon: 'clipboardList', label: 'Tareas', value: taskAvg, weightLabel: '15%' },
-        { icon: 'scrollText', label: 'Exámenes', value: examAvg, weightLabel: '20%' },
-        { icon: 'trophy', label: 'Examen final', value: finalScore, weightLabel: '20%' },
-        { icon: 'checkCircle', label: 'Asistencia', value: attendanceAvg, weightLabel: '10%' },
+      const componentDefs: { key: 'classes' | 'tasks' | 'exams' | 'final'; icon: string }[] = [
+        { key: 'classes', icon: 'bookOpen' },
+        { key: 'tasks', icon: 'clipboardList' },
+        { key: 'exams', icon: 'scrollText' },
+        { key: 'final', icon: 'trophy' },
       ]
 
-      const cardsHtml = components.map(c => {
-        const displayValue = c.value !== null ? `${c.value.toFixed(1)}/20` : '—'
-        const colorClass = c.value !== null
-          ? (c.value >= 14 ? 'text-green-400' : c.value >= 11 ? 'text-yellow-400' : 'text-red-400')
+      const cardsHtml = componentDefs.map(({ key, icon }) => {
+        const value = comp[key]
+        const isRecovery = (key === 'tasks' && raw.recoveryTaskScores.length > 0) || (key === 'exams' && raw.recoveryExamScores.length > 0)
+        const displayValue = value !== null ? `${value.toFixed(1)}/20` : '—'
+        const colorClass = value !== null
+          ? (value >= 14 ? 'text-green-400' : value >= 11 ? 'text-yellow-400' : 'text-red-400')
           : 'text-zinc-500'
         return `
           <div class="glass rounded-xl p-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
-                ${Icon(c.icon, 20)}
+                ${Icon(icon, 20)}
               </div>
               <div>
-                <p class="text-sm text-zinc-400">${c.label}</p>
+                <p class="text-sm text-zinc-400">${COMPONENT_LABELS[key]}${isRecovery ? ' <span class="text-xs text-yellow-400 font-medium">· Rec</span>' : ''}</p>
                 <p class="text-lg font-bold ${colorClass}">${displayValue}</p>
               </div>
             </div>
-            <span class="text-sm text-zinc-500">${c.weightLabel}</span>
+            <span class="text-sm text-zinc-500">${GRADE_WEIGHTS[key]}%</span>
           </div>`
       }).join('')
 
-      const allPresent = components.every(c => c.value !== null)
-      let finalGradeHtml = ''
-      if (!meetsRank) {
-        finalGradeHtml = `<div class="mt-4 rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-center">
+      const considered = (['classes', 'tasks', 'exams', 'final'] as const)
+        .filter(k => comp[k] !== null && comp[k] !== undefined)
+        .map(k => COMPONENT_LABELS[k])
+      const weightsNote = considered.length > 0
+        ? `<p class="text-xs text-zinc-500">Componentes considerados: ${considered.join(' · ')} — el peso se reparte automáticamente entre ellos.</p>`
+        : ''
+
+      let finalHtml = ''
+      if (!okRank) {
+        finalHtml = `<div class="mt-4 rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-center">
           <p class="text-sm text-zinc-400">Nota final</p>
           <p class="text-2xl font-bold text-red-400">NP — Rango insuficiente</p>
         </div>`
-      } else if (!allPresent) {
-        finalGradeHtml = `<div class="mt-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 p-4 text-center">
+      } else if (finalGrade === null) {
+        finalHtml = `<div class="mt-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 p-4 text-center">
           <p class="text-sm text-zinc-400">Nota final</p>
           <p class="text-2xl font-bold text-zinc-500">—</p>
         </div>`
-      } else if (finalScore === null) {
-        finalGradeHtml = `<div class="mt-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4 text-center">
-          <p class="text-sm text-zinc-400">Nota final</p>
-          <p class="text-2xl font-bold text-yellow-400">Pendiente</p>
-        </div>`
       } else {
-        const finalGrade = (classAvg! * 0.25) + (taskAvg! * 0.15) + (examAvg! * 0.20) + (finalScore * 0.20) + (attendanceAvg! * 0.10)
-        const finalColor = finalGrade >= 14 ? 'text-green-400' : finalGrade >= 11 ? 'text-yellow-400' : 'text-red-400'
-        finalGradeHtml = `<div class="mt-4 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-4 text-center">
+        const colorCls = finalGrade >= 14 ? 'text-green-400' : finalGrade >= 11 ? 'text-yellow-400' : 'text-red-400'
+        finalHtml = `<div class="mt-4 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-4 text-center">
           <p class="text-sm text-zinc-400">Nota final</p>
-          <p class="text-3xl font-bold ${finalColor}">${finalGrade.toFixed(1)}/20</p>
+          <p class="text-3xl font-bold ${colorCls}">${finalGrade.toFixed(1)}/20</p>
+          <span class="mt-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMetaItem.cls}">${statusMetaItem.label}</span>
+          <p class="mt-1 text-xs text-zinc-500">Mínimo para aprobar: ${minPass}/20</p>
         </div>`
+      }
+
+      let rankingHtml = ''
+      if (okRank && finalGrade !== null) {
+        const courseStudents = (allEnrolls ?? []).filter((en: any) => en.course_id === courseId).map((en: any) => en.profile_id)
+        const finals: number[] = []
+        for (const sid of courseStudents) {
+          const r = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], sid)
+          const f = weightedFinal(computeComponents(r))
+          if (f !== null) finals.push(f)
+        }
+        const sorted = [...finals].sort((a, b) => b - a)
+        const position = sorted.findIndex((f: number) => f === finalGrade) + 1
+        const total = sorted.length
+        if (total > 0) {
+          const pct = Math.round((position / total) * 100)
+          rankingHtml = `
+            <div class="mt-4 rounded-xl border border-zinc-800 bg-[#111] p-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm text-zinc-400">${Icon('trophy', 14)} Posición en el curso</p>
+                <p class="text-sm font-bold text-white">#${position} de ${total}</p>
+              </div>
+              <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#6366F1]" style="width:${pct}%"></div>
+              </div>
+            </div>`
+        }
       }
 
       return `
@@ -174,7 +207,9 @@ export async function initStudentGrades(): Promise<void> {
           <div class="space-y-3">
             ${cardsHtml}
           </div>
-          ${finalGradeHtml}
+          ${weightsNote}
+          ${finalHtml}
+          ${rankingHtml}
         </div>`
     }).join('')
 
@@ -182,7 +217,7 @@ export async function initStudentGrades(): Promise<void> {
       <div class="mb-6">
         <span class="kicker">Rendimiento académico</span>
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('scrollText', 22)} Mis notas</h1>
-        <p class="mt-1 text-sm text-zinc-500">Resumen de calificaciones por curso</p>
+        <p class="mt-1 text-sm text-zinc-500">Clases 30% · Tareas 20% · Exámenes 25% · Examen final 25% — sin asistencia</p>
       </div>
       ${coursesHtml}`
 
