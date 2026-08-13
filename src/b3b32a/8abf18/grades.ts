@@ -49,6 +49,14 @@ export async function initCoachGrades(): Promise<void> {
     if (!session?.user?.id) return
     const coachId = session.user.id
 
+    const params = new URLSearchParams(location.hash.split('?')[1] || '')
+    const studentParam = params.get('student') || ''
+    const courseParam = params.get('course') || ''
+    if (studentParam) {
+      await renderStudentDetail(studentParam, courseParam)
+      return
+    }
+
     const assignedIds = await getAssignedCourseIds(coachId)
     let coursesQuery = supabase.from('courses').select('id, name, min_pass_grade').eq('is_active', true).order('display_order')
     if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
@@ -228,7 +236,7 @@ function bindPlanillaEvents(): void {
     btn.addEventListener('click', () => {
       const courseId = btn.closest<HTMLElement>('tr')?.dataset.course || ''
       const sid = btn.dataset.student || ''
-      void openStudentDetail(courseId, sid)
+      location.hash = `#/coaches/grades?student=${encodeURIComponent(sid)}&course=${encodeURIComponent(courseId)}`
     })
   })
 }
@@ -294,120 +302,180 @@ function reRenderCourse(courseId: string): void {
   section.querySelectorAll<HTMLElement>('.grade-student-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const courseId2 = btn.closest<HTMLElement>('tr')?.dataset.course || ''
-      void openStudentDetail(courseId2, btn.dataset.student || '')
+      location.hash = `#/coaches/grades?student=${encodeURIComponent(btn.dataset.student || '')}&course=${encodeURIComponent(courseId2)}`
     })
   })
 }
 
-async function openStudentDetail(courseId: string, sid: string): Promise<void> {
-  if (!st) return
-  const course = st.courses.find(c => c.id === courseId)
-  const student = st.studentsByCourse[courseId]?.find(s => s.sid === sid)
-  if (!course || !student) return
+async function renderStudentDetail(sid: string, courseParam: string): Promise<void> {
+  try {
+    const back = `#/coaches/grades${courseParam ? '?course=' + encodeURIComponent(courseParam) : ''}`
 
-  const { data: tasks } = await supabase.from('course_tasks').select('id, title, is_recovery').eq('course_id', courseId)
-  const taskIds = (tasks ?? []).map((t: any) => t.id)
-  const taskIdFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
-  const { data: subs } = await supabase.from('task_submissions').select('task_id, score, graded').eq('student_id', sid).in('task_id', taskIdFilter)
-
-  const { data: exams } = await supabase.from('exams').select('id, title, is_final, is_recovery').eq('course_id', courseId)
-  const examIds = (exams ?? []).map((x: any) => x.id)
-  const examIdFilter = examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000']
-  const { data: results } = await supabase.from('exam_results').select('exam_id, total_score, status').eq('student_id', sid).in('exam_id', examIdFilter)
-
-  const subMap = new Map<string, any>()
-  for (const s of subs ?? []) subMap.set(s.task_id, s)
-  const resultMap = new Map<string, any>()
-  for (const r of results ?? []) resultMap.set(r.exam_id, r)
-
-  const taskRows = (tasks ?? []).map((t: any) => {
-    const sub = subMap.get(t.id)
-    const score = sub && sub.score != null ? parseFloat(sub.score) : null
-    return `<div class="flex items-center justify-between py-2 border-b border-zinc-800/50">
-      <div class="flex items-center gap-2 text-sm text-zinc-300 min-w-0">
-        <span class="truncate">${escapeHtml(t.title || 'Tarea')}</span>
-        ${t.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
-      </div>
-      <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
-    </div>`
-  }).join('')
-
-  const examRows = (exams ?? []).map((x: any) => {
-    const r = resultMap.get(x.id)
-    const score = r && r.status === 'graded' && r.total_score != null ? parseFloat(r.total_score) : null
-    return `<div class="flex items-center justify-between py-2 border-b border-zinc-800/50">
-      <div class="flex items-center gap-2 text-sm text-zinc-300 min-w-0">
-        <span class="truncate">${escapeHtml(x.title || 'Examen')}</span>
-        ${x.is_final ? '<span class="shrink-0 rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] text-purple-400">Final</span>' : ''}
-        ${x.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
-      </div>
-      <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
-    </div>`
-  }).join('')
-
-  const meta = statusMeta[gradeStatus(student.effective, course.minPass, student.pendingRec)]
-  const notaVal = student.effective !== null ? student.effective.toFixed(1) : ''
-
-  document.getElementById('page-content')!.insertAdjacentHTML('beforeend', `
-    <div id="grades-student-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onclick="if(event.target===this)this.remove()">
-      <div class="glass max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto rounded-xl p-6">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h2 class="font-heading text-lg font-bold text-white">${escapeHtml(student.name)}</h2>
-            <p class="text-xs text-zinc-500 mt-0.5">${escapeHtml(course.name)}</p>
-          </div>
-          <button type="button" class="close-grades-modal text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
-        </div>
-
-        <div class="mb-4 grid grid-cols-3 gap-3 text-center">
-          <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
-            <p class="text-[10px] text-zinc-500 uppercase">Nota tareas</p>
-            <p class="text-lg font-bold ${student.tasksAvg === null ? 'text-zinc-600' : student.tasksAvg >= 14 ? 'text-green-400' : student.tasksAvg >= 11 ? 'text-yellow-400' : 'text-red-400'}">${student.tasksAvg !== null ? student.tasksAvg.toFixed(1) : '—'}</p>
-          </div>
-          <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
-            <p class="text-[10px] text-zinc-500 uppercase">Nota alumno</p>
-            <p class="text-lg font-bold text-white">${student.effective !== null ? student.effective.toFixed(1) : '—'}</p>
-          </div>
-          <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
-            <p class="text-[10px] text-zinc-500 uppercase">Estado</p>
-            <p class="mt-1"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.cls}">${meta.label}</span></p>
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <h4 class="mb-2 text-xs font-medium text-zinc-400">${Icon('clipboardList', 12)} Nota del alumno (0-20)</h4>
-          <div class="flex items-center gap-2">
-            <input type="number" step="0.1" min="0" max="20" id="grades-student-nota" value="${notaVal}" class="w-32 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
-            <button type="button" id="grades-save-nota" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 13)} Guardar</button>
-          </div>
-        </div>
-
-        <h4 class="mb-2 text-xs font-medium text-zinc-400">${Icon('clipboardList', 12)} Tareas</h4>
-        <div class="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3">${taskRows || '<p class="py-3 text-xs text-zinc-600 text-center">Sin tareas registradas.</p>'}</div>
-
-        <h4 class="mb-2 text-xs font-medium text-zinc-400">${Icon('target', 12)} Exámenes</h4>
-        <div class="rounded-lg border border-zinc-800 bg-zinc-900/30 px-3">${examRows || '<p class="py-3 text-xs text-zinc-600 text-center">Sin exámenes registrados.</p>'}</div>
-      </div>
-    </div>`)
-
-  document.querySelector('.close-grades-modal')?.addEventListener('click', () => {
-    document.getElementById('grades-student-modal')?.remove()
-  })
-  document.getElementById('grades-save-nota')?.addEventListener('click', async () => {
-    const input = document.getElementById('grades-student-nota') as HTMLInputElement
-    const raw = input.value.trim()
-    let value: number | null = null
-    if (raw !== '') {
-      const v = parseFloat(raw)
-      if (isNaN(v)) { toast('error', 'Nota inválida'); return }
-      value = Math.min(Math.max(v, 0), 20)
+    let course: any = null
+    let enrollment: any = null
+    if (courseParam) {
+      const [{ data: c }, { data: en }] = await Promise.all([
+        supabase.from('courses').select('id, name, min_pass_grade').eq('id', courseParam).maybeSingle(),
+        supabase.from('enrollments').select('id, final_grade').eq('profile_id', sid).eq('course_id', courseParam).eq('status', 'active').maybeSingle(),
+      ])
+      course = c
+      enrollment = en
+    } else {
+      const { data: en } = await supabase.from('enrollments')
+        .select('id, course_id, final_grade, courses(id, name, min_pass_grade)')
+        .eq('profile_id', sid).eq('status', 'active').order('created_at', { ascending: false }).maybeSingle()
+      enrollment = en
+      course = en?.courses || null
     }
-    const { error } = await supabase.from('enrollments').update({ final_grade: value }).eq('id', student.enrollId)
-    if (error) { toast('error', error.message); return }
-    student.manual = value
-    student.effective = value
-    document.getElementById('grades-student-modal')?.remove()
-    reRenderCourse(courseId)
-    toast('success', 'Nota guardada')
-  })
+    if (!course || !enrollment) {
+      document.getElementById('page-content')!.innerHTML = `<p class="text-sm text-zinc-500">Alumno o curso no encontrado. <a class="text-[#A78BFA] underline" href="${back}">Volver a notas</a></p>`
+      return
+    }
+    const courseId = course.id
+    const minPass = course.min_pass_grade ?? 14
+    const enrollId = enrollment.id
+
+    const [{ data: profile }, { data: tasks }, { data: subs }, { data: exams }, { data: results }, { data: allEnrolls }] = await Promise.all([
+      supabase.from('profiles').select('full_name, platform, rank').eq('id', sid).maybeSingle(),
+      supabase.from('course_tasks').select('id, title, is_recovery').eq('course_id', courseId),
+      supabase.from('task_submissions').select('task_id, score, graded').eq('student_id', sid),
+      supabase.from('exams').select('id, title, is_final, is_recovery').eq('course_id', courseId),
+      supabase.from('exam_results').select('exam_id, total_score, status').eq('student_id', sid),
+      supabase.from('enrollments').select('profile_id, final_grade').eq('course_id', courseId).eq('status', 'active'),
+    ])
+
+    const taskIds = (tasks ?? []).map((t: any) => t.id)
+    const taskIdFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
+    const examIds = (exams ?? []).map((x: any) => x.id)
+    const examIdFilter = examIds.length > 0 ? examIds : ['00000000-0000-0000-0000-000000000000']
+    const subsF = (subs ?? []).filter((s: any) => taskIdFilter.includes(s.task_id))
+    const resultsF = (results ?? []).filter((r: any) => examIdFilter.includes(r.exam_id))
+    const ref = {
+      scheduleIds: [] as string[],
+      tasks: (tasks ?? []).map((t: any) => ({ id: t.id, is_recovery: !!t.is_recovery })),
+      exams: (exams ?? []).map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
+    }
+    const raw = buildRawScores(ref, [], subsF, resultsF, sid)
+    const comp = computeComponents(raw)
+    const computed = weightedFinal(comp)
+    const manual = enrollment.final_grade != null ? parseFloat(enrollment.final_grade) : null
+    const effective = manual !== null && !isNaN(manual) ? manual : computed
+    const pendingRec = hasPendingRecovery(ref, resultsF, subsF, sid)
+    const meta = statusMeta[gradeStatus(effective, minPass, pendingRec)]
+    const notaVal = effective !== null ? effective.toFixed(1) : ''
+
+    let ranking = '—'
+    if (effective !== null) {
+      const grades: number[] = []
+      for (const en of allEnrolls ?? []) {
+        const man = en.final_grade != null ? parseFloat(en.final_grade) : null
+        if (man !== null && !isNaN(man)) { grades.push(man); continue }
+        const r2 = buildRawScores(ref, [], subsF, resultsF, en.profile_id)
+        const f = weightedFinal(computeComponents(r2))
+        if (f !== null) grades.push(f)
+      }
+      const sorted = [...grades].sort((a, b) => b - a)
+      const pos = sorted.findIndex(g => g === effective) + 1
+      if (pos > 0) ranking = `#${pos} de ${sorted.length}`
+    }
+
+    const name = profile?.full_name || 'Desconocido'
+    const platform = profile?.platform || 'pc'
+    const platformName = platform === 'playstation' ? 'PlayStation' : platform === 'xbox' ? 'Xbox' : 'PC'
+    const subMap = new Map<string, any>()
+    for (const s of subsF) subMap.set(s.task_id, s)
+    const resultMap = new Map<string, any>()
+    for (const r of resultsF) resultMap.set(r.exam_id, r)
+
+    const taskRows = (tasks ?? []).map((t: any) => {
+      const sub = subMap.get(t.id)
+      const score = sub && sub.score != null ? parseFloat(sub.score) : null
+      return `<div class="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0">
+        <div class="flex items-center gap-2 text-sm text-zinc-300 min-w-0">
+          <span class="truncate">${escapeHtml(t.title || 'Tarea')}</span>
+          ${t.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
+        </div>
+        <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
+      </div>`
+    }).join('')
+
+    const examRows = (exams ?? []).map((x: any) => {
+      const r = resultMap.get(x.id)
+      const score = r && r.status === 'graded' && r.total_score != null ? parseFloat(r.total_score) : null
+      return `<div class="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0">
+        <div class="flex items-center gap-2 text-sm text-zinc-300 min-w-0">
+          <span class="truncate">${escapeHtml(x.title || 'Examen')}</span>
+          ${x.is_final ? '<span class="shrink-0 rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] text-purple-400">Final</span>' : ''}
+          ${x.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
+        </div>
+        <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
+      </div>`
+    }).join('')
+
+    document.getElementById('page-content')!.innerHTML = `
+      <div class="mb-4">
+        <a href="${back}" class="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors">${Icon('arrowLeft', 15)} Volver a notas</a>
+      </div>
+
+      <div class="mb-6">
+        <span class="kicker">Notas del alumno</span>
+        <h1 class="font-heading text-2xl font-bold text-white mt-1">${escapeHtml(name)}</h1>
+        <p class="text-sm text-zinc-400 mt-1">${escapeHtml(course.name)} · ${platformName}</p>
+      </div>
+
+      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Nota tareas</p>
+          <p class="text-lg font-bold ${comp.tasks === null ? 'text-zinc-600' : comp.tasks >= 14 ? 'text-green-400' : comp.tasks >= 11 ? 'text-yellow-400' : 'text-red-400'}">${comp.tasks !== null ? comp.tasks.toFixed(1) : '—'}</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Nota alumno</p>
+          <p class="text-lg font-bold text-white">${effective !== null ? effective.toFixed(1) : '—'}</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Estado</p>
+          <p class="mt-1.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.cls}">${meta.label}</span></p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Ranking</p>
+          <p class="text-lg font-bold text-white">${ranking}</p>
+        </div>
+      </div>
+
+      <div class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
+        <h4 class="mb-3 text-xs font-medium text-zinc-400">${Icon('clipboardList', 12)} Nota del alumno (0-20)</h4>
+        <div class="flex items-center gap-2">
+          <input type="number" step="0.1" min="0" max="20" id="grades-student-nota" value="${notaVal}" class="w-32 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" />
+          <button type="button" id="grades-save-nota" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 13)} Guardar</button>
+          ${manual !== null ? '<span class="text-xs text-zinc-500">Nota asignada por ti</span>' : '<span class="text-xs text-zinc-500">Sin asignar — se usa el promedio automático</span>'}
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="mb-3 flex items-center gap-2 font-heading text-base font-semibold text-white">${Icon('clipboardList', 15)} Tareas</h3>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4">${taskRows || '<p class="py-4 text-xs text-zinc-600 text-center">Sin tareas registradas.</p>'}</div>
+      </div>
+
+      <div>
+        <h3 class="mb-3 flex items-center gap-2 font-heading text-base font-semibold text-white">${Icon('target', 15)} Exámenes</h3>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/30 px-4">${examRows || '<p class="py-4 text-xs text-zinc-600 text-center">Sin exámenes registrados.</p>'}</div>
+      </div>`
+
+    document.getElementById('grades-save-nota')?.addEventListener('click', async () => {
+      const input = document.getElementById('grades-student-nota') as HTMLInputElement
+      const raw = input.value.trim()
+      let value: number | null = null
+      if (raw !== '') {
+        const v = parseFloat(raw)
+        if (isNaN(v)) { toast('error', 'Nota inválida'); return }
+        value = Math.min(Math.max(v, 0), 20)
+      }
+      const { error } = await supabase.from('enrollments').update({ final_grade: value }).eq('id', enrollId)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Nota guardada')
+      await renderStudentDetail(sid, courseId)
+    })
+  } catch (e: any) {
+    toast('error', e?.message || 'Error cargando el alumno')
+  }
 }
