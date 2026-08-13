@@ -217,7 +217,7 @@ export async function initStudentGrades(): Promise<void> {
       <div class="mb-6">
         <span class="kicker">Rendimiento académico</span>
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('scrollText', 22)} Mis notas</h1>
-        <p class="mt-1 text-sm text-zinc-500">Clases 30% · Tareas 20% · Exámenes 25% · Examen final 25% — sin asistencia</p>
+        <p class="mt-1 text-sm text-zinc-500">Clases 30% · Tareas 20% · Exámenes 25% · Examen final 25%</p>
       </div>
       ${coursesHtml}`
 

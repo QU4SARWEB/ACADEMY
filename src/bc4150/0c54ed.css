@@ -2210,24 +2210,6 @@ textarea {
     min-width: 0;
     width: 100%;
   }
-
-  #attendance-modal-body .overflow-x-auto > table {
-    width: 100%;
-    min-width: 0;
-  }
-
-  #attendance-modal-body .overflow-x-auto > table td:last-child {
-    min-width: 15rem;
-  }
-
-  #attendance-modal-body label {
-    min-height: 2.5rem;
-    padding: 0.55rem 0.65rem;
-  }
-
-  #attendance-modal-body #save-attendance-btn {
-    width: 100%;
-  }
 }
 
 @media (max-width: 420px) {
@@ -2242,10 +2224,6 @@ textarea {
   #main-content .overflow-x-auto > table,
   #main-content .course-table table {
     min-width: 29rem;
-  }
-
-  #attendance-modal-body .overflow-x-auto > table {
-    min-width: 0;
   }
 }
 

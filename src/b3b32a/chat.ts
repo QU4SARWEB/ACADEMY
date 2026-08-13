@@ -66,7 +66,7 @@ export async function initChat(): Promise<void> {
 
   const recipientRole = (await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()).data?.role
   const recipientQuery = recipientRole === 'coach'
-    ? supabase.from('profiles').select('id, display_name, full_name, role').in('role', ['student', 'player']).order('full_name')
+    ? supabase.from('profiles').select('id, display_name, full_name, role').in('role', ['student', 'player', 'coach']).neq('id', userId).order('full_name')
     : supabase.from('profiles').select('id, display_name, full_name, role').eq('role', 'coach').order('full_name')
   const recipients = (await recipientQuery).data ?? []
   const courseOptions = recipientRole === 'coach'

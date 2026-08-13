@@ -298,7 +298,6 @@ dash('/coaches/tasks', dashLazy(() => import('@/b3b32a/8abf18/tasks'), 'renderCo
 dash('/coaches/enroll', dashLazy(() => import('@/b3b32a/8abf18/enroll'), 'renderCoachEnroll', 'initCoachEnroll'))
 dash('/coaches/exams', dashLazy(() => import('@/b3b32a/8abf18/exams'), 'renderCoachExams', 'initCoachExams'))
 dash('/coaches/exams/:id', dashLazy(() => import('@/b3b32a/8abf18/exams'), 'renderCoachExams', 'initCoachExams'))
-dash('/coaches/attendance', dashLazy(() => import('@/b3b32a/8abf18/attendance'), 'renderCoachAttendance', 'initCoachAttendance'))
 dash('/coaches/practical', dashLazy(() => import('@/b3b32a/8abf18/practical'), 'renderCoachPractical', 'initCoachPractical'))
 
 
