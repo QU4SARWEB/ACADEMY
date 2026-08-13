@@ -603,9 +603,9 @@ function openSubmissionViewer(studentName: string, files: string[], startIndex: 
     viewer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onclick="if(event.target===this)document.getElementById('submission-viewer')?.remove()">
         <div class="glass flex max-h-[95vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl">
-          <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+          <div class="flex items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
             <p class="truncate text-sm font-medium text-white">${escapeHtml(studentName)} · ${escapeHtml(item.label)}</p>
-            <button id="close-viewer" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
+            <button id="close-viewer" type="button" class="shrink-0 rounded-lg bg-zinc-800 p-1.5 text-zinc-300 transition hover:bg-red-500/20 hover:text-red-400" title="Cerrar">${Icon('x', 18)}</button>
           </div>
           <div class="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             <div class="relative flex min-h-[58vh] items-center justify-center">
