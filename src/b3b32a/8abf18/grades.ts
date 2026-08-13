@@ -5,7 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
-import { renderTaskCreateForm, bindTaskFormEvents } from './tasks'
+import { openTaskEditModal } from './tasks'
 import {
   GRADE_WEIGHTS,
   COMPONENT_LABELS,
@@ -506,29 +506,7 @@ async function bindGradeTaskActions(sid: string, courseId: string): Promise<void
     btn.addEventListener('click', async () => {
       const taskId = btn.dataset.taskId
       if (!taskId) return
-      const [{ data: task }, { data: { session } }] = await Promise.all([
-        supabase.from('course_tasks').select('*').eq('id', taskId).maybeSingle(),
-        supabase.auth.getSession(),
-      ])
-      if (!task) return
-      const coachId = session?.user?.id || ''
-      const assignedIds = await getAssignedCourseIds(coachId)
-      let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
-      if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
-      const { data: courses } = await coursesQuery
-
-      const modal = document.createElement('div')
-      modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4'
-      const inner = document.createElement('div')
-      inner.className = 'glass max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl p-4'
-      inner.innerHTML = renderTaskCreateForm(courses ?? [], task)
-      modal.appendChild(inner)
-      document.body.appendChild(modal)
-      bindTaskFormEvents(inner, coachId, taskId, () => {
-        modal.remove()
-        void renderStudentDetail(sid, courseId)
-      })
-      inner.querySelector('#btn-cancel-task')?.addEventListener('click', () => modal.remove())
+      await openTaskEditModal(taskId, () => { void renderStudentDetail(sid, courseId) })
     })
   })
 }

@@ -365,6 +365,32 @@ function setupDeleteTaskButtons(): void {
   })
 }
 
+export async function openTaskEditModal(taskId: string, onSaved: () => void): Promise<void> {
+  const [{ data: task }, { data: { session } }] = await Promise.all([
+    supabase.from('course_tasks').select('*').eq('id', taskId).maybeSingle(),
+    supabase.auth.getSession(),
+  ])
+  if (!task) return
+  const coachId = session?.user?.id || ''
+  const assignedIds = await getAssignedCourseIds(coachId)
+  let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
+  if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+  const { data: courses } = await coursesQuery
+
+  const modal = document.createElement('div')
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4'
+  const inner = document.createElement('div')
+  inner.className = 'glass max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl p-4'
+  inner.innerHTML = renderTaskCreateForm(courses ?? [], task)
+  modal.appendChild(inner)
+  document.body.appendChild(modal)
+  bindTaskFormEvents(inner, coachId, taskId, () => {
+    modal.remove()
+    onSaved()
+  })
+  inner.querySelector('#btn-cancel-task')?.addEventListener('click', () => modal.remove())
+}
+
 const viewerData: Record<string, { files: string[]; name: string }> = {}
 
 const todayISO = () => {
@@ -476,11 +502,19 @@ async function renderTaskReview(taskId: string, courseParam: string): Promise<vo
       </div>
 
       <div class="mb-6">
-        <span class="kicker">Revisión de entregas</span>
-        <h1 class="font-heading text-2xl font-bold text-white mt-1">${escapeHtml(task.title || 'Tarea')}</h1>
-        <p class="text-sm text-zinc-400 mt-1">${escapeHtml(courseName)} · Semana ${escapeHtml(String(task.week_number ?? ''))} · Vence: ${fmtDate(task.due_date)}</p>
-        ${task.is_recovery ? `<span class="mt-2 inline-flex items-center gap-1 rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
-        ${isOverdue(task.due_date) ? `<span class="mt-2 ml-1 inline-flex items-center gap-1 rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">${Icon('clock', 10)} Vencida</span>` : ''}
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <span class="kicker">Revisión de entregas</span>
+            <h1 class="font-heading text-2xl font-bold text-white mt-1">${escapeHtml(task.title || 'Tarea')}</h1>
+            <p class="text-sm text-zinc-400 mt-1">${escapeHtml(courseName)} · Semana ${escapeHtml(String(task.week_number ?? ''))} · Vence: ${fmtDate(task.due_date)}</p>
+            ${task.is_recovery ? `<span class="mt-2 inline-flex items-center gap-1 rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
+            ${isOverdue(task.due_date) ? `<span class="mt-2 ml-1 inline-flex items-center gap-1 rounded bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">${Icon('clock', 10)} Vencida</span>` : ''}
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" class="review-edit-task-btn flex items-center gap-1.5 rounded-lg bg-zinc-800/60 px-2.5 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-700 hover:text-white transition" data-task-id="${escapeHtml(task.id)}" title="Editar tarea">${Icon('edit', 12)} Editar</button>
+            <button type="button" class="review-del-task-btn flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(task.id)}" title="Eliminar tarea">${Icon('trash', 12)}</button>
+          </div>
+        </div>
       </div>
 
       <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -570,6 +604,27 @@ function bindTaskReviewEvents(taskId: string, courseId: string): void {
       const msg = prompt(`Mensaje para el alumno sobre "${taskTitle}":`)
       if (!msg || !msg.trim()) return
       toast('success', 'Mensaje registrado. El alumno lo verá en su próxima visita.')
+    })
+  })
+
+  const back = `#/coaches/tasks?course=${encodeURIComponent(courseId)}`
+  document.querySelectorAll<HTMLElement>('.review-del-task-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tid = btn.dataset.taskId
+      if (!tid || !(await confirmDialog('¿Eliminar esta tarea? También se eliminarán todas las entregas.'))) return
+      const { error } = await supabase.from('course_tasks').delete().eq('id', tid)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Tarea eliminada')
+      location.hash = back
+    })
+  })
+
+  document.querySelectorAll<HTMLElement>('.review-edit-task-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tid = btn.dataset.taskId
+      if (!tid) return
+      const { data: cur } = await supabase.from('course_tasks').select('course_id').eq('id', tid).maybeSingle()
+      await openTaskEditModal(tid, () => { void renderTaskReview(tid, cur?.course_id || courseId) })
     })
   })
 }
