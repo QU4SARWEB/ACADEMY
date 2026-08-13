@@ -17,6 +17,15 @@ export async function initCoachTasks(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
     const coachId = session.user.id
+
+    const taskParams = new URLSearchParams(location.hash.split('?')[1] || '')
+    const reviewParam = taskParams.get('review') || ''
+    const courseParam2 = taskParams.get('course') || ''
+    if (reviewParam) {
+      await renderTaskReview(reviewParam, courseParam2)
+      return
+    }
+
     const assignedIds = await getAssignedCourseIds(coachId)
 
     let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
@@ -303,12 +312,13 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
 
 function setupTaskCardClicks(): void {
   document.querySelectorAll('.task-card').forEach(card => {
-    card.addEventListener('click', async (e) => {
+    card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement
-      if (target.closest('.delete-task-btn')) return
+      if (target.closest('.delete-task-btn') || target.closest('.edit-task-btn') || target.closest('a')) return
       const taskId = (card as HTMLElement).dataset.taskId
+      const courseId = (card as HTMLElement).dataset.courseId
       if (!taskId) return
-      openTaskSubmissionsModal(taskId)
+      location.hash = `#/coaches/tasks?review=${encodeURIComponent(taskId)}&course=${encodeURIComponent(courseId || '')}`
     })
   })
 }
@@ -349,129 +359,178 @@ function setupDeleteTaskButtons(): void {
   })
 }
 
-async function openTaskSubmissionsModal(taskId: string): Promise<void> {
-  const existing = document.getElementById('task-submissions-modal')
-  if (existing) existing.remove()
+const viewerData: Record<string, { files: string[]; name: string }> = {}
 
-  const div = document.createElement('div')
-  div.id = 'task-submissions-modal'
-  div.innerHTML = renderSubmissionsModal()
-  document.body.appendChild(div)
+async function renderTaskReview(taskId: string, courseParam: string): Promise<void> {
+  try {
+    const back = `#/coaches/tasks${courseParam ? '?course=' + encodeURIComponent(courseParam) : ''}`
 
-  const { data: task } = await supabase
-    .from('course_tasks')
-    .select('id, title, course_id, week_number, due_date')
-    .eq('id', taskId)
-    .maybeSingle()
+    const [{ data: task }, { data: course }] = await Promise.all([
+      supabase.from('course_tasks').select('id, title, description, week_number, due_date, course_id, is_recovery').eq('id', taskId).maybeSingle(),
+      courseParam
+        ? supabase.from('courses').select('id, name').eq('id', courseParam).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ])
+    if (!task) {
+      document.getElementById('page-content')!.innerHTML = `<p class="text-sm text-zinc-500">Tarea no encontrada. <a class="text-[#A78BFA] underline" href="${back}">Volver a tareas</a></p>`
+      return
+    }
+    const courseId = task.course_id
+    const courseName = course?.name || 'Desconocido'
 
-  if (!task) {
-    document.getElementById('submissions-modal-body')!.innerHTML = '<p class="text-sm text-red-400">Tarea no encontrada</p>'
-    return
-  }
+    const [{ data: enrolls }, { data: subs }] = await Promise.all([
+      supabase.from('enrollments')
+        .select('profile_id, profiles!inner(full_name, platform)')
+        .eq('course_id', courseId)
+        .eq('status', 'active'),
+      supabase.from('task_submissions')
+        .select('id, student_id, message, files, links, score, graded, graded_at, created_at')
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: false }),
+    ])
 
-  document.getElementById('submissions-modal-title')!.textContent = task.title || 'Tarea'
+    const subByStudent = new Map<string, any>()
+    for (const s of subs ?? []) subByStudent.set(s.student_id, s)
 
-  const { data: subs } = await supabase
-    .from('task_submissions')
-    .select('id, student_id, message, files, links, score, graded, graded_at, created_at')
-    .eq('task_id', taskId)
-    .order('created_at', { ascending: false })
+    const students = (enrolls ?? []).map((e: any) => {
+      const prof: any = Array.isArray(e.profiles) ? e.profiles[0] : e.profiles
+      return { sid: e.profile_id, name: prof?.full_name || 'Desconocido', platform: prof?.platform || 'pc' }
+    })
 
-  // Fetch student names separately
-  const studentIds = [...new Set((subs ?? []).map((s: any) => s.student_id))]
-  const { data: studentProfiles } = studentIds.length > 0
-    ? await supabase.from('profiles').select('id, full_name, platform').in('id', studentIds)
-    : { data: [] }
-  const nameMap = new Map((studentProfiles ?? []).map((p: any) => [p.id, p.full_name]))
-  const platformMap = new Map((studentProfiles ?? []).map((p: any) => [p.id, p.platform]))
+    const submitted = students.filter(st => subByStudent.has(st.sid))
+    const missing = students.filter(st => !subByStudent.has(st.sid))
+    const isMobile = (p: string) => p === 'mobile'
+    const platformBadge = (p: string) => isMobile(p)
+      ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
+      : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
 
-  const rows = !subs || subs.length === 0
-    ? '<tr><td colspan="7" class="py-8 text-center text-sm text-zinc-500">No hay entregas para esta tarea.</td></tr>'
-    : subs.map((s: any) => {
-        const files: string[] = (s.files as string[]) || []
-        const links: string[] = (s.links as string[]) || []
-        const graded = s.graded
-        const studentName = nameMap.get(s.student_id) || 'Desconocido'
-        const isMobile = platformMap.get(s.student_id) === 'mobile'
-        const platformBadge = isMobile
-          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)} Mobile</span>`
-          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)} PC</span>`
+    const rowFor = (s: any): string => {
+      const sub = subByStudent.get(s.sid)
+      if (!sub) {
         return `
-        <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30" data-submission-id="${escapeHtml(s.id)}">
-          <td class="py-3 px-3 text-sm text-white">${escapeHtml(studentName)}</td>
-          <td class="py-3 px-3">${platformBadge}</td>
-          <td class="py-3 px-3 text-xs text-zinc-400 max-w-[200px]">${s.message ? escapeHtml(s.message).slice(0, 100) : '<span class="text-zinc-600">—</span>'}</td>
-          <td class="py-3 px-3">
-            ${files.length > 0 ? files.map(f => `<a href="${escapeHtml(f)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-[#8B5CF6] hover:text-[#A78BFA] mr-1">${Icon('download', 10)} Archivo</a>`).join('') : '<span class="text-xs text-zinc-600">—</span>'}
-          </td>
-          <td class="py-3 px-3">
-            ${links.length > 0 ? links.map(l => `<a href="${escapeHtml(l)}" target="_blank" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-blue-400 hover:text-blue-300 mr-1">${Icon('externalLink', 10)} Link</a>`).join('') : '<span class="text-xs text-zinc-600">—</span>'}
-          </td>
-          <td class="py-3 px-3">
-            <div class="flex items-center gap-2">
-              <input type="number" class="submission-score w-20 rounded border ${graded ? 'border-green-500/40' : 'border-zinc-700'} bg-[#0A0A0A] px-2 py-1.5 text-xs text-white text-center outline-none focus:border-[#8B5CF6]" step="0.1" min="0" max="20" value="${s.score ?? ''}" data-student="${escapeHtml(s.student_id)}" ${graded ? 'disabled' : ''} />
-              <span class="text-[10px] text-zinc-600">/ 20</span>
-            </div>
-          </td>
-          <td class="py-3 px-3">
-            <div class="flex items-center gap-1">
-              ${!graded
-                ? `<button class="grade-submission-btn flex items-center gap-1 rounded bg-green-600/20 px-2.5 py-1.5 text-[10px] font-medium text-green-400 hover:bg-green-600/30 transition" data-submission-id="${escapeHtml(s.id)}" data-task-id="${escapeHtml(taskId)}">${Icon('checkCircle', 11)} Calificar</button>`
-                : `<span class="text-[10px] text-green-400">${s.score}/20</span>`
-              }
-              <button class="msg-student-btn flex items-center gap-1 rounded bg-zinc-800 px-2 py-1.5 text-[10px] text-zinc-400 hover:text-white transition" data-student-id="${escapeHtml(s.student_id)}" data-task-title="${escapeHtml(task?.title || 'Tarea')}">${Icon('mail', 10)} Mensaje</button>
-            </div>
-          </td>
+        <tr class="border-b border-zinc-800/50 bg-red-500/[0.03]">
+          <td class="py-3 px-3 text-sm text-white">${escapeHtml(s.name)}</td>
+          <td class="py-3 px-3">${platformBadge(s.platform)}</td>
+          <td class="py-3 px-3 text-xs text-zinc-600">—</td>
+          <td class="py-3 px-3 text-xs text-zinc-600">—</td>
+          <td class="py-3 px-3"><span class="inline-flex items-center gap-1 rounded bg-red-500/10 px-2 py-0.5 text-[10px] text-red-400">${Icon('alertTriangle', 10)} No entregó</span></td>
+          <td class="py-3 px-3 text-xs text-zinc-600">—</td>
+          <td class="py-3 px-3 text-xs text-zinc-600">—</td>
         </tr>`
-      }).join('')
+      }
+      const files: string[] = (sub.files as string[]) || []
+      const links: string[] = (sub.links as string[]) || []
+      const graded = sub.graded
+      viewerData[sub.id] = { files, name: s.name }
+      const fileBtns = files.length > 0
+        ? files.map((f, i) => `<button type="button" class="view-file-btn inline-flex items-center gap-1 rounded bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] font-medium text-[#C4B5FD] hover:bg-[#8B5CF6]/30 transition mr-1" data-sub-id="${escapeHtml(sub.id)}" data-index="${i}" title="Ver archivo">${Icon('eye', 10)} Ver ${files.length > 1 ? i + 1 : ''}</button>`).join('')
+        : '<span class="text-xs text-zinc-600">—</span>'
+      const linkBtns = links.length > 0
+        ? links.map(l => `<a href="${escapeHtml(l)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] text-blue-400 hover:text-blue-300 mr-1">${Icon('externalLink', 10)} Link</a>`).join('')
+        : '<span class="text-xs text-zinc-600">—</span>'
+      return `
+      <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30" data-submission-id="${escapeHtml(sub.id)}">
+        <td class="py-3 px-3 text-sm text-white">${escapeHtml(s.name)}</td>
+        <td class="py-3 px-3">${platformBadge(s.platform)}</td>
+        <td class="py-3 px-3 text-xs text-zinc-400 max-w-[200px]">${sub.message ? escapeHtml(sub.message).slice(0, 120) : '<span class="text-zinc-600">—</span>'}</td>
+        <td class="py-3 px-3">${fileBtns}</td>
+        <td class="py-3 px-3">${linkBtns}</td>
+        <td class="py-3 px-3">
+          <div class="flex items-center gap-2">
+            <input type="number" class="submission-score w-20 rounded border ${graded ? 'border-green-500/40' : 'border-zinc-700'} bg-[#0A0A0A] px-2 py-1.5 text-xs text-white text-center outline-none focus:border-[#8B5CF6]" step="0.1" min="0" max="20" value="${sub.score ?? ''}" ${graded ? 'disabled' : ''} />
+            <span class="text-[10px] text-zinc-600">/ 20</span>
+          </div>
+        </td>
+        <td class="py-3 px-3">
+          <div class="flex items-center gap-1">
+            ${!graded
+              ? `<button class="grade-submission-btn flex items-center gap-1 rounded bg-green-600/20 px-2.5 py-1.5 text-[10px] font-medium text-green-400 hover:bg-green-600/30 transition" data-submission-id="${escapeHtml(sub.id)}">${Icon('checkCircle', 11)} Calificar</button>`
+              : `<span class="text-[10px] text-green-400">${sub.score}/20</span>`}
+            <button class="msg-student-btn flex items-center gap-1 rounded bg-zinc-800 px-2 py-1.5 text-[10px] text-zinc-400 hover:text-white transition" data-student-id="${escapeHtml(sub.student_id)}" data-task-title="${escapeHtml(task.title || 'Tarea')}">${Icon('mail', 10)} Mensaje</button>
+          </div>
+        </td>
+      </tr>`
+    }
 
-  document.getElementById('submissions-modal-body')!.innerHTML = `
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left">
-        <thead>
-          <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
-            <th class="py-2.5 px-3 font-medium">Alumno</th>
-            <th class="py-2.5 px-3 font-medium">Plataforma</th>
-            <th class="py-2.5 px-3 font-medium">Mensaje</th>
-            <th class="py-2.5 px-3 font-medium">Archivos</th>
-            <th class="py-2.5 px-3 font-medium">Links</th>
-            <th class="py-2.5 px-3 font-medium">Nota</th>
-            <th class="py-2.5 px-3 font-medium">Acción</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`
+    const rows = [...submitted, ...missing].map(rowFor).join('')
+    const submittedCount = submitted.length
+    const missingCount = missing.length
+    const gradedCount = (subs ?? []).filter((s: any) => s.graded).length
+    const fmtDate = (d: string) => d ? formatDate(d, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 
-  bindSubmissionsModalEvents(taskId)
-}
+    document.getElementById('page-content')!.innerHTML = `
+      <div class="mb-4">
+        <a href="${back}" class="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors">${Icon('arrowLeft', 15)} Volver a tareas</a>
+      </div>
 
-function renderSubmissionsModal(): string {
-  return `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onclick="if(event.target===this)document.getElementById('task-submissions-modal')?.remove()">
-      <div class="glass max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto rounded-xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 id="submissions-modal-title" class="font-heading text-lg font-bold text-white">Entregas</h2>
-          <button id="close-submissions-modal" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
+      <div class="mb-6">
+        <span class="kicker">Revisión de entregas</span>
+        <h1 class="font-heading text-2xl font-bold text-white mt-1">${escapeHtml(task.title || 'Tarea')}</h1>
+        <p class="text-sm text-zinc-400 mt-1">${escapeHtml(courseName)} · Semana ${escapeHtml(String(task.week_number ?? ''))} · Vence: ${fmtDate(task.due_date)}</p>
+        ${task.is_recovery ? `<span class="mt-2 inline-flex items-center gap-1 rounded bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">${Icon('refreshCw', 10)} Recuperación</span>` : ''}
+      </div>
+
+      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Total alumnos</p>
+          <p class="text-lg font-bold text-white">${students.length}</p>
         </div>
-        <div id="submissions-modal-body">
-          <div class="text-center py-8 text-zinc-500">${Icon('loader', 24)} Cargando...</div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Entregadas</p>
+          <p class="text-lg font-bold text-green-400">${submittedCount}</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Sin entregar</p>
+          <p class="text-lg font-bold text-red-400">${missingCount}</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Calificadas</p>
+          <p class="text-lg font-bold ${gradedCount > 0 ? 'text-[#A78BFA]' : 'text-zinc-600'}">${gradedCount}</p>
         </div>
       </div>
-    </div>`
+
+      ${task.description ? `<p class="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 text-sm text-zinc-300">${escapeHtml(task.description)}</p>` : ''}
+
+      <div class="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/20">
+        <table class="w-full text-sm text-left">
+          <thead>
+            <tr class="text-zinc-500 text-xs uppercase border-b border-zinc-800">
+              <th class="py-2.5 px-3 font-medium">Alumno</th>
+              <th class="py-2.5 px-3 font-medium">Plataforma</th>
+              <th class="py-2.5 px-3 font-medium">Mensaje</th>
+              <th class="py-2.5 px-3 font-medium">Archivos</th>
+              <th class="py-2.5 px-3 font-medium">Links</th>
+              <th class="py-2.5 px-3 font-medium">Nota</th>
+              <th class="py-2.5 px-3 font-medium">Acción</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="7" class="py-8 text-center text-sm text-zinc-500">No hay alumnos inscritos en este curso.</td></tr>'}</tbody>
+        </table>
+      </div>`
+
+    bindTaskReviewEvents(taskId, courseId)
+  } catch (err) {
+    console.error('Error loading task review:', err)
+    document.getElementById('page-content')!.innerHTML = '<p class="text-red-400 text-sm">Error al cargar la revisión de la tarea</p>'
+  }
 }
 
-function bindSubmissionsModalEvents(taskId: string): void {
-  document.getElementById('close-submissions-modal')?.addEventListener('click', () => {
-    document.getElementById('task-submissions-modal')?.remove()
+function bindTaskReviewEvents(taskId: string, courseId: string): void {
+  document.querySelectorAll('.view-file-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subId = (btn as HTMLElement).dataset.subId
+      const index = parseInt((btn as HTMLElement).dataset.index || '0', 10)
+      if (!subId) return
+      const data = viewerData[subId]
+      if (!data || data.files.length === 0) return
+      openSubmissionViewer(data.name, data.files, index)
+    })
   })
 
   document.querySelectorAll('.grade-submission-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const subId = (btn as HTMLElement).dataset.submissionId
-      const taskId2 = (btn as HTMLElement).dataset.taskId
-      if (!subId || !taskId2) return
-
+      if (!subId) return
       const tr = (btn as HTMLElement).closest('tr')!
       const scoreInput = tr.querySelector<HTMLInputElement>('.submission-score')
       const score = parseFloat(scoreInput?.value || '')
@@ -479,16 +538,14 @@ function bindSubmissionsModalEvents(taskId: string): void {
         toast('error', 'La nota debe estar entre 0 y 20')
         return
       }
-
       const { error } = await supabase.from('task_submissions').update({
         score,
         graded: true,
         graded_at: new Date().toISOString(),
       }).eq('id', subId)
-
       if (error) { toast('error', error.message); return }
       toast('success', 'Nota guardada')
-      openTaskSubmissionsModal(taskId2)
+      renderTaskReview(taskId, courseId)
     })
   })
 
@@ -497,11 +554,99 @@ function bindSubmissionsModalEvents(taskId: string): void {
       const studentId = (btn as HTMLElement).dataset.studentId
       const taskTitle = (btn as HTMLElement).dataset.taskTitle
       if (!studentId) return
-
       const msg = prompt(`Mensaje para el alumno sobre "${taskTitle}":`)
       if (!msg || !msg.trim()) return
-
-      toast('success', 'Mensaje registrado. El alumno lo ver\u00e1 en su pr\u00f3xima visita.')
+      toast('success', 'Mensaje registrado. El alumno lo verá en su próxima visita.')
     })
   })
+}
+
+function openSubmissionViewer(studentName: string, files: string[], startIndex: number): void {
+  const items = files.map(f => {
+    const name = decodeURIComponent((f.split('/').pop() || 'archivo').split('?')[0])
+    const lower = name.toLowerCase()
+    const kind = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/.test(lower) ? 'image' : /\.pdf$/i.test(lower) ? 'pdf' : 'doc'
+    return { url: f, kind, label: name }
+  })
+  if (items.length === 0) return
+
+  const existing = document.getElementById('submission-viewer')
+  if (existing) existing.remove()
+  const viewer = document.createElement('div')
+  viewer.id = 'submission-viewer'
+  document.body.appendChild(viewer)
+
+  let current = Math.min(Math.max(startIndex, 0), items.length - 1)
+
+  const render = () => {
+    const item = items[current]
+    const main = item.kind === 'image'
+      ? `<img src="${escapeHtml(item.url)}" class="max-h-[58vh] max-w-full object-contain mx-auto rounded-lg" alt="${escapeHtml(item.label)}" />`
+      : item.kind === 'pdf'
+        ? `<iframe src="${escapeHtml(item.url)}" class="h-[58vh] w-full rounded-lg border border-zinc-700 bg-white" title="${escapeHtml(item.label)}"></iframe>`
+        : `<div class="flex flex-col items-center gap-4 py-20 text-center">
+             <span class="text-zinc-500">${Icon('fileText', 52)}</span>
+             <p class="text-sm text-zinc-300 break-all px-6">${escapeHtml(item.label)}</p>
+             <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-4 py-2 text-sm text-white hover:bg-[#7C3AED]">${Icon('download', 14)} Abrir archivo</a>
+           </div>`
+    const thumbnails = items.map((it, i) => {
+      const active = i === current ? 'border-[#8B5CF6] ring-2 ring-[#8B5CF6]/40' : 'border-zinc-700 hover:border-zinc-500'
+      const thumb = it.kind === 'image'
+        ? `<img src="${escapeHtml(it.url)}" class="h-full w-full object-cover" alt="${escapeHtml(it.label)}" />`
+        : `<div class="flex h-full w-full flex-col items-center justify-center gap-1 bg-zinc-900">
+             <span class="text-zinc-500">${Icon('fileText', 18)}</span>
+             <span class="px-1 text-center text-[8px] leading-tight text-zinc-500 line-clamp-2">${escapeHtml(it.label)}</span>
+           </div>`
+      return `<button type="button" class="viewer-thumb h-20 w-20 shrink-0 overflow-hidden rounded-lg border ${active} ${i === current ? '' : 'opacity-60 hover:opacity-100'}" data-index="${i}">${thumb}</button>`
+    }).join('')
+
+    viewer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onclick="if(event.target===this)document.getElementById('submission-viewer')?.remove()">
+        <div class="glass flex max-h-[95vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl">
+          <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <p class="truncate text-sm font-medium text-white">${escapeHtml(studentName)} · ${escapeHtml(item.label)}</p>
+            <button id="close-viewer" class="text-zinc-500 hover:text-white">${Icon('x', 18)}</button>
+          </div>
+          <div class="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+            <div class="relative flex min-h-[58vh] items-center justify-center">
+              ${items.length > 1 ? `<button id="viewer-prev" class="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-zinc-800/90 p-2 text-white transition hover:bg-[#8B5CF6]">${Icon('chevronLeft', 20)}</button>` : ''}
+              ${main}
+              ${items.length > 1 ? `<button id="viewer-next" class="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-zinc-800/90 p-2 text-white transition hover:bg-[#8B5CF6]">${Icon('chevronRight', 20)}</button>` : ''}
+            </div>
+            ${items.length > 1 ? `
+            <div class="mt-1">
+              <p class="mb-2 text-[10px] uppercase text-zinc-500">${items.length} archivos · ${item.kind === 'image' ? 'Imagen' : item.kind === 'pdf' ? 'PDF' : 'Documento'} ${current + 1} de ${items.length}</p>
+              <div class="viewer-thumbs flex gap-2 overflow-x-auto pb-2">${thumbnails}</div>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>`
+  }
+
+  render()
+
+  const nav = (i: number) => {
+    current = (i + items.length) % items.length
+    render()
+  }
+
+  viewer.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.id === 'close-viewer') { viewer.remove(); return }
+    if (t.id === 'viewer-next') { nav(current + 1); return }
+    if (t.id === 'viewer-prev') { nav(current - 1); return }
+    const thumb = t.closest<HTMLElement>('.viewer-thumb')
+    if (thumb) { nav(parseInt(thumb.dataset.index || '0', 10)); return }
+  })
+
+  const keyHandler = (e: KeyboardEvent) => {
+    if (!document.getElementById('submission-viewer')) {
+      document.removeEventListener('keydown', keyHandler)
+      return
+    }
+    if (e.key === 'Escape') viewer.remove()
+    else if (e.key === 'ArrowRight') nav(current + 1)
+    else if (e.key === 'ArrowLeft') nav(current - 1)
+  }
+  document.addEventListener('keydown', keyHandler)
 }
