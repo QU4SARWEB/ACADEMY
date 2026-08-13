@@ -7,7 +7,10 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { formatDate } from '@/2b3583/6b239c'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
 
-const todayISO = () => new Date().toISOString().slice(0, 10)
+const todayISO = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 const isOverdue = (d: string | null | undefined): boolean => !!d && d < todayISO()
 
 export async function loadAndRenderTasks(containerId: string, studentId: string, role: 'student' | 'player'): Promise<void> {

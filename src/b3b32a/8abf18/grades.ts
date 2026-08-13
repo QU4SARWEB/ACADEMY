@@ -3,7 +3,9 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
+import { renderTaskCreateForm, bindTaskFormEvents } from './tasks'
 import {
   GRADE_WEIGHTS,
   COMPONENT_LABELS,
@@ -395,7 +397,13 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
           <span class="truncate">${escapeHtml(t.title || 'Tarea')}</span>
           ${t.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
         </div>
-        <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
+        <div class="flex items-center gap-3 shrink-0">
+          <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
+          <div class="flex items-center gap-1">
+            <button type="button" class="grades-task-edit text-zinc-500 hover:text-[#A78BFA] transition" data-task-id="${escapeHtml(t.id)}" title="Editar tarea">${Icon('edit', 13)}</button>
+            <button type="button" class="grades-task-del text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(t.id)}" title="Eliminar tarea">${Icon('trash', 13)}</button>
+          </div>
+        </div>
       </div>`
     }).join('')
 
@@ -475,7 +483,52 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
       toast('success', 'Nota guardada')
       await renderStudentDetail(sid, courseId)
     })
+
+    await bindGradeTaskActions(sid, courseId)
   } catch (e: any) {
     toast('error', e?.message || 'Error cargando el alumno')
   }
+}
+
+async function bindGradeTaskActions(sid: string, courseId: string): Promise<void> {
+  document.querySelectorAll<HTMLElement>('.grades-task-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const taskId = btn.dataset.taskId
+      if (!taskId || !(await confirmDialog('¿Eliminar esta tarea? También se eliminarán todas las entregas.'))) return
+      const { error } = await supabase.from('course_tasks').delete().eq('id', taskId)
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Tarea eliminada')
+      await renderStudentDetail(sid, courseId)
+    })
+  })
+
+  document.querySelectorAll<HTMLElement>('.grades-task-edit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const taskId = btn.dataset.taskId
+      if (!taskId) return
+      const [{ data: task }, { data: { session } }] = await Promise.all([
+        supabase.from('course_tasks').select('*').eq('id', taskId).maybeSingle(),
+        supabase.auth.getSession(),
+      ])
+      if (!task) return
+      const coachId = session?.user?.id || ''
+      const assignedIds = await getAssignedCourseIds(coachId)
+      let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
+      if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+      const { data: courses } = await coursesQuery
+
+      const modal = document.createElement('div')
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4'
+      const inner = document.createElement('div')
+      inner.className = 'glass max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl p-4'
+      inner.innerHTML = renderTaskCreateForm(courses ?? [], task)
+      modal.appendChild(inner)
+      document.body.appendChild(modal)
+      bindTaskFormEvents(inner, coachId, taskId, () => {
+        modal.remove()
+        void renderStudentDetail(sid, courseId)
+      })
+      inner.querySelector('#btn-cancel-task')?.addEventListener('click', () => modal.remove())
+    })
+  })
 }

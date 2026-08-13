@@ -204,12 +204,12 @@ function setupNewTaskButton(courses: any[], coachId: string): void {
     container.classList.toggle('hidden')
     if (!container.classList.contains('hidden')) {
       container.innerHTML = renderTaskCreateForm(courses)
-      bindTaskFormEvents(container, coachId)
+      bindTaskFormEvents(container, coachId, undefined, () => initCoachTasks())
     }
   })
 }
 
-function renderTaskCreateForm(courses: any[], editTask?: any): string {
+export function renderTaskCreateForm(courses: any[], editTask?: any): string {
   const isEdit = !!editTask
   return `
     <div class="glass rounded-xl p-4">
@@ -259,7 +259,7 @@ function renderTaskCreateForm(courses: any[], editTask?: any): string {
     </div>`
 }
 
-function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: string): void {
+export function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: string, onSaved?: () => void): void {
   document.getElementById('btn-cancel-task')?.addEventListener('click', () => { container.classList.add('hidden') })
 
   document.getElementById('task-create-form')?.addEventListener('submit', async (e) => {
@@ -316,7 +316,7 @@ function bindTaskFormEvents(container: HTMLElement, coachId: string, editId?: st
     if (error) { toast('error', error.message); return }
     toast('success', editId ? 'Tarea actualizada' : 'Tarea creada')
     container.classList.add('hidden')
-    initCoachTasks()
+    onSaved?.()
   })
 }
 
@@ -345,7 +345,7 @@ function setupEditTaskButtons(courses: any[]): void {
       container.classList.remove('hidden')
       container.scrollIntoView({ behavior: 'smooth' })
       container.innerHTML = renderTaskCreateForm(courses, task)
-      bindTaskFormEvents(container, '', taskId)
+      bindTaskFormEvents(container, '', taskId, () => initCoachTasks())
     })
   })
 }
@@ -367,7 +367,10 @@ function setupDeleteTaskButtons(): void {
 
 const viewerData: Record<string, { files: string[]; name: string }> = {}
 
-const todayISO = () => new Date().toISOString().slice(0, 10)
+const todayISO = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 const isOverdue = (d: string | null | undefined): boolean => !!d && d < todayISO()
 
 async function renderTaskReview(taskId: string, courseParam: string): Promise<void> {

@@ -8,12 +8,33 @@ CREATE POLICY coaches_manage_tasks ON course_tasks
     OR course_id IN (SELECT course_id FROM course_assignments WHERE coach_id = auth.uid())
   );
 
--- Bloquear en la base de datos la entrega de tareas vencidas
+-- Bloquear en la base de datos cualquier accion del alumno (entregar, reenviar, borrar) en tareas vencidas
 DROP POLICY IF EXISTS users_manage_own_submissions ON task_submissions;
 
-CREATE POLICY users_manage_own_submissions ON task_submissions
-  FOR ALL USING (student_id = auth.uid())
+CREATE POLICY users_select_own_submissions ON task_submissions
+  FOR SELECT USING (student_id = auth.uid());
+
+CREATE POLICY users_insert_own_submissions ON task_submissions
+  FOR INSERT WITH CHECK (
+    student_id = auth.uid()
+    AND (
+      (SELECT due_date FROM course_tasks WHERE course_tasks.id = task_submissions.task_id) IS NULL
+      OR (SELECT due_date FROM course_tasks WHERE course_tasks.id = task_submissions.task_id) >= CURRENT_DATE
+    )
+  );
+
+CREATE POLICY users_update_own_submissions ON task_submissions
+  FOR UPDATE USING (student_id = auth.uid())
   WITH CHECK (
+    student_id = auth.uid()
+    AND (
+      (SELECT due_date FROM course_tasks WHERE course_tasks.id = task_submissions.task_id) IS NULL
+      OR (SELECT due_date FROM course_tasks WHERE course_tasks.id = task_submissions.task_id) >= CURRENT_DATE
+    )
+  );
+
+CREATE POLICY users_delete_own_submissions ON task_submissions
+  FOR DELETE USING (
     student_id = auth.uid()
     AND (
       (SELECT due_date FROM course_tasks WHERE course_tasks.id = task_submissions.task_id) IS NULL
