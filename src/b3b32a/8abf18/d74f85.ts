@@ -19,8 +19,8 @@ const COURSE_TEMPLATES = [
     desc: 'Curso de nivel intermedio-alto para jugadores Ascendente+. Tácticas competitivas, roles especializados y draft.' },
   { name: 'Elite', months: 1, modules: 5, minRank: 'Inmortal', order: 5,
     desc: 'Curso de nivel avanzado para jugadores Inmortal+. Alto rendimiento, liderazgo y ejecución estratégica.' },
-  { name: 'Semi-Pro', months: 1, modules: 5, minRank: 'Ascendente', order: 6,
-    desc: 'Curso de nivel semi-profesional para jugadores Ascendente+. Preparación para escena competitiva profesional.' },
+  { name: 'Semi-Pro', months: 1, modules: 5, minRank: 'Radiante', order: 6,
+    desc: 'Curso de nivel semi-profesional para jugadores Radiante+. Preparación para escena competitiva profesional.' },
   { name: 'Pro', months: 1, modules: 5, minRank: 'Radiante', order: 7,
     desc: 'Curso de nivel profesional para jugadores Radiante+. Coaching de élite, análisis profundo y rendimiento máximo.' },
 ]
