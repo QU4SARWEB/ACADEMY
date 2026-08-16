@@ -7,6 +7,7 @@ import { autoEnrollComplementaria } from '@/2b3583/course_utils'
 import { schedulePayDates } from '@/2b3583/paydates'
 import { rankBadge } from '@/2b3583/ranks'
 import { meetsRank } from '@/2b3583/grades_utils'
+import { getStudentEnrollments, isStudentPreview } from '@/2b3583/student_view'
 
 export function renderStudentCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -28,12 +29,8 @@ export async function initStudentCourses(): Promise<void> {
       return
     }
 
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('*, courses(name, slug, description, display_order, duration_months, cover_url)')
-      .eq('profile_id', session.user.id)
-      .eq('status', 'active')
-      .order('enrolled_at', { ascending: false })
+    const enrollments = await getStudentEnrollments(session.user.id)
+    const preview = isStudentPreview()
 
     const enrolledCourseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
 
@@ -44,10 +41,13 @@ export async function initStudentCourses(): Promise<void> {
 
     const hasPaidAny = (payments ?? []).some((p: any) => p.status === 'paid' || p.status === 'scholarship')
 
-    const available = enrolledCourseIds.length > 0
-      ? await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.map((id: any) => `"${id}"`).join(',')})`).order('name')
-      : await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).order('name')
-    let coursesData = (available.data ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
+    let coursesData: any[] = []
+    if (!preview) {
+      const available = enrolledCourseIds.length > 0
+        ? await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).not('id', 'in', `(${enrolledCourseIds.map((id: any) => `"${id}"`).join(',')})`).order('name')
+        : await supabase.from('courses').select('id, name, description, duration_months, min_rank, cover_url').eq('is_active', true).order('name')
+      coursesData = (available.data ?? []).filter((c: any) => c.id !== 'aea1376e-95d2-4dec-a4ef-07b2395e8f78' || hasPaidAny)
+    }
 
     function courseCard(course: any, extra: string, footer: string): string {
       const desc = course.description || course.courses?.description || ''
@@ -97,11 +97,16 @@ export async function initStudentCourses(): Promise<void> {
         </div>
       </div>`
 
+    const previewBanner = preview
+      ? `<div class="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 p-4 text-sm text-[#A78BFA]">${Icon('eye', 15)} Vista previa como alumno — todos los cursos, sin inscribirte.</div>`
+      : ''
+
     const html = `
       <div class="mb-6">
         <span class="kicker">Tu formación</span>
         <h1 class="font-heading text-2xl font-bold text-white">Mis cursos</h1>
       </div>
+      ${previewBanner}
       ${enrollHtml}
       ${availableHtml}`
 

@@ -7,6 +7,7 @@ import { Spinner } from '@/4725dc/a14fa2'
 import { formatDate } from '@/2b3583/6b239c'
 import { uploadFileFromInput } from '@/2b3583/76ee3d'
 import { openFileViewer } from '@/2b3583/file_viewer'
+import { getStudentCourseIds, isStudentPreview } from '@/2b3583/student_view'
 
 const todayISO = () => {
   const d = new Date()
@@ -21,13 +22,7 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
   container.innerHTML = Spinner()
 
   try {
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('course_id')
-      .eq('profile_id', studentId)
-      .eq('status', 'active')
-
-    const courseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id))]
+    const courseIds = await getStudentCourseIds(studentId)
     if (courseIds.length === 0) {
       container.innerHTML = '<div class="glass rounded-xl p-8 text-center"><p class="text-sm text-zinc-500">No estás inscrito en ningún curso.</p></div>'
       return
@@ -69,6 +64,7 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
 
     const uniqueCourseIds = [...new Set(tasks.map((t: any) => t.course_id))]
     const activeCourse = courseFilter && uniqueCourseIds.includes(courseFilter) ? courseFilter : null
+    const preview = isStudentPreview()
 
     const fmtDate = (d: string) => d ? formatDate(d) : '—'
 
@@ -147,14 +143,18 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
               </div>` : ''}
               ${hasSubmitted
                 ? `<div>${renderSubmission(submitted)}
-                  ${isGraded && !isPastDue ? `<div class="mt-3 flex justify-end">
+                  ${isGraded && !isPastDue && !preview ? `<div class="mt-3 flex justify-end">
                     <button class="retry-task-btn text-xs flex items-center gap-1 text-amber-400 hover:text-amber-300 transition" data-task-id="${escapeHtml(task.id)}">${Icon('rotate', 12)} Reenviar</button>
                   </div>` : ''}</div>`
                 : overdue
                   ? `<div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/[0.05] px-3 py-3">
                        <p class="flex items-center gap-2 text-sm text-red-400">${Icon('clock', 14)} Tarea vencida — no se aceptan entregas.</p>
                      </div>`
-                  : renderSubmissionForm(task, studentId)}
+                  : preview
+                    ? `<div class="mt-4 rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-3 py-3">
+                         <p class="flex items-center gap-2 text-sm text-zinc-400">${Icon('eye', 14)} Vista previa — no puedes entregar tareas.</p>
+                       </div>`
+                    : renderSubmissionForm(task, studentId)}
             </div>`
         }).join('')}
       </div>`

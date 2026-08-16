@@ -5,6 +5,7 @@ import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { router } from '@/f3395c'
+import { getStudentEnrollments, isStudentPreview } from '@/2b3583/student_view'
 
 export function renderStudentExamList(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -15,11 +16,7 @@ export async function initStudentExamList(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('course_id, courses(name)')
-      .eq('profile_id', session.user.id)
-      .eq('status', 'active')
+    const enrollments = await getStudentEnrollments(session.user.id)
 
     const courseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
 
@@ -194,6 +191,11 @@ export async function initStudentExamDetail(): Promise<void> {
     const questions = (eqs ?? []).map((eq: any) => {
       return { ...eq, text: eq.question, examQuestionId: eq.id, points: eq.points }
     })
+
+    if (isStudentPreview()) {
+      renderPreviewExam(container, exam, questions)
+      return
+    }
 
     const { data: existingResult } = await supabase
       .from('exam_results')
@@ -554,6 +556,33 @@ async function submitExam(
       submitBtn.innerHTML = `${Icon('checkCircle', 14)} Finalizar examen`
     }
   }
+}
+
+function renderPreviewExam(container: HTMLElement, exam: any, questions: any[]): void {
+  const questionHtml = questions.map((q: any, i: number) => `
+    <div class="glass rounded-xl p-5">
+      <div class="flex items-start gap-2 mb-3">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">${i + 1}</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-white">${escapeHtml(q.text)}</p>
+          ${q.explanation ? `<p class="mt-1 text-xs text-zinc-600">${escapeHtml(q.explanation)}</p>` : ''}
+        </div>
+      </div>
+    </div>`).join('')
+
+  container.innerHTML = `
+    <div>
+      <div class="mb-6">
+        <a href="#/students/exams" class="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition mb-2">${Icon('arrowLeft', 14)} Volver a exámenes</a>
+        <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>
+        <p class="mt-1 text-sm text-zinc-500">${questions.length} pregunta${questions.length !== 1 ? 's' : ''} — vista previa</p>
+      </div>
+      <div class="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 p-4 text-sm text-[#A78BFA]">${Icon('eye', 15)} Vista previa — no puedes rendir exámenes.</div>
+      <div class="space-y-4">${questionHtml || '<p class="text-sm text-zinc-500">Sin preguntas publicadas.</p>'}</div>
+      <div class="mt-6">
+        <a href="#/students/exams" class="inline-flex items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:text-white transition">${Icon('arrowLeft', 14)} Volver a exámenes</a>
+      </div>
+    </div>`
 }
 
 function parseOptions(raw: any): string[] {

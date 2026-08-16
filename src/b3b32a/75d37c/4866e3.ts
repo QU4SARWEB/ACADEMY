@@ -4,6 +4,7 @@ import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { formatDate } from '@/2b3583/6b239c'
 import { rankBadge } from '@/2b3583/ranks'
+import { getStudentEnrollments, isStudentPreview } from '@/2b3583/student_view'
 
 export function renderStudentDashboard(): string {
   return `<div id="page-content">
@@ -24,16 +25,11 @@ export async function initStudentDashboard(): Promise<void> {
         .select('full_name, display_name')
         .eq('id', session.user.id)
         .maybeSingle(),
-      supabase
-        .from('enrollments')
-        .select('*, courses(name, id, min_rank)')
-        .eq('profile_id', session.user.id)
-        .eq('status', 'active')
-        .order('enrolled_at', { ascending: false }),
+      getStudentEnrollments(session.user.id),
       supabase.from('payments').select('status, paid_at, created_at, due_at, expires_at').eq('profile_id', session.user.id).order('created_at', { ascending: false }),
     ])
     const profile = profileResult.data
-    const enrollments = enrollmentsResult.data
+    const enrollments = enrollmentsResult
     const myPayments = paymentsResult.data
 
     const courseIds = (enrollments ?? []).map((e: any) => e.course_id).filter(Boolean)
@@ -93,6 +89,9 @@ export async function initStudentDashboard(): Promise<void> {
     })
 
     const userName = profile?.display_name || profile?.full_name || 'Estudiante'
+    const previewBanner = isStudentPreview()
+      ? `<div class="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 p-4 text-sm text-[#A78BFA]">${Icon('eye', 15)} Vista previa como alumno — se muestran todos los cursos sin inscribirte.</div>`
+      : ''
 
     const html = `
       <!-- Encabezado -->
@@ -104,6 +103,7 @@ export async function initStudentDashboard(): Promise<void> {
         </div>
       </div>
 
+      ${previewBanner}
       ${payStatusHtml}
 
       <!-- Siguiente accion -->

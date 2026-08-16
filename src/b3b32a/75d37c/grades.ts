@@ -12,6 +12,7 @@ import {
   weightedFinal,
   gradeStatus,
 } from '@/2b3583/grades_utils'
+import { getStudentEnrollments, isStudentPreview } from '@/2b3583/student_view'
 
 export function renderStudentGrades(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -23,9 +24,9 @@ export async function initStudentGrades(): Promise<void> {
     if (!session?.user?.id) return
     const uid = session.user.id
 
-    const [{ data: profile }, { data: enrollments }] = await Promise.all([
+    const [{ data: profile }, enrollments] = await Promise.all([
       supabase.from('profiles').select('rank').eq('id', uid).maybeSingle(),
-      supabase.from('enrollments').select('*, courses(name, min_rank, min_pass_grade)').eq('profile_id', uid).eq('status', 'active').order('enrolled_at', { ascending: false }),
+      getStudentEnrollments(uid),
     ])
 
     if (!enrollments || enrollments.length === 0) {
@@ -227,12 +228,17 @@ export async function initStudentGrades(): Promise<void> {
         </div>`
     }).join('')
 
+    const previewBanner = isStudentPreview()
+      ? `<div class="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 p-4 text-sm text-[#A78BFA]">${Icon('eye', 15)} Vista previa como alumno — notas calculadas sin tus entregas.</div>`
+      : ''
+
     const html = `
       <div class="mb-6">
         <span class="kicker">Rendimiento académico</span>
         <h1 class="font-heading text-2xl font-bold text-white">${Icon('scrollText', 22)} Mis notas</h1>
         <p class="mt-1 text-sm text-zinc-500">Clases 30% · Tareas 20% · Exámenes 25% · Examen final 25%</p>
       </div>
+      ${previewBanner}
       ${coursesHtml}`
 
     document.getElementById('page-content')!.innerHTML = html

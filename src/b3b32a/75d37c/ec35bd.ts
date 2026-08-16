@@ -6,6 +6,7 @@ import { router } from '@/f3395c'
 import { Breadcrumb } from '@/2b3583/breadcrumb'
 import { formatDate } from '@/2b3583/6b239c'
 import { rankBadge } from '@/2b3583/ranks'
+import { isStudentPreview } from '@/2b3583/student_view'
 
 export function renderStudentCourseDetail(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -30,24 +31,27 @@ export async function initStudentCourseDetail(): Promise<void> {
       return
     }
     sessionStorage.setItem(`qu4sar-course-context:${id}`, course.name)
+    const preview = isStudentPreview()
 
     let paymentStatus: string | null = null
     let dueAt: string | null = null
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('id')
-      .eq('profile_id', session.user.id)
-      .eq('course_id', id)
-      .eq('status', 'active')
-      .maybeSingle()
-    if (enrollment) {
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('status, amount, paid_at, due_at')
-        .eq('enrollment_id', enrollment.id)
-        .order('created_at', { ascending: false })
+    if (!preview) {
+      const { data: enrollment } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .eq('course_id', id)
+        .eq('status', 'active')
         .maybeSingle()
-      if (payment) { paymentStatus = payment.status; dueAt = payment.due_at }
+      if (enrollment) {
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('status, amount, paid_at, due_at')
+          .eq('enrollment_id', enrollment.id)
+          .order('created_at', { ascending: false })
+          .maybeSingle()
+        if (payment) { paymentStatus = payment.status; dueAt = payment.due_at }
+      }
     }
 
     const [{ data: tasks }, { data: exams }, { data: schedules }] = await Promise.all([
@@ -84,7 +88,11 @@ export async function initStudentCourseDetail(): Promise<void> {
       paidDaysLeft = remaining > 0 ? ` — ${remaining} día${remaining !== 1 ? 's' : ''} restantes` : ' — vencida'
     }
 
-    const statusBadge = paymentStatus === 'pending'
+    const statusBadge = preview
+      ? `<div class="mb-6 rounded-xl border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 p-4 text-sm text-[#A78BFA]">
+          ${Icon('eye', 15)} Vista previa de curso — no estás inscrito, solo visualización.
+        </div>`
+      : paymentStatus === 'pending'
       ? `<div class="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-400">
           Pago pendiente — <a href="#/payments" class="underline hover:text-yellow-300">Sube tu comprobante aquí</a>
         </div>`
@@ -217,6 +225,7 @@ const html = `
       material.addEventListener('click', async () => {
         const materialId = material.dataset.materialId
         if (!materialId || material.classList.contains('completed')) return
+        if (preview) { material.classList.add('completed'); return }
         const { error } = await supabase.from('course_material_progress').upsert({ material_id: materialId, student_id: session.user.id }, { onConflict: 'material_id,student_id' })
         if (!error) material.classList.add('completed')
       })

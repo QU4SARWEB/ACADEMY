@@ -1,6 +1,7 @@
 import { Spinner } from '@/4725dc/a14fa2'
 import { supabase } from '@/304244'
 import { renderSchedulePage } from '@/b3b32a/shared/schedule'
+import { getStudentCourseIds } from '@/2b3583/student_view'
 
 export function renderStudentSchedule(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -11,14 +12,8 @@ export async function initStudentSchedule(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return
 
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('course_id')
-      .eq('profile_id', session.user.id)
-      .eq('status', 'active')
-
     const courseFilter = new URLSearchParams(location.hash.split('?')[1] || '').get('course')
-    const enrolledCourseIds = [...new Set((enrollments ?? []).map((e: any) => e.course_id).filter(Boolean))]
+    const enrolledCourseIds = await getStudentCourseIds(session.user.id)
     const scheduleCourseIds = courseFilter ? enrolledCourseIds.filter(id => id === courseFilter) : enrolledCourseIds
     let schedules: any[] = []
     if (scheduleCourseIds.length > 0) {
