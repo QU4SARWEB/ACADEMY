@@ -227,7 +227,8 @@ function rankingHtml(courseId: string, grade: number): string {
   const grades = students.map(s => s.effective).filter((v): v is number => v !== null)
   const sorted = [...grades].sort((a, b) => b - a)
   const pos = sorted.findIndex(v => v === grade) + 1
-  return `#${pos} de ${sorted.length}`
+  const tied = grades.filter(v => v === grade).length
+  return tied > 1 ? `#${pos}–${pos + tied - 1} de ${sorted.length}` : `#${pos} de ${sorted.length}`
 }
 
 function bindPlanillaEvents(): void {
@@ -381,7 +382,10 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
       }
       const sorted = [...grades].sort((a, b) => b - a)
       const pos = sorted.findIndex(g => g === effective) + 1
-      if (pos > 0) ranking = `#${pos} de ${sorted.length}`
+      if (pos > 0) {
+        const tied = grades.filter(g => g === effective).length
+        ranking = tied > 1 ? `#${pos}–${pos + tied - 1} de ${sorted.length}` : `#${pos} de ${sorted.length}`
+      }
     }
 
     const name = profile?.full_name || 'Desconocido'
