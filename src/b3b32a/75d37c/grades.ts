@@ -41,6 +41,17 @@ export async function initStudentGrades(): Promise<void> {
       }
     }
 
+    const courseParam = new URLSearchParams(location.hash.split('?')[1] || '').get('course') || ''
+    if (courseParam) {
+      for (const cid of [...uniqueCourses.keys()]) {
+        if (cid !== courseParam) uniqueCourses.delete(cid)
+      }
+      if (uniqueCourses.size === 0) {
+        document.getElementById('page-content')!.innerHTML = '<p class="text-sm text-zinc-500">Curso no encontrado. <a class="text-[#A78BFA] underline" href="#/students/grades">Volver a mis notas</a></p>'
+        return
+      }
+    }
+
     const courseIds = [...uniqueCourses.keys()]
     const idFilter = courseIds.length > 0 ? courseIds : ['00000000-0000-0000-0000-000000000000']
     const studentRank = profile?.rank || ''

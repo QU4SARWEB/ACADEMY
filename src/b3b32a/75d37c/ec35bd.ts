@@ -216,7 +216,7 @@ const html = `
           <section class="card course-detail-panel"><div class="course-detail-panel__head"><div><span class="kicker">Actividad</span><h2>Tareas del curso</h2></div><a href="#/students/tasks">Ver todas →</a></div>${taskRows || '<p class="course-detail-empty">Todavía no hay tareas en este curso.</p>'}</section>
           <section class="card course-detail-panel"><div class="course-detail-panel__head"><div><span class="kicker">Evaluación</span><h2>Exámenes</h2></div><a href="#/students/exams">Ver todos →</a></div>${examRows || '<p class="course-detail-empty">Todavía no hay exámenes publicados.</p>'}</section>
         </div>
-        <div class="course-detail-footer-actions"><a href="#/students/grades" class="btn btn-ghost">${Icon('trophy', 15)} Ver mis notas</a><a href="#/payments" class="btn btn-primary">${Icon('dollarSign', 15)} Gestionar pagos</a></div>
+        <div class="course-detail-footer-actions"><a href="#/students/grades?course=${encodeURIComponent(id)}" class="btn btn-ghost">${Icon('trophy', 15)} Ver mis notas</a><a href="#/payments" class="btn btn-primary">${Icon('dollarSign', 15)} Gestionar pagos</a></div>
       </div>`
 
     document.getElementById('page-content')!.innerHTML = html
