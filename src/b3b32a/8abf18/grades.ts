@@ -61,7 +61,9 @@ export async function initCoachGrades(): Promise<void> {
 
     const assignedIds = await getAssignedCourseIds(coachId)
     let coursesQuery = supabase.from('courses').select('id, name, min_pass_grade').eq('is_active', true).order('display_order')
-    if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+    if (courseParam) coursesQuery = coursesQuery.eq('id', courseParam)
+    else if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+    else coursesQuery = coursesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
     const { data: courses } = await coursesQuery
 
     const courseIds = (courses ?? []).map((c: any) => c.id)
@@ -210,7 +212,7 @@ function renderPlanilla(): void {
     <div class="mb-6">
       <span class="kicker">Calificaciones de la academia</span>
       <h1 class="font-heading text-2xl font-bold text-white">Notas</h1>
-      <p class="mt-1 text-sm text-zinc-500">Lista de alumnos por curso — escribe la nota del alumno (0-20) o clic para ver sus notas de tareas y exámenes.</p>
+      <p class="mt-1 text-sm text-zinc-500">${courses.length === 1 ? `Mostrando solo: <span class="text-[#A78BFA] font-medium">${escapeHtml(courses[0].name)}</span> — escribe la nota del alumno (0-20) o clic para ver sus notas de tareas y exámenes.` : 'Lista de alumnos por curso — escribe la nota del alumno (0-20) o clic para ver sus notas de tareas y exámenes.'}</p>
     </div>
     ${sections || '<p class="text-sm text-zinc-500">No hay alumnos inscritos en tus cursos.</p>'}`
 

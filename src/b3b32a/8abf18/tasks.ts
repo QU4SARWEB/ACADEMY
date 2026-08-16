@@ -31,6 +31,7 @@ export async function initCoachTasks(): Promise<void> {
 
     let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
     if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+    else coursesQuery = coursesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
     const { data: courses } = await coursesQuery
 
     const courseIds = (courses ?? []).map((c: any) => c.id)
@@ -376,6 +377,7 @@ export async function openTaskEditModal(taskId: string, onSaved: () => void): Pr
   const assignedIds = await getAssignedCourseIds(coachId)
   let coursesQuery = supabase.from('courses').select('id, name').eq('is_active', true).order('display_order')
   if (assignedIds.length > 0) coursesQuery = coursesQuery.in('id', assignedIds)
+  else coursesQuery = coursesQuery.eq('id', '00000000-0000-0000-0000-000000000000')
   const { data: courses } = await coursesQuery
 
   const modal = document.createElement('div')
