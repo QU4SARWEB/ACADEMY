@@ -5684,3 +5684,67 @@ select option {
   color: rgba(255, 255, 255, 0.45);
   text-align: center;
 }
+
+/* ───────────────────────────────────────────────────────────
+   Mobile responsive tables → card layout
+   ─────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  #app thead { display: none; }
+
+  #app table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 0 !important;
+  }
+  #app .overflow-x-auto { overflow-x: visible; }
+
+  #app tbody tr {
+    display: block;
+    margin-bottom: 0.625rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.025);
+    overflow: hidden;
+  }
+  #app tbody tr:last-child { margin-bottom: 0; }
+
+  #app tbody td {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-radius: 0;
+    text-align: left !important;
+    white-space: normal;
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+  #app tbody td:last-child { border-bottom: none; }
+
+  #app tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 1px;
+  }
+  #app tbody td[data-label=""]::before,
+  #app tbody td[data-label]::before:empty { display: none; }
+
+  #app tbody td.hidden,
+  #app thead th.hidden {
+    display: none !important;
+  }
+
+  #app tbody td input[type="text"],
+  #app tbody td input[type="number"],
+  #app tbody td input[type="email"],
+  #app tbody td select,
+  #app tbody td textarea {
+    width: 100%;
+  }
+}

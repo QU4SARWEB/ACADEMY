@@ -8,6 +8,7 @@ import { initAutoSave } from '@/4725dc/forms/DraftManager'
 import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
 import { initNotificationCenter } from '@/4725dc/notification_center'
 import { initUiGlobals } from '@/4725dc/ui_kit'
+import { initResponsiveTables } from '@/2b3583/responsive_tables'
 import { dueTs, expiresTs } from '@/2b3583/paydates'
 
 import '@/bc4150/0c54ed.css'
@@ -341,6 +342,7 @@ router.fallbackRoute(async () => {
 document.addEventListener('DOMContentLoaded', () => {
   initToastContainer()
   initUiGlobals()
+  initResponsiveTables()
   router.start()
 
   supabase.auth.getSession().then(({ data: { session } }) => {
