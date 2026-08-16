@@ -14,6 +14,7 @@ import {
   computeComponents,
   weightedFinal,
   gradeStatus,
+  isTaskOverdue,
 } from '@/2b3583/grades_utils'
 
 export function renderCoachGrades(): string {
@@ -75,7 +76,7 @@ export async function initCoachGrades(): Promise<void> {
         .in('course_id', idFilter)
         .eq('status', 'active')
         .order('created_at', { ascending: false }),
-      supabase.from('course_tasks').select('id, course_id, title, is_recovery').in('course_id', idFilter),
+      supabase.from('course_tasks').select('id, course_id, title, due_date, is_recovery').in('course_id', idFilter),
       supabase.from('exams').select('id, course_id, title, is_final, is_recovery').in('course_id', idFilter),
     ])
 
@@ -89,10 +90,10 @@ export async function initCoachGrades(): Promise<void> {
       supabase.from('exam_results').select('exam_id, student_id, total_score, status').in('exam_id', examIdFilter),
     ])
 
-    const tasksByCourse = new Map<string, { id: string; title: string; is_recovery: boolean }[]>()
+    const tasksByCourse = new Map<string, { id: string; title: string; due_date: string | null; is_recovery: boolean }[]>()
     for (const t of allTasks ?? []) {
       if (!tasksByCourse.has(t.course_id)) tasksByCourse.set(t.course_id, [])
-      tasksByCourse.get(t.course_id)!.push({ id: t.id, title: t.title, is_recovery: !!t.is_recovery })
+      tasksByCourse.get(t.course_id)!.push({ id: t.id, title: t.title, due_date: t.due_date, is_recovery: !!t.is_recovery })
     }
     const examsByCourse = new Map<string, { id: string; title: string; is_final: boolean; is_recovery: boolean }[]>()
     for (const x of allExams ?? []) {
@@ -107,7 +108,7 @@ export async function initCoachGrades(): Promise<void> {
       const exams = examsByCourse.get(e.course_id) || []
       const ref = {
         scheduleIds: [] as string[],
-        tasks: tasks.map(t => ({ id: t.id, is_recovery: t.is_recovery })),
+        tasks: tasks.map(t => ({ id: t.id, due_date: t.due_date, is_recovery: t.is_recovery })),
         exams: exams.map(x => ({ id: x.id, is_final: x.is_final, is_recovery: x.is_recovery })),
       }
       const raw = buildRawScores(ref, [], allSubs ?? [], allResults ?? [], sid)
@@ -341,7 +342,7 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
 
     const [{ data: profile }, { data: tasks }, { data: subs }, { data: exams }, { data: results }, { data: allEnrolls }] = await Promise.all([
       supabase.from('profiles').select('full_name, platform, rank').eq('id', sid).maybeSingle(),
-      supabase.from('course_tasks').select('id, title, is_recovery').eq('course_id', courseId),
+      supabase.from('course_tasks').select('id, title, due_date, is_recovery').eq('course_id', courseId),
       supabase.from('task_submissions').select('task_id, score, graded').eq('student_id', sid),
       supabase.from('exams').select('id, title, is_final, is_recovery').eq('course_id', courseId),
       supabase.from('exam_results').select('exam_id, total_score, status').eq('student_id', sid),
@@ -356,7 +357,7 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
     const resultsF = (results ?? []).filter((r: any) => examIdFilter.includes(r.exam_id))
     const ref = {
       scheduleIds: [] as string[],
-      tasks: (tasks ?? []).map((t: any) => ({ id: t.id, is_recovery: !!t.is_recovery })),
+      tasks: (tasks ?? []).map((t: any) => ({ id: t.id, due_date: t.due_date, is_recovery: !!t.is_recovery })),
       exams: (exams ?? []).map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
     }
     const raw = buildRawScores(ref, [], subsF, resultsF, sid)
@@ -394,13 +395,15 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
     const taskRows = (tasks ?? []).map((t: any) => {
       const sub = subMap.get(t.id)
       const score = sub && sub.score != null ? parseFloat(sub.score) : null
+      const missed = score === null && isTaskOverdue(t.due_date)
       return `<div class="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0">
         <div class="flex items-center gap-2 text-sm text-zinc-300 min-w-0">
           <span class="truncate">${escapeHtml(t.title || 'Tarea')}</span>
           ${t.is_recovery ? '<span class="shrink-0 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-400">Recuperación</span>' : ''}
+          ${missed ? '<span class="shrink-0 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">No entregó</span>' : ''}
         </div>
         <div class="flex items-center gap-3 shrink-0">
-          <span class="text-sm font-medium ${score === null ? 'text-zinc-600' : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : '—'}</span>
+          <span class="text-sm font-medium ${score === null ? (missed ? 'text-red-400' : 'text-zinc-600') : score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'}">${score !== null ? score.toFixed(1) + '/20' : missed ? '0.0/20' : '—'}</span>
           <div class="flex items-center gap-1">
             <button type="button" class="grades-task-edit text-zinc-500 hover:text-[#A78BFA] transition" data-task-id="${escapeHtml(t.id)}" title="Editar tarea">${Icon('edit', 13)}</button>
             <button type="button" class="grades-task-del text-zinc-600 hover:text-red-400 transition" data-task-id="${escapeHtml(t.id)}" title="Eliminar tarea">${Icon('trash', 13)}</button>

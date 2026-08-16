@@ -53,7 +53,7 @@ export async function initStudentGrades(): Promise<void> {
 
     const [{ data: allClassGrades }, { data: allTasks }, { data: allExams }] = await Promise.all([
       supabase.from('class_grades').select('*').in('schedule_id', schedFilter),
-      supabase.from('course_tasks').select('id, course_id, is_recovery').in('course_id', idFilter),
+      supabase.from('course_tasks').select('id, course_id, due_date, is_recovery').in('course_id', idFilter),
       supabase.from('exams').select('id, course_id, is_final, is_recovery').in('course_id', idFilter),
     ])
 
@@ -103,7 +103,7 @@ export async function initStudentGrades(): Promise<void> {
       const courseExams = (allExams ?? []).filter((x: any) => x.course_id === courseId)
       const ref = {
         scheduleIds: courseSchedIds,
-        tasks: courseTasks.map((t: any) => ({ id: t.id, is_recovery: !!t.is_recovery })),
+        tasks: courseTasks.map((t: any) => ({ id: t.id, due_date: t.due_date, is_recovery: !!t.is_recovery })),
         exams: courseExams.map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
       }
 

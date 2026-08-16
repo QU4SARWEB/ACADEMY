@@ -98,8 +98,15 @@ export function gradeStatus(final: number | null, minPass: number, pendingRecove
 
 export interface CourseRef {
   scheduleIds: string[]
-  tasks: { id: string; is_recovery: boolean }[]
+  tasks: { id: string; is_recovery: boolean; due_date?: string | null }[]
   exams: { id: string; is_final: boolean; is_recovery: boolean }[]
+}
+
+export function isTaskOverdue(dueDate: string | null | undefined): boolean {
+  if (!dueDate) return false
+  const today = new Date()
+  const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  return dueDate < localToday
 }
 
 export function buildRawScores(
@@ -115,14 +122,22 @@ export function buildRawScores(
 
   const taskScores: number[] = []
   const recoveryTaskScores: number[] = []
+  const submittedTaskIds = new Set<string>()
   for (const sub of submissions) {
     if (sub.student_id !== studentId || sub.score == null) continue
     const task = ref.tasks.find(t => t.id === sub.task_id)
     if (!task) continue
     const v = parseFloat(sub.score)
     if (isNaN(v)) continue
+    submittedTaskIds.add(task.id)
     if (task.is_recovery) recoveryTaskScores.push(v)
     else taskScores.push(v)
+  }
+  for (const task of ref.tasks) {
+    if (task.is_recovery) continue
+    if (submittedTaskIds.has(task.id)) continue
+    if (!isTaskOverdue(task.due_date)) continue
+    taskScores.push(0)
   }
 
   const examScores: number[] = []
