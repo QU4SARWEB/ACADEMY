@@ -36,5 +36,5 @@ export function Spinner(): string {
 }
 
 export function FullPageSpinner(): string {
-  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]">${Spinner()}</div>`
+  return `<div style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0A0A0A">${Spinner()}</div>`
 }
