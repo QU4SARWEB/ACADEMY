@@ -25,7 +25,7 @@ async function enrollSingleFree(profileId: string, courseId: string, type: strin
 }
 
 export async function createEnrollmentWithPayment(
-  profileId: string, courseId: string, type: string
+  profileId: string, courseId: string, type: string, courseType?: string
 ): Promise<CreateEnrollmentResult> {
   const { data: existing } = await supabase
     .from('enrollments')
@@ -37,13 +37,14 @@ export async function createEnrollmentWithPayment(
   if (existing) return { error: 'Ya est\u00e1 inscrito en este curso' }
 
   const { data: newEnroll, error: enrError } = await supabase.from('enrollments').insert({
-    profile_id: profileId, course_id: courseId, type, status: 'active',
+    profile_id: profileId, course_id: courseId, type, status: 'active', course_type: courseType || 'group',
   }).select('id').maybeSingle()
 
   if (enrError || !newEnroll) return { error: enrError?.message || 'Error al crear inscripci\u00f3n' }
 
   const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
-  const coursePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 15
+  const basePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 15
+  const coursePrice = courseType === 'individual' ? 20 : basePrice
 
   const { data: prof } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
   const payStatus = coursePrice === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')

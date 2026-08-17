@@ -65,6 +65,14 @@ export async function initCoachNewCourse(): Promise<void> {
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
+              <label class="mb-1 block text-xs font-medium text-zinc-400">Tipo de curso</label>
+              <select name="course_type" id="field-type"
+                class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
+                <option value="group">Grupo (hasta 5 alumnos) — $15/mes</option>
+                <option value="individual">1 a 1 (individual) — $20/hora</option>
+              </select>
+            </div>
+            <div>
               <label class="mb-1 block text-xs font-medium text-zinc-400">Duración (meses)</label>
               <input type="number" name="durationMonths" id="field-months" value="3" min="1" max="24"
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]" />
@@ -129,6 +137,22 @@ export async function initCoachNewCourse(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
+    // Course type toggle
+    document.getElementById('field-type')?.addEventListener('change', function(this: HTMLSelectElement) {
+      const priceInput = document.getElementById('field-price') as HTMLInputElement
+      const freeCheck = document.getElementById('field-free') as HTMLInputElement
+      if (this.value === 'individual') {
+        priceInput.value = '20'
+        freeCheck.checked = false
+        freeCheck.disabled = true
+      } else {
+        priceInput.value = '15'
+        freeCheck.disabled = false
+      }
+      priceInput.disabled = false
+      priceInput.classList.remove('opacity-50')
+    })
+
     // Free course toggle
     document.getElementById('field-free')?.addEventListener('change', function(this: HTMLInputElement) {
       const priceInput = document.getElementById('field-price') as HTMLInputElement
@@ -186,6 +210,7 @@ export async function initCoachNewCourse(): Promise<void> {
         name,
         slug,
         description: (fd.get('description') as string) || null,
+        course_type: (fd.get('course_type') as string) || 'group',
         duration_months: duration,
         min_rank: (fd.get('minRank') as string) || '',
         display_order: parseInt(fd.get('displayOrder') as string) || 0,

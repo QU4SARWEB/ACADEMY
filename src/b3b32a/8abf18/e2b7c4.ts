@@ -56,11 +56,22 @@ export async function initCoachEditCourse(): Promise<void> {
 
           <div class="mb-4 grid grid-cols-2 gap-4">
             <div>
+              <label class="mb-1 block text-sm text-zinc-400">Tipo de curso</label>
+              <select name="course_type" id="field-type"
+                class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
+                <option value="group" ${course.course_type === 'group' ? 'selected' : ''}>Grupo (hasta 5 alumnos) — $15/mes</option>
+                <option value="individual" ${course.course_type === 'individual' ? 'selected' : ''}>1 a 1 (individual) — $20/hora</option>
+              </select>
+            </div>
+            <div>
               <label class="mb-1 block text-sm text-zinc-400">Duración (meses)</label>
               <input name="duration_months" type="number" min="1" required
                 class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]"
                 value="${course.duration_months}">
             </div>
+          </div>
+
+          <div class="mb-4 grid grid-cols-2 gap-4">
             <div>
               <label class="mb-1 block text-sm text-zinc-400">Rango mínimo</label>
               <select name="min_rank" required
@@ -69,9 +80,6 @@ export async function initCoachEditCourse(): Promise<void> {
                 ${RANK_OPTIONS.map(r => `<option value="${r}" ${course.min_rank === r ? 'selected' : ''}>${r}+</option>`).join('')}
               </select>
             </div>
-          </div>
-
-          <div class="mb-4 grid grid-cols-2 gap-4">
             <div>
               <label class="mb-1 block text-sm text-zinc-400">Orden de visualización</label>
               <input name="display_order" type="number" min="0" required
@@ -130,6 +138,25 @@ export async function initCoachEditCourse(): Promise<void> {
 
     document.getElementById('page-content')!.innerHTML = html
 
+    // Course type toggle
+    document.getElementById('field-type')?.addEventListener('change', function(this: HTMLSelectElement) {
+      const priceInput = document.querySelector<HTMLInputElement>('input[name="price"]')
+      const freeCheck = document.getElementById('field-free') as HTMLInputElement
+      if (this.value === 'individual') {
+        if (priceInput) { priceInput.value = '20'; priceInput.disabled = false; priceInput.classList.remove('opacity-50') }
+        if (freeCheck) { freeCheck.checked = false; freeCheck.disabled = true }
+      } else {
+        if (freeCheck) { freeCheck.disabled = false }
+        if (priceInput && !freeCheck?.checked) { priceInput.value = '15'; priceInput.disabled = false; priceInput.classList.remove('opacity-50') }
+      }
+    })
+    // Init type state
+    const typeSelect = document.getElementById('field-type') as HTMLSelectElement
+    if (typeSelect?.value === 'individual') {
+      const freeCheck = document.getElementById('field-free') as HTMLInputElement
+      if (freeCheck) { freeCheck.disabled = true }
+    }
+
     // Free course toggle
     document.getElementById('field-free')?.addEventListener('change', function(this: HTMLInputElement) {
       const priceInput = document.querySelector<HTMLInputElement>('input[name="price"]')
@@ -175,6 +202,7 @@ export async function initCoachEditCourse(): Promise<void> {
       const data: Record<string, any> = {
         name: fd.get('name'),
         description: fd.get('description'),
+        course_type: fd.get('course_type') || 'group',
         duration_months: parseInt(fd.get('duration_months') as string),
         min_rank: fd.get('min_rank'),
         display_order: parseInt(fd.get('display_order') as string),

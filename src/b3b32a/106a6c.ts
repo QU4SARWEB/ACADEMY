@@ -183,12 +183,12 @@ export function renderHome(session?: any): string {
           </div>
         </section>
 
-        <!-- Precios / Offers -->
-        <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
+         <!-- Precios / Offers -->
+         <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-6xl scroll-mt-24 px-6">
            <div class="flex flex-col gap-2 mb-10 text-center items-center reveal">
-            <span class="lbl">Mensualidad única · acceso total</span>
+            <span class="lbl">Clases particulares · entrenamiento real</span>
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
-            <p class="s-title-sub">Una mensualidad simple y flexible. Accedes a tu curso por rango y a todos los beneficios de la academia mientras entrenes con nosotros.</p>
+            <p class="s-title-sub">Elige la modalidad que mejor se adapte a tu ritmo. Clases 1 a 1 personalizadas, packs mensuales o acceso completo por rango.</p>
           </div>
           <div class="offer-grid">
             <article class="offer-card offer-card--free reveal" style="--i:0">
@@ -200,29 +200,92 @@ export function renderHome(session?: any): string {
                   <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
               </ul>
               <p class="offer-card__hint">Solo el primer paso.</p>
-              <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Comenzar gratis</a></div>
+              <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Comenzar gratis →</a></div>
             </article>
             <article class="offer-card featured reveal" style="--i:1">
               <span class="offer-card__badge">Más elegido</span>
               <span class="offer-card__badge--secondary">Mejor valor</span>
               <h3 class="offer-card__title">Cursos completos</h3>
-              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · por mes</span></div>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · por mes · 2+ alumnos</span></div>
               <p class="offer-card__save">Mensualidad · sin permanencia</p>
-              <p class="offer-card__blurb">El entrenamiento completo para tu rango: de la teoría a la práctica real, con coaches que siguen tu progreso semana a semana. Es la diferencia entre jugar más y jugar mejor.</p>
+              <p class="offer-card__blurb">El entrenamiento completo para tu rango en grupo: de la teoría a la práctica real, con coaches que siguen tu progreso semana a semana. Clases en vivo con 2 o más alumnos por sesión.</p>
               <ul class="offer-card__list">
                 ${[
-                  'Plan de estudios progresivo diseñado para tu nivel (Rookie a Pro)',
+                  'Plan de estudios progresivo para tu nivel (Rookie a Pro)',
                   'Clases en vivo con coaches certificados',
-                  'Clases grabadas y material para repasar cuando quieras',
-                  'Scrims y evaluaciones semanales para medir tu avance',
+                  'Clases grabadas y material para repasar',
+                  'Scrims y evaluaciones semanales',
                   'Análisis de tu gameplay con feedback accionable',
-                  'Comunidad exclusiva en Discord con eventos y torneos',
+                  'Seguimiento de progreso',
+                  'Comunidad exclusiva en Discord',
                   'Certificado oficial QU4SAR al completar',
-                  'Acceso en PC y Valorant Mobile',
+                  'Acceso en PC y VALORANT Mobile',
                 ].map(f => `
                   <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
               </ul>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
+            </article>
+            <article class="offer-card reveal" style="--i:2">
+              <span class="offer-card__badge offer-card__badge--1on1">1 a 1</span>
+              <h3 class="offer-card__title">Clase particular</h3>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$20</span><span class="offer-card__unit">USD · por hora</span></div>
+              <p class="offer-card__blurb">Una sesión completamente enfocada en tu juego. Trabajamos directamente sobre tus errores, decisiones y hábitos para identificar qué está frenando tu progreso y cómo corregirlo.</p>
+              <p class="offer-card__mode">Online · Discord</p>
+              <ul class="offer-card__list">
+                ${[
+                  '1 hora 1 a 1 con un coach del colectivo',
+                  'Análisis personalizado de tu gameplay',
+                  'Identificación de tus principales leaks',
+                  'Diagnóstico de tus fortalezas y debilidades',
+                  'Análisis de toma de decisiones',
+                  'Análisis de posicionamiento',
+                  'Revisión de uso de utilidad',
+                  'Lectura de ronda e interpretación de información',
+                  'Análisis de economía y gestión de recursos',
+                  'Revisión de duelos y situaciones clave',
+                  'Correcciones de hábitos y errores recurrentes',
+                  'Recomendación de agentes según tu estilo de juego',
+                  'Recomendación de mapas para mejorar',
+                  'Ejercicios personalizados para trabajar tus puntos débiles',
+                  'Objetivos concretos para tu siguiente sesión',
+                  'Plan de mejora adaptado a tu rango',
+                ].map(f => `
+                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+              </ul>
+              <p class="offer-card__hint">Una hora. Un diagnóstico claro. Un plan para mejorar.</p>
+              <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Agendar mi clase →</a></div>
+            </article>
+            <article class="offer-card offer-card--intensive reveal" style="--i:3">
+              <span class="offer-card__badge offer-card__badge--intensive">Intensivo</span>
+              <h3 class="offer-card__title">Coaching Intensivo</h3>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$50</span><span class="offer-card__unit">USD · 15 días · seguimiento individual</span></div>
+              <p class="offer-card__blurb">No es una clase aislada. Es un proceso de entrenamiento personalizado para detectar tus problemas, trabajar sobre ellos y medir tu progreso durante 15 días.</p>
+              <p class="offer-card__mode">Incluye:</p>
+              <ul class="offer-card__list">
+                ${[
+                  'Diagnóstico inicial de nivel y estilo de juego',
+                  '3 sesiones 1 a 1 con coach',
+                  'Análisis personalizado de gameplay',
+                  'Identificación y seguimiento de tus principales leaks',
+                  'Plan de entrenamiento personalizado',
+                  'Objetivos específicos para los 15 días',
+                  'Ejercicios adaptados a tus necesidades',
+                  'Trabajo sobre posicionamiento y toma de decisiones',
+                  'Lectura de rondas e interpretación de información',
+                  'Uso correcto de utilidad',
+                  'Gestión de economía y recursos',
+                  'Análisis de duelos y situaciones frecuentes',
+                  'Recomendación de agentes y mapas',
+                  'Seguimiento de tu evolución',
+                  'Feedback personalizado entre sesiones',
+                  'Ajustes del plan según tu progreso',
+                  'Evaluación final',
+                  'Recomendaciones para continuar mejorando',
+                ].map(f => `
+                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+              </ul>
+              <p class="offer-card__hint">15 días trabajando específicamente en lo que te está frenando.</p>
+              <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Comenzar programa →</a></div>
             </article>
           </div>
 
@@ -232,22 +295,32 @@ export function renderHome(session?: any): string {
               <span>Beneficio</span>
               <span>Gratis</span>
               <span>Cursos <em>$15</em></span>
+              <span>1 a 1 <em>$20</em></span>
+              <span>Intensivo <em>$50</em></span>
             </div>
             ${[
-              { label: 'Evaluación de nivel inicial', free: true, paid: true },
-              { label: 'Examen teórico y práctico', free: true, paid: true },
-              { label: 'Plan de estudios por rango', free: false, paid: true },
-              { label: 'Clases en vivo con coaches', free: false, paid: true },
-              { label: 'Clases grabadas y material', free: false, paid: true },
-              { label: 'Seguimiento con coaches', free: false, paid: true },
-              { label: 'Scrims y torneos', free: false, paid: true },
-              { label: 'Comunidad exclusiva', free: false, paid: true },
-              { label: 'Certificado oficial', free: false, paid: true },
+              { label: 'Evaluación de nivel', v1: true, v2: false, v3: false, v4: false },
+              { label: 'Examen teórico y práctico', v1: true, v2: false, v3: false, v4: false },
+              { label: 'Plan de estudios por rango', v1: false, v2: true, v3: false, v4: true },
+              { label: 'Clases en vivo con coaches', v1: false, v2: true, v3: false, v4: true },
+              { label: '1 a 1 con coach pro', v1: false, v2: false, v3: true, v4: true },
+              { label: 'Identificación de leaks', v1: false, v2: true, v3: true, v4: true },
+              { label: 'Plan de mejora personalizado', v1: false, v2: false, v3: true, v4: true },
+              { label: 'Lectura de ronda y utilidad', v1: false, v2: true, v3: true, v4: true },
+              { label: 'Recomendación de agente/mapas', v1: false, v2: true, v3: true, v4: true },
+              { label: 'Seguimiento de progreso', v1: false, v2: true, v3: false, v4: true },
+              { label: 'Ejercicios entre sesiones', v1: false, v2: false, v3: false, v4: true },
+              { label: 'Evaluación final', v1: false, v2: false, v3: false, v4: true },
+              { label: 'Scrims y torneos', v1: false, v2: true, v3: false, v4: false },
+              { label: 'Comunidad exclusiva', v1: false, v2: true, v3: false, v4: false },
+              { label: 'Certificado oficial', v1: false, v2: true, v3: false, v4: false },
             ].map((r, i) => `
               <div class="compare__row reveal" style="--i:${i}">
                 <span>${escapeHtml(r.label)}</span>
-                <span class="${r.free ? 'yes' : 'no'}">${r.free ? '✓' : '—'}</span>
-                <span class="yes ${r.paid ? 'paid' : 'no'}">${r.paid ? '✓' : '—'}</span>
+                <span class="${r.v1 ? 'yes' : 'no'}">${r.v1 ? '✓' : '—'}</span>
+                <span class="${r.v2 ? 'yes' : 'no'}">${r.v2 ? '✓' : '—'}</span>
+                <span class="${r.v3 ? 'yes' : 'no'}">${r.v3 ? '✓' : '—'}</span>
+                <span class="${r.v4 ? 'yes' : 'no'}">${r.v4 ? '✓' : '—'}</span>
               </div>
             `).join('')}
           </div>

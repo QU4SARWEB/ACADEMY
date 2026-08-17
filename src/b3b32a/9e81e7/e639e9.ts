@@ -514,7 +514,7 @@ async function renderCoachPayments(): Promise<void> {
       }
 
       const payUsd = Number(pay?.paid_usd || 0)
-      const feeUsd = Number(c.price || pay?.amount || 15)
+      const feeUsd = Number(pay?.amount || c.price || 15)
       const owedUsd = Math.max(0, feeUsd - payUsd)
       const isPartial = pay && !isFree && pay.status !== 'paid' && pay.status !== 'scholarship' && payUsd > 0 && owedUsd > 0.005
 
@@ -523,14 +523,14 @@ async function renderCoachPayments(): Promise<void> {
         : !pay
           ? '<span class="rounded-full border border-zinc-700/30 px-2.5 py-0.5 text-xs text-zinc-600">Sin pago</span>'
           : pay.status === 'paid'
-            ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado${daysLeft}</span>`
+            ? `<span class="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs text-green-400">Pagado ${fmtUsd(feeUsd)}${daysLeft}</span>`
             : isPartial
-              ? `<span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs text-amber-400">Debiendo ${fmtUsd(owedUsd)}${daysLeft}</span>`
+              ? `<span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs text-amber-400">Debiendo ${fmtUsd(owedUsd)} de ${fmtUsd(feeUsd)}${daysLeft}</span>`
               : pay.status === 'pending'
-                ? `<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente${daysLeft}</span>`
+                ? `<span class="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs text-yellow-400">Pendiente ${fmtUsd(feeUsd)}${daysLeft}</span>`
                 : pay.status === 'scholarship'
-                  ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca${daysLeft}</span>`
-                  : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido${daysLeft}</span>`
+                  ? `<span class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs text-blue-400">Beca ${fmtUsd(feeUsd)}${daysLeft}</span>`
+                  : `<span class="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs text-red-400">Vencido ${fmtUsd(feeUsd)}${daysLeft}</span>`
 
       const venceCell = pay?.due_at
         ? `<span class="text-xs text-zinc-300">${formatDate(pay.due_at)}</span>`
@@ -983,11 +983,12 @@ async function renderCoachPayments(): Promise<void> {
       const role = createBtn.dataset.role
       if (!profileId) return
       const { data: profile } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
-      const { data: firstEnroll } = await supabase.from('enrollments').select('course_id').eq('profile_id', profileId).limit(1).maybeSingle()
+      const { data: firstEnroll } = await supabase.from('enrollments').select('course_id, course_type').eq('profile_id', profileId).limit(1).maybeSingle()
       let payAmount = 15
       if (firstEnroll) {
         const { data: courseRow } = await supabase.from('courses').select('price').eq('id', firstEnroll.course_id).maybeSingle()
-        if (courseRow) payAmount = courseRow.price ?? 15
+        if (firstEnroll.course_type === 'individual') payAmount = 20
+        else if (courseRow) payAmount = courseRow.price ?? 15
       }
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
       if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }

@@ -21,7 +21,7 @@ export async function initCoachEnroll(): Promise<void> {
     // Show ALL active courses (free and paid)
     const { data: courses } = await supabase
       .from('courses')
-      .select('id, name, price')
+      .select('id, name, price, course_type')
       .eq('is_active', true)
       .order('display_order')
     const allCourses = courses ?? []
@@ -80,27 +80,39 @@ export async function initCoachEnroll(): Promise<void> {
     const cidFilter = allCourseIds.length > 0 ? allCourseIds : ['00000000-0000-0000-0000-000000000000']
     const { data: enrolls } = await supabase
       .from('enrollments')
-      .select('profile_id, course_id')
+      .select('profile_id, course_id, course_type')
       .in('profile_id', sidFilter)
       .in('course_id', cidFilter)
       .in('status', ['active', 'recovery'])
 
     const enrolledMap = new Map<string, Set<string>>()
+    const studentModeMap = new Map<string, string>() // studentId -> courseType (from first enrollment)
     for (const e of enrolls ?? []) {
       if (!enrolledMap.has(e.profile_id)) enrolledMap.set(e.profile_id, new Set())
       enrolledMap.get(e.profile_id)!.add(e.course_id)
+      // Use the first enrollment's course_type for the student's mode toggle
+      if (!studentModeMap.has(e.profile_id)) studentModeMap.set(e.profile_id, e.course_type || 'group')
     }
 
     // Pending changes tracker
-    type Change = { studentId: string; courseId: string; enroll: boolean; type: string }
+    type Change = { studentId: string; courseId: string; enroll: boolean; type: string; courseType: string }
+    type ModeChange = { studentId: string; courseId: string; courseType: string }
     let pendingChanges: Change[] = []
+    let pendingModes: ModeChange[] = []
     const pendingSet = new Set<string>() // "studentId-courseId" for quick lookup
+    const modeSet = new Set<string>() // "studentId-courseId" for mode changes
+
+    // Store original mode for each enrolled student
+    const originalModeMap = new Map<string, string>() // "studentId-courseId" -> 'group'|'individual'
+    for (const e of enrolls ?? []) {
+      originalModeMap.set(e.profile_id + '-' + e.course_id, e.course_type || 'group')
+    }
 
     function updateSaveBar(): void {
       const bar = document.getElementById('enroll-save-bar')
       const count = document.getElementById('enroll-changes-count')
       if (!bar || !count) return
-      const n = pendingChanges.length
+      const n = pendingChanges.length + pendingModes.length
       if (n > 0) {
         bar.classList.remove('hidden')
         count.textContent = `${n} cambio${n !== 1 ? 's' : ''} pendiente${n !== 1 ? 's' : ''}`
@@ -113,6 +125,8 @@ export async function initCoachEnroll(): Promise<void> {
       const key = studentId + '-' + courseId
       const typeEl = document.querySelector<HTMLInputElement>(`.enroll-player-type[data-student="${studentId}"]`)
       const type = typeEl?.checked ? 'player' : 'student'
+      const modeEl = document.querySelector<HTMLInputElement>(`.enroll-mode-type[data-student="${studentId}"]`)
+      const courseType = modeEl?.checked ? 'individual' : 'group'
 
       if (pendingSet.has(key)) {
         // Remove existing pending change
@@ -123,7 +137,7 @@ export async function initCoachEnroll(): Promise<void> {
       // Only add if it changes the current state
       const isCurrentlyEnrolled = enrolledMap.get(studentId)?.has(courseId)
       if (enroll !== isCurrentlyEnrolled) {
-        pendingChanges.push({ studentId, courseId, enroll, type })
+        pendingChanges.push({ studentId, courseId, enroll, type, courseType })
         pendingSet.add(key)
       }
 
@@ -143,13 +157,23 @@ export async function initCoachEnroll(): Promise<void> {
     }
 
     const coachCourses = allCourses.filter((c: any) => enrollableSet.has(c.id))
-    const courseFilterHtml = coachCourses.map((c: any) => `
-      <button class="enroll-course-filter flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
-        data-course-id="${escapeHtml(c.id)}" data-active="1">
-        ${Icon('checkCircle', 14)}
-        <span>${escapeHtml(c.name)}</span>
-      </button>
-    `).join('')
+    const courseFilterHtml = coachCourses.map((c: any) => {
+      const isIndividual = c.course_type === 'individual'
+      return `
+      <div class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition select-none enroll-course-filter-wrap ${isIndividual ? 'border-amber-500/40 bg-amber-500/10' : 'border-[#8B5CF6]/30 bg-[#8B5CF6]/15'}"
+        data-course-id="${escapeHtml(c.id)}" data-active="1" data-course-type="${isIndividual ? 'individual' : 'group'}">
+        <button class="enroll-course-filter flex items-center gap-1.5" data-course-id="${escapeHtml(c.id)}">
+          ${Icon('checkCircle', 14)}
+          <span>${escapeHtml(c.name)}</span>
+        </button>
+        <span class="mx-1 text-zinc-600">|</span>
+        <label class="relative inline-flex cursor-pointer items-center enroll-mode-toggle" data-course-id="${escapeHtml(c.id)}">
+          <input type="checkbox" class="peer sr-only" ${isIndividual ? 'checked' : ''} />
+          <div class="h-4 w-7 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-500 peer-checked:after:translate-x-full"></div>
+          <span class="ml-1.5 text-[10px] ${isIndividual ? 'text-amber-400' : 'text-zinc-500'}">${isIndividual ? '1a1' : 'Equipo'}</span>
+        </label>
+      </div>`
+    }).join('')
 
     function fmtProfile(p: any): string {
       const parts = [p.riot_id, p.social_discord, p.display_name, p.full_name].filter(Boolean)
@@ -186,11 +210,22 @@ export async function initCoachEnroll(): Promise<void> {
           </div>
         </td>
         <td class="py-3 px-4 text-right">
-          <label class="relative inline-flex cursor-pointer items-center">
-            <input type="checkbox" class="enroll-player-type peer sr-only" data-student="${escapeHtml(s.id)}" />
-            <div class="h-5 w-9 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-[#8B5CF6] peer-checked:after:translate-x-full"></div>
-            <span class="ml-2 text-[10px] text-zinc-500 peer-checked:text-[#8B5CF6]">Player</span>
-          </label>
+          <div class="flex items-center justify-end gap-3">
+            ${(() => {
+              const isIndividual = studentModeMap.get(s.id) === 'individual'
+              return `
+            <label class="relative inline-flex cursor-pointer items-center w-[68px]">
+              <input type="checkbox" class="enroll-mode-type peer sr-only" data-student="${escapeHtml(s.id)}" ${isIndividual ? 'checked' : ''} />
+              <div class="h-5 w-9 shrink-0 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-500 peer-checked:after:translate-x-full"></div>
+              <span class="ml-2 w-8 text-[10px] ${isIndividual ? 'text-amber-400' : 'text-zinc-500'}">${isIndividual ? '1a1' : 'Equipo'}</span>
+            </label>`
+            })()}
+            <label class="relative inline-flex cursor-pointer items-center w-[68px]">
+              <input type="checkbox" class="enroll-player-type peer sr-only" data-student="${escapeHtml(s.id)}" />
+              <div class="h-5 w-9 shrink-0 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-[#8B5CF6] peer-checked:after:translate-x-full"></div>
+              <span class="ml-2 w-8 text-[10px] text-zinc-500 peer-checked:text-[#8B5CF6]">Player</span>
+            </label>
+          </div>
         </td>
       </tr>`
     }).join('')
@@ -241,7 +276,7 @@ export async function initCoachEnroll(): Promise<void> {
                   <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
                   <th class="py-3 px-4 font-medium">Plataforma</th>
                   <th class="py-3 px-4 font-medium">Cursos</th>
-                  <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
+                  <th class="py-3 px-4 font-medium text-right w-32">Modo · Tipo</th>
                 </tr>
               </thead>
               <tbody>${renderTableRows(myStudents)}</tbody>
@@ -262,7 +297,7 @@ export async function initCoachEnroll(): Promise<void> {
                   <th class="py-3 px-4 font-medium hidden md:table-cell">Email</th>
                   <th class="py-3 px-4 font-medium">Plataforma</th>
                   <th class="py-3 px-4 font-medium">Cursos</th>
-                  <th class="py-3 px-4 font-medium text-right w-20">Tipo</th>
+                  <th class="py-3 px-4 font-medium text-right w-32">Modo · Tipo</th>
                 </tr>
               </thead>
               <tbody>${renderTableRows(freeOnlyStudents)}</tbody>
@@ -298,19 +333,21 @@ export async function initCoachEnroll(): Promise<void> {
     // Save all pending changes
     document.getElementById('btn-save-enroll')?.addEventListener('click', async () => {
       const changes = [...pendingChanges]
-      if (changes.length === 0) return
+      const modes = [...pendingModes]
+      if (changes.length === 0 && modes.length === 0) return
       ;(window as any).__blockReload = true
       const btn = document.getElementById('btn-save-enroll') as HTMLButtonElement
       btn.disabled = true
       btn.textContent = 'Guardando...'
       let ok = 0, fail = 0
-      // Group by course for batch processing
-      const enrollByCourse = new Map<string, { ids: string[]; type: string }>()
+      // Group by course + courseType for batch processing
+      const enrollByCourse = new Map<string, { ids: string[]; type: string; courseType: string }>()
       const unenrollByCourse = new Map<string, string[]>()
       for (const c of changes) {
         if (c.enroll) {
-          if (!enrollByCourse.has(c.courseId)) enrollByCourse.set(c.courseId, { ids: [], type: c.type })
-          enrollByCourse.get(c.courseId)!.ids.push(c.studentId)
+          const groupKey = c.courseId + '|' + c.courseType
+          if (!enrollByCourse.has(groupKey)) enrollByCourse.set(groupKey, { ids: [], type: c.type, courseType: c.courseType })
+          enrollByCourse.get(groupKey)!.ids.push(c.studentId)
         } else {
           if (!unenrollByCourse.has(c.courseId)) unenrollByCourse.set(c.courseId, [])
           unenrollByCourse.get(c.courseId)!.push(c.studentId)
@@ -328,12 +365,14 @@ export async function initCoachEnroll(): Promise<void> {
         ok += sids.length
       }
 
-      // Process enrollments by course
-      for (const [cid, data] of enrollByCourse) {
+      // Process enrollments by course + courseType
+      for (const [groupKey, data] of enrollByCourse) {
+        const cid = groupKey.split('|')[0]
         const { data: result, error } = await supabase.rpc('batch_enroll', {
           p_student_ids: data.ids,
           p_course_id: cid,
           p_type: data.type,
+          p_course_type: data.courseType,
         })
         if (error) {
           fail += data.ids.length
@@ -345,10 +384,25 @@ export async function initCoachEnroll(): Promise<void> {
           }
         }
       }
+
+      // Process mode changes: update enrollment.course_type + payment.amount
+      for (const m of modes) {
+        const newAmount = m.courseType === 'individual' ? 20 : 15
+        const { data: enr } = await supabase.from('enrollments').select('id').eq('profile_id', m.studentId).eq('course_id', m.courseId).maybeSingle()
+        if (enr?.id) {
+          await supabase.from('enrollments').update({ course_type: m.courseType }).eq('id', enr.id)
+          await supabase.from('payments').update({ amount: newAmount }).eq('enrollment_id', enr.id)
+          ok++
+        } else {
+          fail++
+        }
+      }
       if (fail > 0) toast('warning', `${ok} exitoso${ok !== 1 ? 's' : ''}, ${fail} error${fail !== 1 ? 'es' : ''}`)
       else toast('success', `${ok} cambio${ok !== 1 ? 's' : ''} guardado${ok !== 1 ? 's' : ''}`)
       pendingChanges = []
+      pendingModes = []
       pendingSet.clear()
+      modeSet.clear()
       ;(window as any).__blockReload = false
       initCoachEnroll()
     })
@@ -356,7 +410,9 @@ export async function initCoachEnroll(): Promise<void> {
     // Discard changes
     document.getElementById('btn-discard-enroll')?.addEventListener('click', () => {
       pendingChanges = []
+      pendingModes = []
       pendingSet.clear()
+      modeSet.clear()
       // Reset badges
       document.querySelectorAll<HTMLElement>('.course-badge.pending-enroll').forEach(badge => {
         const sid = badge.dataset.student
@@ -365,6 +421,22 @@ export async function initCoachEnroll(): Promise<void> {
         const enr = enrolledMap.get(sid)?.has(cid)
         badge.className = `course-badge inline-block rounded px-1.5 py-0.5 text-[10px] cursor-pointer transition ${enr ? 'bg-green-500/20 text-green-400' : 'bg-zinc-800 text-zinc-600'}`
         badge.dataset.pending = ''
+      })
+      // Reset mode toggles to original state
+      document.querySelectorAll<HTMLInputElement>('.enroll-mode-type').forEach(toggle => {
+        const sid = toggle.dataset.student
+        if (!sid) return
+        const enrolledCourses = enrolledMap.get(sid)
+        if (!enrolledCourses) return
+        const firstCourse = [...enrolledCourses][0]
+        const origType = originalModeMap.get(sid + '-' + firstCourse) || 'group'
+        toggle.checked = origType === 'individual'
+        const label = toggle.parentElement?.querySelector('span')
+        if (label) {
+          label.textContent = toggle.checked ? '1a1' : 'Equipo'
+          label.classList.toggle('text-amber-400', toggle.checked)
+          label.classList.toggle('text-zinc-500', !toggle.checked)
+        }
       })
       updateSaveBar()
     })
@@ -375,23 +447,89 @@ export async function initCoachEnroll(): Promise<void> {
       document.querySelectorAll<HTMLInputElement>('.enroll-student-cb').forEach(cb => cb.checked = checked)
     })
 
+    // Mode-type toggle: track mode changes for enrolled students
+    document.querySelectorAll<HTMLInputElement>('.enroll-mode-type').forEach(toggle => {
+      toggle.addEventListener('change', () => {
+        const label = toggle.parentElement?.querySelector('span')
+        if (label) {
+          label.textContent = toggle.checked ? '1a1' : 'Equipo'
+          label.classList.toggle('text-amber-400', toggle.checked)
+          label.classList.toggle('text-zinc-500', !toggle.checked)
+        }
+        // Track mode change for already-enrolled students
+        const sid = toggle.dataset.student
+        if (!sid) return
+        // Find which courses this student is enrolled in
+        const enrolledCourses = enrolledMap.get(sid)
+        if (!enrolledCourses) return
+        for (const cid of enrolledCourses) {
+          const key = sid + '-' + cid
+          const newType = toggle.checked ? 'individual' : 'group'
+          const origType = originalModeMap.get(key) || 'group'
+          if (newType !== origType) {
+            if (!modeSet.has(key)) {
+              pendingModes.push({ studentId: sid, courseId: cid, courseType: newType })
+              modeSet.add(key)
+            } else {
+              // Update existing
+              const existing = pendingModes.find(m => m.studentId === sid && m.courseId === cid)
+              if (existing) existing.courseType = newType
+            }
+          } else {
+            // Reverted to original, remove from pending
+            pendingModes = pendingModes.filter(m => !(m.studentId === sid && m.courseId === cid))
+            modeSet.delete(key)
+          }
+        }
+        updateSaveBar()
+      })
+    })
+
     // Course filter toggles
     document.querySelectorAll('.enroll-course-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const el = btn as HTMLElement
-        const cid = el.dataset.courseId
-        const active = el.dataset.active === '1'
-        el.dataset.active = active ? '0' : '1'
-        el.classList.toggle('bg-[#8B5CF6]/15', !active)
-        el.classList.toggle('text-[#8B5CF6]', !active)
-        el.classList.toggle('border-[#8B5CF6]/30', !active)
-        el.classList.toggle('bg-zinc-800/40', active)
-        el.classList.toggle('text-zinc-500', active)
-        el.classList.toggle('border-dashed', active)
-        el.innerHTML = active ? `${Icon('plus', 12)} <span>${escapeHtml(allCourses.find((c: any) => c.id === cid)?.name || '')}</span>` : `${Icon('checkCircle', 14)} <span>${escapeHtml(allCourses.find((c: any) => c.id === cid)?.name || '')}</span>`
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const wrapper = (btn as HTMLElement).closest('.enroll-course-filter-wrap') as HTMLElement
+        if (!wrapper) return
+        const cid = wrapper.dataset.courseId
+        const active = wrapper.dataset.active === '1'
+        wrapper.dataset.active = active ? '0' : '1'
+        wrapper.classList.toggle('border-dashed', active)
+        wrapper.classList.toggle('border-[#8B5CF6]/30', !active)
+        wrapper.classList.toggle('bg-[#8B5CF6]/15', !active)
+        wrapper.classList.toggle('bg-zinc-800/40', active)
+        wrapper.classList.toggle('text-zinc-500', active)
         document.querySelectorAll<HTMLElement>('.course-badge').forEach(badge => {
           if (badge.dataset.course === cid) badge.classList.toggle('opacity-30', active)
         })
+      })
+    })
+
+    // Course mode toggle: Equipo ↔ 1 a 1
+    document.querySelectorAll('.enroll-mode-toggle').forEach(toggle => {
+      toggle.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        const el = toggle as HTMLElement
+        const cid = el.dataset.courseId
+        const input = el.querySelector('input') as HTMLInputElement
+        const label = el.querySelector('span:last-child') as HTMLSpanElement
+        const wrapper = el.closest('.enroll-course-filter-wrap') as HTMLElement
+        if (!cid || !input || !label) return
+        const isIndividual = input.checked
+        const newType = isIndividual ? 'individual' : 'group'
+        const { error } = await supabase.from('courses').update({ course_type: newType }).eq('id', cid)
+        if (error) { toast('error', 'Error al cambiar modo: ' + error.message); return }
+        if (wrapper) {
+          wrapper.dataset.courseType = newType
+          wrapper.classList.toggle('border-amber-500/40', isIndividual)
+          wrapper.classList.toggle('bg-amber-500/10', isIndividual)
+          wrapper.classList.toggle('border-[#8B5CF6]/30', !isIndividual)
+          wrapper.classList.toggle('bg-[#8B5CF6]/15', !isIndividual)
+        }
+        label.textContent = isIndividual ? '1a1' : 'Equipo'
+        label.classList.toggle('text-amber-400', isIndividual)
+        label.classList.toggle('text-zinc-500', !isIndividual)
+        toast('success', `${allCourses.find((c: any) => c.id === cid)?.name || ''}: modo ${isIndividual ? '1 a 1 ($20/hr)' : 'Equipo ($15/mes)'}`)
       })
     })
   } catch (err) {
