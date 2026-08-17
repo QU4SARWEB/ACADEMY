@@ -44,7 +44,8 @@ export async function createEnrollmentWithPayment(
 
   const { data: enrollCourse } = await supabase.from('courses').select('price').eq('id', courseId).maybeSingle()
   const basePrice = enrollCourse?.price != null ? parseFloat(enrollCourse.price) : 15
-  const coursePrice = courseType === 'individual' ? 20 : basePrice
+  const priceMap: Record<string, number> = { group: basePrice, individual: 20, intensive: 50 }
+  const coursePrice = priceMap[courseType || 'group'] ?? basePrice
 
   const { data: prof } = await supabase.from('profiles').select('scholarship').eq('id', profileId).maybeSingle()
   const payStatus = coursePrice === 0 ? 'free' : (prof?.scholarship ? 'scholarship' : 'pending')

@@ -103,7 +103,7 @@ export async function initCoachEnroll(): Promise<void> {
     const modeSet = new Set<string>() // "studentId-courseId" for mode changes
 
     // Store original mode for each enrolled student
-    const originalModeMap = new Map<string, string>() // "studentId-courseId" -> 'group'|'individual'
+    const originalModeMap = new Map<string, string>() // "studentId-courseId" -> 'group'|'individual'|'intensive'
     for (const e of enrolls ?? []) {
       originalModeMap.set(e.profile_id + '-' + e.course_id, e.course_type || 'group')
     }
@@ -125,8 +125,8 @@ export async function initCoachEnroll(): Promise<void> {
       const key = studentId + '-' + courseId
       const typeEl = document.querySelector<HTMLInputElement>(`.enroll-player-type[data-student="${studentId}"]`)
       const type = typeEl?.checked ? 'player' : 'student'
-      const modeEl = document.querySelector<HTMLInputElement>(`.enroll-mode-type[data-student="${studentId}"]`)
-      const courseType = modeEl?.checked ? 'individual' : 'group'
+      const modeBtn = document.querySelector<HTMLElement>(`.enroll-mode-selector[data-student="${studentId}"] .enroll-mode-btn[data-mode].bg-`)
+      const courseType = modeBtn?.dataset.mode || 'group'
 
       if (pendingSet.has(key)) {
         // Remove existing pending change
@@ -159,18 +159,22 @@ export async function initCoachEnroll(): Promise<void> {
     const coachCourses = allCourses.filter((c: any) => enrollableSet.has(c.id))
     const courseFilterHtml = coachCourses.map((c: any) => {
       const isIndividual = c.course_type === 'individual'
+      const isIntensive = c.course_type === 'intensive'
+      const typeColor = isIntensive ? 'border-red-500/40 bg-red-500/10' : isIndividual ? 'border-amber-500/40 bg-amber-500/10' : 'border-[#8B5CF6]/30 bg-[#8B5CF6]/15'
+      const typeLabel = isIntensive ? 'Intensivo' : isIndividual ? '1a1' : 'Equipo'
+      const typeLabelColor = isIntensive ? 'text-red-400' : isIndividual ? 'text-amber-400' : 'text-zinc-500'
       return `
-      <div class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition select-none enroll-course-filter-wrap ${isIndividual ? 'border-amber-500/40 bg-amber-500/10' : 'border-[#8B5CF6]/30 bg-[#8B5CF6]/15'}"
-        data-course-id="${escapeHtml(c.id)}" data-active="1" data-course-type="${isIndividual ? 'individual' : 'group'}">
+      <div class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition select-none enroll-course-filter-wrap ${typeColor}"
+        data-course-id="${escapeHtml(c.id)}" data-active="1" data-course-type="${isIntensive ? 'intensive' : isIndividual ? 'individual' : 'group'}">
         <button class="enroll-course-filter flex items-center gap-1.5" data-course-id="${escapeHtml(c.id)}">
           ${Icon('checkCircle', 14)}
           <span>${escapeHtml(c.name)}</span>
         </button>
         <span class="mx-1 text-zinc-600">|</span>
         <label class="relative inline-flex cursor-pointer items-center enroll-mode-toggle" data-course-id="${escapeHtml(c.id)}">
-          <input type="checkbox" class="peer sr-only" ${isIndividual ? 'checked' : ''} />
+          <input type="checkbox" class="peer sr-only" ${isIndividual || isIntensive ? 'checked' : ''} />
           <div class="h-4 w-7 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-500 peer-checked:after:translate-x-full"></div>
-          <span class="ml-1.5 text-[10px] ${isIndividual ? 'text-amber-400' : 'text-zinc-500'}">${isIndividual ? '1a1' : 'Equipo'}</span>
+          <span class="ml-1.5 text-[10px] ${typeLabelColor}">${typeLabel}</span>
         </label>
       </div>`
     }).join('')
@@ -212,13 +216,13 @@ export async function initCoachEnroll(): Promise<void> {
         <td class="py-3 px-4 text-right">
           <div class="flex items-center justify-end gap-3">
             ${(() => {
-              const isIndividual = studentModeMap.get(s.id) === 'individual'
+              const currentMode = studentModeMap.get(s.id) || 'group'
               return `
-            <label class="relative inline-flex cursor-pointer items-center w-[68px]">
-              <input type="checkbox" class="enroll-mode-type peer sr-only" data-student="${escapeHtml(s.id)}" ${isIndividual ? 'checked' : ''} />
-              <div class="h-5 w-9 shrink-0 rounded-full bg-zinc-700 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-500 peer-checked:after:translate-x-full"></div>
-              <span class="ml-2 w-8 text-[10px] ${isIndividual ? 'text-amber-400' : 'text-zinc-500'}">${isIndividual ? '1a1' : 'Equipo'}</span>
-            </label>`
+            <div class="enroll-mode-selector inline-flex rounded-lg border border-zinc-700 bg-zinc-900 p-0.5" data-student="${escapeHtml(s.id)}">
+              <button type="button" class="enroll-mode-btn rounded-md px-2 py-1 text-[10px] font-medium transition ${currentMode === 'group' ? 'bg-[#8B5CF6]/20 text-[#C4B5FD]' : 'text-zinc-500 hover:text-zinc-300'}" data-mode="group">Equipo</button>
+              <button type="button" class="enroll-mode-btn rounded-md px-2 py-1 text-[10px] font-medium transition ${currentMode === 'individual' ? 'bg-amber-500/20 text-amber-400' : 'text-zinc-500 hover:text-zinc-300'}" data-mode="individual">1a1</button>
+              <button type="button" class="enroll-mode-btn rounded-md px-2 py-1 text-[10px] font-medium transition ${currentMode === 'intensive' ? 'bg-red-500/20 text-red-400' : 'text-zinc-500 hover:text-zinc-300'}" data-mode="intensive">Intensivo</button>
+            </div>`
             })()}
             <label class="relative inline-flex cursor-pointer items-center w-[68px]">
               <input type="checkbox" class="enroll-player-type peer sr-only" data-student="${escapeHtml(s.id)}" />
@@ -387,7 +391,8 @@ export async function initCoachEnroll(): Promise<void> {
 
       // Process mode changes: update enrollment.course_type + payment.amount
       for (const m of modes) {
-        const newAmount = m.courseType === 'individual' ? 20 : 15
+        const priceMap: Record<string, number> = { group: 15, individual: 20, intensive: 50 }
+        const newAmount = priceMap[m.courseType] ?? 15
         const { data: enr } = await supabase.from('enrollments').select('id').eq('profile_id', m.studentId).eq('course_id', m.courseId).maybeSingle()
         if (enr?.id) {
           await supabase.from('enrollments').update({ course_type: m.courseType }).eq('id', enr.id)
@@ -422,21 +427,25 @@ export async function initCoachEnroll(): Promise<void> {
         badge.className = `course-badge inline-block rounded px-1.5 py-0.5 text-[10px] cursor-pointer transition ${enr ? 'bg-green-500/20 text-green-400' : 'bg-zinc-800 text-zinc-600'}`
         badge.dataset.pending = ''
       })
-      // Reset mode toggles to original state
-      document.querySelectorAll<HTMLInputElement>('.enroll-mode-type').forEach(toggle => {
-        const sid = toggle.dataset.student
+      // Reset mode selectors to original state
+      document.querySelectorAll<HTMLElement>('.enroll-mode-selector').forEach(selector => {
+        const sid = selector.dataset.student
         if (!sid) return
         const enrolledCourses = enrolledMap.get(sid)
         if (!enrolledCourses) return
         const firstCourse = [...enrolledCourses][0]
         const origType = originalModeMap.get(sid + '-' + firstCourse) || 'group'
-        toggle.checked = origType === 'individual'
-        const label = toggle.parentElement?.querySelector('span')
-        if (label) {
-          label.textContent = toggle.checked ? '1a1' : 'Equipo'
-          label.classList.toggle('text-amber-400', toggle.checked)
-          label.classList.toggle('text-zinc-500', !toggle.checked)
-        }
+        selector.querySelectorAll('.enroll-mode-btn').forEach(btn => {
+          const mode = (btn as HTMLElement).dataset.mode
+          btn.classList.remove('bg-[#8B5CF6]/20', 'text-[#C4B5FD]', 'bg-amber-500/20', 'text-amber-400', 'bg-red-500/20', 'text-red-400')
+          btn.classList.add('text-zinc-500')
+          if (mode === origType) {
+            btn.classList.remove('text-zinc-500')
+            if (mode === 'group') btn.classList.add('bg-[#8B5CF6]/20', 'text-[#C4B5FD]')
+            else if (mode === 'individual') btn.classList.add('bg-amber-500/20', 'text-amber-400')
+            else if (mode === 'intensive') btn.classList.add('bg-red-500/20', 'text-red-400')
+          }
+        })
       })
       updateSaveBar()
     })
@@ -447,41 +456,45 @@ export async function initCoachEnroll(): Promise<void> {
       document.querySelectorAll<HTMLInputElement>('.enroll-student-cb').forEach(cb => cb.checked = checked)
     })
 
-    // Mode-type toggle: track mode changes for enrolled students
-    document.querySelectorAll<HTMLInputElement>('.enroll-mode-type').forEach(toggle => {
-      toggle.addEventListener('change', () => {
-        const label = toggle.parentElement?.querySelector('span')
-        if (label) {
-          label.textContent = toggle.checked ? '1a1' : 'Equipo'
-          label.classList.toggle('text-amber-400', toggle.checked)
-          label.classList.toggle('text-zinc-500', !toggle.checked)
-        }
-        // Track mode change for already-enrolled students
-        const sid = toggle.dataset.student
-        if (!sid) return
-        // Find which courses this student is enrolled in
-        const enrolledCourses = enrolledMap.get(sid)
-        if (!enrolledCourses) return
-        for (const cid of enrolledCourses) {
-          const key = sid + '-' + cid
-          const newType = toggle.checked ? 'individual' : 'group'
-          const origType = originalModeMap.get(key) || 'group'
-          if (newType !== origType) {
-            if (!modeSet.has(key)) {
-              pendingModes.push({ studentId: sid, courseId: cid, courseType: newType })
-              modeSet.add(key)
+    // Mode selector: 3-option segmented control (Equipo/1a1/Intensivo)
+    document.querySelectorAll<HTMLElement>('.enroll-mode-selector').forEach(selector => {
+      selector.querySelectorAll('.enroll-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sid = selector.dataset.student
+          if (!sid) return
+          const newMode = (btn as HTMLElement).dataset.mode || 'group'
+
+          // Update button styles
+          selector.querySelectorAll('.enroll-mode-btn').forEach(b => {
+            b.classList.remove('bg-[#8B5CF6]/20', 'text-[#C4B5FD]', 'bg-amber-500/20', 'text-amber-400', 'bg-red-500/20', 'text-red-400')
+            b.classList.add('text-zinc-500')
+          })
+          btn.classList.remove('text-zinc-500')
+          if (newMode === 'group') { btn.classList.add('bg-[#8B5CF6]/20', 'text-[#C4B5FD]') }
+          else if (newMode === 'individual') { btn.classList.add('bg-amber-500/20', 'text-amber-400') }
+          else if (newMode === 'intensive') { btn.classList.add('bg-red-500/20', 'text-red-400') }
+
+          // Track mode change for already-enrolled students
+          const enrolledCourses = enrolledMap.get(sid)
+          if (!enrolledCourses) return
+          for (const cid of enrolledCourses) {
+            const key = sid + '-' + cid
+            const origType = originalModeMap.get(key) || 'group'
+            if (newMode !== origType) {
+              if (!modeSet.has(key)) {
+                pendingModes.push({ studentId: sid, courseId: cid, courseType: newMode })
+                modeSet.add(key)
+              } else {
+                const existing = pendingModes.find(m => m.studentId === sid && m.courseId === cid)
+                if (existing) existing.courseType = newMode
+              }
             } else {
-              // Update existing
-              const existing = pendingModes.find(m => m.studentId === sid && m.courseId === cid)
-              if (existing) existing.courseType = newType
+              pendingModes = pendingModes.filter(m => !(m.studentId === sid && m.courseId === cid))
+              modeSet.delete(key)
             }
-          } else {
-            // Reverted to original, remove from pending
-            pendingModes = pendingModes.filter(m => !(m.studentId === sid && m.courseId === cid))
-            modeSet.delete(key)
           }
-        }
-        updateSaveBar()
+          updateSaveBar()
+        })
       })
     })
 

@@ -70,6 +70,7 @@ export async function initCoachNewCourse(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none transition focus:border-[#8B5CF6]">
                 <option value="group">Grupo (hasta 5 alumnos) — $15/mes</option>
                 <option value="individual">1 a 1 (individual) — $20/hora</option>
+                <option value="intensive">Coaching Intensivo — $50/15 días</option>
               </select>
             </div>
             <div>
@@ -143,6 +144,10 @@ export async function initCoachNewCourse(): Promise<void> {
       const freeCheck = document.getElementById('field-free') as HTMLInputElement
       if (this.value === 'individual') {
         priceInput.value = '20'
+        freeCheck.checked = false
+        freeCheck.disabled = true
+      } else if (this.value === 'intensive') {
+        priceInput.value = '50'
         freeCheck.checked = false
         freeCheck.disabled = true
       } else {

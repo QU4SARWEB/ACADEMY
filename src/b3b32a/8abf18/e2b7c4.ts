@@ -61,6 +61,7 @@ export async function initCoachEditCourse(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                 <option value="group" ${course.course_type === 'group' ? 'selected' : ''}>Grupo (hasta 5 alumnos) — $15/mes</option>
                 <option value="individual" ${course.course_type === 'individual' ? 'selected' : ''}>1 a 1 (individual) — $20/hora</option>
+                <option value="intensive" ${course.course_type === 'intensive' ? 'selected' : ''}>Coaching Intensivo — $50/15 días</option>
               </select>
             </div>
             <div>
@@ -145,6 +146,9 @@ export async function initCoachEditCourse(): Promise<void> {
       if (this.value === 'individual') {
         if (priceInput) { priceInput.value = '20'; priceInput.disabled = false; priceInput.classList.remove('opacity-50') }
         if (freeCheck) { freeCheck.checked = false; freeCheck.disabled = true }
+      } else if (this.value === 'intensive') {
+        if (priceInput) { priceInput.value = '50'; priceInput.disabled = false; priceInput.classList.remove('opacity-50') }
+        if (freeCheck) { freeCheck.checked = false; freeCheck.disabled = true }
       } else {
         if (freeCheck) { freeCheck.disabled = false }
         if (priceInput && !freeCheck?.checked) { priceInput.value = '15'; priceInput.disabled = false; priceInput.classList.remove('opacity-50') }
@@ -152,7 +156,7 @@ export async function initCoachEditCourse(): Promise<void> {
     })
     // Init type state
     const typeSelect = document.getElementById('field-type') as HTMLSelectElement
-    if (typeSelect?.value === 'individual') {
+    if (typeSelect?.value === 'individual' || typeSelect?.value === 'intensive') {
       const freeCheck = document.getElementById('field-free') as HTMLInputElement
       if (freeCheck) { freeCheck.disabled = true }
     }
