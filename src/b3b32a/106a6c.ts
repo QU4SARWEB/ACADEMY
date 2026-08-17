@@ -572,8 +572,7 @@ export async function mountHome(): Promise<void> {
               for (const entry of entries) {
                 if (entry.isIntersecting) {
                   entry.target.classList.add('in')
-                } else {
-                  entry.target.classList.remove('in')
+                  io.unobserve(entry.target)
                 }
               }
             }, { threshold: 0.2 })

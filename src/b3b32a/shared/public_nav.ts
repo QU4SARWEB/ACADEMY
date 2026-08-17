@@ -184,24 +184,21 @@ export function mountPublicNav(): void {
     window.addEventListener('scroll', onScroll, { passive: true })
   }
 
-  // Reveal on scroll: aparece después de entrar al viewport y en ambas direcciones
+  // Reveal on scroll: una vez visible, queda visible para siempre
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         const target = entry.target as HTMLElement
-        if (!entry.isIntersecting) {
-          delete target.dataset.revealPending
-          target.classList.remove('in')
-          continue
-        }
+        if (!entry.isIntersecting) continue
+        if (target.classList.contains('in')) { io.unobserve(target); continue }
 
-        // Let the hidden state paint before starting the fade-in transition.
         target.dataset.revealPending = '1'
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (target.isConnected && target.dataset.revealPending === '1') {
               delete target.dataset.revealPending
               target.classList.add('in')
+              io.unobserve(target)
             }
           })
         })
