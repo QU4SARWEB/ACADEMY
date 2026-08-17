@@ -372,9 +372,9 @@ const navGroups: NavItem[][] = [
     </nav>
     ${isCoach ? `
     <!-- Coach quick actions panel (retractable, bottom-right) -->
-    <div id="coach-panel" class="fixed bottom-4 right-0 z-50 flex items-end transition-transform duration-300" style="transform:translateX(0)">
+    <div id="coach-panel" class="fixed bottom-4 right-0 z-50 flex items-end transition-transform duration-300" style="transform:translateX(calc(100% - 28px))">
       <button id="cp-toggle" class="flex items-center justify-center w-7 h-16 rounded-l-lg border border-zinc-700 bg-zinc-900/90 text-zinc-400 hover:text-white transition cursor-pointer mb-1" title="Mostrar/Ocultar">
-        <span id="cp-chevron" style="transition:transform 0.3s">${Icon('chevronRight', 14)}</span>
+        <span id="cp-chevron" style="transition:transform 0.3s;transform:rotate(180deg)">${Icon('chevronRight', 14)}</span>
       </button>
       <div class="flex flex-col gap-1.5 rounded-l-lg border border-zinc-700 bg-zinc-900/90 px-2.5 py-2.5 shadow-lg backdrop-blur-md">
         <button class="preview-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-white whitespace-nowrap w-full text-left" data-role="student">
@@ -448,7 +448,7 @@ export function initSidebar(): void {
   // Coach panel toggle
   const coachPanel = document.getElementById('coach-panel')
   const cpToggle = document.getElementById('cp-toggle')
-  let panelExpanded = true
+  let panelExpanded = false
   cpToggle?.addEventListener('click', () => {
     panelExpanded = !panelExpanded
     if (coachPanel) {
