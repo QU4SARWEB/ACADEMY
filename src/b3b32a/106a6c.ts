@@ -5,6 +5,8 @@ import { rankBadge } from '@/2b3583/ranks'
 import { renderDiscordBanner, renderPublicNavbar, renderPublicFooter, mountPublicNav } from '@/b3b32a/shared/public_nav'
 
 const DISCORD_URL = 'https://discord.gg/jmP2wJVf4N'
+const WHATSAPP_CHANNEL = 'https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k'
+const WHATSAPP_COMMUNITY = 'https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5'
 
 function embers(): string {
   const positions = [2, 7, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 95]
@@ -289,6 +291,28 @@ export function renderHome(session?: any): string {
             </div>
             <ul class="community__perks">
               ${['#anuncios y #reglas', '#general, #clips y #sugerencias', '#guías y #eventos', '#busco-equipo', '#tickets para soporte', 'Salas de voz para clases y coordinación'].map((c, i) => `
+                <li class="community__perk reveal" style="--i:${i}"><span class="dot"></span>${escapeHtml(c)}</li>`).join('')}
+            </ul>
+          </div>
+        </section>
+
+        <!-- WhatsApp -->
+        <section class="mx-auto mt-16 md:mt-20 max-w-5xl scroll-mt-24 px-6">
+          <div class="community-grid">
+            <div class="reveal">
+              <span class="lbl">Comunidad · WhatsApp</span>
+              <h2 class="s-title">Conéctate <em>directo.</em></h2>
+              <p class="s-title-sub">
+                Únete a nuestro canal de WhatsApp para anuncios importantes y a la comunidad para interactuar
+                con otros estudiantes y coaches. No te pierdas ninguna novedad.
+              </p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <a href="${WHATSAPP_CHANNEL}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Canal de WhatsApp →</a>
+                <a href="${WHATSAPP_COMMUNITY}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Unirse a la Comunidad →</a>
+              </div>
+            </div>
+            <ul class="community__perks">
+              ${['Anuncios oficiales de la academia', 'Nuevos cursos y eventos', 'Noticias de Valorant Mobile', 'Interactúa con coaches y alumnos', 'Eventos y torneos exclusivos', 'Soporte rápido y directo'].map((c, i) => `
                 <li class="community__perk reveal" style="--i:${i}"><span class="dot"></span>${escapeHtml(c)}</li>`).join('')}
             </ul>
           </div>

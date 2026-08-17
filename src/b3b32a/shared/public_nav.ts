@@ -5,11 +5,15 @@ import { getProfile } from '@/fa53b9/fa53b9'
 import { router } from '@/f3395c'
 
 const DISCORD_URL = 'https://discord.gg/jmP2wJVf4N'
+const WHATSAPP_CHANNEL = 'https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k'
+const WHATSAPP_COMMUNITY = 'https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5'
 const SOCIALS = {
   youtube: 'https://www.youtube.com/@QU4SAR_ACADEMY',
   twitch: 'https://www.twitch.tv/qu4sar_academy',
   instagram: 'https://www.instagram.com/qu4sar._.esports/',
   discord: DISCORD_URL,
+  whatsappChannel: WHATSAPP_CHANNEL,
+  whatsappCommunity: WHATSAPP_COMMUNITY,
 }
 
 export function renderDiscordBanner(): string {
@@ -94,6 +98,8 @@ export function renderPublicFooter(): string {
         <div>
           <span class="h">Comunidad</span>
           <a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">Discord</a>
+          <a href="${WHATSAPP_CHANNEL}" target="_blank" rel="noopener noreferrer">WhatsApp Canal</a>
+          <a href="${WHATSAPP_COMMUNITY}" target="_blank" rel="noopener noreferrer">WhatsApp Comunidad</a>
           <a href="${SOCIALS.youtube}" target="_blank" rel="noopener noreferrer">YouTube</a>
           <a href="${SOCIALS.twitch}" target="_blank" rel="noopener noreferrer">Twitch</a>
           <a href="${SOCIALS.instagram}" target="_blank" rel="noopener noreferrer">Instagram</a>

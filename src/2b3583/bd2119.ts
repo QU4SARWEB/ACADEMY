@@ -60,6 +60,7 @@ import {
   Video,
   X,
   Zap,
+  MessageCircle,
 } from 'lucide'
 
 type IconNode = readonly (readonly [string, Record<string, string | number | undefined>])[]
@@ -127,6 +128,7 @@ const ICONS: Record<string, IconNode> = {
   refreshCw: RefreshCw,
   check: Check,
   camera: Camera,
+  messageCircle: MessageCircle,
 }
 
 function escapeAttribute(value: string | number): string {
