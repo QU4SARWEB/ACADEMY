@@ -184,7 +184,7 @@ function renderPlanilla(): void {
     }).join('')
 
     return `
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden mb-6" data-course-section="${escapeHtml(c.id)}">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden mb-6 rt-carousel" data-course-section="${escapeHtml(c.id)}">
         <div class="bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
           <p class="text-xs text-zinc-500 mt-0.5">${students.length} alumno${students.length !== 1 ? 's' : ''} · Aprobado desde ${c.minPass}/20 · ${COMPONENT_LABELS.classes} ${GRADE_WEIGHTS.classes}% · ${COMPONENT_LABELS.tasks} ${GRADE_WEIGHTS.tasks}% · ${COMPONENT_LABELS.exams} ${GRADE_WEIGHTS.exams}% · ${COMPONENT_LABELS.final} ${GRADE_WEIGHTS.final}%</p>

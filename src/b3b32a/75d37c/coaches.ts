@@ -56,7 +56,7 @@ export async function initStudentCoaches(): Promise<void> {
       </div>
       ${(coaches ?? []).length === 0
         ? '<p class="text-sm text-zinc-500">Aún no hay coaches registrados.</p>'
-        : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">${list}</div>`}
+        : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 rt-carousel">${list}</div>`}
       ${myProfile?.role === 'coach' ? '<p class="mt-6 text-xs text-zinc-600">Ves esta página en modo coach. Los alumnos la usan para contactarte.</p>' : ''}
     `
   } catch (err) {

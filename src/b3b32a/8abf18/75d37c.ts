@@ -169,7 +169,7 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
 
     <div class="mb-4 flex flex-wrap gap-2" id="course-filters">${filterHtml}</div>
 
-    <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
+    <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden rt-carousel">
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">

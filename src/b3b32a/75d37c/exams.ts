@@ -102,7 +102,7 @@ export async function initStudentExamList(): Promise<void> {
         <p class="mt-1 text-sm text-zinc-500">${filteredExams.length} examen${filteredExams.length !== 1 ? 'es' : ''} disponible${filteredExams.length !== 1 ? 's' : ''}</p>
       </div>
       ${weekHtml}
-      <div class="space-y-4">
+      <div class="space-y-4 rt-carousel">
         ${filteredExams.map((exam: any) => {
           const result = resultMap.get(exam.id)
           const status = result?.status || 'pending'
