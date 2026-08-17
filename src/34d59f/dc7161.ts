@@ -274,6 +274,29 @@ const navGroups: NavItem[][] = [
       </section>`
   }
 
+  mobileBottomTabsHtml += `
+      <button type="button" class="sb-mobile-bottom-tab" data-mobile-bottom-category="community" data-mobile-panel-title="Comunidad" aria-expanded="false">
+        ${Icon('users', 17)}
+        <span>Comunidad</span>
+      </button>`
+  mobilePanelSectionsHtml += `
+      <section class="sb-mobile-panel-section" data-mobile-panel-section="community">
+        <div class="sb-mobile-panel-items">
+          <a href="https://discord.gg/jmP2wJVf4N" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+            ${Icon('messageCircle', 17)}
+            <span>Discord</span>
+          </a>
+          <a href="https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+            ${Icon('messageCircle', 17)}
+            <span>WhatsApp Canal</span>
+          </a>
+          <a href="https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+            ${Icon('users', 17)}
+            <span>WhatsApp Comunidad</span>
+          </a>
+        </div>
+      </section>`
+
   const userName = profile?.display_name || profile?.full_name || 'Usuario'
   const userRole = role.charAt(0).toUpperCase() + role.slice(1)
 
@@ -341,22 +364,6 @@ const navGroups: NavItem[][] = [
         </div>
         <div class="sb-mobile-panel-sections">
           ${mobilePanelSectionsHtml}
-          <section class="sb-mobile-panel-section active" data-mobile-panel-section="community">
-            <div class="sb-mobile-panel-items">
-              <a href="https://discord.gg/jmP2wJVf4N" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
-                ${Icon('messageCircle', 17)}
-                <span>Discord</span>
-              </a>
-              <a href="https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
-                ${Icon('messageCircle', 17)}
-                <span>WhatsApp Canal</span>
-              </a>
-              <a href="https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
-                ${Icon('users', 17)}
-                <span>WhatsApp Comunidad</span>
-              </a>
-            </div>
-          </section>
         </div>
       </div>
       <div class="sb-mobile-bottom-tabs">
