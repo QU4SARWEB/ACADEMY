@@ -9,6 +9,7 @@ import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notificat
 import { initNotificationCenter } from '@/4725dc/notification_center'
 import { initUiGlobals } from '@/4725dc/ui_kit'
 import { initResponsiveTables } from '@/2b3583/responsive_tables'
+import { initCarousel } from '@/b3b32a/shared/clickable_cards'
 import { dueTs, expiresTs } from '@/2b3583/paydates'
 
 import '@/bc4150/0c54ed.css'
@@ -343,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initToastContainer()
   initUiGlobals()
   initResponsiveTables()
+  initCarousel()
   router.start()
 
   supabase.auth.getSession().then(({ data: { session } }) => {

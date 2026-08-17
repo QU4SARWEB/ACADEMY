@@ -9,6 +9,7 @@ import { initBulkActions } from '@/2b3583/bulk_actions'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 import { Pagination, exportExcel, currentPageSize } from '@/4725dc/ui_kit'
 import { schedulePayDates } from '@/2b3583/paydates'
+import { clickToNav } from '@/b3b32a/shared/clickable_cards'
 
 export function renderCoachStudents(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -191,7 +192,7 @@ function renderStudentTable(students: any[], courses: any[], paidCountPerProfile
                 const initial = (displayName || '?').charAt(0).toUpperCase()
                 const myCourseIds = (studentCourseIds[s.id] || []).join(',')
                 return `
-                  <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}" data-course-ids="${escapeHtml(myCourseIds)}">
+                  <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-search="${escapeHtml([s.full_name, s.riot_id, s.social_discord, s.email].filter(Boolean).join(' ').toLowerCase())}" data-course-ids="${escapeHtml(myCourseIds)}" data-nav data-href="#/coaches/students/${escapeHtml(s.id)}">
                     <td class="py-3 px-4"><input type="checkbox" class="row-checkbox h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-[#8B5CF6]" value="${escapeHtml(s.id)}"></td>
                     <td class="py-3 px-4">
                       <div class="flex items-center gap-2">
@@ -303,6 +304,10 @@ export function mountCoachStudents(): void {
 
       document.getElementById('page-content')!.innerHTML = mainHtml
       document.getElementById('modal-root')!.insertAdjacentHTML('beforeend', enrollModalHtml)
+
+      document.querySelectorAll<HTMLElement>('#students-tbody tr[data-nav]').forEach(el => {
+        el.addEventListener('click', e => clickToNav(e, el.dataset.href || ''))
+      })
 
       const container = document.getElementById('page-content')!
       const allRows = Array.from(container.querySelectorAll<HTMLTableRowElement>('#students-tbody tr'))

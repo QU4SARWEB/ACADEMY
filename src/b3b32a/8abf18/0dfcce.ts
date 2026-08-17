@@ -6,6 +6,7 @@ import { toast } from '@/4725dc/4f2900'
 import { confirmDialog } from '@/4725dc/b9f3a2'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 import { rankBadge } from '@/2b3583/ranks'
+import { clickToNav } from '@/b3b32a/shared/clickable_cards'
 
 export function renderCoachCourses(): string {
   return `<div id="page-content">${Spinner()}</div>`
@@ -32,7 +33,7 @@ export function mountCoachCourses(): void {
       const total = studentCount[c.id] || 0
       const isFree = !c.price || c.price <= 0
       return `
-      <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50">
+      <tr class="border-b border-zinc-800 last:border-0 hover:bg-zinc-900/50" data-nav data-href="#/coaches/courses/${escapeHtml(c.id)}">
         <td class="py-3 px-4">
           <div class="flex items-center gap-3">
             ${c.cover_url
@@ -85,6 +86,10 @@ export function mountCoachCourses(): void {
 
     const container = document.getElementById('page-content')
     if (container) container.innerHTML = html
+
+    container?.querySelectorAll<HTMLElement>('[data-nav]').forEach(el => {
+      el.addEventListener('click', e => clickToNav(e, el.dataset.href || ''))
+    })
 
     // Realtime subscription
     if ((window as any).__channels?.courses) {
