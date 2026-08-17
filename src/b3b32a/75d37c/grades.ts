@@ -230,7 +230,7 @@ export async function initStudentGrades(): Promise<void> {
         <div class="mb-8">
           <h2 class="font-heading text-xl font-bold text-white mb-2">${escapeHtml(course.name || 'Curso')}</h2>
           ${rankHtml}
-          <div class="space-y-3 rt-carousel">
+          <div class="space-y-3">
             ${cardsHtml}
           </div>
           ${weightsNote}

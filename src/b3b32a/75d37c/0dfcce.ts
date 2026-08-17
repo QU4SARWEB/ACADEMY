@@ -76,7 +76,7 @@ export async function initStudentCourses(): Promise<void> {
 
     const enrollHtml = (enrollments ?? []).length === 0
       ? '<p class="text-sm text-zinc-500 col-span-full">No estás inscrito en ningún curso actualmente.</p>'
-      : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 rt-carousel">
+      : `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         ${(enrollments ?? []).map((e: any) => {
           const footer = `<div class="mt-auto pt-3 border-t border-zinc-800 flex items-center justify-between"><span class="text-xs text-zinc-500 group-hover:text-white transition">Ver curso →</span></div>`
           return courseCard(e, '', footer, `#/students/courses/${escapeHtml(e.course_id)}`)

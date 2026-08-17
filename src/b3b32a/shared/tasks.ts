@@ -102,7 +102,7 @@ export async function loadAndRenderTasks(containerId: string, studentId: string,
         <button class="task-filter-chip rounded-lg px-3 py-1.5 text-xs font-medium transition border ${activeCourse ? 'bg-zinc-800/40 text-zinc-500 border-zinc-700/50 hover:bg-zinc-700/50 hover:text-zinc-300' : 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30'}" data-course-id="all">Todos</button>
         ${filterChips}
       </div>
-      <div class="space-y-4 rt-carousel" id="task-list">
+      <div class="space-y-4" id="task-list">
         ${filteredTasks.map((task: any) => {
           const submitted = submissionMap.get(task.id)
           const courseName = courseMap.get(task.course_id) || 'Curso'

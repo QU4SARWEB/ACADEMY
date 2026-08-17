@@ -178,7 +178,7 @@ export async function initCoachExams(): Promise<void> {
         ${weekFilterHtml}
       </div>` : ''}
       <div class="mb-4 flex flex-wrap items-center gap-2" id="course-filters">${filterHtml}</div>
-      <div id="exam-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 rt-carousel">${examCards}</div>`
+      <div id="exam-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${examCards}</div>`
 
     document.getElementById('page-content')!.innerHTML = html
     bindExamEvents(courses ?? [], coachId)

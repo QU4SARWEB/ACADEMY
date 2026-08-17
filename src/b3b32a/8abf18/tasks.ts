@@ -143,7 +143,7 @@ export async function initCoachTasks(): Promise<void> {
       <div id="task-form-container" class="hidden mb-6"></div>
       ${taskWeekHtml}
       <div class="mb-4 flex flex-wrap items-center gap-2" id="course-filters">${filterHtml}</div>
-      <div id="task-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 rt-carousel">${taskCards}</div>`
+      <div id="task-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${taskCards}</div>`
 
     document.getElementById('page-content')!.innerHTML = html
     bindTaskEvents(courses ?? [], coachId)

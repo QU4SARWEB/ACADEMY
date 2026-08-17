@@ -67,7 +67,7 @@ export function mountCoachCourses(): void {
           ${Icon('plus', 16)} Nuevo curso
         </a>
       </div>
-      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden rt-carousel">
+      <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
