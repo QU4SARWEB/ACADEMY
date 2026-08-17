@@ -319,6 +319,18 @@ const navGroups: NavItem[][] = [
            class="sb-nav-link flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-white">
           ${Icon('settings', 14)} Personalizar
         </a>
+        <a href="https://discord.gg/jmP2wJVf4N" target="_blank" rel="noopener noreferrer"
+           class="sb-nav-link flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-[#5865F2]">
+          ${Icon('messageCircle', 14)} Discord
+        </a>
+        <a href="https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k" target="_blank" rel="noopener noreferrer"
+           class="sb-nav-link flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-[#25D366]">
+          ${Icon('messageCircle', 14)} WhatsApp Canal
+        </a>
+        <a href="https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5" target="_blank" rel="noopener noreferrer"
+           class="sb-nav-link flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-zinc-400 transition hover:bg-zinc-800/50 hover:text-[#25D366]">
+          ${Icon('users', 14)} WhatsApp Comunidad
+        </a>
       </div>
     </aside>
     <nav class="sb-mobile-bottom-nav" aria-label="Navegacion movil">
@@ -329,6 +341,22 @@ const navGroups: NavItem[][] = [
         </div>
         <div class="sb-mobile-panel-sections">
           ${mobilePanelSectionsHtml}
+          <section class="sb-mobile-panel-section active" data-mobile-panel-section="community">
+            <div class="sb-mobile-panel-items">
+              <a href="https://discord.gg/jmP2wJVf4N" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+                ${Icon('messageCircle', 17)}
+                <span>Discord</span>
+              </a>
+              <a href="https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+                ${Icon('messageCircle', 17)}
+                <span>WhatsApp Canal</span>
+              </a>
+              <a href="https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5" target="_blank" rel="noopener noreferrer" class="sb-mobile-nav-item">
+                ${Icon('users', 17)}
+                <span>WhatsApp Comunidad</span>
+              </a>
+            </div>
+          </section>
         </div>
       </div>
       <div class="sb-mobile-bottom-tabs">
