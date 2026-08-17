@@ -38,3 +38,16 @@ export function Spinner(): string {
 export function FullPageSpinner(): string {
   return `<div style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0A0A0A">${Spinner()}</div>`
 }
+
+export function showLoadingOverlay(): void {
+  removeLoadingOverlay()
+  const el = document.createElement('div')
+  el.id = 'loading-overlay'
+  el.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0A0A0A'
+  el.innerHTML = Spinner()
+  document.body.appendChild(el)
+}
+
+export function removeLoadingOverlay(): void {
+  document.getElementById('loading-overlay')?.remove()
+}

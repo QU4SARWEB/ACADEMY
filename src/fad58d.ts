@@ -2,7 +2,7 @@ import { supabase } from '@/304244'
 import { router } from '@/f3395c'
 import { authGuard, getProfile, isDesktopApp } from '@/fa53b9/fa53b9'
 import { initToastContainer } from '@/4725dc/4f2900'
-import { FullPageSpinner } from '@/4725dc/a14fa2'
+import { showLoadingOverlay, removeLoadingOverlay } from '@/4725dc/a14fa2'
 import { store } from '@/9ed39e/8cd892'
 import { initAutoSave } from '@/4725dc/forms/DraftManager'
 import { initDeviceNotifications, notifyDevice } from '@/4725dc/device_notifications'
@@ -180,7 +180,7 @@ function dashLazy<T extends Record<string, any>>(
 function dash(path: string, loader: DashLoader): void {
   router.on(path, async () => {
     const app = document.getElementById('app')!
-    app.innerHTML = FullPageSpinner()
+    showLoadingOverlay()
 
     // Clean up previous realtime channel and intervals
     if ((window as any).__rtChannel) {
@@ -199,8 +199,6 @@ function dash(path: string, loader: DashLoader): void {
       ])
       const profile = store.get<any>('profile')
 
-      // Sistema de pagos con fechas explícitas: paid vence en due_at (renovación),
-      // pending sin pagar pasa a expired al llegar a expires_at (corte con gracia).
       if (profile && profile.role !== 'coach') {
         const now = Date.now()
         const { data: pays } = await supabase
@@ -218,7 +216,6 @@ function dash(path: string, loader: DashLoader): void {
           }
         }
       }
-      // Check if user has expired payments (block access except /payments)
       let isExpired = false
       if (profile && profile.role !== 'coach') {
         const { data: expiredPay } = await supabase
@@ -232,6 +229,7 @@ function dash(path: string, loader: DashLoader): void {
       }
       ;(window as any).__isExpired = isExpired
       if (isExpired && path !== '/payments') {
+        removeLoadingOverlay()
         router.navigate('/payments')
         return
       }
@@ -246,10 +244,8 @@ function dash(path: string, loader: DashLoader): void {
       await initNotificationCenter()
       if (initFn) await initFn()
 
-      // Auto-save drafts for all forms
       initAutoSave()
 
-      // Real-time auto-refresh via Supabase Realtime
       if (shouldAutoRefresh(path) && initFn) {
         try {
           if ((window as any).__rtChannel) {
@@ -275,6 +271,8 @@ function dash(path: string, loader: DashLoader): void {
         <p class="text-red-400 text-sm">Error al cargar la página</p>
         <button onclick="location.reload()" class="mt-4 text-xs text-zinc-500 hover:text-white underline">Reintentar</button>
       </div>`
+    } finally {
+      removeLoadingOverlay()
     }
   })
 }
