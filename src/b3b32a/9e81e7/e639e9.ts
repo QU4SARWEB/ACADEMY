@@ -988,7 +988,7 @@ async function renderCoachPayments(): Promise<void> {
       if (firstEnroll) {
         const { data: courseRow } = await supabase.from('courses').select('price').eq('id', firstEnroll.course_id).maybeSingle()
         if (firstEnroll.course_type === 'individual') payAmount = 20
-        else if (firstEnroll.course_type === 'intensive') payAmount = 50
+        else if (firstEnroll.course_type === 'intensive') payAmount = 40
         else if (courseRow) payAmount = courseRow.price ?? 15
       }
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()

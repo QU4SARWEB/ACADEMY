@@ -391,7 +391,7 @@ export async function initCoachEnroll(): Promise<void> {
 
       // Process mode changes: update enrollment.course_type + payment.amount
       for (const m of modes) {
-        const priceMap: Record<string, number> = { group: 15, individual: 20, intensive: 50 }
+        const priceMap: Record<string, number> = { group: 15, individual: 20, intensive: 40 }
         const newAmount = priceMap[m.courseType] ?? 15
         const { data: enr } = await supabase.from('enrollments').select('id').eq('profile_id', m.studentId).eq('course_id', m.courseId).maybeSingle()
         if (enr?.id) {

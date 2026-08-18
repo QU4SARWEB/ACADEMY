@@ -61,7 +61,7 @@ export async function initCoachEditCourse(): Promise<void> {
                 class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]">
                 <option value="group" ${course.course_type === 'group' ? 'selected' : ''}>Grupo (hasta 5 alumnos) — $15/mes</option>
                 <option value="individual" ${course.course_type === 'individual' ? 'selected' : ''}>1 a 1 (individual) — $20/hora</option>
-                <option value="intensive" ${course.course_type === 'intensive' ? 'selected' : ''}>Coaching Intensivo — $50/15 días</option>
+                <option value="intensive" ${course.course_type === 'intensive' ? 'selected' : ''}>Coaching Intensivo — $40/15 días</option>
               </select>
             </div>
             <div>

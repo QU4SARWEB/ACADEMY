@@ -262,7 +262,7 @@ export function renderHome(session?: any): string {
             <article class="offer-card offer-card--intensive reveal" style="--i:3">
               <span class="offer-card__badge offer-card__badge--intensive">Intensivo</span>
               <h3 class="offer-card__title">Coaching Intensivo</h3>
-              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$50</span><span class="offer-card__unit">USD · 15 días · seguimiento individual</span></div>
+              <div class="offer-card__price"><span class="offer-card__amount amount-paid">$40</span><span class="offer-card__unit">USD · 15 días · seguimiento individual</span></div>
               <p class="offer-card__blurb">Un proceso de entrenamiento personalizado para detectar, trabajar y medir tu progreso durante 15 días.</p>
               <p class="offer-card__mode">Incluye:</p>
               <div class="offer-card__collapse">
@@ -302,7 +302,7 @@ export function renderHome(session?: any): string {
               <span>Gratis</span>
               <span>Cursos <em>$15</em></span>
               <span>1 a 1 <em>$20</em></span>
-              <span>Intensivo <em>$50</em></span>
+              <span>Intensivo <em>$40</em></span>
             </div>
             ${[
               { label: 'Evaluación de nivel', v1: true, v2: false, v3: false, v4: false },
