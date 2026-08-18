@@ -120,7 +120,7 @@ export async function initCoachExams(): Promise<void> {
           const qs = questionsByExam[e.id] || []
           const totalPoints = qs.reduce((sum: number, q: any) => sum + (q.points || 0), 0)
           const examResults = resultsByExam[e.id] || []
-          const completedCount = examResults.filter((r: any) => r.status === 'graded').length
+          const completedCount = examResults.filter((r: any) => r.status === 'graded' || r.status === 'reviewing').length
           const enrolledCount = enrollCountByCourse[e.course_id]?.size || 0
           return `
           <div class="exam-card rounded-xl border border-zinc-800 bg-[#111] p-5 hover:border-zinc-700 transition"
