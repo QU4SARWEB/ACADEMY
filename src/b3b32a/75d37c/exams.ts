@@ -260,10 +260,62 @@ function renderReadOnlyExam(
   answers: any[],
   canRetry = false,
 ): void {
+  const isGraded = result.status === 'graded'
+
+  if (isGraded && result.total_score != null) {
+    const score = result.total_score
+    const maxScore = questions.reduce((s: number, q: any) => s + (q.points || 0), 0)
+    const pct = Math.round(score / maxScore * 100)
+    const color = score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'
+    const bgColor = score >= 14 ? 'bg-green-500/10 border-green-500/30' : score >= 11 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-red-500/10 border-red-500/30'
+    const emoji = score >= 16 ? '¡Excelente!' : score >= 14 ? '¡Bien!' : score >= 11 ? 'Aprobado' : 'Necesitas mejorar'
+
+    const retryHtml = canRetry ? `
+      <div class="mt-6 flex justify-center">
+        <button id="btn-retry-exam" class="flex items-center gap-2 rounded-lg bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/30 transition">${Icon('rotate', 16)} Reintentar examen</button>
+      </div>` : ''
+
+    container.innerHTML = `
+      <div>
+        <div class="mb-6">
+          <a href="#/students/exams" class="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition mb-2">${Icon('arrowLeft', 14)} Volver a exámenes</a>
+          <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>
+        </div>
+        <div class="glass rounded-xl p-8 text-center">
+          <div class="inline-flex items-center justify-center w-24 h-24 rounded-full ${bgColor} border mb-4">
+            <span class="text-4xl font-bold ${color}">${score}</span>
+            <span class="text-lg text-zinc-500 ml-1">/${maxScore}</span>
+          </div>
+          <p class="text-xl font-heading font-bold text-white mb-1">${emoji}</p>
+          <p class="text-sm text-zinc-500">${pct}% de acierto</p>
+          <div class="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-600">
+            ${Icon('clock', 12)}
+            <span>Calificado ${result.graded_at ? new Date(result.graded_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}</span>
+          </div>
+        </div>
+        ${retryHtml}
+        <div class="mt-6">
+          <a href="#/students/exams" class="inline-flex items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:text-white transition">${Icon('arrowLeft', 14)} Volver a exámenes</a>
+        </div>
+      </div>`
+
+    if (canRetry) {
+      document.getElementById('btn-retry-exam')?.addEventListener('click', async () => {
+        const examId = exam.id
+        const uid = (await supabase.auth.getSession()).data.session?.user?.id
+        if (!uid || !examId) return
+        if (!(await confirmDialog('¿Estás seguro de reintentar el examen? Tu nota anterior se eliminará.', 'Reintentar'))) return
+        await supabase.from('exam_answers').delete().eq('exam_id', examId).eq('student_id', uid)
+        await supabase.from('exam_results').delete().eq('exam_id', examId).eq('student_id', uid)
+        toast('success', 'Puedes volver a rendir el examen')
+        location.hash = `#/students/exams/${examId}`
+      })
+    }
+    return
+  }
+
   const answerMap = new Map<string, any>()
   for (const a of answers) answerMap.set(a.question_id, a)
-
-  const isGraded = result.status === 'graded'
 
   const statusLabels: Record<string, string> = {
     review: 'En revisión',
@@ -288,22 +340,18 @@ function renderReadOnlyExam(
         const isRight = correctAnswer === opt
         let cls = 'border-zinc-700 text-zinc-400'
         let extra = ''
-        if (isGraded) {
-          if (isRight) {
-            cls = 'border-green-500/50 text-green-400 bg-green-500/10'
-            extra = Icon('checkCircle', 14)
-          } else if (isSelected && !isRight) {
-            cls = 'border-red-500/50 text-red-400 bg-red-500/10'
-            extra = Icon('xCircle', 14)
-          }
-        } else if (isSelected) {
-          cls = 'border-[#8B5CF6]/50 text-white bg-[#8B5CF6]/10'
+        if (isRight) {
+          cls = 'border-green-500/50 text-green-400 bg-green-500/10'
+          extra = Icon('checkCircle', 14)
+        } else if (isSelected && !isRight) {
+          cls = 'border-red-500/50 text-red-400 bg-red-500/10'
+          extra = Icon('xCircle', 14)
         }
         return `<div class="flex items-center gap-2 rounded-lg border ${cls} px-3 py-2 text-sm"><span>${escapeHtml(opt)}</span>${extra ? `<span class="ml-auto">${extra}</span>` : ''}</div>`
       }).join('')
     } else if (q.type === 'detail') {
       if (userAnswer) {
-        const scoreDisplay = isGraded && ans?.score != null
+        const scoreDisplay = ans?.score != null
           ? `<span class="text-sm font-bold ${ans.score > 0 ? 'text-green-400' : 'text-red-400'}">${ans.score}/${q.points || '?'}</span>`
           : '<span class="text-xs text-zinc-600">Por calificar</span>'
         answerHtml = `<div class="rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-300">${escapeHtml(userAnswer)}</div><div class="mt-1">${scoreDisplay}</div>`
@@ -315,13 +363,6 @@ function renderReadOnlyExam(
     return `<div class="glass rounded-xl p-5"><div class="flex items-start gap-2 mb-3"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">${i + 1}</span><div class="min-w-0 flex-1"><p class="text-sm font-medium text-white">${escapeHtml(q.text)}</p>${q.explanation ? `<p class="mt-1 text-xs text-zinc-600">${escapeHtml(q.explanation)}</p>` : ''}</div></div><div class="space-y-2">${answerHtml}</div></div>`
   }).join('')
 
-  let totalScoreHtml = ''
-  if (isGraded && result.total_score != null) {
-    const score = result.total_score
-    const color = score >= 14 ? 'text-green-400' : score >= 11 ? 'text-yellow-400' : 'text-red-400'
-    totalScoreHtml = `<div class="glass rounded-xl p-5 text-center"><p class="text-sm text-zinc-500">Calificación total</p><p class="text-3xl font-bold ${color}">${score}/20</p><p class="text-xs text-zinc-600 mt-1">${Math.round(score / 20 * 100)}%</p></div>`
-  }
-
   const retryHtml = canRetry ? `
     <div class="mt-6 flex justify-center">
       <button id="btn-retry-exam" class="flex items-center gap-2 rounded-lg bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/30 transition">${Icon('rotate', 16)} Reintentar examen</button>
@@ -332,9 +373,8 @@ function renderReadOnlyExam(
       <div class="mb-6">
         <a href="#/students/exams" class="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition mb-2">${Icon('arrowLeft', 14)} Volver a exámenes</a>
         <h1 class="font-heading text-2xl font-bold text-white">${escapeHtml(exam.title)}</h1>
-        <p class="mt-1 text-sm text-zinc-500">${statusLabels[result.status] || result.status}${isGraded && result.total_score != null ? ` · ${result.total_score}/20 pts` : ''}</p>
+        <p class="mt-1 text-sm text-zinc-500">${statusLabels[result.status] || result.status}</p>
       </div>
-      ${totalScoreHtml}
       ${retryHtml}
       <div class="space-y-4 mt-6">${questionHtml}</div>
       <div class="mt-6">
