@@ -466,28 +466,47 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
         <p class="text-sm text-zinc-400 mt-1">${escapeHtml(course.name)} · ${platformName}</p>
       </div>
 
-      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Tareas</p>
-          <p class="text-lg font-bold ${comp.tasks === null ? 'text-zinc-600' : comp.tasks >= 14 ? 'text-green-400' : comp.tasks >= 11 ? 'text-yellow-400' : 'text-red-400'}">${comp.tasks !== null ? comp.tasks.toFixed(1) : '—'}</p>
-        </div>
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Práctica</p>
-          <p class="text-lg font-bold ${comp.practice === null ? 'text-zinc-600' : comp.practice >= 14 ? 'text-green-400' : comp.practice >= 11 ? 'text-yellow-400' : 'text-red-400'}">${comp.practice !== null ? comp.practice.toFixed(1) : '—'}</p>
-        </div>
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Final</p>
-          <p class="text-lg font-bold text-white">${effective !== null ? effective.toFixed(1) : '—'}</p>
-        </div>
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Estado</p>
-          <p class="mt-1.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.cls}">${meta.label}</span></p>
-        </div>
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Ranking</p>
-          <p class="text-lg font-bold text-white">${ranking}</p>
-        </div>
+      <div class="mb-6 space-y-3">
+        ${(['classes', 'tasks', 'exams', 'practice', 'final'] as const).map((key) => {
+          const value = comp[key]
+          const displayValue = value !== null ? `${value.toFixed(1)}/20` : '—'
+          const colorClass = value !== null
+            ? (value >= 14 ? 'text-green-400' : value >= 11 ? 'text-yellow-400' : 'text-red-400')
+            : 'text-zinc-500'
+          const iconMap: Record<string, string> = { classes: 'bookOpen', tasks: 'clipboardList', exams: 'scrollText', practice: 'target', final: 'trophy' }
+          return `
+          <div class="glass rounded-xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#8B5CF6]/20 shrink-0">
+                ${Icon(iconMap[key], 20)}
+              </div>
+              <div>
+                <p class="text-sm text-zinc-400">${COMPONENT_LABELS[key]}</p>
+                <p class="text-lg font-bold ${colorClass}">${displayValue}</p>
+              </div>
+            </div>
+            <span class="text-sm text-zinc-500">${GRADE_WEIGHTS[key]}%</span>
+          </div>`
+        }).join('')}
       </div>
+
+      <p class="text-xs text-zinc-500 mb-4">Componentes considerados: ${(['classes', 'tasks', 'exams', 'practice', 'final'] as const).filter(k => comp[k] !== null).map(k => COMPONENT_LABELS[k]).join(' · ')} — el peso se reparte automáticamente entre ellos.</p>
+
+      <div class="mb-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-4 text-center">
+        <p class="text-sm text-zinc-400">Nota final</p>
+        <p class="text-3xl font-bold ${effective !== null ? (effective >= 14 ? 'text-green-400' : effective >= 11 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-500'}">${effective !== null ? effective.toFixed(1) + '/20' : '—'}</p>
+        <span class="mt-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${meta.cls}">${meta.label}</span>
+        <p class="mt-1 text-xs text-zinc-500">Mínimo para aprobar: ${minPass}/20</p>
+        ${manual !== null ? '<p class="mt-1 text-xs text-zinc-500">Asignada por ti (override)</p>' : ''}
+      </div>
+
+      ${ranking !== '—' ? `
+      <div class="mb-6 rounded-xl border border-zinc-800 bg-[#111] p-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm text-zinc-400">${Icon('trophy', 14)} Posición en el curso</p>
+          <p class="text-sm font-bold text-white">${ranking}</p>
+        </div>
+      </div>` : ''}
 
       <div class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
         <h4 class="mb-3 text-xs font-medium text-zinc-400">${Icon('target', 12)} Notas de Práctica (0-20)</h4>
