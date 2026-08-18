@@ -52,7 +52,7 @@ export async function createEnrollmentWithPayment(
 
   const { error: payErr } = await supabase.from('payments').insert({
     profile_id: profileId, enrollment_id: newEnroll.id, type, status: payStatus, amount: coursePrice,
-    ...(payStatus !== 'free' ? schedulePayDates() : {}),
+    ...(payStatus !== 'free' ? schedulePayDates(new Date(), courseType) : {}),
   })
 
   if (payErr) {

@@ -1,6 +1,7 @@
-// Fechas del ciclo mensual de pagos.
-// due_at:     día 2 del mes (renovación).
-// expires_at: día 5 del mes de due_at (corte con 3 días de gracia).
+// Fechas de vencimiento por modalidad.
+// group/individual: ciclo mensual (día 2 renovación, día 5 corte).
+// intensive:        15 días desde la inscripción.
+// scholarship/free: sin fechas.
 
 export function nextPayDay(from: Date = new Date()): Date {
   const d = from.getDate()
@@ -9,7 +10,12 @@ export function nextPayDay(from: Date = new Date()): Date {
   return target
 }
 
-export function schedulePayDates(from: Date = new Date()): { due_at: string; expires_at: string } {
+export function schedulePayDates(from: Date = new Date(), courseType?: string): { due_at: string; expires_at: string } | {} {
+  if (courseType === 'intensive') {
+    const due = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 15)
+    const expires = new Date(due.getFullYear(), due.getMonth(), due.getDate() + 3)
+    return { due_at: due.toISOString(), expires_at: expires.toISOString() }
+  }
   const due = nextPayDay(from)
   const expires = new Date(due.getFullYear(), due.getMonth(), due.getDate() + 3)
   return { due_at: due.toISOString(), expires_at: expires.toISOString() }

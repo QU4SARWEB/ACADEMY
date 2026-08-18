@@ -119,7 +119,7 @@ async function renderStudentPayments(userId: string): Promise<void> {
         type: e.type || 'student',
         status: profile?.scholarship ? 'scholarship' : 'pending',
         amount: priceMap[e.course_id] ?? 15,
-        ...schedulePayDates(),
+        ...schedulePayDates(new Date(), (e as any).course_type),
       })
       if (insErr && insErr.code === '23505') {
       } else if (insErr) {
@@ -346,8 +346,10 @@ async function handleStripeReturn(sessionId: string, paymentId: string): Promise
       body: JSON.stringify({ action: 'verify', sessionId, paymentId }),
     })
     const data = await res.json()
-    if (data?.verified) {
-      await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe', ...schedulePayDates() }).eq('id', paymentId)
+      if (data?.verified) {
+        const { data: payEnroll } = await supabase.from('payments').select('enrollment_id, enrollments!inner(course_type)').eq('id', paymentId).maybeSingle()
+        const enrollType = (payEnroll as any)?.enrollments?.course_type
+        await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'stripe', ...schedulePayDates(new Date(), enrollType) }).eq('id', paymentId)
       const { data: payData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
       if (payData) { autoEnrollGeneralCourses(payData.profile_id, 'student'); autoEnrollComplementaria(payData.profile_id, 'student') }
       toast('success', 'Pago confirmado vía Stripe')
@@ -416,7 +418,9 @@ function renderPaypalButtons(containers: NodeListOf<HTMLElement>) {
       onApprove(data: any, actions: any) {
         return actions.order.capture().then(async (details: any) => {
           if (details.status === 'COMPLETED') {
-            const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal', ...schedulePayDates() }).eq('id', paymentId)
+            const { data: ppEnroll } = await supabase.from('payments').select('enrollment_id, enrollments!inner(course_type)').eq('id', paymentId).maybeSingle()
+            const ppEnrollType = (ppEnroll as any)?.enrollments?.course_type
+            const { error: upErr } = await supabase.from('payments').update({ status: 'paid', paid_at: new Date().toISOString(), method: 'paypal', ...schedulePayDates(new Date(), ppEnrollType) }).eq('id', paymentId)
             if (upErr) { console.error('Error updating payment:', upErr); toast('error', 'Pago realizado pero error al actualizar. Contacta al coach.'); return }
             const { data: ppData } = await supabase.from('payments').select('profile_id').eq('id', paymentId).maybeSingle()
             if (ppData) { autoEnrollGeneralCourses(ppData.profile_id, 'student'); autoEnrollComplementaria(ppData.profile_id, 'student') }
@@ -756,7 +760,10 @@ async function renderCoachPayments(): Promise<void> {
         status: c.newStatus,
         paid_at: c.newStatus === 'paid' ? new Date().toISOString() : null,
       }
-      if (c.newStatus === 'paid' || c.newStatus === 'pending') Object.assign(payUpdate, schedulePayDates())
+      if (c.newStatus === 'paid' || c.newStatus === 'pending') {
+        const { data: cPayEnroll } = await supabase.from('payments').select('enrollments!inner(course_type)').eq('id', c.paymentId).maybeSingle()
+        Object.assign(payUpdate, schedulePayDates(new Date(), (cPayEnroll as any)?.enrollments?.course_type))
+      }
       if (c.newStatus === 'pending') payUpdate.created_at = new Date().toISOString()
       const { error } = await supabase.from('payments').update(payUpdate).eq('id', c.paymentId)
       if (error) { fail++ } else {
@@ -903,7 +910,8 @@ async function renderCoachPayments(): Promise<void> {
     if (totalUsd >= fee - 0.001) {
       update.status = 'paid'
       update.paid_at = new Date().toISOString()
-      Object.assign(update, schedulePayDates())
+      const { data: ePayEnroll } = await supabase.from('payments').select('enrollments!inner(course_type)').eq('id', paymentId).maybeSingle()
+      Object.assign(update, schedulePayDates(new Date(), (ePayEnroll as any)?.enrollments?.course_type))
     } else {
       update.paid_at = null
     }
@@ -994,7 +1002,7 @@ async function renderCoachPayments(): Promise<void> {
       const { data: existingPay } = await supabase.from('payments').select('id').eq('profile_id', profileId).eq('enrollment_id', enrollmentId).maybeSingle()
       if (existingPay) { toast('error', 'Este estudiante ya tiene un pago para esta inscripción'); return }
       const payStatus = payAmount === 0 ? 'free' : (profile?.scholarship ? 'scholarship' : 'pending')
-      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount, ...(payStatus !== 'free' ? schedulePayDates() : {}) })
+      await supabase.from('payments').insert({ profile_id: profileId, enrollment_id: enrollmentId || undefined, type: role || 'student', status: payStatus, amount: payAmount, ...(payStatus !== 'free' ? schedulePayDates(new Date(), firstEnroll?.course_type) : {}) })
       toast('success', 'Pago creado')
       renderCoachPayments()
       return

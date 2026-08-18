@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { schedulePayDates } from '@/2b3583/paydates'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachEnroll(): string {
@@ -396,7 +397,7 @@ export async function initCoachEnroll(): Promise<void> {
         const { data: enr } = await supabase.from('enrollments').select('id').eq('profile_id', m.studentId).eq('course_id', m.courseId).maybeSingle()
         if (enr?.id) {
           await supabase.from('enrollments').update({ course_type: m.courseType }).eq('id', enr.id)
-          await supabase.from('payments').update({ amount: newAmount }).eq('enrollment_id', enr.id)
+          await supabase.from('payments').update({ amount: newAmount, ...schedulePayDates(new Date(), m.courseType) }).eq('enrollment_id', enr.id)
           ok++
         } else {
           fail++
