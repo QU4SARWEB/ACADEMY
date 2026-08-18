@@ -771,22 +771,27 @@ function renderBulkUploadPanel(): string {
     <div class="space-y-3">
       <div>
         <label class="mb-1 block text-xs text-zinc-400">Pega el examen completo</label>
-        <textarea id="bulk-exam-text" rows="12" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] font-mono text-[13px] leading-relaxed" placeholder="¿Cuál es el principal objetivo de un buen posicionamiento?
-A) Buscar siempre el primer enfrentamiento-
-B) Maximizar las posibilidades de ganar
-C) Permanecer siempre detrás del equipo
-D) Mantenerse en movimiento constantemente
+        <textarea id="bulk-exam-text" rows="12" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] font-mono text-[13px] leading-relaxed" placeholder="¿Cuál es la capital de Francia?
+A) Madrid
+B) París-
+C) Roma
+D) Berlín
 
-¿Qué es un trade kill?
+¿Qué lenguaje se usa en la web?
 
-¿Por qué es importante evitar que varios jugadores estén expuestos al mismo ángulo?"></textarea>
+¿Cuántos días tiene el año?
+A) 360
+B) 364
+C) 365-
+D) 366"></textarea>
       </div>
       <div class="rounded-lg border border-zinc-700/50 bg-zinc-800/30 p-3">
-        <p class="text-[11px] text-zinc-500 mb-2"><span class="text-zinc-400 font-medium">Formato:</span> Separa cada pregunta con una línea en blanco.</p>
-        <ul class="text-[11px] text-zinc-500 space-y-1">
-          <li>• <span class="text-green-400">Múltiple elección</span>: Pregunta + opciones A) B) C) D)</li>
-          <li>• <span class="text-yellow-400">Respuesta correcta</span>: Agrega <code class="bg-zinc-700 px-1 rounded">-</code> al final de la opción (ej: <code class="bg-zinc-700 px-1 rounded">A) Opción correcta-</code>)</li>
-          <li>• <span class="text-blue-400">Pregunta abierta</span>: Solo la pregunta (sin opciones)</li>
+        <p class="text-[11px] text-zinc-400 font-medium mb-2">Cómo funciona:</p>
+        <ul class="text-[11px] text-zinc-500 space-y-1.5">
+          <li>1. Separa cada pregunta con una <span class="text-white font-medium">línea en blanco</span></li>
+          <li>2. <span class="text-green-400">Múltiple elección</span>: escribe la pregunta y en las siguientes líneas las opciones con <code class="bg-zinc-700 px-1 rounded">A)</code> <code class="bg-zinc-700 px-1 rounded">B)</code> <code class="bg-zinc-700 px-1 rounded">C)</code> <code class="bg-zinc-700 px-1 rounded">D)</code></li>
+          <li>3. <span class="text-yellow-400">Marcar correcta</span>: pon un <code class="bg-zinc-700 px-1 rounded">-</code> al final de la opción correcta → <code class="bg-zinc-700 px-1 rounded">B) París-</code></li>
+          <li>4. <span class="text-blue-400">Pregunta abierta</span>: solo escribe la pregunta sin opciones</li>
         </ul>
       </div>
       <p id="bulk-upload-error" class="hidden text-xs text-red-400"></p>
