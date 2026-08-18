@@ -1102,15 +1102,17 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
 
             if (q.type === 'multiple') {
               const options: string[] = q.options || []
-              const correctIdx = q.correct_answer
-              const correctLetter = String.fromCharCode(65 + (parseInt(correctIdx) || 0))
-              const isCorrect = studentAnswer === correctLetter || studentAnswer === q.correct_answer
+              const letterIdx: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 }
+              const correctLetter = (q.correct_answer || '').toUpperCase()
+              const correctIdx = letterIdx[correctLetter]
+              const correctText = correctIdx !== undefined ? options[correctIdx] : q.correct_answer
+              const isCorrect = studentAnswer === correctText || studentAnswer.toUpperCase() === correctLetter
               answerHtml = `
                 <div class="space-y-1 mt-2">
                   ${options.map((opt: string, oi: number) => {
                     const letter = String.fromCharCode(65 + oi)
-                    const isAns = studentAnswer === letter || studentAnswer === String(oi)
-                    const isCorr = (q.correct_answer === letter || q.correct_answer === String(oi))
+                    const isAns = studentAnswer === opt || studentAnswer.toUpperCase() === letter
+                    const isCorr = letter === correctLetter
                     let cls = 'border-zinc-700 bg-zinc-900/50'
                     if (isAns && isCorr) cls = 'border-green-500/50 bg-green-500/10'
                     else if (isAns) cls = 'border-red-500/50 bg-red-500/10'

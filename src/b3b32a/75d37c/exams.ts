@@ -500,7 +500,11 @@ async function submitExam(
           const boolMap: Record<string, string> = { Verdadero: 'true', Falso: 'false' }
           isCorrect = (boolMap[userAnswer] || userAnswer) === correctAnswer
         } else {
-          isCorrect = userAnswer === correctAnswer
+          const opts = parseOptions((q as any).options)
+          const letterIdx = { A: 0, B: 1, C: 2, D: 3 }
+          const correctIdx = letterIdx[(correctAnswer || '').toUpperCase() as keyof typeof letterIdx]
+          const correctText = correctIdx !== undefined && opts[correctIdx] ? opts[correctIdx] : correctAnswer
+          isCorrect = userAnswer === correctText || userAnswer.toUpperCase() === (correctAnswer || '').toUpperCase()
         }
         const score = isCorrect ? points : 0
         if (isCorrect) totalScore += points
