@@ -9,7 +9,7 @@ const WHATSAPP_CHANNEL = 'https://whatsapp.com/channel/0029Vb92WwF6rsQxuunG3L3k'
 const WHATSAPP_COMMUNITY = 'https://chat.whatsapp.com/FTvjUpZ8QvGApemX31Gjo5'
 
 function embers(): string {
-  const positions = [2, 7, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 95]
+  const positions = [2, 12, 24, 36, 48, 60, 72, 84, 95]
   return `
     <div class="embers" aria-hidden="true">
       ${positions.map((left, i) => `
@@ -76,12 +76,11 @@ export function renderHome(session?: any): string {
   const mobileAlertSeen = localStorage.getItem('qu4sar-mobile-alert-seen') === '1'
   return `
      <div class="public-page relative min-h-screen overflow-hidden bg-[#0A0A0A]">
-      <style>@keyframes wf { 0% { opacity:1; } 50% { opacity:0.6; } 100% { opacity:1; } }</style>
       <div class="fixed inset-0" style='background: url("qu4sarfondoPublico.jpg") center/cover no-repeat fixed; z-index:-2'></div>
       <div class="fixed inset-0" style="background: rgba(10,10,10,0.35); z-index:-1"></div>
       <div class="pointer-events-none fixed inset-0" style="z-index:-1">
-        <div class="absolute -left-32 top-1/4 h-72 w-72 rounded-full bg-[#8B5CF6]/15 blur-3xl"></div>
-        <div class="absolute -right-32 top-1/2 h-96 w-96 rounded-full bg-[#6D28D9]/15 blur-3xl"></div>
+        <div class="absolute -left-32 top-1/4 h-48 w-48 rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
+        <div class="absolute -right-32 top-1/2 h-64 w-64 rounded-full bg-[#6D28D9]/10 blur-3xl"></div>
       </div>
       ${stellarField()}
 
@@ -183,8 +182,8 @@ export function renderHome(session?: any): string {
           </div>
         </section>
 
-         <!-- Precios / Offers -->
-         <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-6xl scroll-mt-24 px-6">
+          <!-- Precios / Offers -->
+          <section id="precios" class="mx-auto mt-16 md:mt-20 max-w-5xl px-6 scroll-mt-24">
            <div class="flex flex-col gap-2 mb-10 text-center items-center reveal">
             <span class="lbl">Clases particulares · entrenamiento real</span>
             <h2 class="s-title">Invierte en tu <em>futuro competitivo.</em></h2>
@@ -208,83 +207,90 @@ export function renderHome(session?: any): string {
               <h3 class="offer-card__title">Cursos completos</h3>
               <div class="offer-card__price"><span class="offer-card__amount amount-paid">$15</span><span class="offer-card__unit">USD · por mes · 2+ alumnos</span></div>
               <p class="offer-card__save">Mensualidad · sin permanencia</p>
-              <p class="offer-card__blurb">El entrenamiento completo para tu rango en grupo: de la teoría a la práctica real, con coaches que siguen tu progreso semana a semana. Clases en vivo con 2 o más alumnos por sesión.</p>
-              <ul class="offer-card__list">
-                ${[
-                  'Plan de estudios progresivo para tu nivel (Rookie a Pro)',
-                  'Clases en vivo con coaches certificados',
-                  'Clases grabadas y material para repasar',
-                  'Scrims y evaluaciones semanales',
-                  'Análisis de tu gameplay con feedback accionable',
-                  'Seguimiento de progreso',
-                  'Comunidad exclusiva en Discord',
-                  'Certificado oficial QU4SAR al completar',
-                  'Acceso en PC y VALORANT Mobile',
-                ].map(f => `
-                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
-              </ul>
+              <p class="offer-card__blurb">El entrenamiento completo para tu rango en grupo, con coaches que siguen tu progreso semana a semana.</p>
+              <div class="offer-card__collapse">
+                <ul class="offer-card__list">
+                  ${[
+                    'Plan de estudios progresivo para tu nivel (Rookie a Pro)',
+                    'Clases en vivo con coaches certificados',
+                    'Clases grabadas y material para repasar',
+                    'Scrims y evaluaciones semanales',
+                    'Análisis de tu gameplay con feedback accionable',
+                    'Seguimiento de progreso',
+                    'Comunidad exclusiva en Discord',
+                    'Certificado oficial QU4SAR al completar',
+                    'Acceso en PC y VALORANT Mobile',
+                  ].map(f => `
+                    <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+                </ul>
+              </div>
+              <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
             <article class="offer-card reveal" style="--i:2">
               <span class="offer-card__badge offer-card__badge--1on1">1 a 1</span>
               <h3 class="offer-card__title">Clase particular</h3>
               <div class="offer-card__price"><span class="offer-card__amount amount-paid">$20</span><span class="offer-card__unit">USD · por hora</span></div>
-              <p class="offer-card__blurb">Una sesión completamente enfocada en tu juego. Trabajamos directamente sobre tus errores, decisiones y hábitos para identificar qué está frenando tu progreso y cómo corregirlo.</p>
+              <p class="offer-card__blurb">Una sesión enfocada en tu juego. Trabajamos sobre tus errores, decisiones y hábitos.</p>
               <p class="offer-card__mode">Online · Discord</p>
-              <ul class="offer-card__list">
-                ${[
-                  '1 hora 1 a 1 con un coach del colectivo',
-                  'Análisis personalizado de tu gameplay',
-                  'Identificación de tus principales leaks',
-                  'Diagnóstico de tus fortalezas y debilidades',
-                  'Análisis de toma de decisiones',
-                  'Análisis de posicionamiento',
-                  'Revisión de uso de utilidad',
-                  'Lectura de ronda e interpretación de información',
-                  'Análisis de economía y gestión de recursos',
-                  'Revisión de duelos y situaciones clave',
-                  'Correcciones de hábitos y errores recurrentes',
-                  'Recomendación de agentes según tu estilo de juego',
-                  'Recomendación de mapas para mejorar',
-                  'Ejercicios personalizados para trabajar tus puntos débiles',
-                  'Objetivos concretos para tu siguiente sesión',
-                  'Plan de mejora adaptado a tu rango',
-                ].map(f => `
-                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
-              </ul>
-              <p class="offer-card__hint">Una hora. Un diagnóstico claro. Un plan para mejorar.</p>
+              <div class="offer-card__collapse">
+                <ul class="offer-card__list">
+                  ${[
+                    '1 hora 1 a 1 con un coach del colectivo',
+                    'Análisis personalizado de tu gameplay',
+                    'Identificación de tus principales leaks',
+                    'Diagnóstico de tus fortalezas y debilidades',
+                    'Análisis de toma de decisiones',
+                    'Análisis de posicionamiento',
+                    'Revisión de uso de utilidad',
+                    'Lectura de ronda e interpretación de información',
+                    'Análisis de economía y gestión de recursos',
+                    'Revisión de duelos y situaciones clave',
+                    'Correcciones de hábitos y errores recurrentes',
+                    'Recomendación de agentes según tu estilo de juego',
+                    'Recomendación de mapas para mejorar',
+                    'Ejercicios personalizados para trabajar tus puntos débiles',
+                    'Objetivos concretos para tu siguiente sesión',
+                    'Plan de mejora adaptado a tu rango',
+                  ].map(f => `
+                    <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+                </ul>
+              </div>
+              <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Agendar mi clase →</a></div>
             </article>
             <article class="offer-card offer-card--intensive reveal" style="--i:3">
               <span class="offer-card__badge offer-card__badge--intensive">Intensivo</span>
               <h3 class="offer-card__title">Coaching Intensivo</h3>
               <div class="offer-card__price"><span class="offer-card__amount amount-paid">$50</span><span class="offer-card__unit">USD · 15 días · seguimiento individual</span></div>
-              <p class="offer-card__blurb">No es una clase aislada. Es un proceso de entrenamiento personalizado para detectar tus problemas, trabajar sobre ellos y medir tu progreso durante 15 días.</p>
+              <p class="offer-card__blurb">Un proceso de entrenamiento personalizado para detectar, trabajar y medir tu progreso durante 15 días.</p>
               <p class="offer-card__mode">Incluye:</p>
-              <ul class="offer-card__list">
-                ${[
-                  'Diagnóstico inicial de nivel y estilo de juego',
-                  '3 sesiones 1 a 1 con coach',
-                  'Análisis personalizado de gameplay',
-                  'Identificación y seguimiento de tus principales leaks',
-                  'Plan de entrenamiento personalizado',
-                  'Objetivos específicos para los 15 días',
-                  'Ejercicios adaptados a tus necesidades',
-                  'Trabajo sobre posicionamiento y toma de decisiones',
-                  'Lectura de rondas e interpretación de información',
-                  'Uso correcto de utilidad',
-                  'Gestión de economía y recursos',
-                  'Análisis de duelos y situaciones frecuentes',
-                  'Recomendación de agentes y mapas',
-                  'Seguimiento de tu evolución',
-                  'Feedback personalizado entre sesiones',
-                  'Ajustes del plan según tu progreso',
-                  'Evaluación final',
-                  'Recomendaciones para continuar mejorando',
-                ].map(f => `
-                  <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
-              </ul>
-              <p class="offer-card__hint">15 días trabajando específicamente en lo que te está frenando.</p>
+              <div class="offer-card__collapse">
+                <ul class="offer-card__list">
+                  ${[
+                    'Diagnóstico inicial de nivel y estilo de juego',
+                    '3 sesiones 1 a 1 con coach',
+                    'Análisis personalizado de gameplay',
+                    'Identificación y seguimiento de tus principales leaks',
+                    'Plan de entrenamiento personalizado',
+                    'Objetivos específicos para los 15 días',
+                    'Ejercicios adaptados a tus necesidades',
+                    'Trabajo sobre posicionamiento y toma de decisiones',
+                    'Lectura de rondas e interpretación de información',
+                    'Uso correcto de utilidad',
+                    'Gestión de economía y recursos',
+                    'Análisis de duelos y situaciones frecuentes',
+                    'Recomendación de agentes y mapas',
+                    'Seguimiento de tu evolución',
+                    'Feedback personalizado entre sesiones',
+                    'Ajustes del plan según tu progreso',
+                    'Evaluación final',
+                    'Recomendaciones para continuar mejorando',
+                  ].map(f => `
+                    <li>${Icon('checkCircle', 16)}<span>${escapeHtml(f)}</span></li>`).join('')}
+                </ul>
+              </div>
+              <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Comenzar programa →</a></div>
             </article>
           </div>
@@ -510,6 +516,17 @@ export async function mountHome(): Promise<void> {
     document.querySelector('.alert-toast')?.classList.add('hidden-toast')
   })
 
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.offer-card__toggle')
+    if (!btn) return
+    const card = btn.closest('.offer-card')
+    const collapse = card?.querySelector<HTMLElement>('.offer-card__collapse')
+    if (!collapse || !card) return
+    const expanded = collapse.classList.toggle('expanded')
+    card.classList.toggle('expanded', expanded)
+    collapse.style.maxHeight = expanded ? collapse.scrollHeight + 'px' : ''
+  })
+
   // Cargar coaches reales (rol coach) con su avatar
   const { data: coaches } = await supabase
     .from('profiles')
@@ -546,7 +563,7 @@ export async function mountHome(): Promise<void> {
           <a href="#/" data-scroll="precios" class="roster-card reveal" style="--i:${i % 3}">
             <div class="roster-card__poster">
               ${presentation
-                ? `<img src="${escapeHtml(presentation)}" alt="${escapeHtml(name)}" class="poster-art" />`
+                ? `<img src="${escapeHtml(presentation)}" alt="${escapeHtml(name)}" class="poster-art" loading="lazy" decoding="async" />`
                 : `<span class="poster-fallback">${escapeHtml(initial)}</span>`}
               <div class="roster-card__shade"></div>
               <span class="roster-card__corner tl">● Coach</span>

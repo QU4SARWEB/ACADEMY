@@ -19,11 +19,12 @@ export function meetsRank(studentRank: string | null | undefined, minRank: strin
   return rankLevel(studentRank) >= rankLevel(minRank)
 }
 
-export const GRADE_WEIGHTS = { classes: 30, tasks: 20, exams: 25, final: 25 } as const
+export const GRADE_WEIGHTS = { classes: 25, tasks: 15, exams: 20, practice: 20, final: 20 } as const
 export const COMPONENT_LABELS: Record<keyof typeof GRADE_WEIGHTS, string> = {
   classes: 'Clases',
   tasks: 'Tareas',
   exams: 'Exámenes',
+  practice: 'Práctica',
   final: 'Examen final',
 }
 
@@ -31,6 +32,7 @@ export interface GradeComponents {
   classes: number | null
   tasks: number | null
   exams: number | null
+  practice: number | null
   final: number | null
 }
 
@@ -40,6 +42,7 @@ export interface RawScores {
   recoveryTaskScores: number[]
   examScores: number[]
   recoveryExamScores: number[]
+  practiceScore: number | null
   finalScore: number | null
 }
 
@@ -64,6 +67,7 @@ export function computeComponents(raw: RawScores): GradeComponents {
     classes: avg(raw.classScores),
     tasks: recoveryAveraged(raw.taskScores, raw.recoveryTaskScores),
     exams: recoveryAveraged(raw.examScores, raw.recoveryExamScores),
+    practice: raw.practiceScore,
     final: raw.finalScore,
   }
 }
@@ -71,7 +75,7 @@ export function computeComponents(raw: RawScores): GradeComponents {
 export function weightedFinal(comp: GradeComponents): number | null {
   let num = 0
   let den = 0
-  for (const k of ['classes', 'tasks', 'exams', 'final'] as const) {
+  for (const k of ['classes', 'tasks', 'exams', 'practice', 'final'] as const) {
     const v = comp[k]
     if (v !== null && v !== undefined) {
       num += v * GRADE_WEIGHTS[k]
@@ -82,7 +86,7 @@ export function weightedFinal(comp: GradeComponents): number | null {
 }
 
 export function presentComponents(comp: GradeComponents): string[] {
-  return (['classes', 'tasks', 'exams', 'final'] as const)
+  return (['classes', 'tasks', 'exams', 'practice', 'final'] as const)
     .filter(k => comp[k] !== null && comp[k] !== undefined)
     .map(k => COMPONENT_LABELS[k])
 }
@@ -115,6 +119,7 @@ export function buildRawScores(
   submissions: any[],
   results: any[],
   studentId: string,
+  practiceScore: number | null = null,
 ): RawScores {
   const classScores = classGrades
     .filter(g => g.student_id === studentId && ref.scheduleIds.includes(g.schedule_id))
@@ -154,7 +159,7 @@ export function buildRawScores(
     else examScores.push(v)
   }
 
-  return { classScores, taskScores, recoveryTaskScores, examScores, recoveryExamScores, finalScore }
+  return { classScores, taskScores, recoveryTaskScores, examScores, recoveryExamScores, practiceScore, finalScore }
 }
 
 export function hasPendingRecovery(

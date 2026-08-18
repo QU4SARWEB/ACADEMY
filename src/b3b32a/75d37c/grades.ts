@@ -79,9 +79,20 @@ export async function initStudentGrades(): Promise<void> {
 
     const { data: allEnrolls } = await supabase
       .from('enrollments')
-      .select('profile_id, course_id, final_grade')
+      .select('id, profile_id, course_id, final_grade')
       .in('course_id', idFilter)
       .eq('status', 'active')
+
+    const enrollIds = (allEnrolls ?? []).map((e: any) => e.id)
+    const { data: allPractical } = await supabase
+      .from('practical_grades')
+      .select('enrollment_id, score')
+      .in('enrollment_id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
+
+    const practiceByEnroll = new Map<string, number>()
+    for (const pg of allPractical ?? []) {
+      if (pg.score != null) practiceByEnroll.set(pg.enrollment_id, parseFloat(pg.score))
+    }
 
     const finalByCourse = new Map<string, number | null>()
     for (const en of allEnrolls ?? []) {
@@ -119,7 +130,9 @@ export async function initStudentGrades(): Promise<void> {
         exams: courseExams.map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
       }
 
-      const raw = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], uid)
+      const enrollId = allEnrolls?.find((e: any) => e.profile_id === uid && e.course_id === courseId)?.id
+      const practiceScore = enrollId ? (practiceByEnroll.get(enrollId) ?? null) : null
+      const raw = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], uid, practiceScore)
       const comp = computeComponents(raw)
       const pendingRec = hasPendingRecovery(ref, allResults ?? [], allSubmissions ?? [], uid)
       const computed = weightedFinal(comp)
@@ -140,10 +153,11 @@ export async function initStudentGrades(): Promise<void> {
           }
         </div>`
 
-      const componentDefs: { key: 'classes' | 'tasks' | 'exams' | 'final'; icon: string }[] = [
+      const componentDefs: { key: 'classes' | 'tasks' | 'exams' | 'practice' | 'final'; icon: string }[] = [
         { key: 'classes', icon: 'bookOpen' },
         { key: 'tasks', icon: 'clipboardList' },
         { key: 'exams', icon: 'scrollText' },
+        { key: 'practice', icon: 'target' },
         { key: 'final', icon: 'trophy' },
       ]
 
@@ -169,7 +183,7 @@ export async function initStudentGrades(): Promise<void> {
           </div>`
       }).join('')
 
-      const considered = (['classes', 'tasks', 'exams', 'final'] as const)
+      const considered = (['classes', 'tasks', 'exams', 'practice', 'final'] as const)
         .filter(k => comp[k] !== null && comp[k] !== undefined)
         .map(k => COMPONENT_LABELS[k])
       const weightsNote = considered.length > 0

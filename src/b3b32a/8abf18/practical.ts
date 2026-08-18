@@ -32,6 +32,27 @@ export async function initCoachPractical(): Promise<void> {
     const examByCourse = new Map<string, any>()
     for (const ex of practicalExams ?? []) examByCourse.set(ex.course_id, ex)
 
+    const { data: allEnrolls } = await supabase
+      .from('enrollments')
+      .select('id, profile_id, course_id')
+      .in('course_id', cidFilter)
+      .eq('status', 'active')
+
+    const enrollIds = (allEnrolls ?? []).map((e: any) => e.id)
+    const { data: existingPractical } = await supabase
+      .from('practical_grades')
+      .select('enrollment_id, score, note')
+      .in('enrollment_id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
+
+    const practicalByEnroll = new Map<string, any>()
+    for (const pg of existingPractical ?? []) practicalByEnroll.set(pg.enrollment_id, pg)
+
+    const enrollByStudentCourse = new Map<string, any>()
+    for (const en of allEnrolls ?? []) {
+      const key = `${en.profile_id}:${en.course_id}`
+      enrollByStudentCourse.set(key, en)
+    }
+
     const filterHtml = (courses ?? []).map((c: any) => `
       <button class="course-filter-btn flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition select-none bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25"
         data-course-id="${escapeHtml(c.id)}" data-active="1">
@@ -72,7 +93,6 @@ export async function initCoachPractical(): Promise<void> {
       const ex = examByCourse.get(c.id)
       if (!ex) return ''
 
-      // Find theoretical final exam for this course
       const { data: theoryExam } = await supabase
         .from('exams')
         .select('id')
@@ -81,7 +101,6 @@ export async function initCoachPractical(): Promise<void> {
         .ilike('title', '%teorico%')
         .maybeSingle()
 
-      // Get students who have graded the theoretical exam
       let studentIds: string[] = []
       if (theoryExam) {
         const { data: theoryResults } = await supabase
@@ -100,7 +119,6 @@ export async function initCoachPractical(): Promise<void> {
         .in('id', studentIds)
         .order('full_name')
 
-      // Get existing practical results
       const { data: existingResults } = await supabase
         .from('exam_results')
         .select('student_id, total_score, status')
@@ -109,11 +127,10 @@ export async function initCoachPractical(): Promise<void> {
       const resultsMap = new Map<string, any>()
       for (const r of existingResults ?? []) resultsMap.set(r.student_id, r)
 
-      // Assign resultsMap to exam for the render function
       ex.resultsMap = resultsMap
 
       const studentList = students ?? []
-    const rows = studentList.map((s: any) => renderStudentRow(s, c.id)).join('')
+      const rows = studentList.map((s: any) => renderStudentRow(s, c.id)).join('')
       if (!rows) return ''
 
       return `
@@ -141,18 +158,124 @@ export async function initCoachPractical(): Promise<void> {
       </div>`
     }))
 
-    const sections = courseSections.filter(Boolean).join('')
+    const examSections = courseSections.filter(Boolean).join('')
+
+    const practicalGradeRows = await Promise.all((courses ?? []).map(async (c: any) => {
+      const courseEnrolls = (allEnrolls ?? []).filter((e: any) => e.course_id === c.id)
+      if (courseEnrolls.length === 0) return ''
+
+      const studentIds = courseEnrolls.map((e: any) => e.profile_id)
+      const { data: students } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, platform')
+        .in('id', studentIds)
+        .order('full_name')
+
+      const rows = (students ?? []).map((s: any) => {
+        const enroll = enrollByStudentCourse.get(`${s.id}:${c.id}`)
+        const existing = enroll ? practicalByEnroll.get(enroll.id) : null
+        const scoreVal = existing?.score != null ? parseFloat(existing.score) : ''
+        const noteVal = existing?.note || ''
+        const platformBadge = s.platform === 'mobile'
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)}</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)}</span>`
+        return `
+        <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#8B5CF6]/20 text-xs font-bold text-[#8B5CF6]">${escapeHtml((s.full_name || '?').charAt(0).toUpperCase())}</div>
+              <span class="text-sm text-white">${escapeHtml(s.full_name || '')}</span>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-xs text-zinc-400">${escapeHtml(s.email || '')}</td>
+          <td class="py-3 px-4">${platformBadge}</td>
+          <td class="py-3 px-4">
+            <input type="number" class="practice-grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white text-center outline-none focus:border-[#8B5CF6]" min="0" max="20" step="0.1" value="${scoreVal}" placeholder="0-20" data-enrollment="${escapeHtml(enroll?.id || '')}" />
+          </td>
+          <td class="py-3 px-4">
+            <input type="text" class="practice-grade-note w-full max-w-[200px] rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" value="${escapeHtml(noteVal)}" placeholder="Observación" data-enrollment="${escapeHtml(enroll?.id || '')}" />
+          </td>
+          <td class="py-3 px-4">
+            <button class="save-practice-grade rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED] transition" data-enrollment="${escapeHtml(enroll?.id || '')}">${Icon('save', 12)} Guardar</button>
+          </td>
+        </tr>`
+      }).join('')
+
+      if (!rows) return ''
+
+      return `
+      <div class="w-full mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)} — Nota de Práctica</h2>
+          <span class="text-xs text-zinc-500">${(students ?? []).length} alumno${(students ?? []).length !== 1 ? 's' : ''} · Peso: 20% de la nota final</span>
+        </div>
+        <div class="w-full rounded-xl border border-zinc-800 bg-[#111] overflow-hidden">
+          <div class="w-full overflow-x-auto">
+            <table class="w-full min-w-full text-sm">
+              <thead>
+                <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
+                  <th class="py-3 px-4 font-medium">Alumno</th>
+                  <th class="py-3 px-4 font-medium">Email</th>
+                  <th class="py-3 px-4 font-medium">Plataforma</th>
+                  <th class="py-3 px-4 font-medium">Nota (0-20)</th>
+                  <th class="py-3 px-4 font-medium">Observación</th>
+                  <th class="py-3 px-4 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`
+    }))
+
+    const practiceSections = practicalGradeRows.filter(Boolean).join('')
 
     document.getElementById('page-content')!.innerHTML = `
       <div class="mb-6">
         <span class="kicker">Evaluaciones en juego</span>
-        <h1 class="font-heading text-2xl font-bold text-white">Ex\u00e1menes Pr\u00e1cticos</h1>
-        <p class="mt-1 text-sm text-zinc-500">Califica a los alumnos que aprobaron el examen te\u00f3rico. Solo se muestran alumnos con te\u00f3rico calificado.</p>
+        <h1 class="font-heading text-2xl font-bold text-white">Práctica</h1>
+        <p class="mt-1 text-sm text-zinc-500">Califica la práctica de tus alumnos. La nota de práctica afecta el 20% de la nota final.</p>
       </div>
-      ${sections || '<div class="flex flex-col items-center justify-center py-20 text-center"><p class="text-zinc-500">No hay alumnos con te\u00f3rico aprobado a\u00fan.</p></div>'}
-      <p class="text-xs text-zinc-600 mt-4">La nota del examen pr\u00e1ctico es sobre 20. El coach decide cu\u00e1ndo calificar a cada alumno.</p>`
 
-    // Save practical grade
+      <div class="mb-8">
+        <h2 class="font-heading text-lg font-bold text-white mb-3 flex items-center gap-2">${Icon('target', 18)} Nota de Práctica (afecta nota final)</h2>
+        <p class="text-xs text-zinc-500 mb-4">Asigna una nota de 0 a 20 a cada alumno. Esta nota representa el <span class="text-[#8B5CF6] font-medium">20%</span> de la calificación final del curso.</p>
+        ${practiceSections || '<div class="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-zinc-800 bg-[#111]"><p class="text-zinc-500">No hay alumnos inscritos en tus cursos.</p></div>'}
+      </div>
+
+      ${examSections ? `
+      <div class="mb-8">
+        <h2 class="font-heading text-lg font-bold text-white mb-3 flex items-center gap-2">${Icon('scrollText', 18)} Examen Práctico (evaluación)</h2>
+        <p class="text-xs text-zinc-500 mb-4">Califica a los alumnos que aprobaron el examen teórico. Solo se muestran alumnos con teórico calificado.</p>
+        ${examSections}
+      </div>` : ''}
+      <p class="text-xs text-zinc-600 mt-4">Las notas se guardan al hacer clic en "Guardar".</p>`
+
+    document.querySelectorAll('.save-practice-grade').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement
+        const enrollmentId = el.dataset.enrollment
+        if (!enrollmentId) return
+        const scoreInput = document.querySelector<HTMLInputElement>(`.practice-grade-score[data-enrollment="${enrollmentId}"]`)
+        const noteInput = document.querySelector<HTMLInputElement>(`.practice-grade-note[data-enrollment="${enrollmentId}"]`)
+        const raw = scoreInput?.value?.trim() || ''
+        if (raw === '') { toast('error', 'Escribe una nota'); return }
+        const v = parseFloat(raw)
+        if (isNaN(v)) { toast('error', 'Nota inválida'); return }
+        const score = Math.min(Math.max(v, 0), 20)
+        const note = noteInput?.value?.trim() || null
+        const { error } = await supabase.from('practical_grades').upsert({
+          enrollment_id: enrollmentId,
+          coach_id: coachId,
+          score,
+          note,
+        }, { onConflict: 'enrollment_id' })
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Nota de práctica guardada')
+      })
+    })
+
     document.querySelectorAll('.save-practical-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const el = btn as HTMLElement
@@ -161,7 +284,7 @@ export async function initCoachPractical(): Promise<void> {
         if (!studentId || !examId) return
         const scoreInput = document.querySelector<HTMLInputElement>(`.practical-score[data-student="${studentId}"]`)
         const score = parseInt(scoreInput?.value || '0')
-        if (isNaN(score) || score < 0 || score > 20) { toast('error', 'Nota inv\u00e1lida (0-20)'); return }
+        if (isNaN(score) || score < 0 || score > 20) { toast('error', 'Nota inválida (0-20)'); return }
 
         await supabase.from('exam_results').upsert({
           exam_id: examId,

@@ -38,6 +38,7 @@ interface StStudent {
   effective: number | null
   tasksAvg: number | null
   examsAvg: number | null
+  practiceAvg: number | null
   pendingRec: boolean
 }
 
@@ -80,6 +81,15 @@ export async function initCoachGrades(): Promise<void> {
       supabase.from('exams').select('id, course_id, title, is_final, is_recovery').in('course_id', idFilter),
     ])
 
+    const enrollIds = (enrolls ?? []).map((e: any) => e.id)
+    const { data: allPractical } = await supabase
+      .from('practical_grades')
+      .select('enrollment_id, score')
+      .in('enrollment_id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
+
+    const practicalByEnroll = new Map<string, number>()
+    for (const p of allPractical ?? []) practicalByEnroll.set(p.enrollment_id, parseFloat(p.score))
+
     const taskIds = (allTasks ?? []).map((t: any) => t.id)
     const taskIdFilter = taskIds.length > 0 ? taskIds : ['00000000-0000-0000-0000-000000000000']
     const examIds = (allExams ?? []).map((x: any) => x.id)
@@ -111,7 +121,7 @@ export async function initCoachGrades(): Promise<void> {
         tasks: tasks.map(t => ({ id: t.id, due_date: t.due_date, is_recovery: t.is_recovery })),
         exams: exams.map(x => ({ id: x.id, is_final: x.is_final, is_recovery: x.is_recovery })),
       }
-      const raw = buildRawScores(ref, [], allSubs ?? [], allResults ?? [], sid)
+      const raw = buildRawScores(ref, [], allSubs ?? [], allResults ?? [], sid, practicalByEnroll.get(e.id) ?? null)
       const comp = computeComponents(raw)
       const computed = weightedFinal(comp)
       const manual = e.final_grade != null ? parseFloat(e.final_grade) : null
@@ -127,6 +137,7 @@ export async function initCoachGrades(): Promise<void> {
         effective,
         tasksAvg: comp.tasks,
         examsAvg: comp.exams,
+        practiceAvg: comp.practice,
         pendingRec: hasPendingRecovery(ref, allResults ?? [], allSubs ?? [], sid),
       })
     }
@@ -170,6 +181,9 @@ function renderPlanilla(): void {
         <td class="py-2.5 px-3 text-center text-sm" data-role="tasks-avg">
           ${s.tasksAvg !== null ? `<span class="text-zinc-300">${s.tasksAvg.toFixed(1)}</span>` : '<span class="text-zinc-600">—</span>'}
         </td>
+        <td class="py-2.5 px-3 text-center text-sm">
+          ${s.practiceAvg !== null ? `<span class="text-[#8B5CF6]">${s.practiceAvg.toFixed(1)}</span>` : '<span class="text-zinc-600">—</span>'}
+        </td>
         <td class="py-2.5 px-3 text-center">
           <input type="number" step="0.1" min="0" max="20" value="${notaVal}" placeholder="0-20"
             class="grade-nota w-20 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-center text-sm text-white outline-none transition focus:border-[#8B5CF6]"
@@ -187,7 +201,7 @@ function renderPlanilla(): void {
       <div class="rounded-xl border border-zinc-800 bg-[#111] overflow-hidden mb-6" data-course-section="${escapeHtml(c.id)}">
         <div class="bg-zinc-900/50 px-4 py-3 border-b border-zinc-800">
           <h3 class="font-heading text-base font-bold text-white">${escapeHtml(c.name)}</h3>
-          <p class="text-xs text-zinc-500 mt-0.5">${students.length} alumno${students.length !== 1 ? 's' : ''} · Aprobado desde ${c.minPass}/20 · ${COMPONENT_LABELS.classes} ${GRADE_WEIGHTS.classes}% · ${COMPONENT_LABELS.tasks} ${GRADE_WEIGHTS.tasks}% · ${COMPONENT_LABELS.exams} ${GRADE_WEIGHTS.exams}% · ${COMPONENT_LABELS.final} ${GRADE_WEIGHTS.final}%</p>
+          <p class="text-xs text-zinc-500 mt-0.5">${students.length} alumno${students.length !== 1 ? 's' : ''} · Aprobado desde ${c.minPass}/20 · ${COMPONENT_LABELS.classes} ${GRADE_WEIGHTS.classes}% · ${COMPONENT_LABELS.tasks} ${GRADE_WEIGHTS.tasks}% · ${COMPONENT_LABELS.exams} ${GRADE_WEIGHTS.exams}% · ${COMPONENT_LABELS.practice} ${GRADE_WEIGHTS.practice}% · ${COMPONENT_LABELS.final} ${GRADE_WEIGHTS.final}%</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -195,7 +209,8 @@ function renderPlanilla(): void {
               <tr class="border-b border-zinc-800 text-left text-xs text-zinc-500">
                 <th class="py-2.5 px-3 font-medium min-w-[180px]">Alumno</th>
                 <th class="py-2.5 px-3 font-medium">Plataforma</th>
-                <th class="py-2.5 px-3 font-medium text-center min-w-[80px]">Nota tareas</th>
+                <th class="py-2.5 px-3 font-medium text-center min-w-[80px]">Tareas</th>
+                <th class="py-2.5 px-3 font-medium text-center min-w-[80px]">Práctica</th>
                 <th class="py-2.5 px-3 font-medium text-center min-w-[90px]">Nota alumno</th>
                 <th class="py-2.5 px-3 font-medium text-center min-w-[90px]">Estado</th>
                 <th class="py-2.5 px-3 font-medium text-center min-w-[80px]">Ranking</th>
@@ -294,6 +309,7 @@ function reRenderCourse(courseId: string): void {
       </td>
       <td class="py-2.5 px-3">${platformBadge}</td>
       <td class="py-2.5 px-3 text-center text-sm" data-role="tasks-avg">${s.tasksAvg !== null ? `<span class="text-zinc-300">${s.tasksAvg.toFixed(1)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
+      <td class="py-2.5 px-3 text-center text-sm">${s.practiceAvg !== null ? `<span class="text-[#8B5CF6]">${s.practiceAvg.toFixed(1)}</span>` : '<span class="text-zinc-600">—</span>'}</td>
       <td class="py-2.5 px-3 text-center"><input type="number" step="0.1" min="0" max="20" value="${notaVal}" placeholder="0-20" class="grade-nota w-20 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-center text-sm text-white outline-none transition focus:border-[#8B5CF6]" data-enroll="${escapeHtml(s.enrollId)}" title="Nota del alumno sobre 20" /></td>
       <td class="py-2.5 px-3 text-center" data-role="status"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.cls}">${meta.label}</span></td>
       <td class="py-2.5 px-3 text-center text-sm text-zinc-300 whitespace-nowrap" data-role="ranking">${s.effective !== null ? rankingHtml(c.id, s.effective) : '<span class="text-zinc-600">—</span>'}</td>
@@ -316,6 +332,8 @@ function reRenderCourse(courseId: string): void {
 async function renderStudentDetail(sid: string, courseParam: string): Promise<void> {
   try {
     const back = `#/coaches/grades${courseParam ? '?course=' + encodeURIComponent(courseParam) : ''}`
+    const { data: { session } } = await supabase.auth.getSession()
+    const coachId = session?.user?.id || ''
 
     let course: any = null
     let enrollment: any = null
@@ -341,13 +359,14 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
     const minPass = course.min_pass_grade ?? 14
     const enrollId = enrollment.id
 
-    const [{ data: profile }, { data: tasks }, { data: subs }, { data: exams }, { data: results }, { data: allEnrolls }] = await Promise.all([
+    const [{ data: profile }, { data: tasks }, { data: subs }, { data: exams }, { data: results }, { data: allEnrolls }, { data: practicalGrade }] = await Promise.all([
       supabase.from('profiles').select('full_name, platform, rank').eq('id', sid).maybeSingle(),
       supabase.from('course_tasks').select('id, title, due_date, is_recovery').eq('course_id', courseId),
       supabase.from('task_submissions').select('task_id, score, graded').eq('student_id', sid),
       supabase.from('exams').select('id, title, is_final, is_recovery').eq('course_id', courseId),
       supabase.from('exam_results').select('exam_id, total_score, status').eq('student_id', sid),
       supabase.from('enrollments').select('profile_id, final_grade').eq('course_id', courseId).eq('status', 'active'),
+      supabase.from('practical_grades').select('score, note').eq('enrollment_id', enrollId).maybeSingle(),
     ])
 
     const taskIds = (tasks ?? []).map((t: any) => t.id)
@@ -361,7 +380,7 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
       tasks: (tasks ?? []).map((t: any) => ({ id: t.id, due_date: t.due_date, is_recovery: !!t.is_recovery })),
       exams: (exams ?? []).map((x: any) => ({ id: x.id, is_final: !!x.is_final, is_recovery: !!x.is_recovery })),
     }
-    const raw = buildRawScores(ref, [], subsF, resultsF, sid)
+    const raw = buildRawScores(ref, [], subsF, resultsF, sid, practicalGrade?.score != null ? parseFloat(practicalGrade.score) : null)
     const comp = computeComponents(raw)
     const computed = weightedFinal(comp)
     const manual = enrollment.final_grade != null ? parseFloat(enrollment.final_grade) : null
@@ -440,13 +459,17 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
         <p class="text-sm text-zinc-400 mt-1">${escapeHtml(course.name)} · ${platformName}</p>
       </div>
 
-      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Nota tareas</p>
+          <p class="text-[10px] text-zinc-500 uppercase">Tareas</p>
           <p class="text-lg font-bold ${comp.tasks === null ? 'text-zinc-600' : comp.tasks >= 14 ? 'text-green-400' : comp.tasks >= 11 ? 'text-yellow-400' : 'text-red-400'}">${comp.tasks !== null ? comp.tasks.toFixed(1) : '—'}</p>
         </div>
         <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
-          <p class="text-[10px] text-zinc-500 uppercase">Nota alumno</p>
+          <p class="text-[10px] text-zinc-500 uppercase">Práctica</p>
+          <p class="text-lg font-bold ${comp.practice === null ? 'text-zinc-600' : comp.practice >= 14 ? 'text-green-400' : comp.practice >= 11 ? 'text-yellow-400' : 'text-red-400'}">${comp.practice !== null ? comp.practice.toFixed(1) : '—'}</p>
+        </div>
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
+          <p class="text-[10px] text-zinc-500 uppercase">Final</p>
           <p class="text-lg font-bold text-white">${effective !== null ? effective.toFixed(1) : '—'}</p>
         </div>
         <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-center">
@@ -457,6 +480,16 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
           <p class="text-[10px] text-zinc-500 uppercase">Ranking</p>
           <p class="text-lg font-bold text-white">${ranking}</p>
         </div>
+      </div>
+
+      <div class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
+        <h4 class="mb-3 text-xs font-medium text-zinc-400">${Icon('target', 12)} Nota de Práctica (0-20)</h4>
+        <div class="flex items-center gap-2">
+          <input type="number" step="0.1" min="0" max="20" id="grades-student-practice" value="${comp.practice !== null ? comp.practice.toFixed(1) : ''}" class="w-32 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="0-20" />
+          <input type="text" id="grades-practice-note" value="${escapeHtml(practicalGrade?.note || '')}" class="flex-1 rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6]" placeholder="Observación (opcional)" />
+          <button type="button" id="grades-save-practice" class="rounded-lg bg-[#8B5CF6] px-4 py-2 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('save', 13)} Guardar</button>
+        </div>
+        <p class="mt-1.5 text-[10px] text-zinc-600">La nota de práctica se suma al promedio ponderado (${GRADE_WEIGHTS.practice}% del total).</p>
       </div>
 
       <div class="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
@@ -490,6 +523,26 @@ async function renderStudentDetail(sid: string, courseParam: string): Promise<vo
       const { error } = await supabase.from('enrollments').update({ final_grade: value }).eq('id', enrollId)
       if (error) { toast('error', error.message); return }
       toast('success', 'Nota guardada')
+      await renderStudentDetail(sid, courseId)
+    })
+
+    document.getElementById('grades-save-practice')?.addEventListener('click', async () => {
+      const scoreInput = document.getElementById('grades-student-practice') as HTMLInputElement
+      const noteInput = document.getElementById('grades-practice-note') as HTMLInputElement
+      const raw = scoreInput.value.trim()
+      if (raw === '') { toast('error', 'Escribe una nota de práctica'); return }
+      const v = parseFloat(raw)
+      if (isNaN(v)) { toast('error', 'Nota inválida'); return }
+      const score = Math.min(Math.max(v, 0), 20)
+      const note = noteInput.value.trim()
+      const { error } = await supabase.from('practical_grades').upsert({
+        enrollment_id: enrollId,
+        coach_id: coachId,
+        score,
+        note: note || null,
+      }, { onConflict: 'enrollment_id' })
+      if (error) { toast('error', error.message); return }
+      toast('success', 'Nota de práctica guardada')
       await renderStudentDetail(sid, courseId)
     })
 

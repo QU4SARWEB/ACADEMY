@@ -372,9 +372,15 @@ function renderExamCreateForm(courses: any[], editExam?: any, currentQuestions?:
             ${questions.length === 0 ? '<p class="text-xs text-zinc-600 text-center py-2">No hay preguntas agregadas.</p>' : ''}
             ${questions.map((q, i) => renderQuestionItem(q, i)).join('')}
           </div>
-          <button type="button" id="btn-add-question" class="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-600 px-3 py-2 text-xs text-zinc-400 hover:border-[#8B5CF6] hover:text-[#8B5CF6] transition w-full justify-center">
-            ${Icon('plus', 12)} Agregar pregunta
-          </button>
+          <div class="flex gap-2 mb-3">
+            <button type="button" id="btn-add-question" class="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-600 px-3 py-2 text-xs text-zinc-400 hover:border-[#8B5CF6] hover:text-[#8B5CF6] transition flex-1 justify-center">
+              ${Icon('plus', 12)} Agregar pregunta
+            </button>
+            <button type="button" id="btn-bulk-upload" class="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-600 px-3 py-2 text-xs text-zinc-400 hover:border-green-500 hover:text-green-400 transition flex-1 justify-center">
+              ${Icon('upload', 12)} Subir examen completo
+            </button>
+          </div>
+          <div id="bulk-upload-panel" class="hidden mb-3 rounded-lg border border-zinc-700 bg-zinc-900/50 p-3"></div>
           <div id="add-question-panel" class="hidden mt-3 rounded-lg border border-zinc-700 bg-zinc-900/50 p-3"></div>
         </div>
 
@@ -498,10 +504,23 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
 
   document.getElementById('btn-add-question')?.addEventListener('click', () => {
     const panel = document.getElementById('add-question-panel')!
+    const bulkPanel = document.getElementById('bulk-upload-panel')!
+    bulkPanel.classList.add('hidden')
     panel.classList.toggle('hidden')
     if (!panel.classList.contains('hidden')) {
       panel.innerHTML = renderAddQuestionPanel()
       bindQuestionPanelEvents(panel, tempQuestions, () => renderQuestionsList(), tempIdCounter)
+    }
+  })
+
+  document.getElementById('btn-bulk-upload')?.addEventListener('click', () => {
+    const bulkPanel = document.getElementById('bulk-upload-panel')!
+    const panel = document.getElementById('add-question-panel')!
+    panel.classList.add('hidden')
+    bulkPanel.classList.toggle('hidden')
+    if (!bulkPanel.classList.contains('hidden')) {
+      bulkPanel.innerHTML = renderBulkUploadPanel()
+      bindBulkUploadEvents(bulkPanel, tempQuestions, () => renderQuestionsList(), tempIdCounter)
     }
   })
 
@@ -549,7 +568,6 @@ function bindExamFormEvents(container: HTMLElement, coachId: string, editId?: st
       if (error) { toast('error', error.message); submitBtn.disabled = false; submitBtn.textContent = 'Guardar cambios'; return }
     } else {
       payload.published = false
-      payload.coach_id = coachId
       const { data, error } = await supabase.from('exams').insert(payload).select().maybeSingle()
       if (error) { toast('error', error.message); submitBtn.disabled = false; submitBtn.textContent = 'Crear examen'; return }
       examId = data?.id
@@ -692,6 +710,180 @@ function bindQuestionPanelEvents(panel: HTMLElement, tempQuestions: TempQuestion
     document.querySelectorAll<HTMLInputElement>('input[name="correct-option"]').forEach(r => r.checked = false)
     document.querySelector<HTMLInputElement>('input[name="truefalse-answer"][value="true"]')!.checked = true
 
+    panel.classList.add('hidden')
+    onUpdate()
+  })
+}
+
+function parseExamText(raw: string): { type: 'multiple' | 'detail'; question_text: string; options: string[]; correct_answer: string }[] {
+  const cleaned = raw.replace(/\r\n/g, '\n').replace(/\t/g, ' ').trim()
+  const blocks = cleaned.split(/\n\s*\n/).filter(b => b.trim().length > 0)
+  const results: { type: 'multiple' | 'detail'; question_text: string; options: string[]; correct_answer: string }[] = []
+
+  for (const block of blocks) {
+    const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (lines.length === 0) continue
+
+    const optionPattern = /^([A-Da-d])[\)\.\:\-]\s*(.+)$/
+    const optionLines: { letter: string; text: string }[] = []
+    let questionLines: string[] = []
+
+    for (const line of lines) {
+      const match = line.match(optionPattern)
+      if (match) {
+        optionLines.push({ letter: match[1].toUpperCase(), text: match[2].trim() })
+      } else {
+        if (optionLines.length === 0 || questionLines.length > 0) {
+          questionLines.push(line)
+        } else {
+          questionLines.push(line)
+        }
+      }
+    }
+
+    const questionText = questionLines.join(' ').replace(/\s+/g, ' ').trim()
+
+    if (optionLines.length >= 2) {
+      const options = optionLines.map(o => o.text)
+      results.push({
+        type: 'multiple',
+        question_text: questionText,
+        options,
+        correct_answer: '',
+      })
+    } else {
+      results.push({
+        type: 'detail',
+        question_text: questionText,
+        options: [],
+        correct_answer: '',
+      })
+    }
+  }
+
+  return results
+}
+
+function renderBulkUploadPanel(): string {
+  return `
+    <div class="space-y-3">
+      <div>
+        <label class="mb-1 block text-xs text-zinc-400">Pega el examen completo</label>
+        <textarea id="bulk-exam-text" rows="12" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] font-mono text-[13px] leading-relaxed" placeholder="Ejemplo:
+
+¿Cuál es el principal objetivo de un buen posicionamiento?
+A) Buscar siempre el primer enfrentamiento
+B) Maximizar las posibilidades de ganar
+C) Permanecer siempre detrás del equipo
+D) Mantenerse en movimiento constantemente
+
+¿Qué es un trade kill?
+
+¿Por qué es importante evitar que varios jugadores del mismo equipo estén expuestos al mismo ángulo?"></textarea>
+      </div>
+      <div class="rounded-lg border border-zinc-700/50 bg-zinc-800/30 p-3">
+        <p class="text-[11px] text-zinc-500 mb-2"><span class="text-zinc-400 font-medium">Formato:</span> Separa cada pregunta con una línea en blanco.</p>
+        <ul class="text-[11px] text-zinc-500 space-y-1">
+          <li>• <span class="text-green-400">Múltiple elección</span>: Question + opciones A) B) C) D)</li>
+          <li>• <span class="text-blue-400">Pregunta abierta</span>: Solo la pregunta (sin opciones)</li>
+        </ul>
+      </div>
+      <p id="bulk-upload-error" class="hidden text-xs text-red-400"></p>
+      <div id="bulk-preview" class="hidden space-y-2"></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" id="btn-parse-exam" class="rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED]">${Icon('eye', 11)} Vista previa</button>
+        <button type="button" id="btn-confirm-bulk" class="hidden rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700">${Icon('check', 11)} Agregar todas</button>
+        <button type="button" id="btn-cancel-bulk" class="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">Cancelar</button>
+      </div>
+    </div>`
+}
+
+function bindBulkUploadEvents(panel: HTMLElement, tempQuestions: TempQuestion[], onUpdate: () => void, idCounter: number): void {
+  let parsedQuestions: { type: 'multiple' | 'detail'; question_text: string; options: string[]; correct_answer: string }[] = []
+
+  document.getElementById('btn-cancel-bulk')?.addEventListener('click', () => panel.classList.add('hidden'))
+
+  document.getElementById('btn-parse-exam')?.addEventListener('click', () => {
+    const textarea = document.getElementById('bulk-exam-text') as HTMLTextAreaElement
+    const errorEl = document.getElementById('bulk-upload-error')!
+    const previewEl = document.getElementById('bulk-preview')!
+    const confirmBtn = document.getElementById('btn-confirm-bulk')!
+
+    errorEl.classList.add('hidden')
+    previewEl.classList.add('hidden')
+    confirmBtn.classList.add('hidden')
+
+    const raw = textarea.value.trim()
+    if (!raw) {
+      errorEl.textContent = 'Pega el texto del examen'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
+    parsedQuestions = parseExamText(raw)
+    if (parsedQuestions.length === 0) {
+      errorEl.textContent = 'No se detectaron preguntas. Revisa el formato.'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
+    let previewHtml = `<p class="text-xs text-zinc-400 mb-2">Se detectaron <span class="text-white font-medium">${parsedQuestions.length}</span> preguntas:</p>`
+
+    const mcCount = parsedQuestions.filter(q => q.type === 'multiple').length
+    const detailCount = parsedQuestions.filter(q => q.type === 'detail').length
+    previewHtml += `<div class="flex gap-3 mb-3">
+      ${mcCount > 0 ? `<span class="text-[11px] text-green-400">${mcCount} múltiple${mcCount > 1 ? 's' : ''}</span>` : ''}
+      ${detailCount > 0 ? `<span class="text-[11px] text-blue-400">${detailCount} abierta${detailCount > 1 ? 's' : ''}</span>` : ''}
+    </div>`
+
+    previewHtml += '<div class="space-y-2 max-h-[300px] overflow-y-auto pr-1">'
+    parsedQuestions.forEach((q, i) => {
+      const isMc = q.type === 'multiple'
+      const typeBadge = isMc
+        ? '<span class="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] text-green-400">Múltiple</span>'
+        : '<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-400">Abierta</span>'
+      const optionsHtml = isMc ? q.options.map((opt, j) => {
+        const letter = String.fromCharCode(65 + j)
+        return `<span class="text-[10px] text-zinc-500">${letter}) ${escapeHtml(opt)}</span>`
+      }).join(' &nbsp;·&nbsp; ') : ''
+      previewHtml += `
+        <div class="rounded-lg border border-zinc-700/50 bg-zinc-900/30 px-3 py-2">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-zinc-500 shrink-0">${i + 1}.</span>
+            ${typeBadge}
+          </div>
+          <p class="text-xs text-white ml-5">${escapeHtml(q.question_text)}</p>
+          ${optionsHtml ? `<div class="ml-5 mt-1 space-x-2">${optionsHtml}</div>` : ''}
+        </div>`
+    })
+    previewHtml += '</div>'
+
+    previewEl.innerHTML = previewHtml
+    previewEl.classList.remove('hidden')
+    confirmBtn.classList.remove('hidden')
+  })
+
+  document.getElementById('btn-confirm-bulk')?.addEventListener('click', () => {
+    if (parsedQuestions.length === 0) return
+
+    const pointsPerQuestion = Math.floor(20 / parsedQuestions.length)
+    const remainder = 20 - (pointsPerQuestion * parsedQuestions.length)
+
+    for (let i = 0; i < parsedQuestions.length; i++) {
+      const q = parsedQuestions[i]
+      const points = i === 0 ? pointsPerQuestion + remainder : pointsPerQuestion
+      const newId = `temp_${++idCounter}`
+      tempQuestions.push({
+        id: newId,
+        type: q.type,
+        question_text: q.question_text,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        points,
+      })
+    }
+
+    toast('success', `${parsedQuestions.length} preguntas agregadas`)
     panel.classList.add('hidden')
     onUpdate()
   })
