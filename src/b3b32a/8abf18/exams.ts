@@ -1255,17 +1255,17 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
 
         if (q.type === 'multiple' || q.type === 'truefalse') {
           const studentAnswer = answer?.answer || ''
-          const isCorrect = studentAnswer === (q.type === 'multiple' && /^[A-D]$/.test(q.correct_answer) ? q.correct_answer : q.correct_answer) ||
-                           (q.type === 'multiple' && /^\d$/.test(q.correct_answer) ? String.fromCharCode(65 + parseInt(q.correct_answer)) === studentAnswer : false)
-          const correct = q.type === 'multiple'
-            ? (q.correct_answer === studentAnswer || String.fromCharCode(65 + (parseInt(q.correct_answer) || 0)) === studentAnswer)
-            : q.correct_answer === studentAnswer
-          const autoScore = correct ? q.points : 0
-          totalScore += autoScore
+          const opts = q.options || []
+          const letterIdx: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 }
+          const correctLetter = (q.correct_answer || '').toUpperCase()
+          const correctIdx = letterIdx[correctLetter]
+          const correctText = correctIdx !== undefined && opts[correctIdx] ? opts[correctIdx] : q.correct_answer
+          const autoScore = (studentAnswer === correctText || studentAnswer.toUpperCase() === correctLetter || (q.type !== 'multiple' && studentAnswer === q.correct_answer)) ? q.points : 0
           if (!answer?.graded) {
+            totalScore += autoScore
             await supabase.from('exam_answers').update({ score: autoScore, graded: true }).eq('id', answer.id)
           } else {
-            totalScore += (answer?.score || autoScore)
+            totalScore += (answer?.score || 0)
           }
         } else {
           const input = document.querySelector<HTMLInputElement>(`.detail-score-input[data-question-id="${escapeHtml(q.id)}"]`)
@@ -1296,7 +1296,7 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
 
       await supabase.from('exam_results').update({
         total_score: totalScore,
-        graded: allGraded,
+        status: allGraded ? 'graded' : 'reviewing',
       }).eq('id', result.id)
 
       toast('success', 'Calificación guardada')
