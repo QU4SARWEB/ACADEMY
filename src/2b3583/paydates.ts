@@ -3,21 +3,25 @@
 // intensive:        15 días de acceso + 15 días para renovar (due_at + 15).
 // scholarship/free: sin fechas.
 
+function utcDate(y: number, m: number, d: number): Date {
+  return new Date(Date.UTC(y, m, d, 12, 0, 0))
+}
+
 export function nextPayDay(from: Date = new Date()): Date {
-  const d = from.getDate()
-  let target = new Date(from.getFullYear(), from.getMonth(), 2)
-  if (d >= 2) target = new Date(from.getFullYear(), from.getMonth() + 1, 2)
+  const d = from.getUTCDate()
+  let target = utcDate(from.getUTCFullYear(), from.getUTCMonth(), 2)
+  if (d >= 2) target = utcDate(from.getUTCFullYear(), from.getUTCMonth() + 1, 2)
   return target
 }
 
 export function schedulePayDates(from: Date = new Date(), courseType?: string): { due_at: string; expires_at: string } | {} {
   if (courseType === 'intensive') {
-    const due = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 15)
-    const expires = new Date(due.getFullYear(), due.getMonth(), due.getDate() + 15)
+    const due = utcDate(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate() + 15)
+    const expires = utcDate(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate() + 15)
     return { due_at: due.toISOString(), expires_at: expires.toISOString() }
   }
   const due = nextPayDay(from)
-  const expires = new Date(due.getFullYear(), due.getMonth(), due.getDate() + 3)
+  const expires = utcDate(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate() + 3)
   return { due_at: due.toISOString(), expires_at: expires.toISOString() }
 }
 
