@@ -42,7 +42,7 @@ export interface RawScores {
   recoveryTaskScores: number[]
   examScores: number[]
   recoveryExamScores: number[]
-  practiceScore: number | null
+  practiceScores: number[]
   finalScore: number | null
 }
 
@@ -67,7 +67,7 @@ export function computeComponents(raw: RawScores): GradeComponents {
     classes: avg(raw.classScores),
     tasks: recoveryAveraged(raw.taskScores, raw.recoveryTaskScores),
     exams: recoveryAveraged(raw.examScores, raw.recoveryExamScores),
-    practice: raw.practiceScore,
+    practice: avg(raw.practiceScores),
     final: raw.finalScore,
   }
 }
@@ -119,7 +119,7 @@ export function buildRawScores(
   submissions: any[],
   results: any[],
   studentId: string,
-  practiceScore: number | null = null,
+  practiceScores: number[] = [],
 ): RawScores {
   const classScores = classGrades
     .filter(g => g.student_id === studentId && ref.scheduleIds.includes(g.schedule_id))
@@ -159,7 +159,7 @@ export function buildRawScores(
     else examScores.push(v)
   }
 
-  return { classScores, taskScores, recoveryTaskScores, examScores, recoveryExamScores, practiceScore, finalScore }
+  return { classScores, taskScores, recoveryTaskScores, examScores, recoveryExamScores, practiceScores, finalScore }
 }
 
 export function hasPendingRecovery(

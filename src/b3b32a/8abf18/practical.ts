@@ -3,6 +3,7 @@ import { supabase } from '@/304244'
 import { Icon } from '@/2b3583/bd2119'
 import { escapeHtml } from '@/2b3583/e0ebc3'
 import { toast } from '@/4725dc/4f2900'
+import { confirmDialog } from '@/4725dc/b9f3a2'
 import { getAssignedCourseIds } from '@/2b3583/assignments'
 
 export function renderCoachPractical(): string {
@@ -41,11 +42,17 @@ export async function initCoachPractical(): Promise<void> {
     const enrollIds = (allEnrolls ?? []).map((e: any) => e.id)
     const { data: existingPractical } = await supabase
       .from('practical_grades')
-      .select('enrollment_id, score, note')
+      .select('id, enrollment_id, score, note, created_at')
       .in('enrollment_id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
+      .order('created_at', { ascending: false })
 
-    const practicalByEnroll = new Map<string, any>()
-    for (const pg of existingPractical ?? []) practicalByEnroll.set(pg.enrollment_id, pg)
+    const allGradesByEnroll = new Map<string, { id: string; score: number; note: string | null; created_at: string | null }[]>()
+    for (const pg of existingPractical ?? []) {
+      const v = parseFloat(pg.score)
+      if (isNaN(v)) continue
+      if (!allGradesByEnroll.has(pg.enrollment_id)) allGradesByEnroll.set(pg.enrollment_id, [])
+      allGradesByEnroll.get(pg.enrollment_id)!.push({ id: pg.id, score: v, note: pg.note, created_at: pg.created_at })
+    }
 
     const enrollByStudentCourse = new Map<string, any>()
     for (const en of allEnrolls ?? []) {
@@ -173,12 +180,21 @@ export async function initCoachPractical(): Promise<void> {
 
       const rows = (students ?? []).map((s: any) => {
         const enroll = enrollByStudentCourse.get(`${s.id}:${c.id}`)
-        const existing = enroll ? practicalByEnroll.get(enroll.id) : null
-        const scoreVal = existing?.score != null ? parseFloat(existing.score) : ''
-        const noteVal = existing?.note || ''
+        const grades = enroll ? (allGradesByEnroll.get(enroll.id) || []) : []
+        const avg = grades.length > 0 ? grades.reduce((sum, g) => sum + g.score, 0) / grades.length : null
         const platformBadge = s.platform === 'mobile'
           ? `<span class="inline-flex items-center gap-1 rounded-full bg-[#8B5CF6]/15 px-2 py-0.5 text-[10px] text-[#C4B5FD]">${Icon('smartphone', 10)}</span>`
           : `<span class="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">${Icon('play', 10)}</span>`
+        const gradesList = grades.length > 0 ? `
+          <div class="mt-1 space-y-1">
+            ${grades.map(g => `
+              <div class="flex items-center gap-1.5 text-[11px]">
+                <span class="text-[#8B5CF6] font-medium">${g.score.toFixed(1)}</span>
+                ${g.note ? `<span class="text-zinc-500 truncate max-w-[120px]">${escapeHtml(g.note)}</span>` : ''}
+                <span class="text-zinc-600">${g.created_at ? new Date(g.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : ''}</span>
+                <button type="button" class="delete-practice-grade text-zinc-600 hover:text-red-400" data-id="${escapeHtml(g.id)}" title="Eliminar">${Icon('trash', 10)}</button>
+              </div>`).join('')}
+          </div>` : '<p class="text-[10px] text-zinc-600 mt-1">Sin notas</p>'
         return `
         <tr class="border-b border-zinc-800/50 hover:bg-zinc-900/30">
           <td class="py-3 px-4">
@@ -190,13 +206,18 @@ export async function initCoachPractical(): Promise<void> {
           <td class="py-3 px-4 text-xs text-zinc-400">${escapeHtml(s.email || '')}</td>
           <td class="py-3 px-4">${platformBadge}</td>
           <td class="py-3 px-4">
-            <input type="number" class="practice-grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white text-center outline-none focus:border-[#8B5CF6]" min="0" max="20" step="0.1" value="${scoreVal}" placeholder="0-20" data-enrollment="${escapeHtml(enroll?.id || '')}" />
+            <span class="text-sm font-bold ${avg !== null ? (avg >= 14 ? 'text-green-400' : avg >= 11 ? 'text-yellow-400' : 'text-red-400') : 'text-zinc-600'}">${avg !== null ? avg.toFixed(1) : '—'}</span>
+            <span class="text-[10px] text-zinc-600 ml-1">${grades.length > 0 ? `(${grades.length} nota${grades.length > 1 ? 's' : ''})` : ''}</span>
+            ${gradesList}
           </td>
           <td class="py-3 px-4">
-            <input type="text" class="practice-grade-note w-full max-w-[200px] rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" value="${escapeHtml(noteVal)}" placeholder="Observación" data-enrollment="${escapeHtml(enroll?.id || '')}" />
+            <input type="number" class="practice-grade-score w-20 rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white text-center outline-none focus:border-[#8B5CF6]" min="0" max="20" step="0.1" value="" placeholder="Nueva" data-enrollment="${escapeHtml(enroll?.id || '')}" />
           </td>
           <td class="py-3 px-4">
-            <button class="save-practice-grade rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED] transition" data-enrollment="${escapeHtml(enroll?.id || '')}">${Icon('save', 12)} Guardar</button>
+            <input type="text" class="practice-grade-note w-full max-w-[200px] rounded border border-zinc-700 bg-[#0A0A0A] px-2 py-1.5 text-sm text-white outline-none focus:border-[#8B5CF6]" value="" placeholder="Observación" data-enrollment="${escapeHtml(enroll?.id || '')}" />
+          </td>
+          <td class="py-3 px-4">
+            <button class="save-practice-grade rounded-lg bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#7C3AED] transition" data-enrollment="${escapeHtml(enroll?.id || '')}">${Icon('plus', 12)} Agregar</button>
           </td>
         </tr>`
       }).join('')
@@ -217,7 +238,8 @@ export async function initCoachPractical(): Promise<void> {
                   <th class="py-3 px-4 font-medium">Alumno</th>
                   <th class="py-3 px-4 font-medium">Email</th>
                   <th class="py-3 px-4 font-medium">Plataforma</th>
-                  <th class="py-3 px-4 font-medium">Nota (0-20)</th>
+                  <th class="py-3 px-4 font-medium">Promedio</th>
+                  <th class="py-3 px-4 font-medium">Nueva nota</th>
                   <th class="py-3 px-4 font-medium">Observación</th>
                   <th class="py-3 px-4 font-medium"></th>
                 </tr>
@@ -235,12 +257,12 @@ export async function initCoachPractical(): Promise<void> {
       <div class="mb-6">
         <span class="kicker">Evaluaciones en juego</span>
         <h1 class="font-heading text-2xl font-bold text-white">Práctica</h1>
-        <p class="mt-1 text-sm text-zinc-500">Califica la práctica de tus alumnos. La nota de práctica afecta el 20% de la nota final.</p>
+        <p class="mt-1 text-sm text-zinc-500">Califica la práctica de tus alumnos. El promedio de todas las notas equivale al 20% de la nota final.</p>
       </div>
 
       <div class="mb-8">
         <h2 class="font-heading text-lg font-bold text-white mb-3 flex items-center gap-2">${Icon('target', 18)} Nota de Práctica (afecta nota final)</h2>
-        <p class="text-xs text-zinc-500 mb-4">Asigna una nota de 0 a 20 a cada alumno. Esta nota representa el <span class="text-[#8B5CF6] font-medium">20%</span> de la calificación final del curso.</p>
+        <p class="text-xs text-zinc-500 mb-4">Asigna notas de 0 a 20 a cada alumno. El promedio de todas las notas equivale al <span class="text-[#8B5CF6] font-medium">20%</span> de la calificación final del curso.</p>
         ${practiceSections || '<div class="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-zinc-800 bg-[#111]"><p class="text-zinc-500">No hay alumnos inscritos en tus cursos.</p></div>'}
       </div>
 
@@ -265,14 +287,27 @@ export async function initCoachPractical(): Promise<void> {
         if (isNaN(v)) { toast('error', 'Nota inválida'); return }
         const score = Math.min(Math.max(v, 0), 20)
         const note = noteInput?.value?.trim() || null
-        const { error } = await supabase.from('practical_grades').upsert({
+        const { error } = await supabase.from('practical_grades').insert({
           enrollment_id: enrollmentId,
           coach_id: coachId,
           score,
           note,
-        }, { onConflict: 'enrollment_id' })
+        })
         if (error) { toast('error', error.message); return }
         toast('success', 'Nota de práctica guardada')
+        void initCoachPractical()
+      })
+    })
+
+    document.querySelectorAll('.delete-practice-grade').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement
+        const id = el.dataset.id
+        if (!id || !(await confirmDialog('¿Eliminar esta nota de práctica?', 'Eliminar'))) return
+        const { error } = await supabase.from('practical_grades').delete().eq('id', id)
+        if (error) { toast('error', error.message); return }
+        toast('success', 'Nota eliminada')
+        void initCoachPractical()
       })
     })
 

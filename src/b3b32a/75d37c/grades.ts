@@ -89,9 +89,15 @@ export async function initStudentGrades(): Promise<void> {
       .select('enrollment_id, score')
       .in('enrollment_id', enrollIds.length > 0 ? enrollIds : ['00000000-0000-0000-0000-000000000000'])
 
-    const practiceByEnroll = new Map<string, number>()
+    const practiceByEnroll = new Map<string, number[]>()
     for (const pg of allPractical ?? []) {
-      if (pg.score != null) practiceByEnroll.set(pg.enrollment_id, parseFloat(pg.score))
+      if (pg.score != null) {
+        const v = parseFloat(pg.score)
+        if (!isNaN(v)) {
+          if (!practiceByEnroll.has(pg.enrollment_id)) practiceByEnroll.set(pg.enrollment_id, [])
+          practiceByEnroll.get(pg.enrollment_id)!.push(v)
+        }
+      }
     }
 
     const finalByCourse = new Map<string, number | null>()
@@ -131,7 +137,7 @@ export async function initStudentGrades(): Promise<void> {
       }
 
       const enrollId = allEnrolls?.find((e: any) => e.profile_id === uid && e.course_id === courseId)?.id
-      const practiceScore = enrollId ? (practiceByEnroll.get(enrollId) ?? null) : null
+      const practiceScore = enrollId ? (practiceByEnroll.get(enrollId) ?? []) : []
       const raw = buildRawScores(ref, allClassGrades ?? [], allSubmissions ?? [], allResults ?? [], uid, practiceScore)
       const comp = computeComponents(raw)
       const pendingRec = hasPendingRecovery(ref, allResults ?? [], allSubmissions ?? [], uid)
