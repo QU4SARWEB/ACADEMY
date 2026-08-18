@@ -724,20 +724,20 @@ function parseExamText(raw: string): { type: 'multiple' | 'detail'; question_tex
     const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0)
     if (lines.length === 0) continue
 
-    const optionPattern = /^([A-Da-d])[\)\.\:\-]\s*(.+)$/
-    const optionLines: { letter: string; text: string }[] = []
+    const optionPattern = /^([A-Da-d])[\)\.\:\-]\s*(.+?)-?\s*$/
+    const optionLines: { letter: string; text: string; isCorrect: boolean }[] = []
     let questionLines: string[] = []
 
     for (const line of lines) {
-      const match = line.match(optionPattern)
+      const match = line.match(/^([A-Da-d])[\)\.\:\-]\s*(.+)/)
       if (match) {
-        optionLines.push({ letter: match[1].toUpperCase(), text: match[2].trim() })
+        const letter = match[1].toUpperCase()
+        let text = match[2].trim()
+        const isCorrect = text.endsWith('-')
+        if (isCorrect) text = text.slice(0, -1).trimEnd()
+        optionLines.push({ letter, text, isCorrect })
       } else {
-        if (optionLines.length === 0 || questionLines.length > 0) {
-          questionLines.push(line)
-        } else {
-          questionLines.push(line)
-        }
+        questionLines.push(line)
       }
     }
 
@@ -745,11 +745,13 @@ function parseExamText(raw: string): { type: 'multiple' | 'detail'; question_tex
 
     if (optionLines.length >= 2) {
       const options = optionLines.map(o => o.text)
+      const correctIdx = optionLines.findIndex(o => o.isCorrect)
+      const correctAnswer = correctIdx >= 0 ? optionLines[correctIdx].letter : ''
       results.push({
         type: 'multiple',
         question_text: questionText,
         options,
-        correct_answer: '',
+        correct_answer: correctAnswer,
       })
     } else {
       results.push({
@@ -769,22 +771,21 @@ function renderBulkUploadPanel(): string {
     <div class="space-y-3">
       <div>
         <label class="mb-1 block text-xs text-zinc-400">Pega el examen completo</label>
-        <textarea id="bulk-exam-text" rows="12" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] font-mono text-[13px] leading-relaxed" placeholder="Ejemplo:
-
-¿Cuál es el principal objetivo de un buen posicionamiento?
-A) Buscar siempre el primer enfrentamiento
+        <textarea id="bulk-exam-text" rows="12" class="w-full rounded-lg border border-zinc-700 bg-[#0A0A0A] px-3 py-2 text-sm text-white outline-none focus:border-[#8B5CF6] font-mono text-[13px] leading-relaxed" placeholder="¿Cuál es el principal objetivo de un buen posicionamiento?
+A) Buscar siempre el primer enfrentamiento-
 B) Maximizar las posibilidades de ganar
 C) Permanecer siempre detrás del equipo
 D) Mantenerse en movimiento constantemente
 
 ¿Qué es un trade kill?
 
-¿Por qué es importante evitar que varios jugadores del mismo equipo estén expuestos al mismo ángulo?"></textarea>
+¿Por qué es importante evitar que varios jugadores estén expuestos al mismo ángulo?"></textarea>
       </div>
       <div class="rounded-lg border border-zinc-700/50 bg-zinc-800/30 p-3">
         <p class="text-[11px] text-zinc-500 mb-2"><span class="text-zinc-400 font-medium">Formato:</span> Separa cada pregunta con una línea en blanco.</p>
         <ul class="text-[11px] text-zinc-500 space-y-1">
-          <li>• <span class="text-green-400">Múltiple elección</span>: Question + opciones A) B) C) D)</li>
+          <li>• <span class="text-green-400">Múltiple elección</span>: Pregunta + opciones A) B) C) D)</li>
+          <li>• <span class="text-yellow-400">Respuesta correcta</span>: Agrega <code class="bg-zinc-700 px-1 rounded">-</code> al final de la opción (ej: <code class="bg-zinc-700 px-1 rounded">A) Opción correcta-</code>)</li>
           <li>• <span class="text-blue-400">Pregunta abierta</span>: Solo la pregunta (sin opciones)</li>
         </ul>
       </div>
@@ -844,7 +845,8 @@ function bindBulkUploadEvents(panel: HTMLElement, tempQuestions: TempQuestion[],
         : '<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-400">Abierta</span>'
       const optionsHtml = isMc ? q.options.map((opt, j) => {
         const letter = String.fromCharCode(65 + j)
-        return `<span class="text-[10px] text-zinc-500">${letter}) ${escapeHtml(opt)}</span>`
+        const isCorrect = q.correct_answer === letter
+        return `<span class="text-[10px] ${isCorrect ? 'text-green-400 font-medium' : 'text-zinc-500'}">${letter}) ${escapeHtml(opt)}${isCorrect ? ' ✓' : ''}</span>`
       }).join(' &nbsp;·&nbsp; ') : ''
       previewHtml += `
         <div class="rounded-lg border border-zinc-700/50 bg-zinc-900/30 px-3 py-2">
