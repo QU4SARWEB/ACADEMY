@@ -227,6 +227,8 @@ export function renderHome(session?: any): string {
               <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Inscribirse →</a></div>
             </article>
+            <!-- OCULTO: Clase particular $20 — reactivar quitando display:none -->
+            <!--
             <article class="offer-card reveal" style="--i:2">
               <span class="offer-card__badge offer-card__badge--1on1">1 a 1</span>
               <h3 class="offer-card__title">Clase particular</h3>
@@ -259,6 +261,9 @@ export function renderHome(session?: any): string {
               <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-ghost w-full">Agendar mi clase →</a></div>
             </article>
+            -->
+            <!-- OCULTO: Coaching Intensivo $40 — reactivar quitando display:none -->
+            <!--
             <article class="offer-card offer-card--intensive reveal" style="--i:3">
               <span class="offer-card__badge offer-card__badge--intensive">Intensivo</span>
               <h3 class="offer-card__title">Coaching Intensivo</h3>
@@ -293,6 +298,7 @@ export function renderHome(session?: any): string {
               <button class="offer-card__toggle" type="button">${Icon('chevronDown', 14)} <span>Ver toda la info</span></button>
               <div class="offer-card__cta"><a href="#/register" class="btn btn-primary w-full">Comenzar programa →</a></div>
             </article>
+            -->
           </div>
 
           <!-- Mini comparador -->
@@ -301,8 +307,11 @@ export function renderHome(session?: any): string {
               <span>Beneficio</span>
               <span>Gratis</span>
               <span>Cursos <em>$15</em></span>
+              <!-- OCULTO: reactivar 1a1 e Intensivo -->
+              <!--
               <span>1 a 1 <em>$20</em></span>
               <span>Intensivo <em>$40</em></span>
+              -->
             </div>
             ${[
               { label: 'Evaluación de nivel', v1: true, v2: false, v3: false, v4: false },
@@ -325,8 +334,11 @@ export function renderHome(session?: any): string {
                 <span>${escapeHtml(r.label)}</span>
                 <span class="${r.v1 ? 'yes' : 'no'}">${r.v1 ? '✓' : '—'}</span>
                 <span class="${r.v2 ? 'yes' : 'no'}">${r.v2 ? '✓' : '—'}</span>
+                <!-- OCULTO: columnas 1a1 e Intensivo -->
+                <!--
                 <span class="${r.v3 ? 'yes' : 'no'}">${r.v3 ? '✓' : '—'}</span>
                 <span class="${r.v4 ? 'yes' : 'no'}">${r.v4 ? '✓' : '—'}</span>
+                -->
               </div>
             `).join('')}
           </div>
