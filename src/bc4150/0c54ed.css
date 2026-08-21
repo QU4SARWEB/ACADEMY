@@ -521,8 +521,10 @@ button:focus-visible, a:focus-visible {
 /* --- Offers / precios --- */
 .offer-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
+  max-width: 52rem;
+  margin-inline: auto;
 }
 .offer-card {
   position: relative;
@@ -744,7 +746,7 @@ button:focus-visible, a:focus-visible {
 .compare__head,
 .compare__row {
   display: grid;
-  grid-template-columns: 1.6fr 0.5fr 0.5fr 0.5fr 0.5fr;
+  grid-template-columns: 2.2fr 1fr 1fr;
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 1.1rem;
@@ -1451,7 +1453,7 @@ button:focus-visible, a:focus-visible {
   .news-banner__img { width: 90px; height: 90px; }
   .nav-b__right .btn { display: none; }
   .compare__head,
-  .compare__row { grid-template-columns: 1.2fr 0.45fr 0.45fr 0.45fr 0.45fr; padding: 0.6rem 0.85rem; font-size: 0.78rem; }
+  .compare__row { grid-template-columns: 2fr 1fr 1fr; padding: 0.6rem 0.85rem; font-size: 0.78rem; }
 }
 
 /* ============ Responsive mobile ============ */
@@ -1945,7 +1947,7 @@ textarea {
   .compare__head,
   .compare__row {
     min-width: 30rem;
-    grid-template-columns: 1.2fr 0.45fr 0.45fr 0.45fr 0.45fr;
+    grid-template-columns: 1.6fr 0.7fr 0.7fr;
     gap: 0.45rem;
     padding-inline: 0.65rem;
     font-size: 0.72rem;
@@ -4920,14 +4922,6 @@ body:has(#main-content) .dashboard-topbar__profile {
   transform: translateY(20px) scale(0.98);
 }
 
-.public-page .offer-grid .reveal:nth-child(3) {
-  transform: translateX(24px) scale(0.98);
-}
-
-.public-page .offer-grid .reveal:nth-child(4) {
-  transform: translateY(20px) scale(0.98);
-}
-
 .public-page .compare__row.reveal:nth-child(2n) {
   transform: translateX(-16px);
 }
@@ -4953,8 +4947,6 @@ body:has(#main-content) .dashboard-topbar__profile {
 .public-page .roster-grid .reveal.in:nth-child(2n),
 .public-page .roster-grid .reveal.in:nth-child(3n),
 .public-page .offer-grid .reveal.in:nth-child(2),
-.public-page .offer-grid .reveal.in:nth-child(3),
-.public-page .offer-grid .reveal.in:nth-child(4),
 .public-page .compare__row.reveal.in:nth-child(2n),
 .public-page .compare__row.reveal.in:nth-child(3n),
 .public-page .community__perk.reveal.in:nth-child(2n),
