@@ -1129,18 +1129,19 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
                   ${isCorrect ? '✓ Correcto' : '✗ Incorrecto'} · ${q.points} pts
                 </div>`
             } else if (q.type === 'truefalse') {
-              const isCorrect = studentAnswer === q.correct_answer
+              const tfMap: Record<string, string> = { Verdadero: 'true', Falso: 'false' }
+              const isCorrect = (tfMap[studentAnswer] || studentAnswer) === (q.correct_answer || '')
               answerHtml = `
                 <div class="flex gap-3 mt-2">
-                  <div class="flex items-center gap-1.5 rounded border ${studentAnswer === 'true' ? (isCorrect ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10') : q.correct_answer === 'true' ? 'border-green-500/30 bg-green-500/5' : 'border-zinc-700'} px-3 py-1.5 text-xs">
+                  <div class="flex items-center gap-1.5 rounded border ${studentAnswer === 'Verdadero' ? (isCorrect ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10') : q.correct_answer === 'true' ? 'border-green-500/30 bg-green-500/5' : 'border-zinc-700'} px-3 py-1.5 text-xs">
                     <span class="text-zinc-400">V</span>
-                    ${studentAnswer === 'true' ? (isCorrect ? Icon('checkCircle', 12) : Icon('xCircle', 12)) : ''}
-                    ${q.correct_answer === 'true' && studentAnswer !== 'true' ? Icon('checkCircle', 12) : ''}
+                    ${studentAnswer === 'Verdadero' ? (isCorrect ? Icon('checkCircle', 12) : Icon('xCircle', 12)) : ''}
+                    ${q.correct_answer === 'true' && studentAnswer !== 'Verdadero' ? Icon('checkCircle', 12) : ''}
                   </div>
-                  <div class="flex items-center gap-1.5 rounded border ${studentAnswer === 'false' ? (isCorrect ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10') : q.correct_answer === 'false' ? 'border-green-500/30 bg-green-500/5' : 'border-zinc-700'} px-3 py-1.5 text-xs">
+                  <div class="flex items-center gap-1.5 rounded border ${studentAnswer === 'Falso' ? (isCorrect ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10') : q.correct_answer === 'false' ? 'border-green-500/30 bg-green-500/5' : 'border-zinc-700'} px-3 py-1.5 text-xs">
                     <span class="text-zinc-400">F</span>
-                    ${studentAnswer === 'false' ? (isCorrect ? Icon('checkCircle', 12) : Icon('xCircle', 12)) : ''}
-                    ${q.correct_answer === 'false' && studentAnswer !== 'false' ? Icon('checkCircle', 12) : ''}
+                    ${studentAnswer === 'Falso' ? (isCorrect ? Icon('checkCircle', 12) : Icon('xCircle', 12)) : ''}
+                    ${q.correct_answer === 'false' && studentAnswer !== 'Falso' ? Icon('checkCircle', 12) : ''}
                   </div>
                 </div>
                 <div class="mt-1 text-xs ${isCorrect ? 'text-green-400' : 'text-red-400'}">
@@ -1255,12 +1256,19 @@ async function openGradeStudentModal(examId: string, studentId: string, exam: an
 
         if (q.type === 'multiple' || q.type === 'truefalse') {
           const studentAnswer = answer?.answer || ''
-          const opts = q.options || []
-          const letterIdx: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 }
-          const correctLetter = (q.correct_answer || '').toUpperCase()
-          const correctIdx = letterIdx[correctLetter]
-          const correctText = correctIdx !== undefined && opts[correctIdx] ? opts[correctIdx] : q.correct_answer
-          const autoScore = (studentAnswer === correctText || studentAnswer.toUpperCase() === correctLetter || (q.type !== 'multiple' && studentAnswer === q.correct_answer)) ? q.points : 0
+          let isCorrect = false
+          if (q.type === 'truefalse') {
+            const tfMap: Record<string, string> = { Verdadero: 'true', Falso: 'false' }
+            isCorrect = (tfMap[studentAnswer] || studentAnswer) === (q.correct_answer || '')
+          } else {
+            const opts = q.options || []
+            const letterIdx: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 }
+            const correctLetter = (q.correct_answer || '').toUpperCase()
+            const correctIdx = letterIdx[correctLetter]
+            const correctText = correctIdx !== undefined && opts[correctIdx] ? opts[correctIdx] : q.correct_answer
+            isCorrect = studentAnswer === correctText || studentAnswer.toUpperCase() === correctLetter
+          }
+          const autoScore = isCorrect ? q.points : 0
           if (!answer?.graded) {
             totalScore += autoScore
             await supabase.from('exam_answers').update({ score: autoScore, graded: true }).eq('id', answer.id)

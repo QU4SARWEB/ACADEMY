@@ -211,6 +211,7 @@ export async function initStudentExamDetail(): Promise<void> {
         .from('exam_answers')
         .select('*')
         .eq('exam_id', examId)
+        .eq('student_id', uid)
       renderReadOnlyExam(container, exam, questions, result, ans ?? [], true)
       return
     }
@@ -220,6 +221,7 @@ export async function initStudentExamDetail(): Promise<void> {
         .from('exam_answers')
         .select('*')
         .eq('exam_id', examId)
+        .eq('student_id', uid)
       renderReadOnlyExam(container, exam, questions, result, ans ?? [], false)
       return
     }
@@ -327,17 +329,25 @@ function renderReadOnlyExam(
     const userAnswer = ans?.answer || ''
     let answerHtml = ''
 
-    if (q.type === 'multiple' || q.type === 'boolean' || q.type === 'true_false') {
+    if (q.type === 'multiple' || q.type === 'boolean' || q.type === 'true_false' || q.type === 'truefalse') {
       let opts: string[] = []
-      if (q.type === 'multiple') {
-        opts = parseOptions((q as any).options)
-      } else {
+      let correctText = ''
+      const isTF = q.type === 'boolean' || q.type === 'true_false' || q.type === 'truefalse'
+      if (isTF) {
         opts = ['Verdadero', 'Falso']
+        const ca = ((q as any).correct_answer || '').toLowerCase()
+        correctText = ca === 'true' ? 'Verdadero' : ca === 'false' ? 'Falso' : ca
+      } else {
+        opts = parseOptions((q as any).options)
+        const correctAnswer = (q as any).correct_answer || ''
+        const letterIdx: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 }
+        const correctLetter = correctAnswer.toUpperCase()
+        const correctIdx = letterIdx[correctLetter]
+        correctText = correctIdx !== undefined && opts[correctIdx] ? opts[correctIdx] : correctAnswer
       }
-      const correctAnswer = (q as any).correct_answer || ''
       answerHtml = opts.map((opt: string) => {
         const isSelected = userAnswer === opt
-        const isRight = correctAnswer === opt
+        const isRight = opt === correctText
         let cls = 'border-zinc-700 text-zinc-400'
         let extra = ''
         if (isRight) {
@@ -446,7 +456,7 @@ function renderInteractiveExam(
           <span class="text-sm text-zinc-300">${escapeHtml(opt)}</span>
         </label>`
       ).join('')
-    } else if (q.type === 'boolean' || q.type === 'true_false') {
+    } else if (q.type === 'boolean' || q.type === 'true_false' || q.type === 'truefalse') {
       const selected = localAnswers.get(q.id) || ''
       const opts = ['Verdadero', 'Falso']
       optionsHtml = opts.map((opt: string) =>
@@ -533,10 +543,10 @@ async function submitExam(
       const userAnswer = answers.get(q.id) || ''
       const points = (q as any).points || 0
 
-      if (q.type === 'multiple' || q.type === 'boolean' || q.type === 'true_false') {
+    if (q.type === 'multiple' || q.type === 'boolean' || q.type === 'true_false' || q.type === 'truefalse') {
         const correctAnswer = (q as any).correct_answer
         let isCorrect = false
-        if (q.type === 'boolean' || q.type === 'true_false') {
+        if (q.type === 'boolean' || q.type === 'true_false' || q.type === 'truefalse') {
           const boolMap: Record<string, string> = { Verdadero: 'true', Falso: 'false' }
           isCorrect = (boolMap[userAnswer] || userAnswer) === correctAnswer
         } else {
